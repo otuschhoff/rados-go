@@ -88,7 +88,7 @@ for index in 0 1 2; do
   truncate -s 6G "$image_file"
   loop_device=$(losetup --find --show "$image_file")
   LOOPS="$LOOPS $loop_device"
-  "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph orch daemon add osd "$(hostname -s):$loop_device"
+  "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph orch daemon add osd --method raw "$(hostname -s):$loop_device"
 done
 
 ceph_shell() {
