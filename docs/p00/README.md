@@ -1,7 +1,6 @@
 # P00 Evidence, Scope and Oracle
 
-Status: **P00 implementation complete; final strict-schema smoke and gate
-review pending**.
+Status: **P00 complete**.
 
 P00 deliberately contains no client implementation. It freezes the evidence,
 scope, reproducibility contract and independent oracle needed by later phases.
@@ -51,9 +50,9 @@ make inventory
 make verify-p00
 ```
 
-The live runner has passed on an isolated Linux arm64 VM against Ceph 20.2.4.
-The latest report was withdrawn after final review strengthened strict schema
-enforcement for nested test evidence; a final clean-checkpoint rerun is
-required. The native oracle has also been built successfully for both
-`linux/amd64` and `linux/arm64` from the checksum-pinned `librados-devel` and
+The live runner passed on an isolated Linux arm64 VM against Ceph 20.2.4. Its
+sanitized report is
+[`integration/reports/p00-aea2e269-39df-4476-9e55-b6b3de3b67c0.json`](../../integration/reports/p00-aea2e269-39df-4476-9e55-b6b3de3b67c0.json).
+The native oracle has also been built successfully for both `linux/amd64` and
+`linux/arm64` from the checksum-pinned `librados-devel` and
 `libradospp-devel` RPMs recorded in `evidence.json`.

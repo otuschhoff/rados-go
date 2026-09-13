@@ -30,11 +30,12 @@ server image, source-hashed oracle, exact compiler/development/runtime packages.
 hosts; cleanup cluster and loop devices. **Discriminating test:**
 `P00_DISPOSABLE_CLUSTER=I_UNDERSTAND_THIS_DESTROYS_DATA make p00-smoke`.
 **Acceptance:** schema-valid passed report containing CRUD bytes/version and
-`ceph osd map` PG/acting-primary evidence. **Result:** live behavior and verified
-cleanup pass on Linux arm64 against Ceph 20.2.4. Oracle builds are verified for
-amd64 and arm64. The final report is pending a clean-checkpoint rerun after
-strict nested-evidence schema enforcement. **Handoff:** retain the sanitized
-report and rerun when any pinned input or runner behavior changes.
+`ceph osd map` PG/acting-primary evidence. **Result:** complete. The final runner
+passed from a clean checkpoint on Linux arm64 against Ceph 20.2.4, produced a
+strictly validated report after verified cleanup, and removed cluster state,
+loop devices, runner state and the oracle image. Oracle builds are verified for
+amd64 and arm64. **Handoff:** retain the sanitized report and rerun when any
+pinned input or runner behavior changes.
 
 ## P00-T04 Gate Review
 
@@ -44,5 +45,5 @@ no findings; live smoke report exists. **Result:** local checks and first review
 identified inventory, cleanup and provenance findings. Those findings are fixed
 and local checks pass. The repeat-review Makefile provenance and final-review
 schema-enforcement findings are also fixed; the final live rerun and confirmation
-review remain pending. Review ownership is recorded by role in
+review have no findings. Review ownership is recorded by role in
 `protocol-sources.md`; named human sign-off is required at later gates.
