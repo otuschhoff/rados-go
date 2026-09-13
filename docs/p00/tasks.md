@@ -30,16 +30,17 @@ server image, source-hashed oracle, exact compiler/development/runtime packages.
 hosts; cleanup cluster and loop devices. **Discriminating test:**
 `P00_DISPOSABLE_CLUSTER=I_UNDERSTAND_THIS_DESTROYS_DATA make p00-smoke`.
 **Acceptance:** schema-valid passed report containing CRUD bytes/version and
-`ceph osd map` PG/acting-primary evidence. **Result:** implementation complete,
-oracle builds verified for amd64 and arm64; cluster execution blocked in the
-current macOS environment. **Handoff:** run on the documented Linux VM and
-commit the sanitized JSON report.
+`ceph osd map` PG/acting-primary evidence. **Result:** complete. The runner
+passed on Linux arm64 against Ceph 20.2.4, produced a schema-valid report, and
+cleaned the cluster and loop devices. Oracle builds are verified for amd64 and
+arm64. **Handoff:** retain the sanitized report and rerun when any pinned input
+or runner behavior changes.
 
 ## P00-T04 Gate Review
 
 **Goal:** Reconcile every P00 exit criterion with evidence. **Acceptance:** local
 gate, source hash verification, oracle image build and independent review have
 no findings; live smoke report exists. **Result:** local checks and first review
-complete and both oracle architectures build; live smoke remains blocked and
-therefore the P00 exit gate is not yet passed. Review ownership is recorded by
-role in `protocol-sources.md`; named human sign-off is required at later gates.
+complete, both oracle architectures build, and the live smoke report passes.
+Final independent review is pending. Review ownership is recorded by role in
+`protocol-sources.md`; named human sign-off is required at later gates.

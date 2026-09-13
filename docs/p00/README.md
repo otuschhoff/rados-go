@@ -1,7 +1,7 @@
 # P00 Evidence, Scope and Oracle
 
-Status: **local artifacts and oracle builds complete; live-cluster exit evidence
-pending**.
+Status: **P00 implementation and live-cluster evidence complete; final gate
+review pending**.
 
 P00 deliberately contains no client implementation. It freezes the evidence,
 scope, reproducibility contract and independent oracle needed by later phases.
@@ -51,8 +51,9 @@ make inventory
 make verify-p00
 ```
 
-The live gate is not counted as passed until `integration/p00/run.sh` produces
-a report matching `integration/manifest.schema.json` on an isolated Linux host.
-The native oracle has been built successfully for both `linux/amd64` and
+The live runner passed on an isolated Linux arm64 VM against Ceph 20.2.4. Its
+sanitized report is
+[`integration/reports/p00-1effbd73-dee3-4627-9e54-1304030e3072.json`](../../integration/reports/p00-1effbd73-dee3-4627-9e54-1304030e3072.json).
+The native oracle has also been built successfully for both `linux/amd64` and
 `linux/arm64` from the checksum-pinned `librados-devel` and
 `libradospp-devel` RPMs recorded in `evidence.json`.

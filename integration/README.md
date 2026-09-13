@@ -19,6 +19,11 @@ macOS is supported as a future client platform, but Docker Desktop is not a
 sufficient cephadm host because its Linux VM does not expose the required
 systemd/raw-device lifecycle. Start a dedicated Linux VM and run:
 
+The host must also resolve the numeric Ceph UID and GID embedded in the pinned
+image. Some recent distributions require a local `ceph` system account for
+cephadm's numeric ownership operations; the runner checks this before bootstrap
+and reports the required IDs.
+
 ```sh
 sudo env P00_DISPOSABLE_CLUSTER=I_UNDERSTAND_THIS_DESTROYS_DATA make p00-smoke
 ```

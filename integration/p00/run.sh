@@ -41,6 +41,17 @@ ORACLE_LIBRADOS=$(jq -r '.oracle.librados' "$EVIDENCE")
 GO_MINIMUM=$(jq -r '.go.minimum.version' "$EVIDENCE")
 GO_LATEST=$(jq -r '.go.latest.version' "$EVIDENCE")
 
+ceph_ids=$(docker run --rm --entrypoint stat "$CEPH_IMAGE" -c '%u:%g' /var/lib/ceph)
+ceph_uid=${ceph_ids%:*}
+ceph_gid=${ceph_ids#*:}
+owner_probe=$(mktemp -d)
+if ! install -d -o "$ceph_uid" -g "$ceph_gid" "$owner_probe/ceph" 2>/dev/null; then
+  rm -rf "$owner_probe"
+  echo "refusing to run: host must resolve Ceph image UID:GID $ceph_ids for cephadm" >&2
+  exit 2
+fi
+rm -rf "$owner_probe"
+
 if [ -e /var/lib/ceph/ceph ] || find /var/lib/ceph -mindepth 1 -maxdepth 1 -type d 2>/dev/null | grep -q .; then
   echo "refusing to run: /var/lib/ceph is not empty; use a fresh disposable VM" >&2
   exit 2
