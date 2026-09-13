@@ -95,6 +95,19 @@ ceph_shell() {
   "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph "$@"
 }
 
+osds_ready=false
+for attempt in $(seq 1 60); do
+  if ceph_shell osd stat --format json | jq -e '.num_osds == 3 and .num_up_osds == 3 and .num_in_osds == 3' >/dev/null; then
+    osds_ready=true
+    break
+  fi
+  sleep 5
+done
+if [ "$osds_ready" != true ]; then
+  echo "timed out waiting for three OSDs to become up and in" >&2
+  exit 1
+fi
+
 ceph_shell osd crush rule create-replicated p00-replicated-rule default osd
 ceph_shell osd pool create "$POOL" 32 32 replicated p00-replicated-rule
 ceph_shell osd pool set "$POOL" size 3
@@ -119,9 +132,13 @@ ORACLE_IMAGE_BUILT=true
 ORACLE_IMAGE_ID=$(docker image inspect "$ORACLE_IMAGE" --format '{{.Id}}')
 ORACLE_SOURCE_SHA256=$(sha256sum "$SCRIPT_DIR/oracle/main.cc" | awk '{print $1}')
 ORACLE_DOCKERFILE_SHA256=$(sha256sum "$SCRIPT_DIR/oracle/Dockerfile" | awk '{print $1}')
-CRUD_JSON=$(docker run --rm --network host \
-  -v "$STATE_DIR/client:/ceph:ro" "$ORACLE_IMAGE" \
-  smoke client.p00-rw /ceph/ceph.conf "$POOL" "$OBJECT")
+if ! CRUD_JSON=$(docker run --rm --network host \
+  -v "$STATE_DIR/client:/etc/ceph:ro" "$ORACLE_IMAGE" \
+  smoke client.p00-rw /etc/ceph/ceph.conf "$POOL" "$OBJECT" 2>"$STATE_DIR/oracle.stderr"); then
+  cat "$STATE_DIR/oracle.stderr" >&2
+  printf '%s\n' "$CRUD_JSON" >&2
+  exit 1
+fi
 printf '%s\n' "$CRUD_JSON" | jq -e '.status == "passed"' >/dev/null
 
 ceph_shell osd map "$POOL" "$OBJECT" --format json > "$STATE_DIR/object-map.json"
