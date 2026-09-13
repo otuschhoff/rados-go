@@ -148,7 +148,7 @@ printf '%s\n' "$CRUD_JSON" | jq -e '.status == "passed"' >/dev/null
 
 ceph_shell osd map "$POOL" "$OBJECT" --format json > "$STATE_DIR/object-map.json"
 if ! jq -e --arg pool "$POOL" --arg object "$OBJECT" \
-  '.pool == $pool and .object == $object and .pgid and (.up | length > 0) and (.acting | length > 0) and (.acting_primary >= 0)' \
+  '.pool == $pool and .objname == $object and .pgid and (.up | length > 0) and (.acting | length > 0) and (.acting_primary >= 0)' \
   "$STATE_DIR/object-map.json" >/dev/null; then
   echo "invalid object mapping evidence:" >&2
   cat "$STATE_DIR/object-map.json" >&2

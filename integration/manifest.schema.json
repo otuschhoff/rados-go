@@ -109,10 +109,10 @@
         "status": {"const": "passed"},
         "evidence": {
           "type": "object",
-          "required": ["pool", "object", "pgid", "up", "acting", "acting_primary"],
+          "required": ["pool", "objname", "pgid", "up", "acting", "acting_primary"],
           "properties": {
             "pool": {"type": "string", "minLength": 1},
-            "object": {"type": "string", "minLength": 1},
+            "objname": {"type": "string", "minLength": 1},
             "pgid": {"type": "string", "minLength": 1},
             "up": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
             "acting": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},

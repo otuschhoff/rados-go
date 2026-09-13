@@ -297,7 +297,7 @@ func checkReport(path string, manifest evidence) {
 		fatalf("native CRUD evidence is incomplete")
 	}
 	mapping := value.Tests["object_mapping"].Evidence
-	if mapping["pool"] != crud["pool"] || mapping["object"] != crud["object"] || stringValue(mapping["pgid"]) == "" || len(array(mapping["up"])) == 0 || len(array(mapping["acting"])) == 0 || number(mapping["acting_primary"]) < 0 {
+	if mapping["pool"] != crud["pool"] || mapping["objname"] != crud["object"] || stringValue(mapping["pgid"]) == "" || len(array(mapping["up"])) == 0 || len(array(mapping["acting"])) == 0 || number(mapping["acting_primary"]) < 0 {
 		fatalf("object mapping evidence is incomplete or targets a different object")
 	}
 }
