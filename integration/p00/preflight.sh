@@ -33,7 +33,7 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 0
 fi
 
-for command_name in awk df getconf losetup python3 seq ss systemctl sha256sum ip truncate; do
+for command_name in awk df getconf losetup python3 seq ss stat systemctl sha256sum ip truncate; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "P00 preflight: missing Linux host command: $command_name" >&2
     exit 2
@@ -54,6 +54,20 @@ if ! systemctl is-system-running >/dev/null 2>&1 && ! systemctl is-system-runnin
   echo "P00 preflight: systemd is not running" >&2
   exit 2
 fi
+
+for sys_device in /sys/block/*; do
+  device_name=$(basename "$sys_device")
+  if [ ! -e "/dev/$device_name" ]; then
+    continue
+  fi
+  major_minor=$(stat -c '%t:%T' "/dev/$device_name")
+  major=$((0x${major_minor%:*}))
+  minor=$((0x${major_minor#*:}))
+  if [ ! -e "/run/udev/data/b$major:$minor" ]; then
+    echo "P00 preflight: missing udev data for /dev/$device_name; ceph-volume cannot inventory this host" >&2
+    exit 2
+  fi
+done
 
 cpu_count=$(getconf _NPROCESSORS_ONLN)
 memory_kib=$(awk '/^MemTotal:/ {print $2}' /proc/meminfo)
