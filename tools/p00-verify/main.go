@@ -110,18 +110,41 @@ type report struct {
 		Replicated string `json:"replicated_profile"`
 		EC         string `json:"ec_profile"`
 	} `json:"cluster"`
-	Tests map[string]struct {
-		Status   string         `json:"status"`
-		Evidence map[string]any `json:"evidence"`
+	Tests struct {
+		NativeCRUD struct {
+			Status   string `json:"status"`
+			Evidence struct {
+				Status         string `json:"status"`
+				Pool           string `json:"pool"`
+				Object         string `json:"object"`
+				PayloadHex     string `json:"payload_hex"`
+				WriteVersion   int64  `json:"write_version"`
+				ReadVersion    int64  `json:"read_version"`
+				PGHashPosition int64  `json:"pg_hash_position"`
+			} `json:"evidence"`
+		} `json:"native_crud"`
+		ObjectMapping struct {
+			Status   string         `json:"status"`
+			Evidence map[string]any `json:"evidence"`
+		} `json:"object_mapping"`
+		Cleanup struct {
+			Status   string `json:"status"`
+			Evidence struct {
+				ClusterStateRemoved bool `json:"cluster_state_removed"`
+				LoopDevicesDetached bool `json:"loop_devices_detached"`
+				OracleImageRemoved  bool `json:"oracle_image_removed"`
+				RunnerStateRemoved  bool `json:"runner_state_removed"`
+			} `json:"evidence"`
+		} `json:"cleanup"`
 	} `json:"tests"`
 }
 
 var (
-	digestRE = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
-	hashRE   = regexp.MustCompile(`^[0-9a-f]{64}$`)
-	imageRE  = regexp.MustCompile(`^quay\.io/ceph/ceph@sha256:[0-9a-f]{64}$`)
-	commitRE = regexp.MustCompile(`^[0-9a-f]{40}$`)
-	uuidRE   = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+	digestRE              = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
+	hashRE                = regexp.MustCompile(`^[0-9a-f]{64}$`)
+	imageRE               = regexp.MustCompile(`^quay\.io/ceph/ceph@sha256:[0-9a-f]{64}$`)
+	commitRE              = regexp.MustCompile(`^[0-9a-f]{40}$`)
+	uuidRE                = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 	reportProvenancePaths = []string{
 		"Makefile",
 		"docs/p00/evidence.json",
@@ -300,22 +323,19 @@ func checkReport(path string, manifest evidence) {
 	if finished.Before(started) {
 		fatalf("report finished before it started")
 	}
-	for _, name := range []string{"native_crud", "object_mapping", "cleanup"} {
-		result, ok := value.Tests[name]
-		if !ok || result.Status != "passed" || len(result.Evidence) == 0 {
-			fatalf("report test %s is absent, not passed, or has no evidence", name)
-		}
+	if value.Tests.NativeCRUD.Status != "passed" || value.Tests.ObjectMapping.Status != "passed" || value.Tests.Cleanup.Status != "passed" {
+		fatalf("report tests are absent or not passed")
 	}
-	crud := value.Tests["native_crud"].Evidence
-	if crud["status"] != "passed" || stringValue(crud["pool"]) == "" || stringValue(crud["object"]) == "" || !regexp.MustCompile(`^[0-9a-f]+$`).MatchString(stringValue(crud["payload_hex"])) || number(crud["write_version"]) < 1 || number(crud["read_version"]) < 1 || number(crud["pg_hash_position"]) < 0 {
+	crud := value.Tests.NativeCRUD.Evidence
+	if crud.Status != "passed" || crud.Pool == "" || crud.Object == "" || !regexp.MustCompile(`^[0-9a-f]+$`).MatchString(crud.PayloadHex) || crud.WriteVersion < 1 || crud.ReadVersion < 1 || crud.PGHashPosition < 0 {
 		fatalf("native CRUD evidence is incomplete")
 	}
-	mapping := value.Tests["object_mapping"].Evidence
-	if mapping["pool"] != crud["pool"] || mapping["objname"] != crud["object"] || stringValue(mapping["pgid"]) == "" || len(array(mapping["up"])) == 0 || len(array(mapping["acting"])) == 0 || number(mapping["acting_primary"]) < 0 {
+	mapping := value.Tests.ObjectMapping.Evidence
+	if stringValue(mapping["pool"]) != crud.Pool || stringValue(mapping["objname"]) != crud.Object || stringValue(mapping["pgid"]) == "" || len(array(mapping["up"])) == 0 || len(array(mapping["acting"])) == 0 || number(mapping["acting_primary"]) < 0 {
 		fatalf("object mapping evidence is incomplete or targets a different object")
 	}
-	cleanup := value.Tests["cleanup"].Evidence
-	if cleanup["cluster_state_removed"] != true || cleanup["loop_devices_detached"] != true || cleanup["oracle_image_removed"] != true || cleanup["runner_state_removed"] != true {
+	cleanup := value.Tests.Cleanup.Evidence
+	if !cleanup.ClusterStateRemoved || !cleanup.LoopDevicesDetached || !cleanup.OracleImageRemoved || !cleanup.RunnerStateRemoved {
 		fatalf("cleanup evidence is incomplete")
 	}
 }
@@ -378,13 +398,20 @@ func decodeStrict(path string, destination any) {
 	file, err := os.Open(path)
 	must(err)
 	defer file.Close()
-	decoder := json.NewDecoder(file)
+	must(decodeStrictJSON(file, destination))
+}
+
+func decodeStrictJSON(reader io.Reader, destination any) error {
+	decoder := json.NewDecoder(reader)
 	decoder.DisallowUnknownFields()
-	must(decoder.Decode(destination))
+	if err := decoder.Decode(destination); err != nil {
+		return err
+	}
 	var extra any
 	if decoder.Decode(&extra) != io.EOF {
-		fatalf("%s contains trailing JSON values", path)
+		return fmt.Errorf("contains trailing JSON values")
 	}
+	return nil
 }
 
 func readFile(path string) []byte {

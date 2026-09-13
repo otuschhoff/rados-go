@@ -32,3 +32,11 @@ func TestVerifyReportCommitRejectsUnknownCommit(t *testing.T) {
 		t.Fatal("unknown repository commit accepted")
 	}
 }
+
+func TestReportRejectsUnknownCRUDEvidenceField(t *testing.T) {
+	var value report
+	err := decodeStrictJSON(strings.NewReader(`{"tests":{"native_crud":{"evidence":{"unexpected":true}}}}`), &value)
+	if err == nil {
+		t.Fatal("unknown native CRUD evidence field accepted")
+	}
+}
