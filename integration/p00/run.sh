@@ -88,8 +88,13 @@ for index in 0 1 2; do
   truncate -s 6G "$image_file"
   loop_device=$(losetup --find --show "$image_file")
   LOOPS="$LOOPS $loop_device"
-  "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph orch daemon add osd --method raw "$(hostname -s):$loop_device"
 done
+
+loop_paths=$(printf '%s\n' $LOOPS | jq -R . | jq -s .)
+jq -n --arg host "$(hostname -s)" --argjson paths "$loop_paths" \
+  '{service_type:"osd",service_id:"p00-raw",placement:{host_pattern:$host},method:"raw",data_devices:{paths:($paths | map({path:.}))}}' \
+  > "$STATE_DIR/osd-spec.json"
+"$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph orch apply -i - < "$STATE_DIR/osd-spec.json"
 
 ceph_shell() {
   "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph "$@"
