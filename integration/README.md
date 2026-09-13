@@ -6,11 +6,12 @@ tools and librados; production code and ordinary unit tests may not.
 ## P00 host requirements
 
 Use a disposable Linux VM with systemd, root access, Docker, at least 4 CPUs,
-12 GiB RAM and 40 GiB free disk. The runner creates three 6 GiB loop devices,
-bootstraps Ceph services and destroys them on exit. Never run it on a Ceph host
-or a machine containing valuable `/var/lib/ceph` state. Run from a clean,
-committed worktree so the report's repository commit identifies the exact code
-under test.
+12 GiB RAM and 40 GiB free disk. Python 3 and an SSH daemon listening on port 22
+are required for cephadm host management. The runner creates three 6 GiB loop
+devices, bootstraps Ceph services and destroys them on exit. Never run it on a
+Ceph host or a machine containing valuable `/var/lib/ceph` state. Run from a
+clean, committed worktree so the report's repository commit identifies the
+exact code under test.
 
 macOS is supported as a future client platform, but Docker Desktop is not a
 sufficient cephadm host because its Linux VM does not expose the required

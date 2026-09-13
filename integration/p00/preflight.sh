@@ -33,7 +33,7 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 0
 fi
 
-for command_name in awk df getconf losetup systemctl sha256sum ip truncate; do
+for command_name in awk df getconf losetup python3 ss systemctl sha256sum ip truncate; do
   if ! command -v "$command_name" >/dev/null 2>&1; then
     echo "P00 preflight: missing Linux host command: $command_name" >&2
     exit 2
@@ -42,6 +42,11 @@ done
 
 if [ "$(docker info --format '{{.OSType}}' 2>/dev/null)" != "linux" ]; then
   echo "P00 preflight: a reachable Linux Docker daemon is required" >&2
+  exit 2
+fi
+
+if ! ss -ltnH | awk '$4 ~ /:22$/ { found = 1 } END { exit !found }'; then
+  echo "P00 preflight: an SSH daemon must listen on port 22 for cephadm host management" >&2
   exit 2
 fi
 
