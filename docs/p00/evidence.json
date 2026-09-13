@@ -64,7 +64,7 @@
   },
   "inventory": {
     "c_exported_functions": 243,
-    "cpp_public_operations": 376,
+    "cpp_public_operations": 380,
     "generator": "tools/api-inventory/main.go",
     "output": "docs/p00/api-inventory.csv"
   }

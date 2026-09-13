@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestPinnedFormats(t *testing.T) {
 	if !commitRE.MatchString("69f84cc2651aa259a15bc192ddaabd3baba07489") {
@@ -20,5 +23,12 @@ func TestUUIDFormat(t *testing.T) {
 	}
 	if uuidRE.MatchString("not-a-cluster") {
 		t.Fatal("invalid UUID accepted")
+	}
+}
+
+func TestVerifyReportCommitRejectsUnknownCommit(t *testing.T) {
+	err := verifyReportCommit(strings.Repeat("0", 40), reportProvenancePaths)
+	if err == nil {
+		t.Fatal("unknown repository commit accepted")
 	}
 }

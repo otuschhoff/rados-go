@@ -2,6 +2,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/csv"
 	"encoding/hex"
@@ -121,6 +122,15 @@ var (
 	imageRE  = regexp.MustCompile(`^quay\.io/ceph/ceph@sha256:[0-9a-f]{64}$`)
 	commitRE = regexp.MustCompile(`^[0-9a-f]{40}$`)
 	uuidRE   = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+	reportProvenancePaths = []string{
+		"docs/p00/evidence.json",
+		"integration/manifest.schema.json",
+		"integration/p00/preflight.sh",
+		"integration/p00/run.sh",
+		"integration/p00/oracle/Dockerfile",
+		"integration/p00/oracle/main.cc",
+		"tools/p00-verify/main.go",
+	}
 )
 
 func main() {
@@ -267,6 +277,9 @@ func checkReport(path string, manifest evidence) {
 	if value.Source.Baseline != manifest.Ceph.SourceBaseline.Commit || value.Source.Qualification != manifest.Ceph.QualificationRelease.Commit || !commitRE.MatchString(value.Source.Repository) {
 		fatalf("report source pins do not match evidence manifest")
 	}
+	if err := verifyReportCommit(value.Source.Repository, reportProvenancePaths); err != nil {
+		fatalf("report repository provenance: %v", err)
+	}
 	if value.Server.Image != manifest.Images["qualification"].Reference || value.Server.Version == "" {
 		fatalf("report server identity does not match qualification image")
 	}
@@ -286,7 +299,7 @@ func checkReport(path string, manifest evidence) {
 	if finished.Before(started) {
 		fatalf("report finished before it started")
 	}
-	for _, name := range []string{"native_crud", "object_mapping"} {
+	for _, name := range []string{"native_crud", "object_mapping", "cleanup"} {
 		result, ok := value.Tests[name]
 		if !ok || result.Status != "passed" || len(result.Evidence) == 0 {
 			fatalf("report test %s is absent, not passed, or has no evidence", name)
@@ -300,6 +313,38 @@ func checkReport(path string, manifest evidence) {
 	if mapping["pool"] != crud["pool"] || mapping["objname"] != crud["object"] || stringValue(mapping["pgid"]) == "" || len(array(mapping["up"])) == 0 || len(array(mapping["acting"])) == 0 || number(mapping["acting_primary"]) < 0 {
 		fatalf("object mapping evidence is incomplete or targets a different object")
 	}
+	cleanup := value.Tests["cleanup"].Evidence
+	if cleanup["cluster_state_removed"] != true || cleanup["loop_devices_detached"] != true || cleanup["oracle_image_removed"] != true || cleanup["runner_state_removed"] != true {
+		fatalf("cleanup evidence is incomplete")
+	}
+}
+
+func verifyReportCommit(commit string, paths []string) error {
+	if output, err := exec.Command("git", "cat-file", "-e", commit+"^{commit}").CombinedOutput(); err != nil {
+		return fmt.Errorf("commit %s does not exist: %s", commit, strings.TrimSpace(string(output)))
+	}
+	if output, err := exec.Command("git", "merge-base", "--is-ancestor", commit, "HEAD").CombinedOutput(); err != nil {
+		return fmt.Errorf("commit %s is not an ancestor of HEAD: %s", commit, strings.TrimSpace(string(output)))
+	}
+	rootOutput, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return fmt.Errorf("locate repository root: %w", err)
+	}
+	root := strings.TrimSpace(string(rootOutput))
+	for _, path := range paths {
+		committed, err := exec.Command("git", "show", commit+":"+path).Output()
+		if err != nil {
+			return fmt.Errorf("read %s at commit %s: %w", path, commit, err)
+		}
+		current, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+		if err != nil {
+			return fmt.Errorf("read current %s: %w", path, err)
+		}
+		if !bytes.Equal(committed, current) {
+			return fmt.Errorf("%s differs from commit %s; rerun the live smoke", path, commit)
+		}
+	}
+	return nil
 }
 
 func checkHash(path, expected string) {

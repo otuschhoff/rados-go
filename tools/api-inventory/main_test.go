@@ -36,6 +36,33 @@ private:
 	}
 }
 
+func TestExtractCPPPointerReturnsAndAttributes(t *testing.T) {
+	source := `
+class CEPH_RADOS_API Rados {
+public:
+  static PoolAsyncCompletion *pool_async_create_completion();
+  static AioCompletion *aio_create_completion();
+  static AioCompletion *aio_create_completion(void *cb_arg, callback_t cb_complete,
+                                               callback_t cb_safe)
+    __attribute__ ((deprecated));
+  static AioCompletion *aio_create_completion(void *cb_arg, callback_t cb_complete);
+};
+class CEPH_RADOS_API NObjectIterator {
+public:
+  NObjectIterator &operator++();
+};
+`
+	entries := extractCPP(source)
+	if len(entries) != 5 {
+		t.Fatalf("got %d entries: %#v", len(entries), entries)
+	}
+	for _, item := range entries {
+		if item.symbol == "Rados::__attribute__" {
+			t.Fatalf("attribute extracted as method: %#v", item)
+		}
+	}
+}
+
 func TestClassifyAsyncByUnderlyingOperation(t *testing.T) {
 	tests := []struct {
 		symbol string

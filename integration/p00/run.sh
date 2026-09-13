@@ -57,24 +57,66 @@ if [ -e /var/lib/ceph/ceph ] || find /var/lib/ceph -mindepth 1 -maxdepth 1 -type
   exit 2
 fi
 
-cleanup() {
-  exit_code=$?
-  set +e
+cleanup_resources() {
+  cleanup_failed=false
   if [ -n "$FSID" ] && [ -x "$STATE_DIR/cephadm" ]; then
     if ! "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" rm-cluster --force --zap-osds --fsid "$FSID" >/dev/null 2>&1; then
-      "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" rm-cluster --force --fsid "$FSID" >/dev/null 2>&1
+      if ! "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" rm-cluster --force --fsid "$FSID" >/dev/null 2>&1; then
+        echo "cleanup failed: unable to remove Ceph cluster $FSID" >&2
+        cleanup_failed=true
+      fi
     fi
   fi
   for loop_device in $LOOPS; do
-    losetup -d "$loop_device" >/dev/null 2>&1
+    if ! losetup -d "$loop_device" >/dev/null 2>&1; then
+      echo "cleanup failed: unable to detach $loop_device" >&2
+      cleanup_failed=true
+    fi
   done
   if [ "$ORACLE_IMAGE_BUILT" = true ]; then
-    docker image rm "$ORACLE_IMAGE" >/dev/null 2>&1
+    if ! docker image rm "$ORACLE_IMAGE" >/dev/null 2>&1; then
+      echo "cleanup failed: unable to remove oracle image $ORACLE_IMAGE" >&2
+      cleanup_failed=true
+    fi
   fi
-  rm -rf "$STATE_DIR"
+  if ! rm -rf "$STATE_DIR"; then
+    echo "cleanup failed: unable to remove $STATE_DIR" >&2
+    cleanup_failed=true
+  fi
+  if [ -n "$FSID" ] && [ -e "/var/lib/ceph/$FSID" ]; then
+    echo "cleanup failed: Ceph cluster state remains at /var/lib/ceph/$FSID" >&2
+    cleanup_failed=true
+  fi
+  if find /var/lib/ceph -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null | grep -q .; then
+    echo "cleanup failed: /var/lib/ceph is not empty" >&2
+    cleanup_failed=true
+  fi
+  for loop_device in $LOOPS; do
+    if losetup "$loop_device" >/dev/null 2>&1; then
+      echo "cleanup failed: $loop_device remains attached" >&2
+      cleanup_failed=true
+    fi
+  done
+  if [ "$ORACLE_IMAGE_BUILT" = true ] && docker image inspect "$ORACLE_IMAGE" >/dev/null 2>&1; then
+    echo "cleanup failed: oracle image $ORACLE_IMAGE remains" >&2
+    cleanup_failed=true
+  fi
+  if [ -e "$STATE_DIR" ]; then
+    echo "cleanup failed: runner state remains at $STATE_DIR" >&2
+    cleanup_failed=true
+  fi
+  [ "$cleanup_failed" = false ]
+}
+
+cleanup_on_exit() {
+  exit_code=$?
+  trap - EXIT INT TERM
+  if ! cleanup_resources; then
+    exit_code=1
+  fi
   exit "$exit_code"
 }
-trap cleanup EXIT INT TERM
+trap cleanup_on_exit EXIT INT TERM
 
 rm -rf "$STATE_DIR"
 mkdir -p "$STATE_DIR/client" "$STATE_DIR/osds" "$REPORT_DIR"
@@ -165,9 +207,15 @@ if ! jq -e --arg pool "$POOL" --arg object "$OBJECT" \
   cat "$STATE_DIR/object-map.json" >&2
   exit 1
 fi
+MAPPING_JSON=$(cat "$STATE_DIR/object-map.json")
 SERVER_VERSION=$("$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph --version)
-FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 REPORT="$REPORT_DIR/p00-$FSID.json"
+
+if ! cleanup_resources; then
+  exit 1
+fi
+trap - EXIT INT TERM
+FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 jq -n \
   --arg started "$STARTED_AT" --arg finished "$FINISHED_AT" \
@@ -185,7 +233,7 @@ jq -n \
   --arg oracle_librados "$ORACLE_LIBRADOS" \
   --arg go_minimum "$GO_MINIMUM" --arg go_latest "$GO_LATEST" \
   --arg fsid "$FSID" --argjson crud "$CRUD_JSON" \
-  --slurpfile mapping "$STATE_DIR/object-map.json" \
+  --argjson mapping "$MAPPING_JSON" \
   '{schema_version:1,status:"passed",started_at:$started,finished_at:$finished,
     source:{baseline_commit:$baseline,qualification_commit:$qualification,repository_commit:$repository},
     server:{image:$image,version:$version},
@@ -197,7 +245,8 @@ jq -n \
       cephpp_devel_arm64_sha256:$oracle_cephpp_devel_arm64_sha256,librados:$oracle_librados},
     client:{os:$os,architecture:$arch,go_versions:[$go_minimum,$go_latest]},
     cluster:{fsid:$fsid,replicated_profile:"size=3,min_size=2,pg=32,rule=p00-replicated-rule,failure_domain=osd",ec_profile:"k=2,m=1,jerasure,reed_sol_van,pg=32,failure_domain=osd,overwrite=true"},
-    tests:{native_crud:{status:"passed",evidence:$crud},object_mapping:{status:"passed",evidence:$mapping[0]}}}' > "$REPORT"
+    tests:{native_crud:{status:"passed",evidence:$crud},object_mapping:{status:"passed",evidence:$mapping},
+      cleanup:{status:"passed",evidence:{cluster_state_removed:true,loop_devices_detached:true,oracle_image_removed:true,runner_state_removed:true}}}}' > "$REPORT"
 
 GO111MODULE=off go run ./tools/p00-verify -report "$REPORT"
 echo "P00 smoke passed: $REPORT"

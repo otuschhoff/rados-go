@@ -70,11 +70,12 @@
     },
     "tests": {
       "type": "object",
-      "required": ["native_crud", "object_mapping"],
+      "required": ["native_crud", "object_mapping", "cleanup"],
       "additionalProperties": false,
       "properties": {
         "native_crud": {"$ref": "#/$defs/nativeCrud"},
-        "object_mapping": {"$ref": "#/$defs/objectMapping"}
+        "object_mapping": {"$ref": "#/$defs/objectMapping"},
+        "cleanup": {"$ref": "#/$defs/cleanup"}
       }
     }
   },
@@ -117,6 +118,25 @@
             "up": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
             "acting": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
             "acting_primary": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "cleanup": {
+      "type": "object",
+      "required": ["status", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"const": "passed"},
+        "evidence": {
+          "type": "object",
+          "required": ["cluster_state_removed", "loop_devices_detached", "oracle_image_removed", "runner_state_removed"],
+          "additionalProperties": false,
+          "properties": {
+            "cluster_state_removed": {"const": true},
+            "loop_devices_detached": {"const": true},
+            "oracle_image_removed": {"const": true},
+            "runner_state_removed": {"const": true}
           }
         }
       }

@@ -24,7 +24,7 @@ var (
 	spaceRE   = regexp.MustCompile(`\s+`)
 	cNameRE   = regexp.MustCompile(`\b(rados_[A-Za-z0-9_]+)\s*\(`)
 	classRE   = regexp.MustCompile(`\b(class|struct)\s+(?:CEPH_RADOS_API\s+)?([A-Za-z_][A-Za-z0-9_]*)[^;{]*\{`)
-	methodRE  = regexp.MustCompile(`(?m)^[ \t]*(?:explicit\s+)?(?:static\s+)?(?:virtual\s+)?(?:[A-Za-z_~][^;{}()]*?\s+)?(operator\s*(?:\[\]|->|<<|==|!=|=|<|\*|\+\+)|[A-Za-z_~][A-Za-z0-9_]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?(?:=[^;]+)?;`)
+	methodRE  = regexp.MustCompile(`(?m)^[ \t]*(?:explicit\s+)?(?:static\s+)?(?:virtual\s+)?(?:[A-Za-z_~][^;{}()]*?\s+[*&]*\s*)?(operator\s*(?:\[\]|->|<<|==|!=|=|<|\*|\+\+)|[A-Za-z_~][A-Za-z0-9_]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?(?:__attribute__\s*\(\([^;{}]*\)\)\s*)?(?:=[^;]+)?;`)
 	inlineRE  = regexp.MustCompile(`(?m)^[ \t]*(?:explicit\s+)?(?:virtual\s+)?([A-Za-z_~][A-Za-z0-9_]*)\s*\([^;{}\n]*\)(?:\s*:\s*[^{}\n]+)?\s*(?:override\s*)?\{[^{}\n]*\}`)
 	freeCPPRE = regexp.MustCompile(`CEPH_RADOS_API\s+([^;{}]*?\b(operator[^[:space:]<(]*|[A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*\)[^;{}]*);`)
 )
@@ -46,7 +46,10 @@ func main() {
 		if entries[i].owner != entries[j].owner {
 			return entries[i].owner < entries[j].owner
 		}
-		return entries[i].symbol < entries[j].symbol
+		if entries[i].symbol != entries[j].symbol {
+			return entries[i].symbol < entries[j].symbol
+		}
+		return entries[i].signature < entries[j].signature
 	})
 
 	var destination = os.Stdout
@@ -101,7 +104,7 @@ func extractCPP(source string) []entry {
 		body := publicSections(class.body, class.kind == "struct")
 		for _, match := range methodRE.FindAllStringSubmatch(body, -1) {
 			name := match[1]
-			if name == "if" || name == "for" || name == "while" {
+			if name == "if" || name == "for" || name == "while" || name == "__attribute__" {
 				continue
 			}
 			signature := strings.TrimLeft(match[0], ";{}")
