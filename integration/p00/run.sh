@@ -50,7 +50,9 @@ cleanup() {
   exit_code=$?
   set +e
   if [ -n "$FSID" ] && [ -x "$STATE_DIR/cephadm" ]; then
-    "$STATE_DIR/cephadm" rm-cluster --force --zap-osds --fsid "$FSID" >/dev/null 2>&1
+    if ! "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" rm-cluster --force --zap-osds --fsid "$FSID" >/dev/null 2>&1; then
+      "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" rm-cluster --force --fsid "$FSID" >/dev/null 2>&1
+    fi
   fi
   for loop_device in $LOOPS; do
     losetup -d "$loop_device" >/dev/null 2>&1
@@ -86,11 +88,11 @@ for index in 0 1 2; do
   truncate -s 6G "$image_file"
   loop_device=$(losetup --find --show "$image_file")
   LOOPS="$LOOPS $loop_device"
-  "$STATE_DIR/cephadm" shell --fsid "$FSID" -- ceph orch daemon add osd "$(hostname -s):$loop_device"
+  "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph orch daemon add osd "$(hostname -s):$loop_device"
 done
 
 ceph_shell() {
-  "$STATE_DIR/cephadm" shell --fsid "$FSID" -- ceph "$@"
+  "$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph "$@"
 }
 
 ceph_shell osd crush rule create-replicated p00-replicated-rule default osd
@@ -126,7 +128,7 @@ ceph_shell osd map "$POOL" "$OBJECT" --format json > "$STATE_DIR/object-map.json
 jq -e --arg pool "$POOL" --arg object "$OBJECT" \
   '.pool == $pool and .object == $object and .pgid and (.up | length > 0) and (.acting | length > 0) and (.acting_primary >= 0)' \
   "$STATE_DIR/object-map.json" >/dev/null
-SERVER_VERSION=$("$STATE_DIR/cephadm" shell --fsid "$FSID" -- ceph --version)
+SERVER_VERSION=$("$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph --version)
 FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 REPORT="$REPORT_DIR/p00-$FSID.json"
 

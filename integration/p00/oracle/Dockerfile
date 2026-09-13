@@ -29,6 +29,7 @@ RUN c++ -std=c++17 -O2 -Wall -Wextra -Werror /src/main.cc -lrados -o /rados-refe
 
 FROM ${CEPH_IMAGE}
 ARG LIBRADOS_PACKAGE=librados2-20.2.4-0.el9
+LABEL ceph="False"
 RUN test "$(rpm -q --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' librados2)" = "${LIBRADOS_PACKAGE}"
 COPY --from=build /rados-reference /usr/local/bin/rados-reference
 ENTRYPOINT ["/usr/local/bin/rados-reference"]
