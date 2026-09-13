@@ -1,6 +1,6 @@
 # P00 Evidence, Scope and Oracle
 
-Status: **P00 implementation complete; final clean-checkpoint smoke and gate
+Status: **P00 implementation complete; final Makefile-bound smoke and gate
 review pending**.
 
 P00 deliberately contains no client implementation. It freezes the evidence,
@@ -52,8 +52,8 @@ make verify-p00
 ```
 
 The live runner has passed on an isolated Linux arm64 VM against Ceph 20.2.4.
-Its prior report was withdrawn after the final review strengthened inventory,
-cleanup and provenance validation; a clean-checkpoint rerun is required. The
-native oracle has also been built successfully for both `linux/amd64` and
-`linux/arm64` from the checksum-pinned `librados-devel` and `libradospp-devel`
-RPMs recorded in `evidence.json`.
+The latest report was withdrawn after the repeat review added the documented
+`make p00-smoke` entry point to commit-bound provenance; a final clean-checkpoint
+rerun is required. The native oracle has also been built successfully for both
+`linux/amd64` and `linux/arm64` from the checksum-pinned `librados-devel` and
+`libradospp-devel` RPMs recorded in `evidence.json`.

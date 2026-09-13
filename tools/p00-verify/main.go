@@ -123,6 +123,7 @@ var (
 	commitRE = regexp.MustCompile(`^[0-9a-f]{40}$`)
 	uuidRE   = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
 	reportProvenancePaths = []string{
+		"Makefile",
 		"docs/p00/evidence.json",
 		"integration/manifest.schema.json",
 		"integration/p00/preflight.sh",
