@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/otuschhoff/go-librados/integration/manifest.schema.json",
+  "title": "go-librados integration evidence",
+  "type": "object",
+  "required": ["schema_version", "status", "started_at", "finished_at", "source", "server", "oracle", "client", "cluster", "tests"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["passed", "failed", "blocked"]},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "source": {
+      "type": "object",
+      "required": ["baseline_commit", "qualification_commit", "repository_commit"],
+      "additionalProperties": false,
+      "properties": {
+        "baseline_commit": {"pattern": "^[0-9a-f]{40}$"},
+        "qualification_commit": {"pattern": "^[0-9a-f]{40}$"},
+        "repository_commit": {"pattern": "^[0-9a-f]{40}$"}
+      }
+    },
+    "server": {
+      "type": "object",
+      "required": ["image", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "image": {"pattern": "^quay\\.io/ceph/ceph@sha256:[0-9a-f]{64}$"},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "required": ["image_id", "source_sha256", "dockerfile_sha256", "compiler", "ceph_devel", "cephpp_devel", "devel_repository", "ceph_devel_amd64_sha256", "ceph_devel_arm64_sha256", "cephpp_devel_amd64_sha256", "cephpp_devel_arm64_sha256", "librados"],
+      "additionalProperties": false,
+      "properties": {
+        "image_id": {"pattern": "^sha256:[0-9a-f]{64}$"},
+        "source_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "dockerfile_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "compiler": {"type": "string", "minLength": 1},
+        "ceph_devel": {"type": "string", "minLength": 1},
+        "cephpp_devel": {"type": "string", "minLength": 1},
+        "devel_repository": {"type": "string", "format": "uri"},
+        "ceph_devel_amd64_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "ceph_devel_arm64_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "cephpp_devel_amd64_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "cephpp_devel_arm64_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "librados": {"type": "string", "minLength": 1}
+      }
+    },
+    "client": {
+      "type": "object",
+      "required": ["os", "architecture", "go_versions"],
+      "additionalProperties": false,
+      "properties": {
+        "os": {"type": "string"},
+        "architecture": {"type": "string"},
+        "go_versions": {"type": "array", "items": {"type": "string"}, "minItems": 2}
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "required": ["fsid", "replicated_profile", "ec_profile"],
+      "additionalProperties": false,
+      "properties": {
+        "fsid": {"format": "uuid"},
+        "replicated_profile": {"type": "string"},
+        "ec_profile": {"type": "string"}
+      }
+    },
+    "tests": {
+      "type": "object",
+      "required": ["native_crud", "object_mapping"],
+      "additionalProperties": false,
+      "properties": {
+        "native_crud": {"$ref": "#/$defs/nativeCrud"},
+        "object_mapping": {"$ref": "#/$defs/objectMapping"}
+      }
+    }
+  },
+  "$defs": {
+    "nativeCrud": {
+      "type": "object",
+      "required": ["status", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"const": "passed"},
+        "evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "pool", "object", "payload_hex", "write_version", "read_version", "pg_hash_position"],
+          "properties": {
+            "status": {"const": "passed"},
+            "pool": {"type": "string", "minLength": 1},
+            "object": {"type": "string", "minLength": 1},
+            "payload_hex": {"pattern": "^[0-9a-f]+$"},
+            "write_version": {"type": "integer", "minimum": 1},
+            "read_version": {"type": "integer", "minimum": 1},
+            "pg_hash_position": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    },
+    "objectMapping": {
+      "type": "object",
+      "required": ["status", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"const": "passed"},
+        "evidence": {
+          "type": "object",
+          "required": ["pool", "object", "pgid", "up", "acting", "acting_primary"],
+          "properties": {
+            "pool": {"type": "string", "minLength": 1},
+            "object": {"type": "string", "minLength": 1},
+            "pgid": {"type": "string", "minLength": 1},
+            "up": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
+            "acting": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 1},
+            "acting_primary": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    }
+  }
+}

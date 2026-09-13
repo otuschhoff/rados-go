@@ -1,0 +1,292 @@
+// Command api-inventory extracts the public librados API from pinned Ceph headers.
+package main
+
+import (
+	"bufio"
+	"encoding/csv"
+	"flag"
+	"fmt"
+	"os"
+	"regexp"
+	"sort"
+	"strings"
+)
+
+type entry struct {
+	language  string
+	owner     string
+	symbol    string
+	signature string
+}
+
+var (
+	commentRE = regexp.MustCompile(`(?s)/\*.*?\*/|//[^\n]*`)
+	spaceRE   = regexp.MustCompile(`\s+`)
+	cNameRE   = regexp.MustCompile(`\b(rados_[A-Za-z0-9_]+)\s*\(`)
+	classRE   = regexp.MustCompile(`\b(class|struct)\s+(?:CEPH_RADOS_API\s+)?([A-Za-z_][A-Za-z0-9_]*)[^;{]*\{`)
+	methodRE  = regexp.MustCompile(`(?m)^[ \t]*(?:explicit\s+)?(?:static\s+)?(?:virtual\s+)?(?:[A-Za-z_~][^;{}()]*?\s+)?(operator\s*(?:\[\]|->|<<|==|!=|=|<|\*|\+\+)|[A-Za-z_~][A-Za-z0-9_]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?(?:=[^;]+)?;`)
+	inlineRE  = regexp.MustCompile(`(?m)^[ \t]*(?:explicit\s+)?(?:virtual\s+)?([A-Za-z_~][A-Za-z0-9_]*)\s*\([^;{}\n]*\)(?:\s*:\s*[^{}\n]+)?\s*(?:override\s*)?\{[^{}\n]*\}`)
+	freeCPPRE = regexp.MustCompile(`CEPH_RADOS_API\s+([^;{}]*?\b(operator[^[:space:]<(]*|[A-Za-z_][A-Za-z0-9_]*)\s*\([^;{}]*\)[^;{}]*);`)
+)
+
+func main() {
+	cHeader := flag.String("c", "", "path to librados.h")
+	cppHeader := flag.String("cpp", "", "path to librados.hpp")
+	output := flag.String("output", "", "output CSV path, or stdout when empty")
+	flag.Parse()
+	if *cHeader == "" || *cppHeader == "" {
+		fatalf("both -c and -cpp are required")
+	}
+
+	entries := append(extractC(read(*cHeader)), extractCPP(read(*cppHeader))...)
+	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].language != entries[j].language {
+			return entries[i].language < entries[j].language
+		}
+		if entries[i].owner != entries[j].owner {
+			return entries[i].owner < entries[j].owner
+		}
+		return entries[i].symbol < entries[j].symbol
+	})
+
+	var destination = os.Stdout
+	if *output != "" {
+		file, err := os.Create(*output)
+		if err != nil {
+			fatalf("create output: %v", err)
+		}
+		defer file.Close()
+		destination = file
+	}
+
+	writer := csv.NewWriter(destination)
+	must(writer.Write([]string{"language", "owner", "source_symbol", "source_signature", "go_equivalent", "disposition", "phase", "prerequisites", "semantic_difference", "conformance_test"}))
+	seen := make(map[string]struct{}, len(entries))
+	for _, item := range entries {
+		key := item.language + ":" + item.owner + ":" + item.symbol + ":" + item.signature
+		if _, exists := seen[key]; exists {
+			fatalf("duplicate extracted API key %q", key)
+		}
+		seen[key] = struct{}{}
+		goEquivalent, disposition, phase, difference, test := classify(item)
+		must(writer.Write([]string{item.language, item.owner, item.symbol, item.signature, goEquivalent, disposition, phase, prerequisites(phase), difference, test}))
+	}
+	writer.Flush()
+	if err := writer.Error(); err != nil {
+		fatalf("write output: %v", err)
+	}
+	fmt.Fprintf(os.Stderr, "inventory: %d C APIs, %d C++ operations\n", count(entries, "C"), count(entries, "C++"))
+}
+
+func extractC(source string) []entry {
+	source = commentRE.ReplaceAllString(source, " ")
+	var entries []entry
+	for _, statement := range strings.Split(source, ";") {
+		if !strings.Contains(statement, "CEPH_RADOS_API") {
+			continue
+		}
+		match := cNameRE.FindStringSubmatch(statement)
+		if match == nil {
+			continue
+		}
+		entries = append(entries, entry{language: "C", owner: "global", symbol: match[1], signature: normalize(statement + ";")})
+	}
+	return entries
+}
+
+func extractCPP(source string) []entry {
+	source = commentRE.ReplaceAllString(source, " ")
+	var entries []entry
+	for _, class := range publicClassBodies(source) {
+		body := publicSections(class.body, class.kind == "struct")
+		for _, match := range methodRE.FindAllStringSubmatch(body, -1) {
+			name := match[1]
+			if name == "if" || name == "for" || name == "while" {
+				continue
+			}
+			signature := strings.TrimLeft(match[0], ";{}")
+			entries = append(entries, entry{language: "C++", owner: class.name, symbol: class.name + "::" + name, signature: normalize(signature)})
+		}
+		for _, match := range inlineRE.FindAllStringSubmatch(body, -1) {
+			entries = append(entries, entry{language: "C++", owner: class.name, symbol: class.name + "::" + match[1], signature: normalize(match[0])})
+		}
+	}
+	for _, match := range freeCPPRE.FindAllStringSubmatch(source, -1) {
+		entries = append(entries, entry{language: "C++", owner: "global", symbol: match[2], signature: normalize(match[0])})
+	}
+	return entries
+}
+
+type classBody struct {
+	kind string
+	name string
+	body string
+}
+
+func publicClassBodies(source string) []classBody {
+	var result []classBody
+	for _, location := range classRE.FindAllStringSubmatchIndex(source, -1) {
+		start := location[1]
+		depth := 1
+		end := start
+		for end < len(source) && depth > 0 {
+			switch source[end] {
+			case '{':
+				depth++
+			case '}':
+				depth--
+			}
+			end++
+		}
+		if depth == 0 {
+			result = append(result, classBody{kind: source[location[2]:location[3]], name: source[location[4]:location[5]], body: source[start : end-1]})
+		}
+	}
+	return result
+}
+
+func publicSections(body string, initiallyPublic bool) string {
+	var result strings.Builder
+	visibility := "private"
+	if initiallyPublic {
+		visibility = "public"
+	}
+	for scanner := bufio.NewScanner(strings.NewReader(body)); scanner.Scan(); {
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+		switch trimmed {
+		case "public:":
+			visibility = "public"
+		case "private:", "protected:":
+			visibility = "private"
+		default:
+			if visibility == "public" {
+				result.WriteString(line)
+				result.WriteByte('\n')
+			}
+		}
+	}
+	return result.String()
+}
+
+func classify(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	disposition = "planned"
+	difference = "Go context/error/ownership adaptation; exact contract frozen in owning phase"
+	test = "native differential test in owning phase"
+	if strings.Contains(item.signature, "deprecated") || containsAny(lower, "watchctx::notify", "get_auid", "set_auid", "tmap_") {
+		return "none", "intentional-omission: deprecated or legacy API without distinct v1 behavior", "P13", "No deprecated compatibility alias in the initial Go API", "inventory review; no runtime conformance claim"
+	}
+	if containsAny(lower, "monitor_log", "service_register", "service_daemon", "service_update", "base_tier", "cache_", "hit_set") {
+		return "none", "deferred: legacy cache tier or service/log subscription API", "P13", "Outside the v1 scope defined by SPEC.md", "future explicit qualification"
+	}
+	if lower == "rados_buffer_free" || containsAny(lower, "release_", "_destroy") || strings.HasPrefix(lower, "~") || strings.Contains(lower, "::~") {
+		return "automatic Go memory ownership", "go-native", "P01", "No public deallocator", "ownership and leak tests"
+	}
+	switch {
+	case strings.Contains(lower, "::operator") || strings.HasSuffix(lower, "::dup") || strings.HasSuffix(lower, "::is_valid"):
+		return "Go value, iterator, and ownership semantics", "go-native", "P01", "C++ copy/move/operator surface is represented by idiomatic Go values", "ownership and iterator tests"
+	case strings.Contains(lower, "::") && (strings.HasSuffix(lower, "::ioctx") || strings.HasSuffix(lower, "::rados") || strings.HasSuffix(lower, "::objectcursor") || strings.HasSuffix(lower, "::objectoperation") || strings.HasSuffix(lower, "::placementgroup")):
+		return "Go constructors and immutable value/builders", "go-native", "P01", "Constructors and move/copy rules become Go constructors and ownership rules", "API lifecycle tests"
+	case isAny(lower, "rados_create", "rados_create2", "rados_create_with_context", "rados_version", "rados::version") || containsAny(lower, "::init", "connect", "shutdown", "conf_", "config", "cct", "instance_id", "ioctx::close", "ioctx_destroy", "ioctx_get_cluster"):
+		return "rados.Client / rados.Config", disposition, "P01/P04", difference, test
+	case containsAny(lower, "pool_create", "pool_delete", "application_", "cluster_stat", "pool_stat", "mon_command", "mgr_command", "osd_command", "pg_command", "blocklist", "blacklist"):
+		return "rados.Client administrative methods", disposition, "P11", difference, test
+	case containsAny(lower, "pool_list", "pool_lookup", "pool_reverse", "ioctx_create", "get_pool_name", "get_id", "cluster_fsid", "wait_for_latest_osdmap", "min_compatible", "ping_monitor"):
+		return "rados.Client pool/map discovery methods", disposition, "P04", difference, test
+	case containsAny(lower, "watch", "notify"):
+		return "rados.Watch and notify methods", disposition, "P09", difference, test
+	case containsAny(lower, "lock", "break_lock", "list_lockers"):
+		return "rados lock methods", disposition, "P09", difference, test
+	case containsAny(lower, "snap"):
+		return "rados snapshot methods and immutable snapshot views", disposition, "P10", difference, test
+	case containsAny(lower, "omap", "xattr"):
+		return "rados metadata methods / operation builders", disposition, "P08", difference, test
+	case containsAny(lower, "nobjects", "object_list", "objectiterator", "listobject", "objectcursor", "get_locator", "get_nspace"):
+		return "rados object iterator and cursor", disposition, "P08", difference, test
+	case containsAny(lower, "exec"):
+		return "rados class execution methods", disposition, "P09", difference, test
+	case containsAny(lower, "checksum", "writesame", "sparse", "clone", "copy", "alloc_hint", "mapext", "alignment"):
+		return "rados specialized object methods", disposition, "P10", difference, test
+	case containsAny(lower, "read_op", "write_op", "objectreadoperation", "objectwriteoperation", "operate", "assert", "cmp", "objectoperation", "set_op_flags", "full_try", "full_force", "::size"):
+		return "rados.ReadOp / rados.WriteOp", disposition, "P08", difference, test
+	case containsAny(lower, "read", "stat"):
+		return "rados.ObjectRef read/stat methods", disposition, "P06", difference, test
+	case containsAny(lower, "write", "append", "truncate", "trunc", "remove", "zero", "ioctx::create"):
+		return "rados.ObjectRef mutation methods", disposition, "P07", difference, test
+	case containsAny(lower, "aio", "completion", "flush", "get_last_version"):
+		return "context-aware calls and rados.Client.Flush", disposition, "P07", "Unified context-aware Go calls; no public C completion allocation", test
+	case containsAny(lower, "set_namespace", "get_namespace", "locator_set_key", "get_object_pg_hash_position", "get_object_hash_position", "placementgroup::parse"):
+		return "immutable rados.Pool/ObjectRef views and placement diagnostics", disposition, "P05", difference, test
+	case containsAny(lower, "inconsistent"):
+		return "rados.Client administrative consistency methods", disposition, "P11", difference, test
+	case lower == "rados_getaddrs" || containsAny(lower, "get_addrs"):
+		return "rados.Client session addresses", disposition, "P11", difference, test
+	case containsAny(lower, "from_rados_t", "from_rados_ioctx_t"):
+		return "none", "intentional-omission: native handle interoperation violates pure-Go boundary", "P00", "No C handle exists in the distributed client", "dependency and cgo audit"
+	case containsAny(lower, "full_try", "full_force"):
+		return "rados operation flags", disposition, "P08", difference, test
+	case containsAny(lower, "to_str", "::set"):
+		return "Go String/value semantics", "go-native", "P08", "Represented by Go value methods", "cursor round-trip tests"
+	default:
+		return "none", "review-required", "P00", "Must be classified before P00 exit", "classification validator"
+	}
+}
+
+func isAny(value string, candidates ...string) bool {
+	for _, candidate := range candidates {
+		if value == candidate {
+			return true
+		}
+	}
+	return false
+}
+
+func prerequisites(phase string) string {
+	if phase == "P00" || phase == "P01" {
+		return "none"
+	}
+	return "completion of prior phases; see SPEC.md"
+}
+
+func containsAny(value string, needles ...string) bool {
+	for _, needle := range needles {
+		if strings.Contains(value, needle) {
+			return true
+		}
+	}
+	return false
+}
+
+func normalize(value string) string {
+	return strings.TrimSpace(spaceRE.ReplaceAllString(value, " "))
+}
+
+func read(path string) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		fatalf("read %s: %v", path, err)
+	}
+	return string(data)
+}
+
+func count(entries []entry, language string) int {
+	total := 0
+	for _, item := range entries {
+		if item.language == language {
+			total++
+		}
+	}
+	return total
+}
+
+func must(err error) {
+	if err != nil {
+		fatalf("%v", err)
+	}
+}
+
+func fatalf(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "api-inventory: "+format+"\n", args...)
+	os.Exit(1)
+}
