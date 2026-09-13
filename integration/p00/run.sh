@@ -142,9 +142,13 @@ fi
 printf '%s\n' "$CRUD_JSON" | jq -e '.status == "passed"' >/dev/null
 
 ceph_shell osd map "$POOL" "$OBJECT" --format json > "$STATE_DIR/object-map.json"
-jq -e --arg pool "$POOL" --arg object "$OBJECT" \
+if ! jq -e --arg pool "$POOL" --arg object "$OBJECT" \
   '.pool == $pool and .object == $object and .pgid and (.up | length > 0) and (.acting | length > 0) and (.acting_primary >= 0)' \
-  "$STATE_DIR/object-map.json" >/dev/null
+  "$STATE_DIR/object-map.json" >/dev/null; then
+  echo "invalid object mapping evidence:" >&2
+  cat "$STATE_DIR/object-map.json" >&2
+  exit 1
+fi
 SERVER_VERSION=$("$STATE_DIR/cephadm" --image "$CEPH_IMAGE" shell --fsid "$FSID" -- ceph --version)
 FINISHED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 REPORT="$REPORT_DIR/p00-$FSID.json"
