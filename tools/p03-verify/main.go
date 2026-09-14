@@ -34,7 +34,7 @@ var artifactHashes = map[string]string{
 	"testdata/p03/crypto-vectors.json":                       "9baad25768d0d32c238cb1c98bc2d6c08f66f84dde724b92b5d518dce50b4591",
 	"testdata/p03/crypto-vectors.json.manifest.json":         "87e796f2079d36430deb5602b41ee9a366c29f1c3374277440e0525005016e1d",
 	"integration/p03/reproduce-fixtures.sh":                  "7fde6e6631885b908cf4ae31ef658f9f0b2be66ec546937948399a4c5db98794",
-	"integration/p03/reproduce.sh":                           "df6a87773e8e4d1d065b8a31982000d73a1809b5a7e7058d05bd39a04b922089",
+	"integration/p03/reproduce.sh":                           "2bc68e91dc20952e24dab7e1dec7d18c707c89ae411261540854f77943138297",
 	"integration/p03/report.schema.json":                     "20f41e324d78424b8e7bb50f3233e73a64740232391d3674d8b92f25390c1e29",
 	"integration/p03/rfc8009-oracle/main.go":                 "acd8b9a14e8bfb7b43b9fcdbbf1ed6331f4df1b32bc64acf9b6ffa17823fdda8",
 	"integration/p03/probe/main.go":                          "edbd3a39504e6685a21c90e2a722e69afe3b6ca3dae083619f8c75b693d80cfe",

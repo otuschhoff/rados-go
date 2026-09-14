@@ -78,7 +78,7 @@ docker run --rm --user 0 --platform "$platform" \
 		monmaptool --create --fsid '"$fsid"' --addv a "[v2:'"$monitor_ip"':3300/0]" /cluster/monmap
 		mkdir -p /cluster/mondata
 		ceph-mon --mkfs -i a --fsid '"$fsid"' --monmap /cluster/monmap --keyring /cluster/mon.keyring --mon-data /cluster/mondata
-		chown -R ceph:ceph /cluster
+		chown -R ceph:ceph /cluster/mondata /cluster/*.keyring /cluster/monmap
 	'
 
 start_monitor() {
