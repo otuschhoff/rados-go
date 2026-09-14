@@ -119,7 +119,7 @@ func encodeTestPool(encoder *wire.Encoder) {
 		pool.Uint8(1)
 		pool.Uint8(3)
 		pool.Uint8(2)
-		pool.Uint8(0)
+		pool.Uint8(objectHashRJenkins)
 		pool.Uint32(32)
 		pool.Uint32(16)
 		pool.Uint32(0)

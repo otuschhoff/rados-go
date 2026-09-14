@@ -1,0 +1,25 @@
+device 0 osd.0 class hdd
+device 1 osd.1 class hdd
+device 2 osd.2 class hdd
+device 3 osd.3 class hdd
+
+type 0 osd
+type 1 root
+
+root default {
+	id -1
+	alg straw2
+	hash 0
+	item osd.0 weight 1.00000
+	item osd.1 weight 2.00000
+	item osd.2 weight 3.00000
+	item osd.3 weight 4.00000
+}
+
+rule p05-replicated-rule {
+	id 0
+	type replicated
+	step take default
+	step choose firstn 0 type osd
+	step emit
+}
