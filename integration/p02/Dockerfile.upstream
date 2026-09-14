@@ -17,6 +17,7 @@ WORKDIR /ceph
 RUN ./install-deps.sh
 COPY --from=ceph-source . /ceph
 COPY --from=ceph-deps-source /src/BLAKE3 /ceph/src/BLAKE3
+COPY --from=ceph-deps-source /src/crypto/isa-l/isa-l_crypto /ceph/src/crypto/isa-l/isa-l_crypto
 COPY --from=ceph-deps-source /src/fmt /ceph/src/fmt
 COPY --from=ceph-deps-source /src/erasure-code/jerasure/gf-complete /ceph/src/erasure-code/jerasure/gf-complete
 COPY --from=ceph-deps-source /src/erasure-code/jerasure/jerasure /ceph/src/erasure-code/jerasure/jerasure

@@ -36,7 +36,7 @@ git -C "$temporary/ceph-repository" fetch --depth=1 origin "$qualification_commi
 git -C "$temporary/ceph-repository" worktree add --detach "$temporary/ceph-deps" "$baseline_commit"
 git -C "$temporary/ceph-repository" worktree add --detach "$temporary/ceph-source" "$qualification_commit"
 
-submodules='src/BLAKE3 src/fmt src/erasure-code/jerasure/gf-complete src/erasure-code/jerasure/jerasure src/isa-l src/rocksdb src/xxHash src/zstd'
+submodules='src/BLAKE3 src/crypto/isa-l/isa-l_crypto src/fmt src/erasure-code/jerasure/gf-complete src/erasure-code/jerasure/jerasure src/isa-l src/rocksdb src/xxHash src/zstd'
 git -C "$temporary/ceph-deps" submodule update --init --depth 1 -- $submodules
 for submodule in $submodules; do
   baseline_tree=$(git -C "$temporary/ceph-deps" ls-tree "$baseline_commit" "$submodule")

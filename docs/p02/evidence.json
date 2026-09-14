@@ -48,7 +48,7 @@
       "linux/arm64": "a4c5493230ae810de4dd3c2fe818c666441af83d2be2ce5873b9788fdd37cbdb"
     },
     "oracle_sha256": "043d94bfb9f590e9987e7ae15509d3a75813c1765e43a99ba4d7fbe06d49ee34",
-    "dockerfile_sha256": "8993f4eedcdda61bfc2c4b37a24b78455df769a9a2461aefe551bfdfa00ed4ec",
+    "dockerfile_sha256": "c023c1fac6e89411df044dcf75d95ee12a2135b7fc7653fcf9793cf6d6eea757",
     "reproduction_command": "make reproduce-p02-upstream"
   }
 }
