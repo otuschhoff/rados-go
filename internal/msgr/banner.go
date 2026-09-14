@@ -44,7 +44,7 @@ func (banner Banner) Encode() []byte {
 func ReadBanner(reader io.Reader, maxPayload uint16) (Banner, error) {
 	header := make([]byte, len(bannerPrefix)+2)
 	if _, err := io.ReadFull(reader, header); err != nil {
-		return Banner{}, fmt.Errorf("%w: banner header: %v", ErrMalformed, err)
+		return Banner{}, fmt.Errorf("%w: banner header: %w", ErrMalformed, err)
 	}
 	if string(header[:len(bannerPrefix)]) != bannerPrefix {
 		return Banner{}, fmt.Errorf("%w: invalid banner prefix", ErrMalformed)
@@ -80,5 +80,5 @@ func NegotiateBanner(local, peer Banner) (uint64, error) {
 var castagnoliTable = crc32.MakeTable(crc32.Castagnoli)
 
 func cephCRC32C(seed uint32, payload []byte) uint32 {
-	return crc32.Update(seed, castagnoliTable, payload)
+	return ^crc32.Update(^seed, castagnoliTable, payload)
 }

@@ -8,6 +8,9 @@ import (
 	"fmt"
 	"math"
 	"sync"
+	"sync/atomic"
+
+	"github.com/otuschhoff/go-librados/internal/protocol"
 )
 
 var (
@@ -26,6 +29,11 @@ type Transport interface {
 	ReadFrame() (Frame, error)
 	WriteFrame(Frame) error
 	Close() error
+}
+
+type AuthenticatedTransport interface {
+	Transport
+	AuthenticatedGlobalID() uint64
 }
 
 // Connector returns a freshly authenticated transport. Session state and
@@ -109,21 +117,26 @@ type SessionEvent struct {
 }
 
 type SessionSnapshot struct {
-	State                SessionState
-	NextOutboundSequence uint64
-	LastInboundSequence  uint64
-	NextTransactionID    uint64
-	ClientCookie         uint64
-	ServerCookie         uint64
-	GlobalSequence       uint64
-	ConnectSequence      uint64
-	Queued               int
-	InFlight             int
-	Replay               int
-	RetainedBytes        uint64
-	ReconnectAttempts    int
-	HandshakeTransitions int
-	DroppedEvents        uint64
+	State                 SessionState
+	AuthenticatedGlobalID uint64
+	ServerGlobalID        int64
+	ServerAddresses       protocol.EntityAddrVec
+	ServerFeatures        uint64
+	ServerFlags           uint64
+	NextOutboundSequence  uint64
+	LastInboundSequence   uint64
+	NextTransactionID     uint64
+	ClientCookie          uint64
+	ServerCookie          uint64
+	GlobalSequence        uint64
+	ConnectSequence       uint64
+	Queued                int
+	InFlight              int
+	Replay                int
+	RetainedBytes         uint64
+	ReconnectAttempts     int
+	HandshakeTransitions  int
+	DroppedEvents         uint64
 }
 
 type SessionConfig struct {
@@ -139,8 +152,41 @@ type SessionConfig struct {
 	ClientCookie            uint64
 	ServerCookie            uint64
 	GlobalSequence          uint64
+	GlobalSequenceSource    GlobalSequenceSource
 	ConnectSequence         uint64
 	CookieSource            CookieSource
+}
+
+type GlobalSequenceSource interface {
+	Next(after uint64) (uint64, error)
+}
+
+type atomicGlobalSequenceSource struct{ value atomic.Uint64 }
+
+func (source *atomicGlobalSequenceSource) Next(after uint64) (uint64, error) {
+	for {
+		current := source.value.Load()
+		base := max(current, after)
+		if base == math.MaxUint64 {
+			return 0, ErrTransitionLimit
+		}
+		if source.value.CompareAndSwap(current, base+1) {
+			return base + 1, nil
+		}
+	}
+}
+
+var processGlobalSequences atomicGlobalSequenceSource
+
+func nextGlobalSequence(source GlobalSequenceSource, after uint64) (uint64, error) {
+	next, err := source.Next(after)
+	if err != nil {
+		return 0, err
+	}
+	if next <= after {
+		return 0, fmt.Errorf("%w: global sequence %d does not advance past %d", ErrMalformed, next, after)
+	}
+	return next, nil
 }
 
 type Session struct {
@@ -229,15 +275,21 @@ type sessionOwner struct {
 	replay        []*pendingRequest
 	retainedBytes uint64
 
-	nextOutbound      uint64
-	sequenceExhausted bool
-	lastInbound       uint64
-	nextTID           uint64
-	tidExhausted      bool
-	clientCookie      uint64
-	serverCookie      uint64
-	globalSeq         uint64
-	connectSeq        uint64
+	nextOutbound          uint64
+	sequenceExhausted     bool
+	lastInbound           uint64
+	nextTID               uint64
+	tidExhausted          bool
+	clientCookie          uint64
+	serverCookie          uint64
+	globalSeq             uint64
+	connectSeq            uint64
+	authenticatedGlobalID uint64
+	serverGlobalID        int64
+	serverAddresses       protocol.EntityAddrVec
+	serverFeatures        uint64
+	serverFlags           uint64
+	connectedOnce         bool
 
 	reconnectAttempts int
 	transitions       int
@@ -267,6 +319,25 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 	if config.Limits.MaxSegmentBytes == 0 || config.Limits.MaxFrameBytes == 0 {
 		return nil, fmt.Errorf("%w: frame limits must be positive", ErrMalformed)
 	}
+	if config.GlobalSequence != 0 && config.ClientIdent.GlobalSequence != 0 && config.GlobalSequence != config.ClientIdent.GlobalSequence {
+		return nil, fmt.Errorf("%w: conflicting global sequences", ErrMalformed)
+	}
+	if config.GlobalSequence == 0 {
+		config.GlobalSequence = config.ClientIdent.GlobalSequence
+	}
+	if config.GlobalSequenceSource == nil {
+		config.GlobalSequenceSource = &processGlobalSequences
+	}
+	minimumAfter := uint64(0)
+	if config.GlobalSequence > 0 {
+		minimumAfter = config.GlobalSequence - 1
+	}
+	var err error
+	config.GlobalSequence, err = nextGlobalSequence(config.GlobalSequenceSource, minimumAfter)
+	if err != nil {
+		return nil, err
+	}
+	config.ClientIdent.GlobalSequence = config.GlobalSequence
 	if config.CookieSource == nil {
 		config.CookieSource = randomCookieSource{}
 	}
@@ -288,6 +359,7 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		clientCookie:      config.ClientCookie,
 		serverCookie:      config.ServerCookie,
 		globalSeq:         config.GlobalSequence,
+		connectedOnce:     transport != nil,
 		connectSeq:        config.ConnectSequence,
 		connectorRequests: make(chan connectRequest),
 		connectorResults:  make(chan connectResult),
@@ -553,6 +625,9 @@ func (owner *sessionOwner) handleFrame(frame Frame) {
 }
 
 func (owner *sessionOwner) handleMessage(message Message) {
+	if !owner.acceptAcknowledgment(message.Header.AckSequence) {
+		return
+	}
 	sequence := message.Header.Sequence
 	if sequence <= owner.lastInbound {
 		owner.emit(SessionEvent{Kind: EventDuplicateDropped, Sequence: sequence})
@@ -562,6 +637,7 @@ func (owner *sessionOwner) handleMessage(message Message) {
 		owner.emit(SessionEvent{Kind: EventSequenceGap, Sequence: sequence, Expected: owner.lastInbound + 1})
 	}
 	owner.lastInbound = sequence
+	owner.trimReplay(message.Header.AckSequence)
 	owner.queueControl(Ack{Sequence: sequence})
 	if pending := owner.byTID[message.Header.TransactionID]; pending != nil {
 		owner.removePending(pending)
@@ -575,13 +651,16 @@ func (owner *sessionOwner) handleControl(payload any) {
 		if !owner.readyControl("ack") {
 			return
 		}
+		if !owner.acceptAcknowledgment(value.Sequence) {
+			return
+		}
 		owner.trimReplay(value.Sequence)
 		owner.emit(SessionEvent{Kind: EventAcknowledged, Sequence: value.Sequence})
 	case Keepalive2:
 		if !owner.readyControl("keepalive2") {
 			return
 		}
-		owner.queueControl(Keepalive2Ack{Timestamp: value.Timestamp})
+		owner.queueControl(Keepalive2Ack(value))
 	case Keepalive2Ack:
 		if !owner.readyControl("keepalive2 ack") {
 			return
@@ -607,12 +686,12 @@ func (owner *sessionOwner) handleControl(payload any) {
 		if !owner.transitionAllowed(StateReconnecting) {
 			return
 		}
-		base := max(owner.globalSeq, value.GlobalSequence)
-		if base == math.MaxUint64 {
+		next, err := nextGlobalSequence(owner.config.GlobalSequenceSource, max(owner.globalSeq, value.GlobalSequence))
+		if err != nil {
 			owner.failTerminal(ErrTransitionLimit)
 			return
 		}
-		owner.globalSeq = base + 1
+		owner.globalSeq = next
 		owner.emit(SessionEvent{Kind: EventRetryGlobal, Sequence: owner.globalSeq})
 		owner.sendReconnect()
 	case Wait:
@@ -626,6 +705,9 @@ func (owner *sessionOwner) handleControl(payload any) {
 		owner.handleFault(ErrSessionDisconnected)
 	case SessionReconnectOK:
 		if !owner.transitionAllowed(StateReconnecting) {
+			return
+		}
+		if !owner.acceptAcknowledgment(value.MessageSequence) {
 			return
 		}
 		owner.trimReplay(value.MessageSequence)
@@ -644,10 +726,26 @@ func (owner *sessionOwner) handleControl(payload any) {
 			owner.handleFault(ErrTransitionLimit)
 			return
 		}
+		if unsupported := value.RequiredFeatures &^ owner.config.ClientIdent.SupportedFeatures; unsupported != 0 {
+			owner.handleFault(fmt.Errorf("%w: server requires unsupported features %#x", ErrMalformed, unsupported))
+			return
+		}
+		if missing := owner.config.ClientIdent.RequiredFeatures &^ value.SupportedFeatures; missing != 0 {
+			owner.handleFault(fmt.Errorf("%w: server lacks required features %#x", ErrMalformed, missing))
+			return
+		}
+		if !containsEntityEndpoint(value.Addresses, owner.config.ClientIdent.TargetAddress) {
+			owner.handleFault(fmt.Errorf("%w: server ident does not contain target address", ErrMalformed))
+			return
+		}
 		owner.serverCookie = value.Cookie
+		owner.serverGlobalID = value.GlobalID
+		owner.serverAddresses = cloneEntityAddresses(value.Addresses)
+		owner.serverFeatures = value.SupportedFeatures
+		owner.serverFlags = value.Flags
 		owner.partialReset = false
 		owner.reconnectAttempts = 0
-		owner.prepareReplay()
+		owner.failSentUnknown(ErrSessionDisconnected)
 		owner.setState(StateReady)
 	default:
 		owner.handleFault(fmt.Errorf("%w: unexpected session control %T", ErrUnsupportedPayload, payload))
@@ -660,6 +758,23 @@ func (owner *sessionOwner) readyControl(name string) bool {
 	}
 	owner.handleFault(fmt.Errorf("%w: %s in state %d", ErrMalformed, name, owner.state))
 	return false
+}
+
+func (owner *sessionOwner) acceptAcknowledgment(sequence uint64) bool {
+	if !owner.sequenceExhausted && sequence >= owner.nextOutbound && sequence != 0 {
+		owner.handleFault(fmt.Errorf("%w: acknowledgment %d exceeds highest outbound sequence", ErrMalformed, sequence))
+		return false
+	}
+	return true
+}
+
+func cloneEntityAddresses(addresses protocol.EntityAddrVec) protocol.EntityAddrVec {
+	cloned := make(protocol.EntityAddrVec, len(addresses))
+	for index, address := range addresses {
+		cloned[index] = address
+		cloned[index].SocketData = append([]byte(nil), address.SocketData...)
+	}
+	return cloned
 }
 
 func (owner *sessionOwner) transitionAllowed(want SessionState) bool {
@@ -678,6 +793,7 @@ func (owner *sessionOwner) transitionAllowed(want SessionState) bool {
 func (owner *sessionOwner) handleReset(full bool) {
 	owner.emit(SessionEvent{Kind: EventSessionReset, Full: full})
 	owner.serverCookie = 0
+	owner.serverFlags = 0
 	owner.connectSeq = 0
 	owner.lastInbound = 0
 	if full {
@@ -706,6 +822,19 @@ func (owner *sessionOwner) queueClientIdent() {
 	ident.Cookie = owner.clientCookie
 	ident.GlobalSequence = owner.globalSeq
 	owner.queueControl(ident)
+}
+
+func containsEntityEndpoint(addresses protocol.EntityAddrVec, target protocol.EntityAddr) bool {
+	targetEndpoint, ok := target.AddrPort()
+	if !ok {
+		return false
+	}
+	for _, address := range addresses {
+		if endpoint, ok := address.AddrPort(); ok && endpoint == targetEndpoint {
+			return true
+		}
+	}
+	return false
 }
 
 func (owner *sessionOwner) refreshClientCookie() error {
@@ -782,8 +911,13 @@ func (owner *sessionOwner) handleFault(err error) {
 	owner.writeTasks = nil
 	owner.writeBusy = false
 	owner.controlQueue = nil
-	if owner.config.ReconnectPolicy == FailPending {
+	if owner.serverFlags&ConnectionFlagLossy != 0 {
+		owner.failSentUnknown(err)
+		owner.resetForNewIdentity()
+	} else if owner.config.ReconnectPolicy == FailPending {
 		owner.failAll(fmt.Errorf("%w: %v", ErrSessionDisconnected, err))
+	} else if owner.serverCookie == 0 {
+		owner.failSentUnknown(err)
 	} else {
 		owner.prepareReplay()
 	}
@@ -840,6 +974,31 @@ func (owner *sessionOwner) handleConnected(result connectResult) {
 	}
 	owner.terminalErr = nil
 	owner.transitions = 0
+	if owner.connectedOnce {
+		next, err := nextGlobalSequence(owner.config.GlobalSequenceSource, owner.globalSeq)
+		if err != nil {
+			_ = result.transport.Close()
+			owner.failTerminal(ErrTransitionLimit)
+			return
+		}
+		owner.globalSeq = next
+	}
+	owner.connectedOnce = true
+	identityChanged := false
+	if authenticated, ok := result.transport.(AuthenticatedTransport); ok {
+		globalID := authenticated.AuthenticatedGlobalID()
+		if globalID > math.MaxInt64 {
+			_ = result.transport.Close()
+			owner.failTerminal(ErrMalformed)
+			return
+		}
+		identityChanged = owner.authenticatedGlobalID != 0 && owner.authenticatedGlobalID != globalID
+		owner.config.ClientIdent.GlobalID = int64(globalID)
+		owner.authenticatedGlobalID = globalID
+	}
+	if identityChanged {
+		owner.resetForNewIdentity()
+	}
 	if owner.serverCookie != 0 {
 		if owner.connectSeq == math.MaxUint64 {
 			_ = result.transport.Close()
@@ -859,6 +1018,30 @@ func (owner *sessionOwner) handleConnected(result connectResult) {
 		owner.startTransport(result.transport, StateConnecting)
 		owner.queueClientIdent()
 	}
+}
+
+func (owner *sessionOwner) resetForNewIdentity() {
+	owner.serverCookie = 0
+	owner.serverFlags = 0
+	owner.connectSeq = 0
+	owner.lastInbound = 0
+	owner.nextOutbound = 1
+	owner.sequenceExhausted = false
+	owner.nextTID = 1
+	owner.tidExhausted = false
+	owner.failAll(ErrSessionDisconnected)
+	owner.partialReset = false
+}
+
+func (owner *sessionOwner) failSentUnknown(cause error) {
+	for _, pending := range append([]*pendingRequest(nil), owner.pending...) {
+		if !pending.sent {
+			continue
+		}
+		owner.removePending(pending)
+		pending.request.result <- submitResult{err: fmt.Errorf("%w: %v", ErrOutcomeUnknown, cause)}
+	}
+	owner.replay = nil
 }
 
 func (owner *sessionOwner) startTransport(transport Transport, state SessionState) {
@@ -1070,21 +1253,26 @@ func (owner *sessionOwner) snapshot() SessionSnapshot {
 		}
 	}
 	return SessionSnapshot{
-		State:                owner.state,
-		NextOutboundSequence: owner.nextOutbound,
-		LastInboundSequence:  owner.lastInbound,
-		NextTransactionID:    owner.nextTID,
-		ClientCookie:         owner.clientCookie,
-		ServerCookie:         owner.serverCookie,
-		GlobalSequence:       owner.globalSeq,
-		ConnectSequence:      owner.connectSeq,
-		Queued:               queued,
-		InFlight:             owner.inFlightCount(),
-		Replay:               len(owner.replay),
-		RetainedBytes:        owner.retainedBytes,
-		ReconnectAttempts:    owner.reconnectAttempts,
-		HandshakeTransitions: owner.transitions,
-		DroppedEvents:        owner.droppedEvents,
+		State:                 owner.state,
+		AuthenticatedGlobalID: owner.authenticatedGlobalID,
+		ServerGlobalID:        owner.serverGlobalID,
+		ServerAddresses:       cloneEntityAddresses(owner.serverAddresses),
+		ServerFeatures:        owner.serverFeatures,
+		ServerFlags:           owner.serverFlags,
+		NextOutboundSequence:  owner.nextOutbound,
+		LastInboundSequence:   owner.lastInbound,
+		NextTransactionID:     owner.nextTID,
+		ClientCookie:          owner.clientCookie,
+		ServerCookie:          owner.serverCookie,
+		GlobalSequence:        owner.globalSeq,
+		ConnectSequence:       owner.connectSeq,
+		Queued:                queued,
+		InFlight:              owner.inFlightCount(),
+		Replay:                len(owner.replay),
+		RetainedBytes:         owner.retainedBytes,
+		ReconnectAttempts:     owner.reconnectAttempts,
+		HandshakeTransitions:  owner.transitions,
+		DroppedEvents:         owner.droppedEvents,
 	}
 }
 

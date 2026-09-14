@@ -380,8 +380,8 @@ func assertFuzzSessionInvariants(t *testing.T, owner *sessionOwner) {
 		t.Fatalf("retained bytes = %d, tracked = %d, limit = %d", retained, owner.retainedBytes, owner.config.MaxRetainedBytes)
 	}
 	for _, replay := range owner.replay {
-		if owner.byRequest[replay.request] != replay || !replay.sent {
-			t.Fatal("replay entry is not an active sent request")
+		if owner.byRequest[replay.request] != replay || replay.seq == 0 {
+			t.Fatal("replay entry is not an active sequenced request")
 		}
 	}
 	if owner.state == StateStopped {

@@ -42,24 +42,47 @@ approval or named reviewer is asserted by the manifests.
 
 Run `make reproduce-p02` to build the oracle in the digest-pinned Ceph image,
 regenerate all five files in a temporary directory, byte-compare them, and
-reject extra output.
+reject extra output. That target also invokes the upstream reproduction
+described below.
+
+## Upstream Ceph Oracle
+
+The seven files under `testdata/p02/upstream` are emitted by Ceph's own
+`FrameAssembler` from qualification release `v20.2.4`, commit
+`7f793731f1b39eb4f465e960113d2363c311b964`. They cover CRC-enabled one- and
+four-segment frames, a CRC-disabled frame, an ACK control frame, a complete
+message frame, and one- and multi-record secure frames. The four cases shared
+with the independent oracle match byte-for-byte.
+
+`integration/p02/upstream_oracle.cc` links to `libceph-common.so.2` from the
+digest-pinned qualification image's `ceph-common-20.2.4-0.el9` package. The
+package identity and both architecture-specific library hashes are verified;
+the qualification source provides matching headers and source anchors, not a
+claim that the RPM binary was built from the exact recorded Git commit. Each
+secure artifact starts from a fresh Ceph crypto handler and uses only the
+synthetic byte sequence 0 through 63 as its connection secret. The reduced
+CMake configuration uses eight
+submodule trees from the baseline checkout only after the reproduction script
+proves that each Git-link object ID is identical at both pinned Ceph commits.
+
+Run `make reproduce-p02-upstream` to fetch both exact source commits, populate
+only those verified submodules, build the native oracle, regenerate all seven
+files, reject missing or extra output, and compare the four overlapping files
+with the independent oracle. The regular `make reproduce-p02` fixture gate runs
+both generators.
 
 ## Current Reproduction Truth
 
-As of 2026-09-14, the independent oracle compiled locally with Apple clang 21
-and OpenSSL 3.6.4. The digest-pinned Docker reproduction was attempted, but its
-package download/build was canceled. It remains **pending** until
-`make reproduce-p02` is rerun to completion. Local compilation does not replace
-the pinned-container reproduction gate.
+The independent oracle and upstream `FrameAssembler` oracle both reproduce in
+the digest-pinned qualification image. Ceph development RPM payloads and source
+commits are checksum- or commit-pinned, and generated output must match every
+checked-in byte. DNF-resolved transitive build dependencies are not immutable:
+the configured remote repositories can change independently of the base image.
+Consequently this evidence claims reproducible protocol vectors, not a
+bit-reproducible build environment; unavailable or behavior-changing packages
+make reproduction fail instead of silently updating checked-in evidence.
 
-The image, compiler, Ceph packages, and downloaded Ceph RPMs are pinned. The
-Dockerfile currently resolves `openssl-devel` from the image's enabled
-repositories because no verified OpenSSL development-package NEVRA and RPM
-checksum were recorded before the build was canceled. An exact package value
-must not be guessed; this unresolved dependency is another reason the Docker
-reproduction is not a completed evidence gate.
-
-Actual vectors produced by executing upstream Ceph `FrameAssembler` remain an
-unresolved gate. P02 cannot be declared complete solely from the current
-source-derived independent fixtures, even after their local or containerized
-reproduction succeeds.
+The upstream `FrameAssembler` vectors and byte-parity checks pass. P02 remains
+incomplete until an accountable human records the redistribution decision for
+the generated artifacts and the reviewed tree. No reviewer identity or legal
+approval is inferred from automated checks.

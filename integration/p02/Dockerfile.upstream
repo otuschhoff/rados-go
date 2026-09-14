@@ -1,25 +1,38 @@
-ARG CEPH_IMAGE
+ARG CEPH_IMAGE=quay.io/ceph/ceph@sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a779fd8f9
 FROM ${CEPH_IMAGE} AS build
+ARG BOOST_SHA256=af57be25cb4c4f4b413ed692fe378affb4352ea50fbe294a11ef548f4d527d89
 RUN dnf install -y dnf-utils selinux-policy-targeted && \
       dnf config-manager --set-enabled crb && \
-      dnf install -y git cmake ninja-build
+  dnf install -y git cmake ninja-build bzip2
+
+RUN curl -fsSL https://archives.boost.io/release/1.87.0/source/boost_1_87_0.tar.bz2 -o /tmp/boost.tar.bz2 && \
+  echo "${BOOST_SHA256}  /tmp/boost.tar.bz2" | sha256sum -c - && \
+  mkdir -p /opt/boost && \
+  tar -xjf /tmp/boost.tar.bz2 --strip-components=1 -C /opt/boost && \
+  rm /tmp/boost.tar.bz2
 COPY --from=ceph-source /install-deps.sh /ceph/install-deps.sh
 COPY --from=ceph-source /ceph.spec.in /ceph/ceph.spec.in
 COPY --from=ceph-source /src/script /ceph/src/script
 WORKDIR /ceph
 RUN ./install-deps.sh
 COPY --from=ceph-source . /ceph
+COPY --from=ceph-deps-source /src/BLAKE3 /ceph/src/BLAKE3
+COPY --from=ceph-deps-source /src/fmt /ceph/src/fmt
+COPY --from=ceph-deps-source /src/erasure-code/jerasure/gf-complete /ceph/src/erasure-code/jerasure/gf-complete
+COPY --from=ceph-deps-source /src/erasure-code/jerasure/jerasure /ceph/src/erasure-code/jerasure/jerasure
+COPY --from=ceph-deps-source /src/isa-l /ceph/src/isa-l
+COPY --from=ceph-deps-source /src/rocksdb /ceph/src/rocksdb
+COPY --from=ceph-deps-source /src/xxHash /ceph/src/xxHash
+COPY --from=ceph-deps-source /src/zstd /ceph/src/zstd
 COPY upstream_oracle.cc /ceph/src/test/msgr/p02_upstream_vectors.cc
 RUN --mount=type=cache,target=/build \
-  printf '%s\n' \
-      'add_executable(p02_upstream_vectors p02_upstream_vectors.cc)' \
-      'target_link_libraries(p02_upstream_vectors global)' \
-      >> /ceph/src/test/msgr/CMakeLists.txt && \
-    cmake -S /ceph -B /build -GNinja \
+  rm -f /ceph/.git && \
+  cmake -S /ceph -B /build -GNinja \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_C_FLAGS_RELEASE="-O0 -DNDEBUG" \
       -DCMAKE_CXX_FLAGS_RELEASE="-O0 -DNDEBUG" \
-      -DWITH_TESTS=ON \
+      -DENABLE_GIT_VERSION=OFF \
+      -DWITH_TESTS=OFF \
       -DWITH_RDMA=OFF \
       -DWITH_RADOSGW=OFF \
       -DWITH_CEPHFS=OFF \
@@ -41,8 +54,26 @@ RUN --mount=type=cache,target=/build \
       -DWITH_OPENLDAP=OFF \
       -DWITH_EC_ISA_PLUGIN=OFF \
       -DALLOCATOR=libc && \
-      cmake --build /build --target p02_upstream_vectors --parallel 1 --verbose && \
-      install -Dm755 /build/bin/p02_upstream_vectors /out/p02-upstream-vectors
+      c++ \
+        -DBOOST_ASIO_DISABLE_THREAD_KEYWORD_EXTENSION \
+        -DBOOST_ASIO_NO_TS_EXECUTORS \
+        -DHAVE_CONFIG_H -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -D_REENTRANT \
+        -D_THREAD_SAFE -D__CEPH__ -D__STDC_FORMAT_MACROS -D__linux__ \
+        -I/build/src/include -I/ceph/src -isystem /opt/boost \
+        -isystem /build/include -isystem /ceph/src/xxHash \
+        -isystem /ceph/src/fmt/include \
+        -O0 -DNDEBUG -std=c++20 -fPIE -Wall -fno-strict-aliasing \
+        -fsigned-char -Wtype-limits -Wignored-qualifiers -Wpointer-arith \
+        -Werror=format-security -Winit-self -Wno-unknown-pragmas \
+        -Wnon-virtual-dtor -ftemplate-depth-1024 -DBOOST_ALLOW_DEPRECATED_HEADERS \
+        -Wpessimizing-move -Wredundant-move -Wstrict-null-sentinel \
+        -Woverloaded-virtual -fstack-protector-strong \
+        -c /ceph/src/test/msgr/p02_upstream_vectors.cc \
+        -o /tmp/p02_upstream_vectors.o && \
+      mkdir -p /out && \
+      c++ -O0 -DNDEBUG -rdynamic -pie -Wl,-rpath,/usr/lib64/ceph \
+        /tmp/p02_upstream_vectors.o -o /out/p02-upstream-vectors \
+        /usr/lib64/ceph/libceph-common.so.2 -Wl,--as-needed -latomic
 
 FROM ${CEPH_IMAGE}
     COPY --from=build /out/p02-upstream-vectors /usr/local/bin/p02-upstream-vectors

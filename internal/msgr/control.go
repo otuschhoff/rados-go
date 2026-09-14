@@ -13,6 +13,8 @@ var ErrUnsupportedPayload = errors.New("unsupported messenger payload")
 
 var controlFeatures = protocol.FeatureMessageAddress2 | protocol.FeatureServerNautilusMask
 
+const ConnectionFlagLossy uint64 = 1
+
 type Hello struct {
 	EntityType  protocol.EntityType
 	PeerAddress protocol.EntityAddr
@@ -64,6 +66,30 @@ type Timestamp struct {
 type Keepalive2 struct{ Timestamp Timestamp }
 type Keepalive2Ack struct{ Timestamp Timestamp }
 type Ack struct{ Sequence uint64 }
+
+type AuthRequest struct {
+	Method         uint32
+	PreferredModes []uint32
+	AuthPayload    []byte
+}
+
+type AuthBadMethod struct {
+	Method         uint32
+	Result         int32
+	AllowedMethods []uint32
+	AllowedModes   []uint32
+}
+
+type AuthReplyMore struct{ AuthPayload []byte }
+type AuthRequestMore struct{ AuthPayload []byte }
+
+type AuthDone struct {
+	GlobalID       uint64
+	ConnectionMode uint32
+	AuthPayload    []byte
+}
+
+type AuthSignature struct{ Signature [32]byte }
 
 // AuthPayload preserves the complete control segment for auth tags. CephX
 // interpretation belongs to the authentication layer.
@@ -138,6 +164,41 @@ func EncodeControl(payload any, limits Limits) (Frame, error) {
 		encodeTimestamp(encoder, value.Timestamp)
 	case Ack:
 		encoder.Uint64(value.Sequence)
+	case AuthRequest:
+		if uint64(len(value.AuthPayload)) > uint64(limits.MaxAuthBytes) {
+			return Frame{}, wire.ErrLimitExceeded
+		}
+		encoder.Uint32(value.Method)
+		if err = encodeUint32Slice(encoder, value.PreferredModes); err != nil {
+			break
+		}
+		encoder.Bytes(value.AuthPayload)
+	case AuthBadMethod:
+		encoder.Uint32(value.Method)
+		encoder.Int32(value.Result)
+		if err = encodeUint32Slice(encoder, value.AllowedMethods); err != nil {
+			break
+		}
+		err = encodeUint32Slice(encoder, value.AllowedModes)
+	case AuthReplyMore:
+		if uint64(len(value.AuthPayload)) > uint64(limits.MaxAuthBytes) {
+			return Frame{}, wire.ErrLimitExceeded
+		}
+		encoder.Bytes(value.AuthPayload)
+	case AuthRequestMore:
+		if uint64(len(value.AuthPayload)) > uint64(limits.MaxAuthBytes) {
+			return Frame{}, wire.ErrLimitExceeded
+		}
+		encoder.Bytes(value.AuthPayload)
+	case AuthDone:
+		if uint64(len(value.AuthPayload)) > uint64(limits.MaxAuthBytes) {
+			return Frame{}, wire.ErrLimitExceeded
+		}
+		encoder.Uint64(value.GlobalID)
+		encoder.Uint32(value.ConnectionMode)
+		encoder.Bytes(value.AuthPayload)
+	case AuthSignature:
+		encoder.Raw(value.Signature[:])
 	case AuthPayload:
 		if uint64(len(value.Payload)) > uint64(limits.MaxAuthBytes) {
 			return Frame{}, wire.ErrLimitExceeded
@@ -168,13 +229,6 @@ func DecodeControl(frame Frame, limits Limits) (any, error) {
 	if uint64(len(data)) > uint64(limits.MaxSegmentBytes) {
 		return nil, wire.ErrLimitExceeded
 	}
-	if frame.Tag >= TagAuthRequest && frame.Tag <= TagAuthSignature {
-		if uint64(len(data)) > uint64(limits.MaxAuthBytes) {
-			return nil, wire.ErrLimitExceeded
-		}
-		return AuthPayload{Tag: frame.Tag, Payload: append([]byte(nil), data...)}, nil
-	}
-
 	decoder := wire.NewDecoder(data, wire.Limits{MaxBytes: limits.MaxSegmentBytes})
 	var payload any
 	var err error
@@ -237,6 +291,18 @@ func DecodeControl(frame Frame, limits Limits) (any, error) {
 		payload, err = decodeKeepalive(decoder, true)
 	case TagAck:
 		payload = Ack{Sequence: decoder.Uint64()}
+	case TagAuthRequest:
+		payload, err = decodeAuthRequest(decoder, limits)
+	case TagAuthBadMethod:
+		payload, err = decodeAuthBadMethod(decoder, limits)
+	case TagAuthReplyMore:
+		payload, err = decodeAuthReplyMore(decoder, limits)
+	case TagAuthRequestMore:
+		payload, err = decodeAuthRequestMore(decoder, limits)
+	case TagAuthDone:
+		payload, err = decodeAuthDone(decoder, limits)
+	case TagAuthSignature:
+		payload, err = decodeAuthSignature(decoder)
 	}
 	if err == nil {
 		err = decoder.Finish()
@@ -278,6 +344,18 @@ func controlTag(payload any) (Tag, error) {
 		return TagKeepalive2Ack, nil
 	case Ack:
 		return TagAck, nil
+	case AuthRequest:
+		return TagAuthRequest, nil
+	case AuthBadMethod:
+		return TagAuthBadMethod, nil
+	case AuthReplyMore:
+		return TagAuthReplyMore, nil
+	case AuthRequestMore:
+		return TagAuthRequestMore, nil
+	case AuthDone:
+		return TagAuthDone, nil
+	case AuthSignature:
+		return TagAuthSignature, nil
 	case AuthPayload:
 		if value.Tag < TagAuthRequest || value.Tag > TagAuthSignature {
 			return 0, fmt.Errorf("%w: auth tag %d", ErrMalformed, value.Tag)
@@ -312,4 +390,107 @@ func checkedUint32Length(length int) (uint32, error) {
 		return 0, wire.ErrLimitExceeded
 	}
 	return uint32(length), nil
+}
+
+func encodeUint32Slice(encoder *wire.Encoder, values []uint32) error {
+	length, err := checkedUint32Length(len(values))
+	if err != nil {
+		return err
+	}
+	encoder.Uint32(length)
+	for _, value := range values {
+		encoder.Uint32(value)
+	}
+	return nil
+}
+
+func decodeUint32Slice(decoder *wire.Decoder, maxBytes uint32) ([]uint32, error) {
+	count := decoder.Uint32()
+	if uint64(count)*4 > decoder.Remaining() {
+		return nil, wire.ErrMalformed
+	}
+	if uint64(count) > uint64(maxBytes/4) {
+		return nil, wire.ErrLimitExceeded
+	}
+	values := make([]uint32, count)
+	for index := range values {
+		values[index] = decoder.Uint32()
+	}
+	return values, nil
+}
+
+func decodeAuthBytes(decoder *wire.Decoder, limits Limits) ([]byte, error) {
+	length := decoder.Uint32()
+	if length > limits.MaxAuthBytes {
+		return nil, wire.ErrLimitExceeded
+	}
+	if uint64(length) > decoder.Remaining() {
+		return nil, wire.ErrMalformed
+	}
+	return decoder.Raw(length), nil
+}
+
+func decodeAuthRequest(decoder *wire.Decoder, limits Limits) (AuthRequest, error) {
+	payload := AuthRequest{Method: decoder.Uint32()}
+	modes, err := decodeUint32Slice(decoder, limits.MaxAuthBytes)
+	if err != nil {
+		return AuthRequest{}, err
+	}
+	payload.PreferredModes = modes
+	payload.AuthPayload, err = decodeAuthBytes(decoder, limits)
+	if err != nil {
+		return AuthRequest{}, err
+	}
+	return payload, nil
+}
+
+func decodeAuthBadMethod(decoder *wire.Decoder, limits Limits) (AuthBadMethod, error) {
+	payload := AuthBadMethod{Method: decoder.Uint32(), Result: decoder.Int32()}
+	methods, err := decodeUint32Slice(decoder, limits.MaxAuthBytes)
+	if err != nil {
+		return AuthBadMethod{}, err
+	}
+	modes, err := decodeUint32Slice(decoder, limits.MaxAuthBytes)
+	if err != nil {
+		return AuthBadMethod{}, err
+	}
+	payload.AllowedMethods = methods
+	payload.AllowedModes = modes
+	return payload, nil
+}
+
+func decodeAuthReplyMore(decoder *wire.Decoder, limits Limits) (AuthReplyMore, error) {
+	payload, err := decodeAuthBytes(decoder, limits)
+	if err != nil {
+		return AuthReplyMore{}, err
+	}
+	return AuthReplyMore{AuthPayload: payload}, nil
+}
+
+func decodeAuthRequestMore(decoder *wire.Decoder, limits Limits) (AuthRequestMore, error) {
+	payload, err := decodeAuthBytes(decoder, limits)
+	if err != nil {
+		return AuthRequestMore{}, err
+	}
+	return AuthRequestMore{AuthPayload: payload}, nil
+}
+
+func decodeAuthDone(decoder *wire.Decoder, limits Limits) (AuthDone, error) {
+	globalID := decoder.Uint64()
+	connectionMode := decoder.Uint32()
+	payload, err := decodeAuthBytes(decoder, limits)
+	if err != nil {
+		return AuthDone{}, err
+	}
+	return AuthDone{GlobalID: globalID, ConnectionMode: connectionMode, AuthPayload: payload}, nil
+}
+
+func decodeAuthSignature(decoder *wire.Decoder) (AuthSignature, error) {
+	raw := decoder.Raw(32)
+	if len(raw) != 32 {
+		return AuthSignature{}, wire.ErrMalformed
+	}
+	var signature [32]byte
+	copy(signature[:], raw)
+	return AuthSignature{Signature: signature}, nil
 }

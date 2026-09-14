@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/otuschhoff/go-librados/integration/p03/report.schema.json",
+  "title": "go-librados P03 real-monitor evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "server", "scenarios", "probe"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"const": "passed"},
+    "command": {"const": "make integration-p03"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "repository_commit", "dirty", "identity", "artifacts"],
+      "properties": {
+        "repository": {"type": "string", "format": "uri"},
+        "repository_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "dirty": {"type": "boolean", "description": "Observed working-tree state before the run; artifact hashes, not this informational flag, identify tested content."},
+        "identity": {"const": "content-addressed-artifacts"},
+        "artifacts": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source_anchor_commit", "image", "platform", "host_platform", "runtime_package", "monitor_binary_sha256"],
+      "properties": {
+        "repository": {"type": "string", "format": "uri"},
+        "source_anchor_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "image": {"type": "string", "pattern": "^quay\\.io/ceph/ceph@sha256:[0-9a-f]{64}$"},
+        "platform": {"enum": ["linux/amd64", "linux/arm64"]},
+        "host_platform": {"enum": ["linux/amd64", "linux/arm64"]},
+        "runtime_package": {"type": "string", "minLength": 1},
+        "monitor_binary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secure_authentication", "client_server_ident", "same_session_renewal", "global_id_reuse", "ticket_renewal", "expired_ticket_rejection", "post_expiry_reconnect", "valid_wrong_key_rejection", "secure_to_crc_downgrade_rejection"],
+      "properties": {
+        "secure_authentication": {"const": "passed"},
+        "client_server_ident": {"const": "passed"},
+        "same_session_renewal": {"const": "passed"},
+        "global_id_reuse": {"const": "passed"},
+        "ticket_renewal": {"const": "passed"},
+        "expired_ticket_rejection": {"const": "passed"},
+        "post_expiry_reconnect": {"const": "passed"},
+        "valid_wrong_key_rejection": {"const": "passed"},
+        "secure_to_crc_downgrade_rejection": {"const": "passed"}
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authenticated_mode", "global_id", "reconnected", "ticket_renewed", "initial_ticket_sha256", "renewed_ticket_sha256", "expiry_rejected", "expired_reconnect", "renewed_global_id", "post_expiry_global_id", "server_global_id", "server_addresses", "server_features", "server_cookie"],
+      "properties": {
+        "authenticated_mode": {"const": "secure"},
+        "global_id": {"type": "integer", "minimum": 1},
+        "reconnected": {"const": true},
+        "ticket_renewed": {"const": true},
+        "initial_ticket_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "renewed_ticket_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "expiry_rejected": {"const": true},
+        "expired_reconnect": {"const": true},
+        "renewed_global_id": {"type": "integer", "minimum": 1},
+        "post_expiry_global_id": {"type": "integer", "minimum": 1},
+        "server_global_id": {"type": "integer", "minimum": 0},
+        "server_addresses": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "server_features": {"type": "integer", "minimum": 0},
+        "server_cookie": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

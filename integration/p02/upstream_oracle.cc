@@ -1,11 +1,10 @@
 #include "auth/Auth.h"
-#include "common/ceph_argparse.h"
-#include "global/global_context.h"
-#include "global/global_init.h"
+#include "common/ceph_context.h"
 #include "msg/async/compression_onwire.h"
 #include "msg/async/frames_v2.h"
 
 #include <array>
+#include <cstdio>
 #include <cstdlib>
 #include <filesystem>
 #include <stdexcept>
@@ -40,7 +39,8 @@ bufferlist make_sequence(std::size_t size) {
   return output;
 }
 
-void emit_vectors(const std::filesystem::path& directory) {
+void emit_vectors(CephContext* context,
+                  const std::filesystem::path& directory) {
   std::filesystem::create_directories(directory);
   crypto_rxtx_t no_crypto;
   compression_rxtx_t no_compression;
@@ -108,7 +108,7 @@ void emit_vectors(const std::filesystem::path& directory) {
     auth_meta.connection_secret[index] = static_cast<char>(index);
   }
   auto crypto = crypto_rxtx_t::create_handler_pair(
-      g_ceph_context, auth_meta, true, false);
+      context, auth_meta, true, false);
   FrameAssembler secure(&crypto, true, true, &no_compression);
 
   bufferlist secure_one_segments[1];
@@ -117,26 +117,33 @@ void emit_vectors(const std::filesystem::path& directory) {
                                            one_aligns, 1);
   write_vector(directory, "upstream-secure-one-segment.bin", secure_one);
 
+    auto multi_record_crypto = crypto_rxtx_t::create_handler_pair(
+      context, auth_meta, true, false);
+    FrameAssembler secure_multi_record(&multi_record_crypto, true, true,
+                     &no_compression);
   bufferlist secure_four_segments[4];
   secure_four_segments[0] = make_sequence(63);
   secure_four_segments[2].append("middle", 6);
   secure_four_segments[3] = make_sequence(32);
-  auto secure_four = secure.assemble_frame(Tag::MESSAGE, secure_four_segments,
-                                            four_aligns, 4);
+    auto secure_four = secure_multi_record.assemble_frame(
+      Tag::MESSAGE, secure_four_segments, four_aligns, 4);
   write_vector(directory, "upstream-secure-multi-record.bin", secure_four);
 }
 
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  if (argc != 2) {
-    return 2;
+  try {
+    if (argc != 2) {
+      std::fprintf(stderr, "usage: %s OUTPUT_DIRECTORY\n", argv[0]);
+      return 2;
+    }
+    auto context = boost::intrusive_ptr<CephContext>(
+      new CephContext(CEPH_ENTITY_TYPE_CLIENT));
+    emit_vectors(context.get(), argv[1]);
+    return 0;
+  } catch (const std::exception& error) {
+    std::fprintf(stderr, "p02-upstream-vectors: %s\n", error.what());
+    return 1;
   }
-  auto args = argv_to_vec(argc, argv);
-  auto context = global_init(nullptr, args, CEPH_ENTITY_TYPE_CLIENT,
-                             CODE_ENVIRONMENT_UTILITY,
-                             CINIT_FLAG_NO_DEFAULT_CONFIG_FILE);
-  common_init_finish(context.get());
-  emit_vectors(argv[1]);
-  return 0;
 }

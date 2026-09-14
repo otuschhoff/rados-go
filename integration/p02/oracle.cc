@@ -45,7 +45,7 @@ void put64(Bytes& output, std::size_t offset, std::uint64_t value) {
 }
 
 std::uint32_t crc32c(std::uint32_t seed, std::span<const std::uint8_t> input) {
-  std::uint32_t crc = ~seed;
+  std::uint32_t crc = seed;
   for (const std::uint8_t value : input) {
     crc ^= value;
     for (int bit = 0; bit < 8; ++bit) {
@@ -53,7 +53,7 @@ std::uint32_t crc32c(std::uint32_t seed, std::span<const std::uint8_t> input) {
       crc = (crc >> 1) ^ (0x82f63b78U & mask);
     }
   }
-  return ~crc;
+  return crc;
 }
 
 Bytes preamble(std::uint8_t tag, const std::vector<Segment>& segments) {

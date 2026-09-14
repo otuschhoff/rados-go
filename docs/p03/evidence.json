@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "status": "complete",
+  "source": {
+    "repository": "https://github.com/ceph/ceph.git",
+    "baseline_commit": "69f84cc2651aa259a15bc192ddaabd3baba07489",
+    "qualification_commit": "7f793731f1b39eb4f465e960113d2363c311b964",
+    "image": "quay.io/ceph/ceph@sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a779fd8f9"
+  },
+  "dependency": {
+    "module": "github.com/otuschhoff/gokrb5/v8",
+    "version": "v8.5.3",
+    "imported_package": "github.com/otuschhoff/gokrb5/v8/crypto",
+    "license": "Apache-2.0",
+    "purpose": "RFC 8009 AES256-CTS-HMAC-SHA384-192",
+    "supported_go": "1.26.0",
+    "maintenance_security_posture": "Pinned fork release; module verification and govulncheck are mandatory gates; approved with no findings by Oliver Tuschhoff on 2026-09-14",
+    "transitive_graph": "docs/p03/modules.txt",
+    "cgo_ffi": "CGO_ENABLED=0 go list -deps reports no packages with CgoFiles and all production cross-builds are cgo-disabled",
+    "replacement_cost": "Replace the imported crypto package behind internal/cephx with another reviewed RFC 8009 implementation and rerun RFC, fixture, fuzz, race, cross-build, and real-monitor gates"
+  },
+  "artifacts": {
+    "testdata/p03/cephx-encoding-vectors.json": "6b7c66e654f2f11a2effa2c51119b4cdcf19eba642952d8eaa292de3182f1cc4",
+    "testdata/p03/cephx-encoding-vectors.json.manifest.json": "fa72e75e9780ea2d63533d561acac35a57ce44e58dbee30e4466cdfc2d43586e",
+    "testdata/p03/crypto-vectors.json": "9baad25768d0d32c238cb1c98bc2d6c08f66f84dde724b92b5d518dce50b4591",
+    "testdata/p03/crypto-vectors.json.manifest.json": "87e796f2079d36430deb5602b41ee9a366c29f1c3374277440e0525005016e1d",
+    "integration/p03/reproduce-fixtures.sh": "7fde6e6631885b908cf4ae31ef658f9f0b2be66ec546937948399a4c5db98794",
+    "integration/p03/reproduce.sh": "df6a87773e8e4d1d065b8a31982000d73a1809b5a7e7058d05bd39a04b922089",
+    "integration/p03/report.schema.json": "20f41e324d78424b8e7bb50f3233e73a64740232391d3674d8b92f25390c1e29",
+    "integration/p03/rfc8009-oracle/main.go": "acd8b9a14e8bfb7b43b9fcdbbf1ed6331f4df1b32bc64acf9b6ffa17823fdda8",
+    "integration/p03/probe/main.go": "edbd3a39504e6685a21c90e2a722e69afe3b6ca3dae083619f8c75b693d80cfe",
+    "integration/p03/legacy-crush.txt": "5b07d221477e01a50ad37ab113cb8511ada2895bd3e848504518d0ef634f13ea"
+  },
+  "real_monitor": {
+    "report": "docs/p03/integration-report.json",
+    "command": "make integration-p03"
+  },
+  "review": {
+    "status": "approved with no findings",
+    "reviewed_by": "Oliver Tuschhoff",
+    "reviewed_at": "2026-09-14",
+    "reviewed_tree": "repository a3c1b3d9d255effd183c493101d330dcb379a9d6 plus content-addressed artifacts in docs/p03/integration-report.json",
+    "crypto_and_wire": "approved with no findings",
+    "connector_and_deadlines": "approved with no findings",
+    "ticket_lifecycle": "approved with no findings",
+    "secrets_and_logs": "approved with no findings",
+    "license_redistribution": "approved for redistribution",
+    "scope_boundary": "P04 not started"
+  }
+}

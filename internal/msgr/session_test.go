@@ -3,9 +3,11 @@ package msgr
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/netip"
 	"reflect"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -253,7 +255,7 @@ func TestSessionReconnectReplaysOriginalIdentity(t *testing.T) {
 	if !ok {
 		t.Fatalf("reconnect frame type = %T", reconnect)
 	}
-	if reconnect.ClientCookie != 11 || reconnect.ServerCookie != 22 || reconnect.GlobalSequence != 33 || reconnect.ConnectSequence != 5 {
+	if reconnect.ClientCookie != 11 || reconnect.ServerCookie != 22 || reconnect.GlobalSequence != 34 || reconnect.ConnectSequence != 5 {
 		t.Fatalf("reconnect = %+v", reconnect)
 	}
 
@@ -268,6 +270,172 @@ func TestSessionReconnectReplaysOriginalIdentity(t *testing.T) {
 	secondTransport.inject(messageFrame(t, response))
 	if outcome := waitOutcome(t, result); outcome.err != nil {
 		t.Fatal(outcome.err)
+	}
+}
+
+func TestSessionNewAuthenticatedIdentityResetsMessengerState(t *testing.T) {
+	first := newFakeTransport()
+	second := newFakeTransport()
+	transports := make(chan Transport, 2)
+	transports <- &authenticatedFakeTransport{fakeTransport: first, globalID: 10}
+	transports <- &authenticatedFakeTransport{fakeTransport: second, globalID: 11}
+	connector := ConnectorFunc(func(ctx context.Context) (Transport, error) {
+		select {
+		case transport := <-transports:
+			return transport, nil
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	})
+	config := testSessionConfig(t)
+	session := newTestSession(t, nil, connector, config)
+	defer session.Stop()
+
+	firstIdent := decodeWrittenControl(t, first).(ClientIdent)
+	if firstIdent.GlobalID != 10 {
+		t.Fatalf("first global ID = %d", firstIdent.GlobalID)
+	}
+	first.inject(controlFrame(t, ServerIdent{Addresses: protocol.EntityAddrVec{config.ClientIdent.TargetAddress}, Cookie: 22}))
+	for event := waitEvent(t, session, EventStateChanged); event.State != StateReady; event = waitEvent(t, session, EventStateChanged) {
+	}
+	result := submitAsync(session, context.Background(), testMessage("request"))
+	_ = decodeWrittenMessage(t, first)
+	first.fail(errors.New("identity expired"))
+	secondIdent, ok := decodeWrittenControl(t, second).(ClientIdent)
+	if !ok || secondIdent.GlobalID != 11 || secondIdent.GlobalSequence != firstIdent.GlobalSequence+1 {
+		t.Fatalf("replacement identity frame = %+v", secondIdent)
+	}
+	if outcome := waitOutcome(t, result); !errors.Is(outcome.err, ErrSessionDisconnected) {
+		t.Fatalf("old identity request error = %v", outcome.err)
+	}
+}
+
+func TestSessionLossyFaultDoesNotReplaySentRequest(t *testing.T) {
+	for _, policy := range []ReconnectPolicy{FailPending, ReplayPending} {
+		t.Run(fmt.Sprintf("policy-%d", policy), func(t *testing.T) {
+			first := newFakeTransport()
+			second := newFakeTransport()
+			transports := make(chan Transport, 2)
+			transports <- first
+			transports <- second
+			var connects atomic.Int32
+			config := testSessionConfig(t)
+			config.ReconnectPolicy = policy
+			session := newTestSession(t, nil, ConnectorFunc(func(ctx context.Context) (Transport, error) {
+				connects.Add(1)
+				select {
+				case transport := <-transports:
+					return transport, nil
+				case <-ctx.Done():
+					return nil, ctx.Err()
+				}
+			}), config)
+			defer session.Stop()
+
+			_ = decodeWrittenControl(t, first).(ClientIdent)
+			first.inject(controlFrame(t, ServerIdent{
+				Addresses: protocol.EntityAddrVec{config.ClientIdent.TargetAddress},
+				Flags:     ConnectionFlagLossy,
+			}))
+			waitSnapshot(t, session, func(snapshot SessionSnapshot) bool { return snapshot.State == StateReady })
+			result := submitAsync(session, context.Background(), testMessage("request"))
+			_ = decodeWrittenMessage(t, first)
+			first.fail(errors.New("reply lost"))
+			if outcome := waitOutcome(t, result); !errors.Is(outcome.err, ErrOutcomeUnknown) {
+				t.Fatalf("lossy request error = %v", outcome.err)
+			}
+			if _, ok := decodeWrittenControl(t, second).(ClientIdent); !ok {
+				t.Fatal("lossy replacement did not start a fresh ClientIdent session")
+			}
+			if got := connects.Load(); got != 2 {
+				t.Fatalf("lossy session connection attempts = %d, want 2", got)
+			}
+		})
+	}
+}
+
+func TestSessionDefaultGlobalSequencesAreUniqueAndNonzero(t *testing.T) {
+	const count = 32
+	sequences := make(chan uint64, count)
+	var waitGroup sync.WaitGroup
+	for range count {
+		waitGroup.Add(1)
+		go func() {
+			defer waitGroup.Done()
+			transport := newFakeTransport()
+			config := testSessionConfig(t)
+			config.GlobalSequence = 0
+			config.ClientIdent.GlobalSequence = 0
+			config.GlobalSequenceSource = nil
+			session := newTestSession(t, nil, oneTransportConnector(transport), config)
+			defer session.Stop()
+			sequences <- decodeWrittenControl(t, transport).(ClientIdent).GlobalSequence
+		}()
+	}
+	waitGroup.Wait()
+	close(sequences)
+	seen := make(map[uint64]struct{}, count)
+	for sequence := range sequences {
+		if sequence == 0 {
+			t.Fatal("default global sequence is zero")
+		}
+		if _, duplicate := seen[sequence]; duplicate {
+			t.Fatalf("duplicate global sequence %d", sequence)
+		}
+		seen[sequence] = struct{}{}
+	}
+}
+
+func TestSessionExplicitGlobalSequenceAdvancesDefaultAllocator(t *testing.T) {
+	minimum := processGlobalSequences.value.Load() + 100
+	explicitTransport := newFakeTransport()
+	explicitConfig := testSessionConfig(t)
+	explicitConfig.GlobalSequence = minimum
+	explicitConfig.GlobalSequenceSource = nil
+	explicit := newTestSession(t, nil, oneTransportConnector(explicitTransport), explicitConfig)
+	defer explicit.Stop()
+	explicitSequence := decodeWrittenControl(t, explicitTransport).(ClientIdent).GlobalSequence
+	if explicitSequence < minimum {
+		t.Fatalf("explicit sequence = %d, want at least %d", explicitSequence, minimum)
+	}
+
+	defaultTransport := newFakeTransport()
+	defaultConfig := testSessionConfig(t)
+	defaultConfig.GlobalSequenceSource = nil
+	following := newTestSession(t, nil, oneTransportConnector(defaultTransport), defaultConfig)
+	defer following.Stop()
+	defaultSequence := decodeWrittenControl(t, defaultTransport).(ClientIdent).GlobalSequence
+	if defaultSequence <= explicitSequence {
+		t.Fatalf("default sequence = %d, want greater than explicit %d", defaultSequence, explicitSequence)
+	}
+}
+
+func TestSessionRejectsNonAdvancingGlobalSequenceSource(t *testing.T) {
+	for _, returned := range []uint64{0, 3, 4} {
+		config := testSessionConfig(t)
+		config.GlobalSequence = 5
+		config.GlobalSequenceSource = globalSequenceSourceFunc(func(uint64) (uint64, error) { return returned, nil })
+		if _, err := NewSession(nil, nil, config); !errors.Is(err, ErrMalformed) {
+			t.Fatalf("source result %d error = %v, want ErrMalformed", returned, err)
+		}
+	}
+	config := testSessionConfig(t)
+	config.GlobalSequence = 5
+	config.GlobalSequenceSource = globalSequenceSourceFunc(func(after uint64) (uint64, error) { return after + 1, nil })
+	session := newTestSession(t, nil, nil, config)
+	session.Stop()
+}
+
+type globalSequenceSourceFunc func(uint64) (uint64, error)
+
+func (function globalSequenceSourceFunc) Next(after uint64) (uint64, error) { return function(after) }
+
+func TestSessionRejectsConflictingGlobalSequences(t *testing.T) {
+	config := testSessionConfig(t)
+	config.GlobalSequence = 1
+	config.ClientIdent.GlobalSequence = 2
+	if _, err := NewSession(nil, nil, config); !errors.Is(err, ErrMalformed) {
+		t.Fatalf("conflicting sequence error = %v", err)
 	}
 }
 
@@ -301,6 +469,125 @@ func TestSessionAckedRequestCompletesFromPeerReplayAfterReconnect(t *testing.T) 
 	secondTransport.inject(messageFrame(t, response))
 	if outcome := waitOutcome(t, result); outcome.err != nil || string(outcome.message.Front) != "replayed response" {
 		t.Fatalf("submit outcome = %+v", outcome)
+	}
+}
+
+func TestSessionMessageHeaderAcknowledgementPreventsReplay(t *testing.T) {
+	firstTransport := newFakeTransport()
+	secondTransport := newFakeTransport()
+	config := testSessionConfig(t)
+	config.ClientCookie = 11
+	config.ServerCookie = 22
+	session := newTestSession(t, firstTransport, oneTransportConnector(secondTransport), config)
+	defer session.Stop()
+
+	result := submitAsync(session, context.Background(), testMessage("request"))
+	sent := decodeWrittenMessage(t, firstTransport)
+	peerMessage := testMessage("unrelated")
+	peerMessage.Header.Sequence = 1
+	peerMessage.Header.TransactionID = sent.Header.TransactionID + 1
+	peerMessage.Header.AckSequence = sent.Header.Sequence
+	firstTransport.inject(messageFrame(t, peerMessage))
+	_ = decodeWrittenControl(t, firstTransport).(Ack)
+
+	firstTransport.fail(errors.New("response lost with connection"))
+	_ = decodeWrittenControl(t, secondTransport).(SessionReconnect)
+	secondTransport.inject(controlFrame(t, SessionReconnectOK{MessageSequence: sent.Header.Sequence}))
+	select {
+	case frame := <-secondTransport.writes:
+		if frame.Tag == TagMessage {
+			t.Fatal("message-header-acknowledged request was replayed")
+		}
+	default:
+	}
+	response := testMessage("response")
+	response.Header.Sequence = 2
+	response.Header.TransactionID = sent.Header.TransactionID
+	secondTransport.inject(messageFrame(t, response))
+	if outcome := waitOutcome(t, result); outcome.err != nil {
+		t.Fatal(outcome.err)
+	}
+}
+
+func TestSessionUsesAuthenticatedTransportGlobalID(t *testing.T) {
+	transport := newFakeTransport()
+	authenticated := &authenticatedFakeTransport{fakeTransport: transport, globalID: 4100}
+	config := testSessionConfig(t)
+	session := newTestSession(t, nil, oneTransportConnector(authenticated), config)
+	defer session.Stop()
+
+	ident := decodeWrittenControl(t, transport).(ClientIdent)
+	if ident.GlobalID != 4100 {
+		t.Fatalf("client ident global id = %d, want 4100", ident.GlobalID)
+	}
+	transport.inject(controlFrame(t, ServerIdent{
+		Addresses:         protocol.EntityAddrVec{config.ClientIdent.TargetAddress},
+		GlobalID:          52,
+		SupportedFeatures: 71,
+		Cookie:            93,
+	}))
+	for event := waitEvent(t, session, EventStateChanged); event.State != StateReady; event = waitEvent(t, session, EventStateChanged) {
+	}
+	snapshot := getSnapshot(t, session)
+	if snapshot.AuthenticatedGlobalID != 4100 || snapshot.ServerGlobalID != 52 || snapshot.ServerFeatures != 71 || snapshot.ServerCookie != 93 || !reflect.DeepEqual(snapshot.ServerAddresses, protocol.EntityAddrVec{config.ClientIdent.TargetAddress}) {
+		t.Fatalf("negotiated snapshot = %+v", snapshot)
+	}
+	snapshot.ServerAddresses[0].SocketData[0] ^= 0xff
+	if next := getSnapshot(t, session); reflect.DeepEqual(snapshot.ServerAddresses, next.ServerAddresses) {
+		t.Fatal("mutating a snapshot changed the retained server addresses")
+	}
+}
+
+func TestSessionRejectsInvalidServerIdent(t *testing.T) {
+	tests := []struct {
+		name  string
+		ident ServerIdent
+	}{
+		{name: "missing target address", ident: ServerIdent{}},
+		{name: "unsupported required feature", ident: ServerIdent{RequiredFeatures: 1 << 63}},
+		{name: "missing client required feature", ident: ServerIdent{SupportedFeatures: 1}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			owner := newUnitSessionOwner(t)
+			owner.state = StateConnecting
+			owner.config.MaxReconnectAttempts = 0
+			if test.name == "missing client required feature" {
+				owner.config.ClientIdent.RequiredFeatures = 2
+			}
+			if test.ident.RequiredFeatures != 0 {
+				test.ident.Addresses = protocol.EntityAddrVec{owner.config.ClientIdent.TargetAddress}
+			}
+			owner.handleControl(test.ident)
+			if owner.state != StateDisconnected || owner.terminalErr == nil {
+				t.Fatalf("invalid server ident left state=%d error=%v", owner.state, owner.terminalErr)
+			}
+		})
+	}
+}
+
+func TestSessionRejectsAcknowledgmentBeyondOutboundSequence(t *testing.T) {
+	for _, test := range []struct {
+		name   string
+		state  SessionState
+		handle func(*sessionOwner)
+	}{
+		{name: "ack", state: StateReady, handle: func(owner *sessionOwner) { owner.handleControl(Ack{Sequence: 2}) }},
+		{name: "message header", state: StateReady, handle: func(owner *sessionOwner) {
+			owner.handleMessage(Message{Header: MessageHeader{Sequence: 1, AckSequence: 2}})
+		}},
+		{name: "reconnect ok", state: StateReconnecting, handle: func(owner *sessionOwner) { owner.handleControl(SessionReconnectOK{MessageSequence: 2}) }},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			owner := newUnitSessionOwner(t)
+			owner.state = test.state
+			owner.config.MaxReconnectAttempts = 0
+			owner.nextOutbound = 2
+			test.handle(owner)
+			if owner.state != StateDisconnected || owner.terminalErr == nil {
+				t.Fatalf("oversized acknowledgment left state=%d error=%v", owner.state, owner.terminalErr)
+			}
+		})
 	}
 }
 
@@ -338,7 +625,7 @@ func TestSessionReconnectTransitionsAndResets(t *testing.T) {
 		if ident.Cookie != 101 || ident.GlobalSequence != 11 {
 			t.Fatalf("partial reset ident = %+v", ident)
 		}
-		secondTransport.inject(controlFrame(t, ServerIdent{Cookie: 303}))
+		secondTransport.inject(controlFrame(t, ServerIdent{Addresses: protocol.EntityAddrVec{config.ClientIdent.TargetAddress}, Cookie: 303}))
 		replayed := decodeWrittenMessage(t, secondTransport)
 		if replayed.Header.Sequence != original.Header.Sequence || replayed.Header.TransactionID != original.Header.TransactionID {
 			t.Fatalf("partial reset replay = %+v, original = %+v", replayed.Header, original.Header)
@@ -371,11 +658,11 @@ func TestSessionReconnectTransitionsAndResets(t *testing.T) {
 			t.Fatalf("full reset result = %v", err)
 		}
 		ident := decodeWrittenControl(t, secondTransport).(ClientIdent)
-		if ident.Cookie != 9 || ident.GlobalSequence != 3 {
+		if ident.Cookie != 9 || ident.GlobalSequence != 4 {
 			t.Fatalf("full reset ident = %+v", ident)
 		}
 		snapshot := getSnapshot(t, session)
-		if snapshot.ClientCookie != 9 || snapshot.ServerCookie != 0 || snapshot.GlobalSequence != 3 || snapshot.NextOutboundSequence != 1 || snapshot.Replay != 0 || snapshot.RetainedBytes != 0 {
+		if snapshot.ClientCookie != 9 || snapshot.ServerCookie != 0 || snapshot.GlobalSequence != 4 || snapshot.NextOutboundSequence != 1 || snapshot.Replay != 0 || snapshot.RetainedBytes != 0 {
 			t.Fatalf("full reset snapshot = %+v", snapshot)
 		}
 	})
@@ -401,13 +688,13 @@ func TestSessionCookieSourceInitialResetAndDirectReady(t *testing.T) {
 		if initial.Cookie != 41 || initial.GlobalSequence != 17 {
 			t.Fatalf("initial ident = %+v", initial)
 		}
-		firstTransport.inject(controlFrame(t, ServerIdent{Cookie: 90}))
+		firstTransport.inject(controlFrame(t, ServerIdent{Addresses: protocol.EntityAddrVec{config.ClientIdent.TargetAddress}, Cookie: 90}))
 		waitSnapshot(t, session, func(snapshot SessionSnapshot) bool { return snapshot.State == StateReady })
 		firstTransport.fail(errors.New("fault"))
 		_ = decodeWrittenControl(t, secondTransport).(SessionReconnect)
 		secondTransport.inject(controlFrame(t, SessionReset{Full: true}))
 		reset := decodeWrittenControl(t, secondTransport).(ClientIdent)
-		if reset.Cookie != 42 || reset.GlobalSequence != 17 {
+		if reset.Cookie != 42 || reset.GlobalSequence != 18 {
 			t.Fatalf("reset ident = %+v", reset)
 		}
 	})
@@ -746,11 +1033,21 @@ func testSessionConfig(t *testing.T) SessionConfig {
 		MaxHandshakeTransitions: 8,
 		EventBuffer:             64,
 		ReconnectPolicy:         ReplayPending,
+		GlobalSequenceSource:    &atomicGlobalSequenceSource{},
 		ClientIdent: ClientIdent{
 			Addresses:     protocol.EntityAddrVec{address},
 			TargetAddress: address,
 		},
 	}
+}
+
+type authenticatedFakeTransport struct {
+	*fakeTransport
+	globalID uint64
+}
+
+func (transport *authenticatedFakeTransport) AuthenticatedGlobalID() uint64 {
+	return transport.globalID
 }
 
 func newTestSession(t *testing.T, transport Transport, connector Connector, config SessionConfig) *Session {

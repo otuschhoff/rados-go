@@ -228,7 +228,7 @@ func encodePreamble(tag Tag, descriptors []segmentDescriptor) [PreambleSize]byte
 
 func decodePreamble(preamble [PreambleSize]byte) (Tag, []segmentDescriptor, error) {
 	if got, want := cephCRC32C(0, preamble[:28]), binary.LittleEndian.Uint32(preamble[28:]); got != want {
-		return 0, nil, fmt.Errorf("%w: preamble crc", ErrIntegrity)
+		return 0, nil, fmt.Errorf("%w: preamble crc calculated=%#x encoded=%#x", ErrIntegrity, got, want)
 	}
 	tag := Tag(preamble[0])
 	if !validTag(tag) {

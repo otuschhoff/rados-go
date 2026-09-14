@@ -64,6 +64,12 @@ func TestControlRoundTrips(t *testing.T) {
 		Keepalive2{Timestamp: Timestamp{Seconds: 14, Nanoseconds: 15}},
 		Keepalive2Ack{Timestamp: Timestamp{Seconds: 16, Nanoseconds: 17}},
 		Ack{Sequence: 18},
+		AuthRequest{Method: 2, PreferredModes: []uint32{2, 1}, AuthPayload: []byte{1, 2, 3}},
+		AuthBadMethod{Method: 2, Result: -13, AllowedMethods: []uint32{2}, AllowedModes: []uint32{2, 1}},
+		AuthReplyMore{AuthPayload: []byte{4, 5}},
+		AuthRequestMore{AuthPayload: []byte{6, 7}},
+		AuthDone{GlobalID: 42, ConnectionMode: 2, AuthPayload: []byte{8, 9}},
+		AuthSignature{Signature: [32]byte{1, 2, 3}},
 	}
 	for _, want := range tests {
 		t.Run(reflect.TypeOf(want).Name(), func(t *testing.T) {
@@ -89,15 +95,19 @@ func TestAuthPayloadTagsAreBoundedAndClassified(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err := DecodeControl(frame, controlTestLimits)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("tag %d decoded = %#v", tag, got)
+		if frame.Tag != tag {
+			t.Fatalf("tag = %d, want %d", frame.Tag, tag)
 		}
 	}
-	_, err := DecodeControl(Frame{Tag: TagAuthDone, Segments: []Segment{{Alignment: DefaultAlignment, Data: make([]byte, 65)}}}, controlTestLimits)
+	encoder := wire.NewEncoder(4096)
+	encoder.Uint64(1)
+	encoder.Uint32(2)
+	encoder.Bytes(make([]byte, 65))
+	data, err := encoder.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = DecodeControl(Frame{Tag: TagAuthDone, Segments: []Segment{{Alignment: DefaultAlignment, Data: data}}}, controlTestLimits)
 	if !errors.Is(err, wire.ErrLimitExceeded) {
 		t.Fatalf("auth limit error = %v", err)
 	}

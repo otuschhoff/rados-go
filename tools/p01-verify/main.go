@@ -201,11 +201,38 @@ func checkHash(path, want string) {
 func checkModule(minimumGo string) {
 	data, err := os.ReadFile("go.mod")
 	must(err)
-	fields := strings.Fields(string(data))
-	want := []string{"module", "github.com/otuschhoff/go-librados", "go", minimumGo}
-	if !slices.Equal(fields, want) {
-		fatalf("go.mod must pin the selected module and minimum Go patch (got %q)", fields)
+	if err := validateModule(data, minimumGo); err != nil {
+		fatalf("go.mod must pin the selected module and minimum Go patch: %v", err)
 	}
+}
+
+func validateModule(data []byte, minimumGo string) error {
+	var modulePath, goVersion string
+	for _, line := range strings.Split(string(data), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
+		switch fields[0] {
+		case "module":
+			if len(fields) != 2 || modulePath != "" {
+				return errors.New("invalid or duplicate module directive")
+			}
+			modulePath = fields[1]
+		case "go":
+			if len(fields) != 2 || goVersion != "" {
+				return errors.New("invalid or duplicate go directive")
+			}
+			goVersion = fields[1]
+		}
+	}
+	if modulePath != "github.com/otuschhoff/go-librados" {
+		return fmt.Errorf("module is %q", modulePath)
+	}
+	if goVersion != minimumGo {
+		return fmt.Errorf("go version is %q, want %q", goVersion, minimumGo)
+	}
+	return nil
 }
 
 func checkFixture(name string, want fixtureExpectation, pins evidencePins) {

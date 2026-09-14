@@ -42,8 +42,8 @@ func TestCephCRC32C(t *testing.T) {
 		payload string
 		want    uint32
 	}{
-		{"foo bar baz", 1599983188},
-		{"whiz bang boom", 4207245113},
+		{"foo bar baz", 4119623852},
+		{"whiz bang boom", 2360230088},
 	} {
 		if got := cephCRC32C(0, []byte(test.payload)); got != test.want {
 			t.Fatalf("crc32c(%q) = %d, want %d", test.payload, got, test.want)

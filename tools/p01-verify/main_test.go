@@ -60,3 +60,19 @@ func TestEvidencePinsControlFixtureExpectations(t *testing.T) {
 		t.Fatalf("fixture command does not use evidence image: %v", want)
 	}
 }
+
+func TestValidateModuleAllowsLaterPhaseDependencies(t *testing.T) {
+	data := []byte("module github.com/otuschhoff/go-librados\n\ngo 1.26.8\n\nrequire example.com/dependency v1.2.3\n")
+	if err := validateModule(data, "1.26.8"); err != nil {
+		t.Fatal(err)
+	}
+	for _, invalid := range [][]byte{
+		[]byte("module example.com/wrong\n\ngo 1.26.8\n"),
+		[]byte("module github.com/otuschhoff/go-librados\n\ngo 1.26.7\n"),
+		[]byte("module github.com/otuschhoff/go-librados\nmodule github.com/otuschhoff/go-librados\ngo 1.26.8\n"),
+	} {
+		if err := validateModule(invalid, "1.26.8"); err == nil {
+			t.Fatalf("invalid go.mod accepted: %q", invalid)
+		}
+	}
+}

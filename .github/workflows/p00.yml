@@ -1,4 +1,4 @@
-name: P00, P01, and P02 verification
+name: P00 through P03 verification
 
 on:
   push:
@@ -67,7 +67,61 @@ jobs:
           GO111MODULE=off go run ./tools/p00-verify -ceph-source /tmp/go-librados-ceph
           make inventory
           git diff --exit-code -- docs/p00/api-inventory.csv
-      - run: make verify-p02
+      - run: make verify-p03
+
+  p03-quality:
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make quality-p03
+
+  p03-fuzz:
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make ${{ github.event_name == 'schedule' && 'fuzz-p03-nightly' || 'fuzz-p03' }}
+
+  p03-fixtures-and-integration:
+    needs: pins
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+            architecture: amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+            architecture: arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    env:
+      P03_PLATFORM: ${{ matrix.platform }}
+      P03_REPORT: docs/p03/integration-report-${{ matrix.architecture }}.json
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make reproduce-p03-fixtures integration-p03
+      - run: CGO_ENABLED=0 go run ./tools/p03-verify
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: p03-integration-${{ matrix.architecture }}
+          path: ${{ env.P03_REPORT }}
+          if-no-files-found: error
 
   p02-quality:
     needs: pins
@@ -109,8 +163,17 @@ jobs:
 
   p02-fixtures:
     needs: pins
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      P02_PLATFORM: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - run: make reproduce-p02
@@ -127,7 +190,7 @@ jobs:
       - name: Reject production cgo imports
         run: test -z "$(go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
       - name: Verify dependency and license boundary
-        run: test "$(go list -m all | wc -l)" -eq 1
+        run: test -z "$(go list -deps -f '{{with .Module}}{{if ne .Path "github.com/otuschhoff/go-librados"}}{{.Path}}{{end}}{{end}}' . ./internal/encoding ./internal/protocol | sort -u)"
       - name: Race test
         run: go test -race ./...
       - name: Static analysis

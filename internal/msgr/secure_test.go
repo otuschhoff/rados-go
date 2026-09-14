@@ -16,7 +16,7 @@ func TestSecureDeterministicVector(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const expected = "4de81a477793cc7cbb381480b30cc69431dabdf879b50b483d403cfd1ce7066a25a34695d34ff7965036a3b4f02908ecd7f8cc4f2688a28ab01f761aeee6fdba01654a9d4a848c689172d4521fcf81081e2681d78b52b306bad9cd41eee13858"
+	const expected = "4de81a477793cc7cbb381480b30cc69431dabdf879b50b483d403cfd7520cf9d25a34695d34ff7965036a3b4f02908ecd7f8cc4f2688a28ab01f761aeee6fdba01654a9d4a848c689172d4521fcf810804495e6587c7f08a8c5bc025ec8d1369"
 	if got := hex.EncodeToString(wire); got != expected {
 		t.Fatalf("secure vector = %s", got)
 	}
