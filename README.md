@@ -1,16 +1,17 @@
 # go-librados
 
-`go-librados` is a planned pure-Go Ceph RADOS client. The repository is
-currently at **P00: Evidence, Scope and Oracle**. It does not yet contain a Go
-client and must not be described as interoperable.
+`go-librados` is a planned pure-Go Ceph RADOS client. The repository has
+completed **P01: Minimal Module and Binary Primitives**. It does not yet contain
+a network client and must not be described as interoperable.
 
 The implementation contract is [SPEC.md](SPEC.md). P00 evidence and decisions
-are indexed in [docs/p00/README.md](docs/p00/README.md).
+are indexed in [docs/p00/README.md](docs/p00/README.md); P01 decisions and
+qualification are indexed in [docs/p01/README.md](docs/p01/README.md).
 
-Run the locally reproducible P00 checks with:
+Run the locally reproducible P00 and P01 checks with:
 
 ```sh
-make verify-p00
+make verify-p01
 ```
 
 Run the disposable-cluster proof only on an isolated Linux host or VM that

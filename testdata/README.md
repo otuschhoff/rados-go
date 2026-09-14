@@ -1,7 +1,7 @@
 # Protocol Fixtures
 
-No protocol fixtures are checked in during P00. Every fixture added from P01
-onward must have a sidecar manifest that validates against
+P01 fixtures are under `p01/`. Every fixture has a sidecar manifest validated
+against
 `manifest.schema.json`. Synthetic secrets must be non-reusable and explicitly
 marked. Captures containing real credentials, tickets or session secrets must
 never be committed.

@@ -1,8 +1,10 @@
-name: P00 evidence
+name: P00 and P01 verification
 
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "17 3 * * *"
 
 permissions:
   contents: read
@@ -64,7 +66,58 @@ jobs:
           GO111MODULE=off go run ./tools/p00-verify -ceph-source /tmp/go-librados-ceph
           make inventory
           git diff --exit-code -- docs/p00/api-inventory.csv
-      - run: make verify-p00
+      - run: make verify-p01
+
+  p01-quality:
+    needs: pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - name: Reject production cgo imports
+        run: test -z "$(go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+      - name: Verify dependency and license boundary
+        run: test "$(go list -m all | wc -l)" -eq 1
+      - name: Race test
+        run: go test -race ./...
+      - name: Static analysis
+        run: go run "honnef.co/go/tools/cmd/staticcheck@$(jq -r '.quality_tools.staticcheck' docs/p01/evidence.json)" ./...
+      - name: Vulnerability scan
+        run: go run "golang.org/x/vuln/cmd/govulncheck@$(jq -r '.quality_tools.govulncheck' docs/p01/evidence.json)" ./...
+
+  p01-fuzz:
+    if: github.event_name == 'schedule'
+    needs: pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make fuzz-p01-nightly
+
+  p01-fuzz-smoke:
+    if: github.event_name != 'schedule'
+    needs: pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make fuzz-p01
+
+  p01-fixtures:
+    needs: pins
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: make reproduce-p01
 
   oracle-build:
     needs: pins
