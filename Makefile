@@ -81,7 +81,7 @@ verify-p02: verify-p01
 verify-p02-all: verify-p02 quality-p02 reproduce-p02 fuzz-p02
 
 quality-p02:
-	test -z "$$(go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+	test -z "$$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
 	test -z "$$(go list -deps -f '{{with .Module}}{{if ne .Path "github.com/otuschhoff/go-librados"}}{{.Path}}{{end}}{{end}}' . ./internal/encoding ./internal/protocol ./internal/msgr | sort -u)"
 	go test -race ./...
 	go run "honnef.co/go/tools/cmd/staticcheck@$$(jq -r '.quality_tools.staticcheck' docs/p01/evidence.json)" ./...
