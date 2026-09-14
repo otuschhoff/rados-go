@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "incomplete/pending-upstream-oracle",
+  "source": {
+    "repository": "https://github.com/ceph/ceph.git",
+    "tag": "v20.2.0",
+    "commit": "69f84cc2651aa259a15bc192ddaabd3baba07489"
+  },
+  "local_toolchain": {
+    "compiler": "Apple clang 21",
+    "openssl": "OpenSSL 3.6.4"
+  },
+  "commands": [
+    {"command": "gofmt -w tools/p02-verify/main.go tools/p02-verify/main_test.go", "result": "passed"},
+    {"command": "go test ./tools/p02-verify ./internal/msgr", "result": "passed"},
+    {"command": "CGO_ENABLED=0 go test ./...", "result": "passed"},
+    {"command": "go run ./tools/p02-verify", "result": "passed"},
+    {"command": "make unit-p02 differential-p02 integration-p02", "result": "passed"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "fixtures": {
+    "banner-rev1.bin": "6819c56d3d3d3ccaa0545a80d55aaa8088d88e9f849113cdafa58feb298cfcca",
+    "crc-four-segment.bin": "b922bf62be1b19706c6fa26b63c9e8e6ddd9efdc3bec6705712d20f9d9e05929",
+    "crc-one-segment.bin": "beb6e6b846d5b2e6f544addb9bacfe92086ea1a9001aec88e61dcacfbd918389",
+    "secure-multi-record.bin": "ef4278163cad9ef06c2dba23e4e1b1db11be4731445c4af23ac91cc0f07de469",
+    "secure-one-segment.bin": "950b81ca9889ad23534f12c7772dec5d8cce575f63de4df92ca3850ff190de5f"
+  },
+  "docker_reproduction": {
+    "command": "make reproduce-p02",
+    "result": "canceled",
+    "reason": "pinned image package download/build canceled; openssl-devel NEVRA and RPM checksum not recorded"
+  },
+  "upstream_oracle": {
+    "kind": "Ceph FrameAssembler",
+    "result": "pending"
+  }
+}

@@ -1,4 +1,4 @@
-name: P00 and P01 verification
+name: P00, P01, and P02 verification
 
 on:
   push:
@@ -46,6 +46,7 @@ jobs:
 
   verify:
     needs: pins
+    timeout-minutes: 20
     strategy:
       matrix:
         go: ${{ fromJSON(needs.pins.outputs.go-matrix) }}
@@ -66,7 +67,53 @@ jobs:
           GO111MODULE=off go run ./tools/p00-verify -ceph-source /tmp/go-librados-ceph
           make inventory
           git diff --exit-code -- docs/p00/api-inventory.csv
-      - run: make verify-p01
+      - run: make verify-p02
+
+  p02-quality:
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make quality-p02
+
+  p02-fuzz:
+    if: github.event_name == 'schedule'
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make fuzz-p02-nightly
+
+  p02-fuzz-smoke:
+    if: github.event_name != 'schedule'
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.minimum-go }}
+          check-latest: false
+      - run: make fuzz-p02
+
+  p02-fixtures:
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: make reproduce-p02
 
   p01-quality:
     needs: pins

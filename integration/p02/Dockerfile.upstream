@@ -1,0 +1,49 @@
+ARG CEPH_IMAGE
+FROM ${CEPH_IMAGE} AS build
+RUN dnf install -y dnf-utils selinux-policy-targeted && \
+      dnf config-manager --set-enabled crb && \
+      dnf install -y git cmake ninja-build
+COPY --from=ceph-source /install-deps.sh /ceph/install-deps.sh
+COPY --from=ceph-source /ceph.spec.in /ceph/ceph.spec.in
+COPY --from=ceph-source /src/script /ceph/src/script
+WORKDIR /ceph
+RUN ./install-deps.sh
+COPY --from=ceph-source . /ceph
+COPY upstream_oracle.cc /ceph/src/test/msgr/p02_upstream_vectors.cc
+RUN --mount=type=cache,target=/build \
+  printf '%s\n' \
+      'add_executable(p02_upstream_vectors p02_upstream_vectors.cc)' \
+      'target_link_libraries(p02_upstream_vectors global)' \
+      >> /ceph/src/test/msgr/CMakeLists.txt && \
+    cmake -S /ceph -B /build -GNinja \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_FLAGS_RELEASE="-O0 -DNDEBUG" \
+      -DCMAKE_CXX_FLAGS_RELEASE="-O0 -DNDEBUG" \
+      -DWITH_TESTS=ON \
+      -DWITH_RDMA=OFF \
+      -DWITH_RADOSGW=OFF \
+      -DWITH_CEPHFS=OFF \
+      -DWITH_LIBCEPHFS=OFF \
+      -DWITH_LIBCEPHSQLITE=OFF \
+      -DWITH_RBD=OFF \
+      -DWITH_KRBD=OFF \
+      -DWITH_BLUESTORE=OFF \
+      -DWITH_FUSE=OFF \
+      -DWITH_MGR=OFF \
+      -DWITH_JAEGER=OFF \
+      -DWITH_LTTNG=OFF \
+      -DWITH_BABELTRACE=OFF \
+      -DWITH_MANPAGE=OFF \
+      -DWITH_SYSTEMD=OFF \
+      -DWITH_QATLIB=OFF \
+      -DWITH_QATZIP=OFF \
+      -DWITH_UADK=OFF \
+      -DWITH_OPENLDAP=OFF \
+      -DWITH_EC_ISA_PLUGIN=OFF \
+      -DALLOCATOR=libc && \
+      cmake --build /build --target p02_upstream_vectors --parallel 1 --verbose && \
+      install -Dm755 /build/bin/p02_upstream_vectors /out/p02-upstream-vectors
+
+FROM ${CEPH_IMAGE}
+    COPY --from=build /out/p02-upstream-vectors /usr/local/bin/p02-upstream-vectors
+ENTRYPOINT ["/usr/local/bin/p02-upstream-vectors"]
