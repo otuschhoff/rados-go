@@ -210,4 +210,7 @@ func (d *Decoder) Versioned(localVersion uint8) (version uint8, payload *Decoder
 
 func (d *Decoder) Remaining() uint64 { return uint64(len(d.data)) - d.offset }
 
+// Position returns the number of bytes consumed from this decoder's input.
+func (d *Decoder) Position() uint64 { return d.offset }
+
 func (d *Decoder) Finish() error { return d.err }

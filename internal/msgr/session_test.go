@@ -142,6 +142,31 @@ func TestSessionAckDoesNotCompleteAndIncomingSequenceRules(t *testing.T) {
 	}
 }
 
+func TestSessionSendCompletesAfterWrite(t *testing.T) {
+	transport := newFakeTransport()
+	session := newTestSession(t, transport, nil, testSessionConfig(t))
+	defer session.Stop()
+
+	done := make(chan error, 1)
+	go func() { done <- session.Send(context.Background(), testMessage("one-way")) }()
+	sent := decodeWrittenMessage(t, transport)
+	if string(sent.Front) != "one-way" || sent.Header.TransactionID == 0 {
+		t.Fatalf("sent = %+v", sent)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Send did not complete after transport write")
+	}
+	snapshot := getSnapshot(t, session)
+	if snapshot.InFlight != 0 || snapshot.Replay != 0 || snapshot.RetainedBytes != 0 {
+		t.Fatalf("one-way send retained state: %+v", snapshot)
+	}
+}
+
 func TestSessionQueueBoundsAndCancellation(t *testing.T) {
 	config := testSessionConfig(t)
 	config.MaxQueuedMessages = 2
@@ -506,6 +531,119 @@ func TestSessionMessageHeaderAcknowledgementPreventsReplay(t *testing.T) {
 	secondTransport.inject(messageFrame(t, response))
 	if outcome := waitOutcome(t, result); outcome.err != nil {
 		t.Fatal(outcome.err)
+	}
+}
+
+func TestSessionDeliversUnsolicitedMessages(t *testing.T) {
+	transport := newFakeTransport()
+	session := newTestSession(t, transport, nil, testSessionConfig(t))
+	defer session.Stop()
+
+	message := testMessage("map update")
+	message.Header.Sequence = 1
+	message.Header.TransactionID = 99
+	frame := messageFrame(t, message)
+	transport.inject(frame)
+
+	select {
+	case incoming := <-session.Incoming():
+		frame.Segments[1].Data[0] = 'X'
+		if string(incoming.Front) != "map update" || incoming.Header.TransactionID != 99 {
+			t.Fatalf("incoming message = %+v", incoming)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for unsolicited message")
+	}
+	ack, ok := decodeWrittenControl(t, transport).(Ack)
+	if !ok || ack.Sequence != 1 {
+		t.Fatalf("unsolicited message ack = %#v", ack)
+	}
+}
+
+func TestSessionKeepsMatchedRepliesOutOfIncoming(t *testing.T) {
+	transport := newFakeTransport()
+	session := newTestSession(t, transport, nil, testSessionConfig(t))
+	defer session.Stop()
+
+	result := submitAsync(session, context.Background(), testMessage("request"))
+	sent := decodeWrittenMessage(t, transport)
+	reply := testMessage("reply")
+	reply.Header.Sequence = 1
+	reply.Header.TransactionID = sent.Header.TransactionID
+	transport.inject(messageFrame(t, reply))
+
+	if outcome := waitOutcome(t, result); outcome.err != nil || string(outcome.message.Front) != "reply" {
+		t.Fatalf("submit outcome = %+v", outcome)
+	}
+	select {
+	case message := <-session.Incoming():
+		t.Fatalf("matched reply delivered as unsolicited: %+v", message)
+	default:
+	}
+}
+
+func TestSessionFailsExplicitlyWhenIncomingQueueIsFull(t *testing.T) {
+	transport := newFakeTransport()
+	config := testSessionConfig(t)
+	config.MaxQueuedMessages = 1
+	session := newTestSession(t, transport, nil, config)
+	defer session.Stop()
+
+	first := testMessage("first")
+	first.Header.Sequence = 1
+	transport.inject(messageFrame(t, first))
+	_ = decodeWrittenControl(t, transport).(Ack)
+
+	second := testMessage("second")
+	second.Header.Sequence = 2
+	transport.inject(messageFrame(t, second))
+	event := waitEvent(t, session, EventTransportFault)
+	if !errors.Is(event.Err, ErrQueueSaturated) {
+		t.Fatalf("overflow error = %v, want %v", event.Err, ErrQueueSaturated)
+	}
+	if incoming := <-session.Incoming(); string(incoming.Front) != "first" {
+		t.Fatalf("retained incoming message = %+v", incoming)
+	}
+	if _, err := session.Submit(context.Background(), testMessage("late")); !errors.Is(err, ErrQueueSaturated) {
+		t.Fatalf("submit after incoming overflow = %v", err)
+	}
+}
+
+func TestSessionIncomingSurvivesReconnectAndClosesOnStop(t *testing.T) {
+	firstTransport := newFakeTransport()
+	secondTransport := newFakeTransport()
+	config := testSessionConfig(t)
+	config.ClientCookie = 11
+	config.ServerCookie = 22
+	session := newTestSession(t, firstTransport, oneTransportConnector(secondTransport), config)
+
+	first := testMessage("before reconnect")
+	first.Header.Sequence = 1
+	firstTransport.inject(messageFrame(t, first))
+	if incoming := <-session.Incoming(); string(incoming.Front) != "before reconnect" {
+		t.Fatalf("first incoming message = %+v", incoming)
+	}
+	_ = decodeWrittenControl(t, firstTransport).(Ack)
+
+	firstTransport.fail(errors.New("fault"))
+	_ = decodeWrittenControl(t, secondTransport).(SessionReconnect)
+	secondTransport.inject(controlFrame(t, SessionReconnectOK{MessageSequence: 0}))
+	waitEvent(t, session, EventReconnectOK)
+	second := testMessage("after reconnect")
+	second.Header.Sequence = 2
+	secondTransport.inject(messageFrame(t, second))
+	if incoming := <-session.Incoming(); string(incoming.Front) != "after reconnect" {
+		t.Fatalf("second incoming message = %+v", incoming)
+	}
+
+	session.Stop()
+	select {
+	case _, ok := <-session.Incoming():
+		if ok {
+			t.Fatal("incoming channel remained open after stop")
+		}
+	case <-time.After(time.Second):
+		t.Fatal("incoming channel did not close after stop")
 	}
 }
 
@@ -1063,7 +1201,7 @@ func newUnitSessionOwner(t *testing.T) *sessionOwner {
 	t.Helper()
 	config := testSessionConfig(t)
 	return &sessionOwner{
-		session:      &Session{commands: make(chan any), events: make(chan SessionEvent, config.EventBuffer), done: make(chan struct{})},
+		session:      &Session{commands: make(chan any), events: make(chan SessionEvent, config.EventBuffer), incoming: make(chan Message, config.MaxQueuedMessages), done: make(chan struct{})},
 		config:       config,
 		state:        StateReady,
 		byRequest:    make(map[*submitCommand]*pendingRequest),

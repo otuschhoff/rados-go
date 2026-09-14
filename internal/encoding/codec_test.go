@@ -3,6 +3,7 @@ package encoding
 import (
 	"bytes"
 	"errors"
+	"math"
 	"testing"
 )
 
@@ -83,6 +84,25 @@ func TestEncoderLimitIsSticky(t *testing.T) {
 	data, err := encoder.BytesResult()
 	if !errors.Is(err, ErrLimitExceeded) || data != nil {
 		t.Fatalf("data=%x error=%v", data, err)
+	}
+}
+
+func TestCRC32C(t *testing.T) {
+	for _, test := range []struct {
+		payload string
+		want    uint32
+	}{
+		{"foo bar baz", 4119623852},
+		{"whiz bang boom", 2360230088},
+	} {
+		if got := CRC32C(0, []byte(test.payload)); got != test.want {
+			t.Fatalf("CRC32C(%q) = %d, want %d", test.payload, got, test.want)
+		}
+	}
+
+	first := CRC32C(math.MaxUint32, []byte("foo "))
+	if got, want := CRC32C(first, []byte("bar baz")), CRC32C(math.MaxUint32, []byte("foo bar baz")); got != want {
+		t.Fatalf("chained CRC32C = %d, want %d", got, want)
 	}
 }
 

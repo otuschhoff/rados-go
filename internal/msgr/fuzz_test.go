@@ -342,6 +342,7 @@ func newFuzzSessionOwner(t *testing.T) *sessionOwner {
 	session := &Session{
 		commands: make(chan any),
 		events:   make(chan SessionEvent, config.EventBuffer),
+		incoming: make(chan Message, config.MaxQueuedMessages),
 		done:     make(chan struct{}),
 	}
 	_, cancel := context.WithCancel(context.Background())

@@ -192,6 +192,8 @@ func nextGlobalSequence(source GlobalSequenceSource, after uint64) (uint64, erro
 type Session struct {
 	commands chan any
 	events   chan SessionEvent
+	incoming chan Message
+	terminal chan error
 	done     chan struct{}
 	stopOnce sync.Once
 }
@@ -199,6 +201,7 @@ type Session struct {
 type submitCommand struct {
 	ctx      context.Context
 	message  Message
+	oneWay   bool
 	admitted chan struct{}
 	result   chan submitResult
 }
@@ -224,6 +227,7 @@ type pumpFrame struct {
 type pumpWriteResult struct {
 	generation uint64
 	taskID     uint64
+	request    *submitCommand
 	err        error
 }
 
@@ -345,6 +349,8 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 	session := &Session{
 		commands: make(chan any),
 		events:   make(chan SessionEvent, config.EventBuffer),
+		incoming: make(chan Message, config.MaxQueuedMessages),
+		terminal: make(chan error, 1),
 		done:     make(chan struct{}),
 	}
 	owner := &sessionOwner{
@@ -377,10 +383,21 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 }
 
 func (session *Session) Submit(ctx context.Context, message Message) (Message, error) {
+	return session.submit(ctx, message, false)
+}
+
+// Send transmits a one-way message and returns after its frame has been
+// accepted by the transport. Callers must resubmit it after reconnect.
+func (session *Session) Send(ctx context.Context, message Message) error {
+	_, err := session.submit(ctx, message, true)
+	return err
+}
+
+func (session *Session) submit(ctx context.Context, message Message, oneWay bool) (Message, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	request := &submitCommand{ctx: ctx, message: message, admitted: make(chan struct{}), result: make(chan submitResult, 1)}
+	request := &submitCommand{ctx: ctx, message: message, oneWay: oneWay, admitted: make(chan struct{}), result: make(chan submitResult, 1)}
 	select {
 	case session.commands <- request:
 	case <-ctx.Done():
@@ -434,6 +451,8 @@ func (session *Session) Snapshot(ctx context.Context) (SessionSnapshot, error) {
 }
 
 func (session *Session) Events() <-chan SessionEvent { return session.events }
+func (session *Session) Incoming() <-chan Message    { return session.incoming }
+func (session *Session) Terminal() <-chan error      { return session.terminal }
 func (session *Session) Done() <-chan struct{}       { return session.done }
 
 func (session *Session) Stop() {
@@ -477,6 +496,11 @@ func (owner *sessionOwner) run() {
 				owner.writeBusy = false
 				if written.err != nil {
 					owner.handleFault(written.err)
+				} else if written.request != nil {
+					if pending := owner.byRequest[written.request]; pending != nil && pending.request.oneWay {
+						owner.removePending(pending)
+						pending.request.result <- submitResult{}
+					}
 				}
 			}
 		case fault := <-owner.faults:
@@ -642,6 +666,12 @@ func (owner *sessionOwner) handleMessage(message Message) {
 	if pending := owner.byTID[message.Header.TransactionID]; pending != nil {
 		owner.removePending(pending)
 		pending.request.result <- submitResult{message: message}
+		return
+	}
+	select {
+	case owner.session.incoming <- message:
+	default:
+		owner.failTerminal(fmt.Errorf("%w: unsolicited message queue is full", ErrQueueSaturated))
 	}
 }
 
@@ -747,6 +777,8 @@ func (owner *sessionOwner) handleControl(payload any) {
 		owner.reconnectAttempts = 0
 		owner.failSentUnknown(ErrSessionDisconnected)
 		owner.setState(StateReady)
+	case IdentMissingFeatures:
+		owner.failTerminal(fmt.Errorf("%w: server requires missing features %#x", ErrUnsupportedPayload, value.Features))
 	default:
 		owner.handleFault(fmt.Errorf("%w: unexpected session control %T", ErrUnsupportedPayload, payload))
 	}
@@ -927,6 +959,10 @@ func (owner *sessionOwner) handleFault(err error) {
 
 func (owner *sessionOwner) failTerminal(err error) {
 	owner.terminalErr = err
+	select {
+	case owner.session.terminal <- err:
+	default:
+	}
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})
 	if owner.transport != nil {
 		_ = owner.transport.Close()
@@ -945,8 +981,7 @@ func (owner *sessionOwner) failTerminal(err error) {
 
 func (owner *sessionOwner) beginReconnect() {
 	if owner.config.MaxReconnectAttempts == 0 || owner.reconnectAttempts >= owner.config.MaxReconnectAttempts {
-		owner.terminalErr = ErrReconnectExhausted
-		owner.failAll(ErrReconnectExhausted)
+		owner.failTerminal(ErrReconnectExhausted)
 		return
 	}
 	owner.reconnectAttempts++
@@ -1081,7 +1116,7 @@ func (owner *sessionOwner) writePump(generation uint64, transport Transport, tas
 			}
 			err := transport.WriteFrame(task.frame)
 			select {
-			case owner.writes <- pumpWriteResult{generation: generation, taskID: task.id, err: err}:
+			case owner.writes <- pumpWriteResult{generation: generation, taskID: task.id, request: task.request, err: err}:
 			case <-owner.session.done:
 				return
 			}
@@ -1137,6 +1172,7 @@ func (owner *sessionOwner) stop(done chan struct{}) {
 	close(owner.session.done)
 	owner.pumpWG.Wait()
 	close(owner.session.events)
+	close(owner.session.incoming)
 	close(done)
 }
 

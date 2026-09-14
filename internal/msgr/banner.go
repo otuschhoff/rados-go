@@ -5,8 +5,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"hash/crc32"
 	"io"
+
+	wire "github.com/otuschhoff/go-librados/internal/encoding"
 )
 
 const (
@@ -77,8 +78,6 @@ func NegotiateBanner(local, peer Banner) (uint64, error) {
 	return negotiated, nil
 }
 
-var castagnoliTable = crc32.MakeTable(crc32.Castagnoli)
-
 func cephCRC32C(seed uint32, payload []byte) uint32 {
-	return ^crc32.Update(^seed, castagnoliTable, payload)
+	return wire.CRC32C(seed, payload)
 }
