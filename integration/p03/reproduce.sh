@@ -40,6 +40,8 @@ report=${P03_REPORT:-"$root/docs/p03/integration-report.json"}
 cleanup() {
 	docker rm -f "$monitor" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
+	docker run --rm --user 0 --platform "$platform" \
+		-v "$temporary:/cluster" "$image" find /cluster -mindepth 1 -delete >/dev/null 2>&1 || true
 	rm -rf "$temporary"
 }
 trap cleanup EXIT HUP INT TERM
@@ -47,7 +49,7 @@ trap cleanup EXIT HUP INT TERM
 implementation_files=$(
 	{
 		find internal/cephx internal/encoding internal/msgr internal/protocol -type f -name '*.go'
-		printf '%s\n' Makefile go.mod go.sum integration/p03/legacy-crush.txt integration/p03/probe/main.go integration/p03/report.schema.json integration/p03/reproduce.sh
+		printf '%s\n' go.mod go.sum integration/p03/legacy-crush.txt integration/p03/probe/main.go integration/p03/report.schema.json integration/p03/reproduce.sh
 	} | LC_ALL=C sort
 )
 hash_implementation() {
@@ -57,7 +59,7 @@ hash_implementation() {
 	done | jq -Rn '[inputs | split("\t") | {(.[1]): .[0]}] | add'
 }
 mkdir -p "$source_snapshot/integration/p03/probe"
-cp Makefile go.mod go.sum "$source_snapshot/"
+cp go.mod go.sum "$source_snapshot/"
 cp -R internal "$source_snapshot/"
 cp integration/p03/legacy-crush.txt integration/p03/report.schema.json integration/p03/reproduce.sh "$source_snapshot/integration/p03/"
 cp integration/p03/probe/main.go "$source_snapshot/integration/p03/probe/"
@@ -79,11 +81,12 @@ docker run --rm --user 0 --platform "$platform" \
 		mkdir -p /cluster/mondata
 		ceph-mon --mkfs -i a --fsid '"$fsid"' --monmap /cluster/monmap --keyring /cluster/mon.keyring --mon-data /cluster/mondata
 		chown -R ceph:ceph /cluster/mondata /cluster/*.keyring /cluster/monmap
+		chmod 755 /cluster
 	'
 
 start_monitor() {
 	mode=$1
-	docker run -d --rm --name "$monitor" --platform "$platform" \
+	docker run -d --name "$monitor" --platform "$platform" \
 		--network "$network" --ip "$monitor_ip" \
 		-v "$temporary:/cluster" "$image" \
 		ceph-mon -f -i a --mon-data /cluster/mondata \

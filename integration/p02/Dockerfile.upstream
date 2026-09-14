@@ -1,6 +1,7 @@
 ARG CEPH_IMAGE=quay.io/ceph/ceph@sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a779fd8f9
 FROM ${CEPH_IMAGE} AS build
 ARG BOOST_SHA256=af57be25cb4c4f4b413ed692fe378affb4352ea50fbe294a11ef548f4d527d89
+COPY centos-stream.repo /etc/yum.repos.d/centos.repo
 RUN dnf install -y dnf-utils selinux-policy-targeted && \
       dnf config-manager --set-enabled crb && \
   dnf install -y git cmake ninja-build bzip2

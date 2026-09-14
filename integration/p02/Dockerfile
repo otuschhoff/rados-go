@@ -9,6 +9,7 @@ ARG CEPH_DEVEL_ARM64_SHA256=8099805cc647054564b93231680c21ea1c7a8e7d7912ecdd7063
 ARG CEPHPP_DEVEL_AMD64_SHA256=e6b4af18428d87fcb6913bee11449d88fc956ead2f17cb1426b086e310b93e7a
 ARG CEPHPP_DEVEL_ARM64_SHA256=3344fc0a7a5d66a65da1bbd4d6b815b72a7e6b290aaccc5358dae32637c85f76
 ARG TARGETARCH
+COPY centos-stream.repo /etc/yum.repos.d/centos.repo
 RUN case "${TARGETARCH}" in \
 			amd64) rpm_arch=x86_64; c_checksum="${CEPH_DEVEL_AMD64_SHA256}"; cpp_checksum="${CEPHPP_DEVEL_AMD64_SHA256}" ;; \
 			arm64) rpm_arch=aarch64; c_checksum="${CEPH_DEVEL_ARM64_SHA256}"; cpp_checksum="${CEPHPP_DEVEL_ARM64_SHA256}" ;; \
@@ -20,7 +21,11 @@ RUN case "${TARGETARCH}" in \
 		curl -fsSL "${CEPH_DEVEL_REPOSITORY}/${rpm_arch}/${CEPHPP_DEVEL_PACKAGE}.${rpm_arch}.rpm" -o "${cpp_rpm}" && \
 		echo "${c_checksum}  ${c_rpm}" | sha256sum -c - && \
 		echo "${cpp_checksum}  ${cpp_rpm}" | sha256sum -c - && \
-		dnf -y install "${c_rpm}" "${cpp_rpm}" "${COMPILER_PACKAGE}" openssl-devel && \
+		for attempt in 1 2 3; do \
+			dnf clean all && \
+			dnf -y --refresh install "${c_rpm}" "${cpp_rpm}" "${COMPILER_PACKAGE}" openssl-devel && break; \
+			test "${attempt}" -lt 3 || exit 1; \
+		done && \
 		test "$(rpm -q --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' librados-devel)" = "${CEPH_DEVEL_PACKAGE}" && \
 		test "$(rpm -q --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' libradospp-devel)" = "${CEPHPP_DEVEL_PACKAGE}" && \
 		rm -f "${c_rpm}" "${cpp_rpm}" && dnf clean all

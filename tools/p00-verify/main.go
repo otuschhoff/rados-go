@@ -205,6 +205,7 @@ func checkPins(value evidence) {
 	}
 	checkHash("integration/p00/oracle/main.cc", value.Oracle.SourceSHA256)
 	checkHash("integration/p00/oracle/Dockerfile", value.Oracle.DockerfileSHA256)
+	checkHash("integration/p00/oracle/centos-stream.repo", "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b")
 }
 
 func checkInventory(path string, wantC, wantCPP int) {
@@ -253,7 +254,7 @@ func checkRequiredFiles() {
 	required := []string{
 		"docs/p00/compatibility.md", "docs/p00/protocol-sources.md", "docs/p00/licensing.md",
 		"docs/p00/threat-model.md", "docs/p00/tasks.md", "docs/p00/task-handoff.md", "integration/manifest.schema.json",
-		"testdata/manifest.schema.json", "testdata/README.md", "integration/p00/oracle/Dockerfile", "integration/p00/oracle/main.cc",
+		"testdata/manifest.schema.json", "testdata/README.md", "integration/p00/oracle/Dockerfile", "integration/p00/oracle/centos-stream.repo", "integration/p00/oracle/main.cc",
 	}
 	for _, path := range required {
 		info, err := os.Stat(path)

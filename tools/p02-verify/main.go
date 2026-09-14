@@ -20,9 +20,10 @@ const (
 	upstreamFixtureDirectory = "testdata/p02/upstream"
 	evidencePath             = "docs/p02/evidence.json"
 	oracleSHA256             = "7a14c655f4e93e7f350ebdc9e74ef233733ef19611ab9b7ebfe7b16c5cd9a8b7"
-	dockerfileSHA256         = "d892591e5d2adaeada139da1f70bce8a636bc4cb2972fa3ae33b7c7e9fd68af0"
+	dockerfileSHA256         = "bfaa51f4f49af164a94e82156c745e2ea21c620dac561658a37b230f3fd579a8"
+	repositorySHA256         = "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b"
 	upstreamOracleSHA256     = "043d94bfb9f590e9987e7ae15509d3a75813c1765e43a99ba4d7fbe06d49ee34"
-	upstreamDockerfileSHA256 = "c023c1fac6e89411df044dcf75d95ee12a2135b7fc7653fcf9793cf6d6eea757"
+	upstreamDockerfileSHA256 = "01546be09168474a7c6151693f19ca1e5a97102478e887c80734207d9e6c590b"
 	upstreamReproduceSHA256  = "8f5e3f8404872c51bfc9c8bca7cdb2a505dee70d4e9a8f847f13687d4243b2b7"
 	generatorTool            = "source-derived independent C++/OpenSSL oracle"
 	generatorVersion         = "Ceph 20.2.0 contract"
@@ -161,6 +162,7 @@ func main() {
 	checkP02Evidence(pins, fixtures, upstreamFixtures)
 	checkHash("integration/p02/oracle.cc", oracleSHA256)
 	checkHash("integration/p02/Dockerfile", dockerfileSHA256)
+	checkHash("integration/p02/centos-stream.repo", repositorySHA256)
 	checkHash("integration/p02/upstream_oracle.cc", upstreamOracleSHA256)
 	checkHash("integration/p02/Dockerfile.upstream", upstreamDockerfileSHA256)
 	checkHash("integration/p02/reproduce-upstream.sh", upstreamReproduceSHA256)
