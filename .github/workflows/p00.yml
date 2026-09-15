@@ -192,7 +192,7 @@ jobs:
       - name: Reject production cgo imports
         run: test -z "$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
       - name: Verify dependency and license boundary
-        run: test -z "$(go list -deps -f '{{with .Module}}{{if ne .Path "github.com/otuschhoff/go-librados"}}{{.Path}}{{end}}{{end}}' . ./internal/encoding ./internal/protocol | sort -u)"
+        run: test -z "$(go list -deps -f '{{with .Module}}{{if ne .Path "github.com/otuschhoff/go-librados"}}{{.Path}}{{end}}{{end}}' ./internal/encoding ./internal/protocol | sort -u)"
       - name: Race test
         run: go test -race ./...
       - name: Static analysis
