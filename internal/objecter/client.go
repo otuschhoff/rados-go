@@ -20,12 +20,13 @@ import (
 )
 
 var (
-	ErrClosed        = errors.New("objecter closed")
-	ErrNoPrimary     = errors.New("object has no acting primary")
-	ErrRecovery      = errors.New("read recovery exhausted")
-	ErrMalformedStat = errors.New("malformed stat result")
-	ErrStaleMap      = errors.New("OSD supplied a newer map")
-	ErrNoSortBitwise = errors.New("OSD map does not enable SORTBITWISE")
+	ErrClosed           = errors.New("objecter closed")
+	ErrNoPrimary        = errors.New("object has no acting primary")
+	ErrRecovery         = errors.New("read recovery exhausted")
+	ErrMalformedStat    = errors.New("malformed stat result")
+	ErrStaleMap         = errors.New("OSD supplied a newer map")
+	ErrNoSortBitwise    = errors.New("OSD map does not enable SORTBITWISE")
+	ErrWatchInterrupted = errors.New("watch interrupted; events may have been lost")
 )
 
 const readReplyFrontBytes = uint64(144)
@@ -82,6 +83,11 @@ type session interface {
 	Stop()
 }
 
+type notificationSession interface {
+	Notifications() <-chan osd.WatchNotification
+	NotificationError() error
+}
+
 type backoffWaiter interface {
 	Wait(context.Context, maps.PG, osd.HObject) error
 }
@@ -112,8 +118,10 @@ type Config struct {
 type Client struct {
 	config                Config
 	mu                    sync.Mutex
+	done                  chan struct{}
 	sessions              map[int32]sessionEntry
 	closed                bool
+	closeDone             chan struct{}
 	mutationClosed        bool
 	nextTransaction       uint64
 	nextMutation          uint64
@@ -121,6 +129,14 @@ type Client struct {
 	retainedMutationBytes uint64
 	unknownMutation       uint64
 	mutationChanged       chan struct{}
+	watches               map[uint64]*Watch
+	notifies              map[uint64]chan notifyCompletion
+	workers               sync.WaitGroup
+}
+
+type notifyCompletion struct {
+	notification osd.WatchNotification
+	err          error
 }
 
 type sessionEntry struct {
@@ -165,7 +181,7 @@ func New(config Config) (*Client, error) {
 		config.SessionFactory = productionSessionFactory(config)
 	}
 	config.ClientAddresses = cloneAddresses(config.ClientAddresses)
-	return &Client{config: config, sessions: make(map[int32]sessionEntry), nextTransaction: 1, pendingMutations: make(map[uint64]uint64), mutationChanged: make(chan struct{})}, nil
+	return &Client{config: config, done: make(chan struct{}), sessions: make(map[int32]sessionEntry), nextTransaction: 1, pendingMutations: make(map[uint64]uint64), mutationChanged: make(chan struct{}), watches: make(map[uint64]*Watch), notifies: make(map[uint64]chan notifyCompletion)}, nil
 }
 
 func (client *Client) Read(ctx context.Context, target Target, offset, length uint64) (Result, error) {
@@ -199,10 +215,15 @@ func (client *Client) ReadOperations(ctx context.Context, target Target, operati
 	if len(operations) == 0 {
 		return Result{}, wire.ErrMalformed
 	}
+	classCall := false
 	for _, operation := range operations {
-		if !isReadOperation(operation.Code) {
+		if !isReadOperation(operation.Code) && operation.Code != osd.OpCall {
 			return Result{}, wire.ErrMalformed
 		}
+		classCall = classCall || operation.Code == osd.OpCall
+	}
+	if classCall {
+		return client.ClassOperations(ctx, target, operations)
 	}
 	return client.executeOperations(ctx, target, operations, 0, false)
 }
@@ -211,7 +232,7 @@ func isReadOperation(code uint16) bool {
 	switch code {
 	case osd.OpRead, osd.OpStat, osd.OpAssertVer, osd.OpOmapGetKeys, osd.OpOmapGetValues,
 		osd.OpOmapGetValuesByKeys, osd.OpOmapGetHeader, osd.OpOmapCompare,
-		osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr:
+		osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr, osd.OpListWatchers:
 		return true
 	default:
 		return false
@@ -222,15 +243,25 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 	return client.executeOperation(ctx, target, operation, 0, false)
 }
 
+func (client *Client) executeTrackedOutcomeSensitive(ctx context.Context, target Target, operation osd.Operation) (Result, error) {
+	sequence, transactionID, operation, err := client.admitMutation(ctx, operation)
+	if err != nil {
+		return Result{}, err
+	}
+	result, err := client.executeRoutedOperations(ctx, target, []osd.Operation{operation}, transactionID, true, false, 0, client.config.Router.Route)
+	client.completeMutation(sequence, err)
+	return result, err
+}
+
 func (client *Client) executeOperation(ctx context.Context, target Target, operation osd.Operation, transactionID uint64, mutation bool) (Result, error) {
 	return client.executeOperations(ctx, target, []osd.Operation{operation}, transactionID, mutation)
 }
 
 func (client *Client) executeOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, mutation bool) (Result, error) {
-	return client.executeRoutedOperations(ctx, target, operations, transactionID, mutation, 0, client.config.Router.Route)
+	return client.executeRoutedOperations(ctx, target, operations, transactionID, mutation, mutation, 0, client.config.Router.Route)
 }
 
-func (client *Client) executeRoutedOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, mutation bool, initialFlags uint32, routeTarget func(Target) (Route, error)) (Result, error) {
+func (client *Client) executeRoutedOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error)) (Result, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -302,7 +333,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			if errors.Is(err, msgr.ErrQueueSaturated) {
 				return Result{}, preserveOutcomeUnknown(lastErr, err)
 			}
-			if mutation && errors.Is(err, msgr.ErrOutcomeUnknown) {
+			if outcomeSensitive && errors.Is(err, msgr.ErrOutcomeUnknown) {
 				lastErr = preserveOutcomeUnknown(lastErr, err)
 				client.invalidate(route.Primary, active)
 				if !errors.Is(err, msgr.ErrReconnectExhausted) && !errors.Is(err, ErrStaleMap) {
@@ -326,21 +357,21 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 		reply, err := osd.DecodeReply(message, client.config.MessageLimits)
 		if err != nil {
 			client.invalidate(route.Primary, active)
-			if mutation {
+			if outcomeSensitive {
 				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, err)
 			}
 			return Result{}, fmt.Errorf("%w: %v", osd.ErrMalformedReply, err)
 		}
 		if reply.Object != currentTarget.Object || reply.PG != route.PG {
 			client.invalidate(route.Primary, active)
-			if mutation {
+			if outcomeSensitive {
 				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
 			}
 			return Result{}, osd.ErrMalformedReply
 		}
 		if reply.Retry >= 0 && reply.Retry != int32(attempt) {
 			client.invalidate(route.Primary, active)
-			if mutation {
+			if outcomeSensitive {
 				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
 			}
 			return Result{}, osd.ErrMalformedReply
@@ -354,7 +385,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			currentTarget.Namespace = reply.Redirect.Namespace
 			requestFlags |= osd.FlagRedirected | osd.FlagIgnoreCache | osd.FlagIgnoreOverlay
 			lastErr = errors.New("OSD redirected read")
-			if mutation {
+			if outcomeSensitive {
 				transactionID, err = client.takeTransactionID()
 				if err != nil {
 					return Result{}, err
@@ -365,7 +396,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 		if reply.Result == -11 {
 			lastErr = protocol.WireErrno(reply.Result)
 			client.refresh(ctx, route.Epoch)
-			if mutation {
+			if outcomeSensitive {
 				transactionID, err = client.takeTransactionID()
 				if err != nil {
 					return Result{}, err
@@ -375,7 +406,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 		}
 		if len(reply.Operations) != len(operations) {
 			client.invalidate(route.Primary, active)
-			if mutation {
+			if outcomeSensitive {
 				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
 			}
 			return Result{}, osd.ErrMalformedReply
@@ -384,7 +415,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 		for index := range operations {
 			if reply.Operations[index].Operation != operations[index].Code {
 				client.invalidate(route.Primary, active)
-				if mutation {
+				if outcomeSensitive {
 					return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
 				}
 				return Result{}, osd.ErrMalformedReply
@@ -394,7 +425,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 		if retry {
 			lastErr = protocol.WireErrno(-11)
 			client.refresh(ctx, route.Epoch)
-			if mutation {
+			if outcomeSensitive {
 				transactionID, err = client.takeTransactionID()
 				if err != nil {
 					return Result{}, err
@@ -402,7 +433,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			}
 			continue
 		}
-		if mutation && reply.Result == 0 && uint64(reply.Flags)&uint64(osd.FlagOnDisk) == 0 {
+		if durable && reply.Result == 0 && uint64(reply.Flags)&uint64(osd.FlagOnDisk) == 0 {
 			client.invalidate(route.Primary, active)
 			return Result{}, fmt.Errorf("%w: mutation reply is not durable", msgr.ErrOutcomeUnknown)
 		}
@@ -448,7 +479,7 @@ func (client *Client) PGNLS(ctx context.Context, poolID int64, namespace string,
 		}
 		return client.routeRawHash(poolID, cursor.Hash)
 	}
-	result, err := client.executeRoutedOperations(ctx, Target{PoolID: poolID, Namespace: namespace, Snapshot: osd.NoSnap}, []osd.Operation{operation}, 0, false, osd.FlagPGOp|osd.FlagIgnoreOverlay, routeTarget)
+	result, err := client.executeRoutedOperations(ctx, Target{PoolID: poolID, Namespace: namespace, Snapshot: osd.NoSnap}, []osd.Operation{operation}, 0, false, false, osd.FlagPGOp|osd.FlagIgnoreOverlay, routeTarget)
 	if err != nil {
 		return osd.ListPage{}, err
 	}
@@ -647,49 +678,114 @@ func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) 
 		return nil, ErrNoPrimary
 	}
 	client.mu.Lock()
-	defer client.mu.Unlock()
 	if client.closed {
+		client.mu.Unlock()
 		return nil, ErrClosed
 	}
+	var interrupted []*Watch
 	if existing, ok := client.sessions[osdID]; ok {
 		if existing.address == address {
+			client.mu.Unlock()
 			return existing.session, nil
 		}
-		existing.session.Stop()
 		delete(client.sessions, osdID)
+		interrupted = client.watchesForPrimaryLocked(osdID)
+		existing.session.Stop()
 	}
 	created, err := client.config.SessionFactory(osdID, addresses)
 	if err != nil {
+		client.mu.Unlock()
+		for _, watch := range interrupted {
+			watch.interrupt(msgr.ErrSessionClosed)
+		}
 		return nil, err
 	}
 	client.sessions[osdID] = sessionEntry{address: address, session: created}
+	if notifications, ok := created.(notificationSession); ok {
+		client.workers.Add(1)
+		go func() {
+			defer client.workers.Done()
+			client.dispatchNotifications(osdID, created, notifications)
+		}()
+	}
+	client.mu.Unlock()
+	for _, watch := range interrupted {
+		watch.interrupt(msgr.ErrSessionClosed)
+	}
 	return created, nil
 }
 
 func (client *Client) invalidate(osdID int32, failed session) {
 	client.mu.Lock()
-	defer client.mu.Unlock()
+	var interrupted []*Watch
+	removed := false
 	if existing, ok := client.sessions[osdID]; ok && existing.session == failed {
 		delete(client.sessions, osdID)
-		failed.Stop()
+		interrupted = client.watchesForPrimaryLocked(osdID)
+		removed = true
 	}
+	client.mu.Unlock()
+	if !removed {
+		return
+	}
+	failed.Stop()
+	for _, watch := range interrupted {
+		watch.interrupt(msgr.ErrSessionClosed)
+	}
+}
+
+func (client *Client) watchesForPrimaryLocked(osdID int32) []*Watch {
+	watches := make([]*Watch, 0)
+	for _, watch := range client.watches {
+		if watch.primaryOSD() == osdID {
+			watches = append(watches, watch)
+		}
+	}
+	return watches
 }
 
 func (client *Client) Close() {
 	client.mu.Lock()
 	if client.closed {
+		closeDone := client.closeDone
 		client.mu.Unlock()
+		if closeDone != nil {
+			<-closeDone
+		}
 		return
 	}
 	client.closed = true
+	client.closeDone = make(chan struct{})
+	closeDone := client.closeDone
 	client.mutationClosed = true
 	client.notifyMutationWaitersLocked()
 	sessions := client.sessions
 	client.sessions = nil
+	watches := client.watches
+	notifies := client.notifies
+	client.watches = nil
+	client.notifies = nil
+	if client.done != nil {
+		close(client.done)
+	}
 	client.mu.Unlock()
+	for _, watch := range watches {
+		watch.stop(ErrClosed)
+	}
+	for _, completion := range notifies {
+		select {
+		case completion <- notifyCompletion{err: errors.Join(msgr.ErrOutcomeUnknown, ErrClosed)}:
+		default:
+		}
+	}
 	for _, entry := range sessions {
 		entry.session.Stop()
 	}
+	for _, watch := range watches {
+		watch.wait()
+	}
+	client.workers.Wait()
+	close(closeDone)
 }
 
 func productionSessionFactory(config Config) SessionFactory {

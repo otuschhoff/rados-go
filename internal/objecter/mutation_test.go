@@ -62,6 +62,66 @@ func TestCompoundMutationPreservesOrderAndRetryIdentity(t *testing.T) {
 	}
 }
 
+func TestClassOperationsUseReadModeWithConservativeOutcome(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	var request msgr.Message
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			return testReplyOperation(t, 10, 19, 0, osd.OpCall, []byte("output")), nil
+		}}, nil
+	})
+	defer client.Close()
+	operation := osd.Operation{Code: osd.OpCall, ClassNameLength: 4, MethodNameLength: 10, ClassInputLength: 0, Length: 14, Data: []byte("locklist_locks")}
+	result, err := client.ClassOperations(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, []osd.Operation{operation})
+	if err != nil || string(result.Data) != "output" {
+		t.Fatalf("result=%+v error=%v", result, err)
+	}
+	_, flags, _ := decodeRequestOperationsForTest(t, request)
+	if flags&osd.FlagRead == 0 || flags&(osd.FlagWrite|osd.FlagOnDisk) != 0 {
+		t.Fatalf("class flags=%#x", flags)
+	}
+}
+
+func TestClassOperationOutcomeUnknownIsObservable(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	requests := 0
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, _ msgr.Message) (msgr.Message, error) {
+			requests++
+			return msgr.Message{}, msgr.ErrOutcomeUnknown
+		}}, nil
+	})
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	operation := osd.Operation{Code: osd.OpCall, ClassNameLength: 4, MethodNameLength: 10, Length: 14, Data: []byte("locklist_locks")}
+	_, err := client.ClassOperations(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, []osd.Operation{operation})
+	if !errors.Is(err, msgr.ErrOutcomeUnknown) || requests != 1 {
+		t.Fatalf("class error=%v requests=%d", err, requests)
+	}
+}
+
+func TestWriteClassOperationUsesDurableWriteMode(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	var request msgr.Message
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			return testReplyOperations(t, 10, 19, int64(osd.FlagOnDisk), []osd.OperationResult{{Operation: osd.OpCall}}), nil
+		}}, nil
+	})
+	defer client.Close()
+	operation := osd.Operation{Code: osd.OpCall, ClassNameLength: 4, MethodNameLength: 4, ClassInputLength: 0, Length: 8, Data: []byte("locklock")}
+	if _, err := client.MutateOperations(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, []osd.Operation{operation}); err != nil {
+		t.Fatal(err)
+	}
+	_, flags, _ := decodeRequestOperationsForTest(t, request)
+	if flags&osd.FlagWrite == 0 || flags&osd.FlagOnDisk == 0 || flags&osd.FlagRead != 0 {
+		t.Fatalf("write class flags=%#x", flags)
+	}
+}
+
 func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	var mu sync.Mutex

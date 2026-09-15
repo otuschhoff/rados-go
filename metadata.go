@@ -149,6 +149,19 @@ func (object ObjectRef) GetOMAP(ctx context.Context, keys [][]byte) ([]OMAPEntry
 	return values, nil
 }
 
+func (object ObjectRef) Exec(ctx context.Context, class, method string, input []byte) (ClassResult, error) {
+	operation, err := classOperation(class, method, input)
+	if err != nil {
+		return ClassResult{}, object.invalidOperationWith("execute class", err)
+	}
+	result, executeErr := object.executeRead(ctx, "execute class", []osd.Operation{operation})
+	var output ClassResult
+	if len(result.Results) != 0 {
+		output = ClassResult{Data: append([]byte(nil), result.Results[0].Data...), Code: result.Results[0].Code}
+	}
+	return output, executeErr
+}
+
 func (op *ReadOp) Read(offset, length uint64) int {
 	return op.add(osd.Operation{Code: osd.OpRead, Offset: offset, Length: length})
 }
@@ -181,6 +194,14 @@ func (op *ReadOp) ListOMAP(after string, limit uint64) int {
 		return op.fail(err)
 	}
 	return op.add(osd.Operation{Code: osd.OpOmapGetValues, Length: uint64(len(payload)), Data: payload})
+}
+
+func (op *ReadOp) Exec(class, method string, input []byte) int {
+	operation, err := classOperation(class, method, input)
+	if err != nil {
+		return op.fail(err)
+	}
+	return op.add(operation)
 }
 
 func (op *ReadOp) SetFlags(index int, flags SubOpFlags) {
@@ -288,6 +309,14 @@ func (op *WriteOp) CompareOMAP(key, value []byte) int {
 	return op.add(osd.Operation{Code: osd.OpOmapCompare, Length: uint64(len(payload)), Data: payload})
 }
 
+func (op *WriteOp) Exec(class, method string, input []byte) int {
+	operation, err := classOperation(class, method, input)
+	if err != nil {
+		return op.fail(err)
+	}
+	return op.add(operation)
+}
+
 func (op *WriteOp) SetFlags(index int, flags SubOpFlags) {
 	op.setFlags(index, flags)
 }
@@ -346,8 +375,12 @@ func publicOperationResult(operation, target string, operations []osd.Operation,
 	public := OpResult{Version: result.Version, Results: make([]SubOpResult, len(result.Operations))}
 	for index, item := range result.Operations {
 		public.Results[index].Data = append([]byte(nil), item.Data...)
-		if item.Code != 0 {
+		public.Results[index].Code = item.Code
+		if item.Code < 0 {
 			public.Results[index].Err = &OpError{Op: operation, Target: target, Code: item.Code, Err: publicErrorFor(protocol.WireErrno(item.Code).Class())}
+		}
+		if item.Code > 0 {
+			public.Results[index].Value = uint64(item.Code)
 		}
 		if item.Code <= -maxErrno {
 			public.Results[index].Value = uint64(-maxErrno - item.Code)
@@ -454,6 +487,21 @@ func decodeLimit(data []byte) uint32 {
 
 func validXAttrName(name string) bool {
 	return name != "" && !strings.ContainsRune(name, '\x00')
+}
+
+func classOperation(class, method string, input []byte) (osd.Operation, error) {
+	if class == "" || method == "" || len(class) > math.MaxUint8 || len(method) > math.MaxUint8 || len(input) > math.MaxUint32 ||
+		strings.ContainsRune(class, '\x00') || strings.ContainsRune(method, '\x00') || uint64(len(class))+uint64(len(method))+uint64(len(input)) > math.MaxUint32 {
+		return osd.Operation{}, wire.ErrMalformed
+	}
+	data := make([]byte, 0, len(class)+len(method)+len(input))
+	data = append(data, class...)
+	data = append(data, method...)
+	data = append(data, input...)
+	return osd.Operation{
+		Code: osd.OpCall, ClassNameLength: uint8(len(class)), MethodNameLength: uint8(len(method)),
+		ClassInputLength: uint32(len(input)), Length: uint64(len(data)), Data: data,
+	}, nil
 }
 
 func (object ObjectRef) invalidOperation(operation string) error {

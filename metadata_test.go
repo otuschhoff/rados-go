@@ -57,6 +57,36 @@ func TestReadOpIndexesAndDefersValidation(t *testing.T) {
 	}
 }
 
+func TestClassOperationsCopyInputAndValidateNames(t *testing.T) {
+	input := []byte("input")
+	read := NewReadOp()
+	if index := read.Exec("lock", "list_locks", input); index != 0 {
+		t.Fatalf("read exec index=%d", index)
+	}
+	input[0] = 'X'
+	operations, err := read.freeze()
+	if err != nil || len(operations) != 1 || operations[0].Code != osd.OpCall || string(operations[0].Data) != "locklist_locksinput" || operations[0].ClassInputLength != 5 {
+		t.Fatalf("operations=%+v error=%v", operations, err)
+	}
+
+	write := NewWriteOp()
+	if index := write.Exec("bad\x00class", "method", nil); index != -1 {
+		t.Fatalf("invalid write exec index=%d", index)
+	}
+	if _, err := write.freeze(); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("invalid write exec error=%v", err)
+	}
+}
+
+func TestClassOperationPositiveResultIsPreserved(t *testing.T) {
+	operations := []osd.Operation{{Code: osd.OpCall}}
+	result := objecter.Result{Operations: []objecter.OperationResult{{Code: 7, Data: []byte("output")}}}
+	public := publicOperationResult("execute class", "pool/object", operations, result)
+	if len(public.Results) != 1 || public.Results[0].Code != 7 || public.Results[0].Value != 7 || public.Results[0].Err != nil || string(public.Results[0].Data) != "output" {
+		t.Fatalf("result=%+v", public)
+	}
+}
+
 func TestOperationFlagsPreserveInternalFlagsAndRejectUnknownValues(t *testing.T) {
 	read := NewReadOp()
 	index := read.GetXAttr("optional")

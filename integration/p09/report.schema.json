@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "server", "native_runtime", "cluster", "scenarios", "probe", "native"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "status": { "const": "passed" },
+    "command": { "const": "make integration-p09" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "identity", "artifacts"],
+      "properties": {
+        "repository": { "const": "https://github.com/otuschhoff/go-librados.git" },
+        "identity": { "const": "content-addressed-artifacts" },
+        "artifacts": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source_anchor_commit", "version", "image", "platform", "binaries"],
+      "properties": {
+        "repository": { "const": "https://github.com/ceph/ceph.git" },
+        "source_anchor_commit": { "const": "7f793731f1b39eb4f465e960113d2363c311b964" },
+        "version": { "const": "ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)" },
+        "image": { "type": "string", "pattern": "^quay\\.io/ceph/ceph@sha256:[0-9a-f]{64}$" },
+        "platform": { "enum": ["linux/amd64", "linux/arm64"] },
+        "binaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mon_sha256", "osd_sha256"],
+          "properties": {
+            "mon_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "osd_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      }
+    },
+    "native_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soname", "path", "package", "sha256"],
+      "properties": {
+        "soname": { "const": "librados.so.2" },
+        "path": { "type": "string", "pattern": "^/.+" },
+        "package": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fsid", "osds", "pool", "replicas", "osd_device_bytes"],
+      "properties": {
+        "fsid": { "const": "11111111-2222-4333-8444-999999999999" },
+        "osds": { "const": 3 },
+        "pool": { "const": "p09-data" },
+        "replicas": { "const": 2 },
+        "osd_device_bytes": { "const": 8589934592 }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class_execution", "ambiguous_class_execution", "lock_interoperability", "lock_lease_lifecycle", "watch_notify_interoperability", "partial_timeout_results", "remap_reregistration", "osd_restart", "lost_watch_observability", "bounded_shutdown"],
+      "properties": {
+        "class_execution": { "const": "passed" },
+        "ambiguous_class_execution": { "const": "passed" },
+        "lock_interoperability": { "const": "passed" },
+        "lock_lease_lifecycle": { "const": "passed" },
+        "watch_notify_interoperability": { "const": "passed" },
+        "partial_timeout_results": { "const": "passed" },
+        "remap_reregistration": { "const": "passed" },
+        "osd_restart": { "const": "passed" },
+        "lost_watch_observability": { "const": "passed" },
+        "bounded_shutdown": { "const": "passed" }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class_execution", "lock_contention", "lock_renew", "lock_break", "lock_shared", "lock_expiry", "watch_ack", "notify_timeout", "native_locks", "native_watch", "native_notify", "watch_remap", "osd_restart", "watch_shutdown", "client_shutdown"],
+      "properties": {
+        "class_execution": { "const": true },
+        "lock_contention": { "const": true },
+        "lock_renew": { "const": true },
+        "lock_break": { "const": true },
+        "lock_shared": { "const": true },
+        "lock_expiry": { "const": true },
+        "watch_ack": { "const": true },
+        "notify_timeout": { "const": true },
+        "native_locks": { "const": true },
+        "native_watch": { "const": true },
+        "native_notify": { "const": true },
+        "watch_remap": { "const": true },
+        "osd_restart": { "const": true },
+        "watch_shutdown": { "const": true },
+        "client_shutdown": { "const": true }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "watch", "notify", "verify"],
+      "properties": {
+        "seed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["native_exec", "native_exec_result", "native_exec_output", "native_lock_seed", "native_lock_renew", "native_lock_release", "native_lock_expiry"],
+          "properties": {
+            "native_exec": { "const": true },
+            "native_exec_result": { "type": "integer", "minimum": 1 },
+            "native_exec_output": { "type": "string", "pattern": "^(?:[0-9a-f]{2})+$" },
+            "native_lock_seed": { "const": true },
+            "native_lock_renew": { "const": true },
+            "native_lock_release": { "const": true },
+            "native_lock_expiry": { "const": true }
+          }
+        },
+        "watch": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["go_notify_native_watch", "native_watch_remap", "native_watch_restart", "native_watch_same_cookie", "native_watch_exactly_once", "native_lock_shared", "native_shared_release"],
+          "properties": {
+            "go_notify_native_watch": { "const": true },
+            "native_watch_remap": { "const": true },
+            "native_watch_restart": { "const": true },
+            "native_watch_same_cookie": { "const": true },
+            "native_watch_exactly_once": { "const": true },
+            "native_lock_shared": { "const": true },
+            "native_shared_release": { "const": true }
+          }
+        },
+        "notify": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["native_notify_go_watch"],
+          "properties": {
+            "native_notify_go_watch": { "const": true }
+          }
+        },
+        "verify": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["go_lock_native_read", "native_break_go_lock"],
+          "properties": {
+            "go_lock_native_read": { "const": true },
+            "native_break_go_lock": { "const": true }
+          }
+        }
+      }
+    }
+  }
+}

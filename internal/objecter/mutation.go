@@ -35,15 +35,44 @@ func (client *Client) MutateOperations(ctx context.Context, target Target, opera
 	if err != nil {
 		return Result{}, err
 	}
-	result, mutationErr := client.executeOperations(ctx, target, owned, transactionID, true)
+	result, mutationErr := client.executeRoutedOperations(ctx, target, owned, transactionID, true, true, osd.FlagWrite|osd.FlagOnDisk, client.config.Router.Route)
 	client.completeMutation(sequence, mutationErr)
 	return result, mutationErr
+}
+
+func (client *Client) ClassOperations(ctx context.Context, target Target, operations []osd.Operation) (Result, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if target.Snapshot != osd.NoSnap || len(operations) == 0 || uint64(len(operations)) > uint64(client.config.MessageLimits.MaxOperations) {
+		return Result{}, wire.ErrMalformed
+	}
+	classCall := false
+	for _, operation := range operations {
+		if !isReadOperation(operation.Code) && operation.Code != osd.OpCall {
+			return Result{}, wire.ErrMalformed
+		}
+		if operation.Code == osd.OpCall && !validCompoundPayload(operation) {
+			return Result{}, wire.ErrMalformed
+		}
+		classCall = classCall || operation.Code == osd.OpCall
+	}
+	if !classCall {
+		return Result{}, wire.ErrMalformed
+	}
+	sequence, transactionID, owned, err := client.admitMutationOperations(ctx, operations)
+	if err != nil {
+		return Result{}, err
+	}
+	result, classErr := client.executeRoutedOperations(ctx, target, owned, transactionID, true, false, 0, client.config.Router.Route)
+	client.completeMutation(sequence, classErr)
+	return result, classErr
 }
 
 func validCompoundPayload(operation osd.Operation) bool {
 	switch operation.Code {
 	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpCompareExtent,
-		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange, osd.OpOmapCompare:
+		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange, osd.OpOmapCompare, osd.OpCall:
 		return uint64(len(operation.Data)) == operation.Length
 	case osd.OpSetXattr, osd.OpCompareXattr:
 		return uint64(operation.XattrNameLength)+uint64(operation.XattrValueLength) == uint64(len(operation.Data))
@@ -58,7 +87,7 @@ func isMutationOperation(code uint16) bool {
 	switch code {
 	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpTruncate, osd.OpZero, osd.OpDelete, osd.OpCreate,
 		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapClear, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange,
-		osd.OpSetXattr, osd.OpRemoveXattr:
+		osd.OpSetXattr, osd.OpRemoveXattr, osd.OpCall, osd.OpWatch:
 		return true
 	default:
 		return false
@@ -189,6 +218,12 @@ func (client *Client) BeginShutdown() {
 	client.mu.Lock()
 	if !client.mutationClosed {
 		client.mutationClosed = true
+		for _, completion := range client.notifies {
+			select {
+			case completion <- notifyCompletion{err: errors.Join(msgr.ErrOutcomeUnknown, ErrClosed)}:
+			default:
+			}
+		}
 		client.notifyMutationWaitersLocked()
 	}
 	client.mu.Unlock()

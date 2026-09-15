@@ -31,7 +31,7 @@ sudo env P00_DISPOSABLE_CLUSTER=I_UNDERSTAND_THIS_DESTROYS_DATA make p00-smoke
 Successful reports are written to `integration/reports/` and contain no keys.
 The report must validate against `integration/manifest.schema.json`.
 
-## P06 through P08 host requirements
+## P06 through P09 host requirements
 
 The P06 read-path gate runs on macOS or Linux with Docker, Go, `jq`, Python 3,
 `shasum`, and network access to the pinned multi-architecture Ceph image. Docker
@@ -53,9 +53,15 @@ binary metadata interoperability, single-request compound atomicity,
 cross-client version contention, namespace isolation, and cursor-based
 enumeration. Both clients use the pool-scoped `client.p08` identity.
 
+P09 reuses the same topology for class execution, locks, and watch/notify
+coordination, including partial-timeout reporting, remap-triggered
+watch re-registration, and bounded shutdown. The native differential
+driver remains isolated through dynamic symbol loading and is not linked
+into production Go binaries.
+
 Run the latest serialized quality, real-cluster, semantic-verifier,
 cross-build, and fuzz gates with:
 
 ```sh
-make verify-p08-all
+make verify-p09-all
 ```

@@ -150,6 +150,39 @@ func TestOSDSessionTerminalErrorWakesBackoffWaiter(t *testing.T) {
 	}
 }
 
+func TestClientCloseJoinsRealOSDSessionDispatcher(t *testing.T) {
+	transport := newFakeOSDTransport()
+	session := newOSDSession(transport, backoffTestLimits, time.Second)
+	client := &Client{
+		done:             make(chan struct{}),
+		sessions:         map[int32]sessionEntry{1: {session: session}},
+		pendingMutations: make(map[uint64]uint64),
+		mutationChanged:  make(chan struct{}),
+		watches:          make(map[uint64]*Watch),
+		notifies:         make(map[uint64]chan notifyCompletion),
+	}
+	client.workers.Add(1)
+	go func() {
+		defer client.workers.Done()
+		client.dispatchNotifications(1, session, session)
+	}()
+	closed := make(chan struct{})
+	go func() {
+		client.Close()
+		close(closed)
+	}()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("client close did not join real OSD session workers")
+	}
+	select {
+	case <-session.Notifications():
+	case <-time.After(time.Second):
+		t.Fatal("OSD session notification channel did not close")
+	}
+}
+
 func encodeBackoffMessage(t testing.TB, backoff osd.Backoff) msgr.Message {
 	t.Helper()
 	block := backoff

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "status": "passed",
-  "command": "make integration-p08",
-  "started_at": "2026-09-15T21:56:12Z",
-  "finished_at": "2026-09-15T21:56:39Z",
+  "command": "make integration-p09",
+  "started_at": "2026-09-15T21:56:40Z",
+  "finished_at": "2026-09-15T21:57:43Z",
   "source": {
     "repository": "https://github.com/otuschhoff/go-librados.git",
     "identity": "content-addressed-artifacts",
@@ -94,6 +94,8 @@
       "SPEC.md": "f1f3841e519fa174a9adc69bfb078ed57bf0491561d60b019c14ee886bf49b05",
       "client.go": "e0bf425583190c9a0d8a41a853b3472aa18cabaf68806de8268e09a9217e6c55",
       "client_test.go": "97fe4b8945762ad386974d2c9d88e862ebd6b1115a6db675d618cdae9e76219a",
+      "coordination.go": "547bb86eb961edb91f9b3df9b81b7c08fd0fe4847bf33c718b999fd9f4980c45",
+      "coordination_test.go": "ffdb66db32d47bc2425f0d34ea2b08770b4baca5b7f936a4df2ff15d8dadc079",
       "doc.go": "029e90e8a1a61bb7e92db5d30d97c26c6adb73e4afc11ea22e1f7d82c30f3f6e",
       "errors.go": "3c677e89fa2e729024fb91e6ae1323bc687b0283ef9415d7f50a812a0d3ee31c",
       "errors_test.go": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7",
@@ -103,14 +105,14 @@
       "metadata_test.go": "9927e9a4a80d1dc90daf7db48daa6d6d9aad1919917765689dc31d5aa8e9f969",
       "docs/p00/api-inventory.csv": "4a7af7e3a2bcc3737439befb638f6ae613008f43587d85ff41be6f666a1e2f71",
       "integration/README.md": "e6d640ca6572d4516acaac89b0d4af5eb08d09e51b866dedd91646c0e9e44d6f",
-      "integration/p08/native_driver.c": "21c82fcf6560b0ceb2a2442104007b0931efc4a3699fb301ed77d2f332fc0a5e",
-      "integration/p08/probe/main.go": "d1fda773bf08cf9ccf9261668589d082136b8482746b06fcfb0f03283c48f85b",
-      "integration/p08/report.schema.json": "8e1e641588b28cf8a25a2ccf184578f15deb6a68a0ee863b5605ae8d5d224081",
-      "integration/p08/reproduce.sh": "9d49bb845d76a92e19d7fa15b7ed4111ff0c37ff5e33d0fd8aafb5aac2bd332f",
-      "tools/p08-verify/main.go": "6d0cd638c635f2ebc7858cf3ee109ce558dd3ef740241e231e8c6145eb8d00ca",
-      "tools/p08-verify/main_test.go": "697c0990b433db1675839c850ae52f2969638fc7802ac24d9e131446d22056ac",
-      "docs/p08/tasks.md": "b7ffb6a83d62cfbc973812d8a5dd1d91b95ec1295895edd10c7d4c1f9a070c46",
-      "docs/p08/provenance.md": "9183ff0e77c3c5b00702f060b40f88a589eda14e4a623db89057a0061c9ea35b",
+      "integration/p09/native_driver.c": "8e6a3816b64f507444284e8896b04334719f31d1c3ffb3e2b35530edd96ad020",
+      "integration/p09/probe/main.go": "955264ce3830e450862d4998b68ab5ea8db7e90d98fbce87ed5ca9d47f3bb6a3",
+      "integration/p09/report.schema.json": "5e116d7a511c7045ce734df8ca02e1cd6a80d85bdc9ab615e5a3695916d83a07",
+      "integration/p09/reproduce.sh": "43efbd27fd3242ac58492ec827b1f0d7d44a9cec5eb5a7613a5d7750a4a5b055",
+      "tools/p09-verify/main.go": "6807729a41f859d50befd41f3c6a410e427556081e455dfe7331f11d66b3d857",
+      "tools/p09-verify/main_test.go": "45a569a70a069b531ed93ae051827ba3727d51016e872d3e95a773d3fe3d21d4",
+      "docs/p09/tasks.md": "d0c2e0ec62cb0c6f2deff0dd5f6fc415e61eb407bba7f2736f404f3bd20b9489",
+      "docs/p09/provenance.md": "d928e23024df6ef36a7bbad594fad7133a83e4d828da707d99aeea5bc2083ab9",
       "go.mod": "2b65739ae80b83e64d1dfbd07684b2967a745d19be61b4e8e546182262d2a4a7",
       "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c"
     }
@@ -133,42 +135,66 @@
     "sha256": "b630ea9d633d724bacfb116815915c852374d0a8ca351bdc488f0bbae4fb4bac"
   },
   "cluster": {
-    "fsid": "11111111-2222-4333-8444-888888888888",
+    "fsid": "11111111-2222-4333-8444-999999999999",
     "osds": 3,
-    "pool": "p08-data",
+    "pool": "p09-data",
     "replicas": 2,
     "osd_device_bytes": 8589934592
   },
   "scenarios": {
-    "metadata_interoperability": "passed",
-    "compound_atomicity": "passed",
-    "cross_client_contention": "passed",
-    "enumeration_conformance": "passed",
-    "namespace_isolation": "passed",
-    "cursor_pagination_and_partitioning": "passed"
+    "class_execution": "passed",
+    "ambiguous_class_execution": "passed",
+    "lock_interoperability": "passed",
+    "lock_lease_lifecycle": "passed",
+    "watch_notify_interoperability": "passed",
+    "partial_timeout_results": "passed",
+    "remap_reregistration": "passed",
+    "osd_restart": "passed",
+    "lost_watch_observability": "passed",
+    "bounded_shutdown": "passed"
   },
   "probe": {
-    "native_metadata": true,
-    "binary_metadata": true,
-    "omap_pagination": true,
-    "compound_read": true,
-    "compound_atomicity": true,
-    "cross_client_contention": true,
-    "enumeration": true,
-    "namespaces": true,
-    "cursor_continuation": true,
-    "cursor_partitioning": true
+    "class_execution": true,
+    "lock_contention": true,
+    "lock_renew": true,
+    "lock_break": true,
+    "lock_shared": true,
+    "lock_expiry": true,
+    "watch_ack": true,
+    "notify_timeout": true,
+    "native_locks": true,
+    "native_watch": true,
+    "native_notify": true,
+    "watch_remap": true,
+    "osd_restart": true,
+    "watch_shutdown": true,
+    "client_shutdown": true
   },
   "native": {
     "seed": {
-      "native_binary_metadata": true,
-      "native_compound_seed": true
+      "native_exec": true,
+      "native_exec_result": 10,
+      "native_exec_output": "01010400000000000000",
+      "native_lock_seed": true,
+      "native_lock_renew": true,
+      "native_lock_release": true,
+      "native_lock_expiry": true
+    },
+    "watch": {
+      "go_notify_native_watch": true,
+      "native_watch_remap": true,
+      "native_watch_restart": true,
+      "native_watch_same_cookie": true,
+      "native_watch_exactly_once": true,
+      "native_lock_shared": true,
+      "native_shared_release": true
+    },
+    "notify": {
+      "native_notify_go_watch": true
     },
     "verify": {
-      "go_binary_metadata": true,
-      "go_omap_native_read": true,
-      "go_enumeration_native_read": true,
-      "namespace_filtering": true
+      "go_lock_native_read": true,
+      "native_break_go_lock": true
     }
   }
 }

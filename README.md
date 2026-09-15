@@ -1,23 +1,24 @@
 # go-librados
 
-`go-librados` is a pure-Go Ceph RADOS client implemented through **P08:
-Metadata, Compound Operations and Enumeration**. Its qualified network scope is Ceph
+`go-librados` is a pure-Go Ceph RADOS client implemented through **P09:
+Class Execution, Locks, and Watch/Notify**. Its qualified network scope is Ceph
 v20.2.4 replicated pools: monitor discovery and maps, exact placement,
 CephX-secured OSD sessions, ranged head reads, stat, namespace and locator
 views, create/write/write-full/append/truncate/zero/remove, flush and graceful
 shutdown, outcome-unknown classification, and bounded recovery from primary
 changes, redirects, and backoff. It also includes binary-safe xattrs and OMAP,
-atomic single-object compound operations, and cursor-based object enumeration.
-Live snapshot interoperability is not yet claimed.
+atomic single-object compound operations, cursor-based object enumeration,
+class execution, object locks, and watch/notify coordination. Live snapshot
+interoperability is not yet claimed.
 
 The implementation contract is [SPEC.md](SPEC.md). Phase evidence and
-qualification are indexed under `docs/p00` through `docs/p08`.
+qualification are indexed under `docs/p00` through `docs/p09`.
 
-Run the complete P08 qualification, including the pinned disposable cluster,
+Run the complete P09 qualification, including the pinned disposable cluster,
 with:
 
 ```sh
-make verify-p08-all
+make verify-p09-all
 ```
 
 The P08 Docker workflow and its host requirements are documented in

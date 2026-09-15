@@ -36,8 +36,14 @@ type OpResult struct {
 	Results []SubOpResult
 }
 
+type ClassResult struct {
+	Data []byte
+	Code int32
+}
+
 type SubOpResult struct {
 	Data  []byte
+	Code  int32
 	Value uint64
 	Err   error
 }
@@ -166,10 +172,11 @@ func (pool Pool) ListObjectsRange(ctx context.Context, after, end ObjectCursor, 
 	if err != nil || comparison > 0 {
 		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: ErrInvalidArgument}
 	}
-	_, objects, err := pool.client.active()
+	_, objects, done, err := pool.client.beginOperation()
 	if err != nil {
 		return ObjectPage{}, pool.client.wrapError("list objects", fmt.Sprintf("pool %d", pool.id), err)
 	}
+	defer done()
 	if limit > objects.MaxEnumerationEntries() {
 		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: ErrInvalidArgument}
 	}
@@ -314,12 +321,15 @@ func (object ObjectRef) begin(ctx context.Context) (*objecter.Client, context.Co
 	if object.pool.client == nil {
 		return nil, nil, nil, &OpError{Err: ErrInvalidArgument}
 	}
-	_, objects, err := object.pool.client.active()
+	_, objects, done, err := object.pool.client.beginOperation()
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	operationCtx, cancel := object.pool.client.operationContext(ctx)
-	return objects, operationCtx, cancel, nil
+	return objects, operationCtx, func() {
+		cancel()
+		done()
+	}, nil
 }
 
 func (object ObjectRef) target() objecter.Target {

@@ -16,6 +16,9 @@ var ErrMalformedReply = errors.New("malformed OSD reply")
 const (
 	OpRead                = uint16(0x1201)
 	OpStat                = uint16(0x1202)
+	OpNotify              = uint16(0x1206)
+	OpNotifyAck           = uint16(0x1207)
+	OpListWatchers        = uint16(0x1209)
 	OpAssertVer           = uint16(0x1208)
 	OpOmapGetKeys         = uint16(0x1211)
 	OpOmapGetValues       = uint16(0x1212)
@@ -26,6 +29,7 @@ const (
 	OpGetXattr            = uint16(0x1301)
 	OpGetXattrs           = uint16(0x1302)
 	OpCompareXattr        = uint16(0x1303)
+	OpCall                = uint16(0x1401)
 	OpPGList              = uint16(0x1501)
 	OpPGNList             = uint16(0x1505)
 	OpWrite               = uint16(0x2201)
@@ -34,6 +38,7 @@ const (
 	OpZero                = uint16(0x2204)
 	OpDelete              = uint16(0x2205)
 	OpAppend              = uint16(0x2206)
+	OpWatch               = uint16(0x220f)
 	OpCreate              = uint16(0x220d)
 	OpOmapSetValues       = uint16(0x2215)
 	OpOmapSetHeader       = uint16(0x2216)
@@ -70,6 +75,14 @@ type Operation struct {
 	XattrValueLength uint32
 	CompareOperator  uint8
 	CompareMode      uint8
+	ClassNameLength  uint8
+	MethodNameLength uint8
+	ClassInputLength uint32
+	WatchCookie      uint64
+	WatchVersion     uint64
+	WatchOperation   uint8
+	WatchGeneration  uint32
+	WatchTimeout     uint32
 	AssertVersion    uint64
 	ListCount        uint64
 	ListStartEpoch   uint32
@@ -159,7 +172,7 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	encoder.Uint32(request.ObjectHash)
 	encoder.Uint32(request.MapEpoch)
 	flags := FlagRead
-	if mutation {
+	if mutation || request.Flags&FlagWrite != 0 {
 		flags = FlagWrite | FlagOnDisk
 	}
 	encoder.Uint32(flags | request.Flags)
@@ -194,10 +207,10 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 
 func supportedOperation(code uint16) bool {
 	switch code {
-	case OpRead, OpStat, OpAssertVer, OpOmapGetKeys, OpOmapGetValues,
+	case OpRead, OpStat, OpNotify, OpNotifyAck, OpListWatchers, OpAssertVer, OpOmapGetKeys, OpOmapGetValues,
 		OpOmapGetValuesByKeys, OpOmapGetHeader, OpOmapCompare, OpCompareExtent,
-		OpGetXattr, OpGetXattrs, OpCompareXattr, OpPGList, OpPGNList,
-		OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpCreate,
+		OpGetXattr, OpGetXattrs, OpCompareXattr, OpCall, OpPGList, OpPGNList,
+		OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpWatch, OpCreate,
 		OpOmapSetValues, OpOmapSetHeader, OpOmapClear, OpOmapRemoveKeys,
 		OpOmapRemoveRange, OpSetXattr, OpRemoveXattr:
 		return true
@@ -218,6 +231,19 @@ func validateOperation(operation Operation) error {
 		}
 	case OpSetXattr, OpCompareXattr:
 		if uint64(operation.XattrNameLength)+uint64(operation.XattrValueLength) != uint64(len(operation.Data)) {
+			return wire.ErrMalformed
+		}
+	case OpCall:
+		if operation.ClassNameLength == 0 || operation.MethodNameLength == 0 ||
+			uint64(operation.ClassNameLength)+uint64(operation.MethodNameLength)+uint64(operation.ClassInputLength) != uint64(len(operation.Data)) {
+			return wire.ErrMalformed
+		}
+	case OpWatch:
+		if operation.WatchCookie == 0 || (operation.WatchOperation != WatchOperationUnwatch && operation.WatchOperation != WatchOperationRegister && operation.WatchOperation != WatchOperationReconnect && operation.WatchOperation != WatchOperationPing) || len(operation.Data) != 0 {
+			return wire.ErrMalformed
+		}
+	case OpNotify, OpNotifyAck:
+		if operation.WatchCookie == 0 || len(operation.Data) == 0 {
 			return wire.ErrMalformed
 		}
 	}
@@ -332,6 +358,22 @@ func encodeOperation(encoder *wire.Encoder, operation Operation) {
 		encoder.Uint64(0)
 		encoder.Uint64(operation.AssertVersion)
 		encoder.Raw(make([]byte, 12))
+	case OpCall:
+		encoder.Uint8(operation.ClassNameLength)
+		encoder.Uint8(operation.MethodNameLength)
+		encoder.Uint8(0)
+		encoder.Uint32(operation.ClassInputLength)
+		encoder.Raw(make([]byte, 21))
+	case OpWatch:
+		encoder.Uint64(operation.WatchCookie)
+		encoder.Uint64(operation.WatchVersion)
+		encoder.Uint8(operation.WatchOperation)
+		encoder.Uint32(operation.WatchGeneration)
+		encoder.Uint32(operation.WatchTimeout)
+		encoder.Raw(make([]byte, 3))
+	case OpNotify, OpNotifyAck:
+		encoder.Uint64(operation.WatchCookie)
+		encoder.Raw(make([]byte, 20))
 	case OpPGList, OpPGNList:
 		encoder.Uint64(operation.ListCount)
 		encoder.Uint32(operation.ListStartEpoch)

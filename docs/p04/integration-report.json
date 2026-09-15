@@ -2,13 +2,13 @@
   "schema_version": 1,
   "status": "passed",
   "command": "make integration-p04",
-  "started_at": "2026-09-15T15:46:41Z",
-  "finished_at": "2026-09-15T15:47:18Z",
+  "started_at": "2026-09-15T21:53:33Z",
+  "finished_at": "2026-09-15T21:54:10Z",
   "source": {
     "repository": "https://github.com/otuschhoff/go-librados.git",
     "identity": "content-addressed-artifacts",
     "artifacts": {
-      "Makefile": "09ea96e5259fb8eea3b626c20b5b454158a9b8d1cf579fd76a83f47434dbecda",
+      "Makefile": "f04dfb8ddc218b95ff2d4b6dc8a60b1bbbc4f37b3f5de16645d9e128895bc689",
       "go.mod": "2b65739ae80b83e64d1dfbd07684b2967a745d19be61b4e8e546182262d2a4a7",
       "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c",
       "integration/p04/probe/main.go": "77750dec8be50a8a3ec7ee16a26819c8c7c21be7d1548b0ba26c5273c37ec0c1",
@@ -65,7 +65,7 @@
       "internal/protocol/entity.go": "5025b974107672555f4dbd50121f4edff27aba03a824b584b492a75ab2d3e410",
       "internal/protocol/errno.go": "9e5c9e026589ee64a6b6da2a5863e1d8cce56a434be4eeb2bad249afe904607f",
       "internal/protocol/features.go": "671e1a0318f6550fa25146bf969ca893a7541b1f87a3538ced354467699df658",
-      "internal/protocol/message_types.go": "c399706d7a9a4bd9431e4be38fc3e1706257bc36a0bd6b84fa230d25f0ae9198",
+      "internal/protocol/message_types.go": "0bbafb5c029c3d3f2d1555ded4d6175a2ff2f8887130df082e8f0f1a35b0861c",
       "internal/protocol/protocol_test.go": "1abe381d83131ea28f7ca7e7190d5ded7352d80715ce2387184ca09fefc4d85f"
     }
   },

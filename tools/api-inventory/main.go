@@ -266,9 +266,9 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "pool_list", "pool_lookup", "pool_reverse", "ioctx_create", "get_pool_name", "get_id", "cluster_fsid", "wait_for_latest_osdmap", "min_compatible", "ping_monitor"):
 		return "rados.Client pool/map discovery methods", disposition, "P04", difference, test
 	case containsAny(lower, "watch", "notify"):
-		return "rados.Watch and notify methods", disposition, "P09", difference, test
+		return classifyP09(item, "rados.Watch and notify methods", "watch/notify")
 	case containsAny(lower, "lock", "break_lock", "list_lockers"):
-		return "rados lock methods", disposition, "P09", difference, test
+		return classifyP09(item, "rados lock methods", "lock")
 	case containsAny(lower, "snap"):
 		return "rados snapshot methods and immutable snapshot views", disposition, "P10", difference, test
 	case containsAny(lower, "omap", "xattr"):
@@ -276,7 +276,7 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "nobjects", "object_list", "objectiterator", "listobject", "objectcursor", "get_locator", "get_nspace"):
 		return classifyP08(item, "rados object iterator and cursor")
 	case containsAny(lower, "exec"):
-		return "rados class execution methods", disposition, "P09", difference, test
+		return classifyP09(item, "rados class execution methods", "class/lock/watch")
 	case containsAny(lower, "checksum", "writesame", "sparse", "clone", "copy", "alloc_hint", "mapext", "alignment"):
 		return "rados specialized object methods", disposition, "P10", difference, test
 	case containsAny(lower, "read_op", "write_op", "objectreadoperation", "objectwriteoperation", "operate", "assert", "cmp", "objectoperation", "set_op_flags", "full_try", "full_force", "::size"):
@@ -302,6 +302,17 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	default:
 		return "none", "review-required", "P00", "Must be classified before P00 exit", "classification validator"
 	}
+}
+
+func classifyP09(item entry, equivalent, surface string) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	disposition = "implemented"
+	difference = "Unified context-aware Go calls preserve native semantics and use Go-owned results"
+	if containsAny(lower, "watch_flush", "decode_notify_response", "free_notify_response") {
+		disposition = "go-native"
+		difference = "Watch draining and notify reply memory ownership are integrated into Go lifecycle and result semantics"
+	}
+	return equivalent, disposition, "P09", difference, "P09 unit and live " + surface + " interoperability tests"
 }
 
 func classifyP08(item entry, equivalent string) (goEquivalent, disposition, phase, difference, test string) {

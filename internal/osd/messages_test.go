@@ -150,6 +150,9 @@ func TestEncodeOperationUnionFixtures(t *testing.T) {
 		{name: "extent", operation: Operation{Code: OpCompareExtent, Offset: 0x0102030405060708, Length: 9}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9}},
 		{name: "xattr", operation: Operation{Code: OpCompareXattr, XattrNameLength: 3, XattrValueLength: 5, CompareOperator: 6, CompareMode: 7}, union: []byte{3, 0, 0, 0, 5, 0, 0, 0, 6, 7}},
 		{name: "assert version", operation: Operation{Code: OpAssertVer, AssertVersion: 0x0102030405060708}, union: []byte{0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 6, 5, 4, 3, 2, 1}},
+		{name: "class call", operation: Operation{Code: OpCall, ClassNameLength: 4, MethodNameLength: 6, ClassInputLength: 0x01020304}, union: []byte{4, 6, 0, 4, 3, 2, 1}},
+		{name: "watch", operation: Operation{Code: OpWatch, WatchCookie: 0x0102030405060708, WatchVersion: 9, WatchOperation: WatchOperationReconnect, WatchGeneration: 10, WatchTimeout: 11}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9, 0, 0, 0, 0, 0, 0, 0, 5, 10, 0, 0, 0, 11, 0, 0, 0}},
+		{name: "notify", operation: Operation{Code: OpNotify, WatchCookie: 0x0102030405060708}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1}},
 		{name: "pg list", operation: Operation{Code: OpPGNList, ListCount: 9, ListStartEpoch: 10}, union: []byte{9, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0}},
 	}
 	for _, test := range tests {
@@ -169,6 +172,27 @@ func TestEncodeOperationUnionFixtures(t *testing.T) {
 				t.Fatalf("union=%x want=%x", union, want)
 			}
 		})
+	}
+}
+
+func TestEncodeClassCallRequest(t *testing.T) {
+	operation := Operation{
+		Code: OpCall, ClassNameLength: 4, MethodNameLength: 10, ClassInputLength: 3,
+		Data: []byte("locklist_locks\x00\x01\x02"),
+	}
+	message, err := EncodeRequest(Request{
+		PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap,
+		Operations: []Operation{operation},
+	}, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(message.Data, operation.Data) {
+		t.Fatalf("data=%x want=%x", message.Data, operation.Data)
+	}
+	operation.ClassInputLength++
+	if _, err := EncodeRequest(Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Operations: []Operation{operation}}, testLimits); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("malformed class call error=%v", err)
 	}
 }
 

@@ -17,10 +17,11 @@ type osdSession struct {
 	limits     osd.Limits
 	ackTimeout time.Duration
 
-	mu       sync.Mutex
-	backoffs map[uint64]osd.Backoff
-	changed  chan struct{}
-	err      error
+	mu            sync.Mutex
+	backoffs      map[uint64]osd.Backoff
+	changed       chan struct{}
+	err           error
+	notifications chan osd.WatchNotification
 }
 
 type osdTransport interface {
@@ -34,9 +35,15 @@ type osdTransport interface {
 }
 
 func newOSDSession(raw osdTransport, limits osd.Limits, ackTimeout time.Duration) *osdSession {
-	session := &osdSession{raw: raw, limits: limits, ackTimeout: ackTimeout, backoffs: make(map[uint64]osd.Backoff), changed: make(chan struct{})}
+	session := &osdSession{raw: raw, limits: limits, ackTimeout: ackTimeout, backoffs: make(map[uint64]osd.Backoff), changed: make(chan struct{}), notifications: make(chan osd.WatchNotification, 128)}
 	go session.receive()
 	return session
+}
+
+func (session *osdSession) Notifications() <-chan osd.WatchNotification { return session.notifications }
+
+func (session *osdSession) NotificationError() error {
+	return session.failure(msgr.ErrSessionClosed)
 }
 
 func (session *osdSession) Submit(ctx context.Context, message msgr.Message) (msgr.Message, error) {
@@ -121,6 +128,7 @@ func (session *osdSession) Wait(ctx context.Context, pg maps.PG, object osd.HObj
 }
 
 func (session *osdSession) receive() {
+	defer close(session.notifications)
 	for {
 		select {
 		case message, ok := <-session.raw.Incoming():
@@ -132,6 +140,22 @@ func (session *osdSession) receive() {
 				session.fail(ErrStaleMap)
 				session.raw.Stop()
 				return
+			}
+			if message.Header.Type == protocol.MessageWatchNotify {
+				notification, err := osd.DecodeWatchNotification(message, session.limits)
+				if err != nil {
+					session.fail(err)
+					session.raw.Stop()
+					return
+				}
+				select {
+				case session.notifications <- notification:
+				default:
+					session.fail(msgr.ErrQueueSaturated)
+					session.raw.Stop()
+					return
+				}
+				continue
 			}
 			if message.Header.Type != protocol.MessageOSDBackoff {
 				continue

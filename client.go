@@ -52,13 +52,18 @@ type Client struct {
 	credential cephx.Credential
 	expected   *maps.FSID
 
-	connectMu sync.Mutex
-	mu        sync.Mutex
-	closed    bool
-	connected bool
-	monitor   *mon.Client
-	objects   *objecter.Client
-	authority atomic.Pointer[cephx.Connector]
+	connectGate chan struct{}
+	mu          sync.Mutex
+	closed      bool
+	closing     bool
+	closeDone   chan struct{}
+	connected   bool
+	monitor     *mon.Client
+	objects     *objecter.Client
+	authority   atomic.Pointer[cephx.Connector]
+	workers     sync.WaitGroup
+	lifetime    context.Context
+	cancel      context.CancelFunc
 }
 
 func New(config Config) (*Client, error) {
@@ -88,14 +93,27 @@ func New(config Config) (*Client, error) {
 		}
 		expected = &fsid
 	}
-	return &Client{config: config, credential: credential, expected: expected}, nil
+	lifetime, cancel := context.WithCancel(context.Background())
+	client := &Client{config: config, credential: credential, expected: expected, connectGate: make(chan struct{}, 1), lifetime: lifetime, cancel: cancel}
+	client.connectGate <- struct{}{}
+	return client, nil
 }
 
 func (client *Client) Connect(ctx context.Context) error {
-	client.connectMu.Lock()
-	defer client.connectMu.Unlock()
+	if !client.startWorker() {
+		return &OpError{Op: "connect", Err: ErrClosed}
+	}
+	defer client.workers.Done()
+	operationCtx, cancel := client.operationContext(ctx)
+	defer cancel()
+	select {
+	case <-client.connectGate:
+		defer func() { client.connectGate <- struct{}{} }()
+	case <-operationCtx.Done():
+		return client.wrapError("connect", "monitors", operationCtx.Err())
+	}
 	client.mu.Lock()
-	if client.closed {
+	if client.closed || client.closing {
 		client.mu.Unlock()
 		return &OpError{Op: "connect", Err: ErrClosed}
 	}
@@ -104,8 +122,6 @@ func (client *Client) Connect(ctx context.Context) error {
 		return nil
 	}
 	client.mu.Unlock()
-	operationCtx, cancel := client.operationContext(ctx)
-	defer cancel()
 	endpoints, err := mon.ResolveSeeds(operationCtx, client.config.Monitors, nil, mon.SeedLimits{MaxSeeds: 64, MaxAddresses: 64})
 	if err != nil {
 		return client.wrapError("connect", "monitors", err)
@@ -138,7 +154,7 @@ func (client *Client) Connect(ctx context.Context) error {
 		return client.wrapError("connect", "monitors", err)
 	}
 	client.mu.Lock()
-	if client.closed {
+	if client.closed || client.closing {
 		client.mu.Unlock()
 		monitorClient.Close()
 		return &OpError{Op: "connect", Err: ErrClosed}
@@ -164,7 +180,7 @@ func (client *Client) Connect(ctx context.Context) error {
 		return client.wrapError("connect", "OSDs", err)
 	}
 	client.mu.Lock()
-	if client.closed {
+	if client.closed || client.closing {
 		client.mu.Unlock()
 		objectClient.Close()
 		monitorClient.Close()
@@ -189,10 +205,11 @@ func randomClientNonce() (uint32, error) {
 }
 
 func (client *Client) OpenPool(ctx context.Context, name string) (Pool, error) {
-	monitorClient, _, err := client.active()
+	monitorClient, _, done, err := client.beginOperation()
 	if err != nil {
 		return Pool{}, err
 	}
+	defer done()
 	operationCtx, cancel := client.operationContext(ctx)
 	defer cancel()
 	select {
@@ -208,10 +225,11 @@ func (client *Client) OpenPool(ctx context.Context, name string) (Pool, error) {
 }
 
 func (client *Client) OpenPoolByID(ctx context.Context, id int64) (Pool, error) {
-	monitorClient, _, err := client.active()
+	monitorClient, _, done, err := client.beginOperation()
 	if err != nil {
 		return Pool{}, err
 	}
+	defer done()
 	operationCtx, cancel := client.operationContext(ctx)
 	defer cancel()
 	select {
@@ -228,10 +246,11 @@ func (client *Client) OpenPoolByID(ctx context.Context, id int64) (Pool, error) 
 }
 
 func (client *Client) Flush(ctx context.Context) error {
-	_, objects, err := client.active()
+	_, objects, done, err := client.beginOperation()
 	if err != nil {
 		return err
 	}
+	defer done()
 	operationCtx, cancel := client.operationContext(ctx)
 	defer cancel()
 	if err := objects.Flush(operationCtx); err != nil {
@@ -241,41 +260,91 @@ func (client *Client) Flush(ctx context.Context) error {
 }
 
 func (client *Client) Shutdown(ctx context.Context) error {
-	_, objects, err := client.active()
-	if err != nil {
-		if errors.Is(err, ErrClosed) {
-			return client.Close()
+	client.mu.Lock()
+	if client.closed || client.closing {
+		closeDone := client.closeDone
+		client.mu.Unlock()
+		if closeDone != nil {
+			operationCtx, cancel := client.boundedContext(ctx)
+			defer cancel()
+			select {
+			case <-closeDone:
+			case <-operationCtx.Done():
+				return client.wrapError("shutdown", "client", operationCtx.Err())
+			}
 		}
-		return err
+		return nil
 	}
-	objects.BeginShutdown()
-	operationCtx, cancel := client.operationContext(ctx)
-	defer cancel()
-	if err := objects.Flush(operationCtx); err != nil {
-		_ = client.Close()
-		return client.wrapError("shutdown", "client", err)
+	client.closing = true
+	client.closeDone = make(chan struct{})
+	closeDone := client.closeDone
+	objects := client.objects
+	cancelLifetime := client.cancel
+	client.mu.Unlock()
+	if cancelLifetime != nil {
+		cancelLifetime()
 	}
-	return client.Close()
+	var flushErr error
+	if objects != nil {
+		objects.BeginShutdown()
+		operationCtx, cancel := client.boundedContext(ctx)
+		flushErr = objects.Flush(operationCtx)
+		cancel()
+	}
+	client.finishClose(closeDone)
+	if flushErr != nil {
+		return client.wrapError("shutdown", "client", flushErr)
+	}
+	return nil
 }
 
 func (client *Client) Close() error {
 	client.mu.Lock()
-	if client.closed {
+	if client.closed || client.closing {
+		closeDone := client.closeDone
 		client.mu.Unlock()
+		if closeDone != nil {
+			<-closeDone
+		}
 		return nil
 	}
+	client.closing = true
+	client.closeDone = make(chan struct{})
+	closeDone := client.closeDone
+	client.mu.Unlock()
+	client.finishClose(closeDone)
+	return nil
+}
+
+func (client *Client) finishClose(closeDone chan struct{}) {
+	client.mu.Lock()
 	client.closed = true
+	cancelLifetime := client.cancel
 	objects, monitorClient := client.objects, client.monitor
 	client.objects, client.monitor = nil, nil
 	client.connected = false
 	client.mu.Unlock()
+	if cancelLifetime != nil {
+		cancelLifetime()
+	}
 	if objects != nil {
 		objects.Close()
 	}
 	if monitorClient != nil {
 		monitorClient.Close()
 	}
-	return nil
+	client.workers.Wait()
+	close(closeDone)
+}
+
+func (client *Client) startWorker() bool {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	if client.closed || client.closing {
+		return false
+	}
+	client.workers.Add(1)
+	return true
 }
 
 func (client *Client) FSID() string {
@@ -300,7 +369,7 @@ func (client *Client) InstanceID() uint64 {
 func (client *Client) active() (*mon.Client, *objecter.Client, error) {
 	client.mu.Lock()
 	defer client.mu.Unlock()
-	if client.closed {
+	if client.closed || client.closing {
 		return nil, nil, &OpError{Err: ErrClosed}
 	}
 	if !client.connected || client.monitor == nil || client.objects == nil {
@@ -309,7 +378,29 @@ func (client *Client) active() (*mon.Client, *objecter.Client, error) {
 	return client.monitor, client.objects, nil
 }
 
+func (client *Client) beginOperation() (*mon.Client, *objecter.Client, func(), error) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	if client.closed || client.closing || !client.connected || client.monitor == nil || client.objects == nil {
+		return nil, nil, nil, &OpError{Err: ErrClosed}
+	}
+	client.workers.Add(1)
+	return client.monitor, client.objects, client.workers.Done, nil
+}
+
 func (client *Client) operationContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	operationCtx, cancel := client.boundedContext(ctx)
+	if client.lifetime == nil {
+		return operationCtx, cancel
+	}
+	stop := context.AfterFunc(client.lifetime, cancel)
+	return operationCtx, func() {
+		stop()
+		cancel()
+	}
+}
+
+func (client *Client) boundedContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -323,13 +414,17 @@ func (client *Client) wrapError(op, target string, err error) error {
 	if err == nil {
 		return nil
 	}
+	code := int32(0)
 	var wireErr protocol.WireErrno
 	if errors.As(err, &wireErr) {
-		return &OpError{Op: op, Target: target, Code: int32(wireErr), Err: err}
+		code = int32(wireErr)
 	}
 	classified := err
 	if errors.Is(err, msgr.ErrOutcomeUnknown) {
 		classified = errors.Join(ErrOutcomeUnknown, classified)
+	}
+	if errors.Is(err, objecter.ErrWatchInterrupted) {
+		classified = errors.Join(ErrWatchInterrupted, classified)
 	}
 	switch {
 	case errors.Is(err, context.DeadlineExceeded):
@@ -337,13 +432,13 @@ func (client *Client) wrapError(op, target string, err error) error {
 	case errors.Is(err, context.Canceled):
 		classified = errors.Join(ErrCanceled, classified)
 	case errors.Is(err, mon.ErrClosed), errors.Is(err, objecter.ErrClosed), errors.Is(err, msgr.ErrSessionClosed):
-		classified = errors.Join(ErrClosed, err)
+		classified = errors.Join(ErrClosed, classified)
 	case errors.Is(err, msgr.ErrUnsupportedFeature), errors.Is(err, wire.ErrUnsupportedVersion), errors.Is(err, objecter.ErrNoSortBitwise), errors.Is(err, maps.ErrUnsupportedPlacement):
-		classified = errors.Join(ErrUnsupported, err)
+		classified = errors.Join(ErrUnsupported, classified)
 	case errors.Is(err, wire.ErrLimitExceeded), errors.Is(err, wire.ErrMalformed):
-		classified = errors.Join(ErrInvalidArgument, err)
+		classified = errors.Join(ErrInvalidArgument, classified)
 	}
-	return &OpError{Op: op, Target: target, Err: classified}
+	return &OpError{Op: op, Target: target, Code: code, Err: classified}
 }
 
 func parsePublicFSID(value string) (maps.FSID, error) {

@@ -7,8 +7,11 @@ import (
 	"time"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	"github.com/otuschhoff/go-librados/internal/mon"
 	"github.com/otuschhoff/go-librados/internal/msgr"
+	"github.com/otuschhoff/go-librados/internal/objecter"
 	"github.com/otuschhoff/go-librados/internal/osd"
+	"github.com/otuschhoff/go-librados/internal/protocol"
 )
 
 func TestWrapErrorDistinguishesPeerAndCallerFailures(t *testing.T) {
@@ -37,6 +40,185 @@ func TestWrapErrorPreservesOutcomeUnknownWithTimeout(t *testing.T) {
 	if !errors.Is(err, ErrOutcomeUnknown) || !errors.Is(err, ErrTimeout) || !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("error=%v", err)
 	}
+}
+
+func TestWrapErrorPreservesOutcomeUnknownWithClose(t *testing.T) {
+	client := &Client{}
+	err := client.wrapError("notify", "object", errors.Join(msgr.ErrOutcomeUnknown, objecter.ErrClosed))
+	if !errors.Is(err, ErrOutcomeUnknown) || !errors.Is(err, ErrClosed) || !errors.Is(err, msgr.ErrOutcomeUnknown) || !errors.Is(err, objecter.ErrClosed) {
+		t.Fatalf("error=%v", err)
+	}
+}
+
+func TestWrapErrorPreservesNestedWireMetadata(t *testing.T) {
+	client := &Client{}
+	inner := client.wrapError("execute write", "pool/object", protocol.WireErrno(-16))
+	err := client.wrapError("lock", "pool/object", inner)
+	var operation *OpError
+	if !errors.As(err, &operation) || operation.Op != "lock" || operation.Target != "pool/object" || operation.Code != -16 || !errors.Is(err, ErrConflict) {
+		t.Fatalf("error=%v operation=%+v", err, operation)
+	}
+}
+
+func TestWrapErrorClassifiesWatchInterruption(t *testing.T) {
+	err := (&Client{}).wrapError("watch", "pool/object", errors.Join(objecter.ErrWatchInterrupted, protocol.WireErrno(-110)))
+	var operation *OpError
+	if !errors.Is(err, ErrWatchInterrupted) || !errors.Is(err, objecter.ErrWatchInterrupted) || !errors.As(err, &operation) || operation.Code != -110 || !errors.Is(err, ErrTimeout) {
+		t.Fatalf("error=%v", err)
+	}
+}
+
+func TestClientCloseWaitsForPublicWorkers(t *testing.T) {
+	client := &Client{}
+	if !client.startWorker() {
+		t.Fatal("worker was not admitted")
+	}
+	release := make(chan struct{})
+	go func() {
+		<-release
+		client.workers.Done()
+	}()
+	closed := make(chan struct{})
+	go func() {
+		_ = client.Close()
+		close(closed)
+	}()
+	concurrentClosed := make(chan struct{})
+	go func() {
+		_ = client.Close()
+		close(concurrentClosed)
+	}()
+	select {
+	case <-closed:
+		t.Fatal("close returned while a public worker was active")
+	case <-time.After(20 * time.Millisecond):
+	}
+	select {
+	case <-concurrentClosed:
+		t.Fatal("concurrent close returned while a public worker was active")
+	case <-time.After(20 * time.Millisecond):
+	}
+	close(release)
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("close did not return after the public worker exited")
+	}
+	select {
+	case <-concurrentClosed:
+	case <-time.After(time.Second):
+		t.Fatal("concurrent close did not return after the public worker exited")
+	}
+}
+
+func TestClientRejectsWorkWhileClosing(t *testing.T) {
+	client := &Client{closing: true, closeDone: make(chan struct{})}
+	if _, _, err := client.active(); !errors.Is(err, ErrClosed) {
+		t.Fatalf("active error=%v", err)
+	}
+	if client.startWorker() {
+		t.Fatal("worker admitted while closing")
+	}
+}
+
+func TestClientCloseWaitsForAdmittedOperation(t *testing.T) {
+	client := &Client{connected: true, monitor: &mon.Client{}, objects: &objecter.Client{}}
+	_, _, done, err := client.beginOperation()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.mu.Lock()
+	client.monitor = nil
+	client.objects = nil
+	client.mu.Unlock()
+	closed := make(chan struct{})
+	go func() {
+		_ = client.Close()
+		close(closed)
+	}()
+	select {
+	case <-closed:
+		t.Fatal("close returned while an operation was admitted")
+	case <-time.After(20 * time.Millisecond):
+	}
+	done()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("close did not return after the operation completed")
+	}
+}
+
+func TestShutdownBeforeConnectIsTerminal(t *testing.T) {
+	client, err := New(Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Connect(context.Background()); !errors.Is(err, ErrClosed) {
+		t.Fatalf("connect after shutdown error=%v", err)
+	}
+}
+
+func TestConcurrentShutdownHonorsContext(t *testing.T) {
+	client := &Client{closing: true, closeDone: make(chan struct{}), config: Config{OperationTimeout: time.Second}}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+	if err := client.Shutdown(ctx); !errors.Is(err, ErrTimeout) || !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("shutdown error=%v", err)
+	}
+}
+
+func TestShutdownAfterCloseIsIdempotent(t *testing.T) {
+	client, err := New(Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := client.Close(); err != nil {
+		t.Fatal(err)
+	}
+	for range 10000 {
+		if err := client.Shutdown(context.Background()); err != nil {
+			t.Fatalf("shutdown after close error=%v", err)
+		}
+	}
+}
+
+func TestConnectGateHonorsContextAndClientClose(t *testing.T) {
+	newClient := func(t *testing.T) *Client {
+		t.Helper()
+		client, err := New(Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey), OperationTimeout: time.Second})
+		if err != nil {
+			t.Fatal(err)
+		}
+		<-client.connectGate
+		return client
+	}
+	t.Run("caller timeout", func(t *testing.T) {
+		client := newClient(t)
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+		defer cancel()
+		if err := client.Connect(ctx); !errors.Is(err, ErrTimeout) || !errors.Is(err, context.DeadlineExceeded) {
+			t.Fatalf("connect error=%v", err)
+		}
+		client.connectGate <- struct{}{}
+		_ = client.Close()
+	})
+	t.Run("client close", func(t *testing.T) {
+		client := newClient(t)
+		connectDone := make(chan error, 1)
+		go func() { connectDone <- client.Connect(context.Background()) }()
+		time.Sleep(20 * time.Millisecond)
+		if err := client.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := <-connectDone; !errors.Is(err, ErrCanceled) {
+			t.Fatalf("connect error=%v", err)
+		}
+		client.connectGate <- struct{}{}
+	})
 }
 
 const testPublicKey = "AQB7AAAAyAEAABAAMTIzNDU2Nzg5MDEyMzQ1Ng=="

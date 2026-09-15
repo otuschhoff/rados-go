@@ -153,3 +153,21 @@ func TestImplementedClassifications(t *testing.T) {
 		}
 	}
 }
+
+func TestP09Classifications(t *testing.T) {
+	for _, test := range []struct {
+		symbol      string
+		disposition string
+	}{
+		{symbol: "rados_exec", disposition: "implemented"},
+		{symbol: "rados_lock_exclusive", disposition: "implemented"},
+		{symbol: "rados_watch3", disposition: "implemented"},
+		{symbol: "rados_watch_flush", disposition: "go-native"},
+		{symbol: "rados_decode_notify_response", disposition: "go-native"},
+	} {
+		_, disposition, phase, _, _ := classify(entry{symbol: test.symbol})
+		if disposition != test.disposition || phase != "P09" {
+			t.Errorf("%s classification disposition=%q phase=%q", test.symbol, disposition, phase)
+		}
+	}
+}
