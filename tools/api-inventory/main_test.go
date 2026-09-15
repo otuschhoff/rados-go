@@ -91,6 +91,30 @@ func TestClassifyAsyncByUnderlyingOperation(t *testing.T) {
 
 func TestImplementedClassifications(t *testing.T) {
 	want := map[string]classification{
+		"rados_read_op_set_flags": {
+			"rados.ReadOp.SetFlags", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+			"Exposes the qualified FAILOK sub-operation flag; rejects unknown flags", "P08 unit and live compound FAILOK tests",
+		},
+		"rados_write_op_set_flags": {
+			"rados.WriteOp.SetFlags", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+			"Exposes the qualified FAILOK sub-operation flag; preserves typed create flags", "P08 unit and live compound FAILOK tests",
+		},
+		"rados_write_op_omap_rm_range2": {
+			"rados.WriteOp.RemoveOMAPRange", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+			"Binary-safe half-open key range in a server-owned compound", "P08 codec and live metadata tests",
+		},
+		"IoCtx::omap_get_header": {
+			"rados.ObjectRef.GetOMAPHeader", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+			"Returns caller-owned header bytes", "P08 unit and live metadata tests",
+		},
+		"IoCtx::omap_get_vals_by_keys": {
+			"rados.ObjectRef.GetOMAP", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+			"Binary-safe key selection returns caller-owned entries", "P08 codec and live metadata tests",
+		},
+		"ObjectReadOperation::omap_get_header": {
+			"rados.ReadOp.GetOMAPHeader", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+			"Ordered compound result uses Go-owned bytes", "P08 unit and live compound tests",
+		},
 		"rados_aio_flush": {
 			"rados.Client.Flush", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
 			"Watermark-based context-aware drain; no public C completion allocation", "P07 mutation/flush unit and live-cluster tests",

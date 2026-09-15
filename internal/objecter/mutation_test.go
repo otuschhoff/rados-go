@@ -18,6 +18,50 @@ func (route routeFunc) Route(target Target) (Route, error) {
 	return route(target)
 }
 
+func TestCompoundMutationPreservesOrderAndRetryIdentity(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	var requests []msgr.Message
+	created := 0
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		created++
+		attempt := created
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			requests = append(requests, message)
+			if attempt == 1 {
+				return msgr.Message{}, errors.New("not sent")
+			}
+			return testReplyOperations(t, 10, 29, int64(osd.FlagOnDisk), []osd.OperationResult{
+				{Operation: osd.OpWrite, Data: []byte("write-result")},
+				{Operation: osd.OpSetXattr, Data: []byte("xattr-result")},
+			}), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.MutateOperations(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, []osd.Operation{
+		{Code: osd.OpWrite, Length: 3, Data: []byte("abc")},
+		{Code: osd.OpSetXattr, XattrNameLength: 1, XattrValueLength: 2, Data: []byte("nvv")},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Version != 29 || len(result.Operations) != 2 || string(result.Operations[0].Data) != "write-result" || string(result.Operations[1].Data) != "xattr-result" {
+		t.Fatalf("result=%+v", result)
+	}
+	if len(requests) != 2 || requests[0].Header.TransactionID == 0 || requests[0].Header.TransactionID != requests[1].Header.TransactionID {
+		t.Fatalf("request identities=%d/%d", requests[0].Header.TransactionID, requests[1].Header.TransactionID)
+	}
+	for index, request := range requests {
+		if string(request.Data) != "abcnvv" {
+			t.Fatalf("request %d data=%q", index, request.Data)
+		}
+		codes, flags, retry := decodeRequestOperationsForTest(t, request)
+		if len(codes) != 2 || codes[0] != osd.OpWrite || codes[1] != osd.OpSetXattr || flags&osd.FlagReturnVector == 0 || retry != int32(index) {
+			t.Fatalf("request %d codes=%v flags=%#x retry=%d", index, codes, flags, retry)
+		}
+	}
+}
+
 func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	var mu sync.Mutex
@@ -365,6 +409,8 @@ func TestMutationRejectsSnapshotAndMalformedExtent(t *testing.T) {
 		{target: Target{Snapshot: 1}, operation: osd.Operation{Code: osd.OpDelete}},
 		{target: Target{Snapshot: osd.NoSnap}, operation: osd.Operation{Code: osd.OpWrite, Length: 2, Data: []byte("x")}},
 		{target: Target{Snapshot: osd.NoSnap}, operation: osd.Operation{Code: osd.OpZero, Offset: ^uint64(0), Length: 2}},
+		{target: Target{Snapshot: osd.NoSnap}, operation: osd.Operation{Code: osd.OpDelete, Data: []byte("unexpected")}},
+		{target: Target{Snapshot: osd.NoSnap}, operation: osd.Operation{Code: osd.OpSetXattr, XattrNameLength: 1, XattrValueLength: 2, Data: []byte("short")}},
 	} {
 		if _, err := client.Mutate(context.Background(), test.target, test.operation); err == nil {
 			t.Fatalf("accepted target=%+v operation=%+v", test.target, test.operation)

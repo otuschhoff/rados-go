@@ -31,7 +31,7 @@ sudo env P00_DISPOSABLE_CLUSTER=I_UNDERSTAND_THIS_DESTROYS_DATA make p00-smoke
 Successful reports are written to `integration/reports/` and contain no keys.
 The report must validate against `integration/manifest.schema.json`.
 
-## P06 and P07 host requirements
+## P06 through P08 host requirements
 
 The P06 read-path gate runs on macOS or Linux with Docker, Go, `jq`, Python 3,
 `shasum`, and network access to the pinned multi-architecture Ceph image. Docker
@@ -47,9 +47,15 @@ least 12 GiB free disk and enough time for the complete 144-row Go/native,
 secure/CRC baseline matrix. No native Ceph library is linked into shipped Go
 code.
 
+P08 reuses the three-OSD, 8 GiB BlueStore topology without the benchmark
+matrix. It compiles an isolated, dynamically loaded native driver and proves
+binary metadata interoperability, single-request compound atomicity,
+cross-client version contention, namespace isolation, and cursor-based
+enumeration. Both clients use the pool-scoped `client.p08` identity.
+
 Run the latest serialized quality, real-cluster, semantic-verifier,
 cross-build, and fuzz gates with:
 
 ```sh
-make verify-p07-all
+make verify-p08-all
 ```

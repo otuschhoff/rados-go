@@ -2,6 +2,7 @@ package osd
 
 import (
 	"fmt"
+	"math"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 	"github.com/otuschhoff/go-librados/internal/maps"
@@ -23,6 +24,30 @@ type HObject struct {
 	Max       bool
 	Namespace string
 	Pool      int64
+}
+
+func (object HObject) IsMin() bool {
+	return object.Snapshot == 0 && object.Hash == 0 && !object.Max && object.Pool == math.MinInt64
+}
+
+func (object HObject) IsMax() bool { return object.Max }
+
+func MarshalHObject(object HObject, maxBytes uint32) ([]byte, error) {
+	encoder := wire.NewEncoder(maxBytes)
+	encodeHObject(encoder, object)
+	return encoder.BytesResult()
+}
+
+func UnmarshalHObject(data []byte, maxBytes uint32) (HObject, error) {
+	decoder := wire.NewDecoder(data, wire.Limits{MaxBytes: maxBytes})
+	object, err := decodeHObject(decoder)
+	if err != nil {
+		return HObject{}, err
+	}
+	if err := decoder.Finish(); err != nil || decoder.Remaining() != 0 {
+		return HObject{}, ErrMalformedReply
+	}
+	return object, nil
 }
 
 type Backoff struct {
@@ -81,10 +106,10 @@ func EncodeBackoffAcknowledgment(backoff Backoff, limits Limits) (msgr.Message, 
 }
 
 func (backoff Backoff) Contains(target HObject) bool {
-	if compareHObject(backoff.Begin, backoff.End) == 0 {
-		return compareHObject(target, backoff.Begin) == 0
+	if CompareHObject(backoff.Begin, backoff.End) == 0 {
+		return CompareHObject(target, backoff.Begin) == 0
 	}
-	return compareHObject(backoff.Begin, target) <= 0 && compareHObject(target, backoff.End) < 0
+	return CompareHObject(backoff.Begin, target) <= 0 && CompareHObject(target, backoff.End) < 0
 }
 
 func decodeSPG(decoder *wire.Decoder) (maps.PG, int8, error) {
@@ -138,14 +163,17 @@ func encodeSPGWithShard(encoder *wire.Encoder, pg maps.PG, shard int8) {
 	})
 }
 
-func compareHObject(left, right HObject) int {
+func CompareHObject(left, right HObject) int {
+	if left.Max && right.Max {
+		return 0
+	}
 	if result := compareBool(left.Max, right.Max); result != 0 {
 		return result
 	}
 	if result := compareOrdered(left.Pool, right.Pool); result != 0 {
 		return result
 	}
-	if result := compareOrdered(reverseBits(left.Hash), reverseBits(right.Hash)); result != 0 {
+	if result := compareOrdered(ReverseBits(left.Hash), ReverseBits(right.Hash)); result != 0 {
 		return result
 	}
 	if result := compareOrdered(left.Namespace, right.Namespace); result != 0 {
@@ -161,6 +189,8 @@ func compareHObject(left, right HObject) int {
 	}
 	return compareOrdered(left.Snapshot, right.Snapshot)
 }
+
+func compareHObject(left, right HObject) int { return CompareHObject(left, right) }
 
 func effectiveKey(object HObject) string {
 	if object.Key != "" {
@@ -189,7 +219,7 @@ func compareOrdered[T ~int64 | ~uint32 | ~uint64 | ~string](left, right T) int {
 	return 0
 }
 
-func reverseBits(value uint32) uint32 {
+func ReverseBits(value uint32) uint32 {
 	value = value>>1&0x55555555 | value&0x55555555<<1
 	value = value>>2&0x33333333 | value&0x33333333<<2
 	value = value>>4&0x0f0f0f0f | value&0x0f0f0f0f<<4

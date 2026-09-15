@@ -25,6 +25,7 @@ var (
 	ErrRecovery      = errors.New("read recovery exhausted")
 	ErrMalformedStat = errors.New("malformed stat result")
 	ErrStaleMap      = errors.New("OSD supplied a newer map")
+	ErrNoSortBitwise = errors.New("OSD map does not enable SORTBITWISE")
 )
 
 const readReplyFrontBytes = uint64(144)
@@ -46,6 +47,10 @@ type Router interface {
 	Route(Target) (Route, error)
 }
 
+type rawHashRouter interface {
+	RouteRawHash(int64, uint32) (Route, error)
+}
+
 type Target struct {
 	PoolID    int64
 	Object    string
@@ -59,6 +64,17 @@ type Result struct {
 	Size             uint64
 	ModificationTime time.Time
 	Version          uint64
+	Operations       []OperationResult
+}
+
+type OperationResult struct {
+	Data []byte
+	Code int32
+}
+
+type EnumerationResult struct {
+	Entries []osd.ListEntry
+	Next    osd.HObject
 }
 
 type session interface {
@@ -112,6 +128,10 @@ type sessionEntry struct {
 	session session
 }
 
+func (client *Client) MaxEnumerationEntries() uint64 {
+	return uint64(client.config.MessageLimits.MaxBytes / 12)
+}
+
 func New(config Config) (*Client, error) {
 	if config.Maps == nil || config.MessageLimits.MaxBytes == 0 || config.MessageLimits.MaxOperations == 0 || config.MaxAttempts <= 0 || config.RefreshWait <= 0 {
 		return nil, wire.ErrLimitExceeded
@@ -133,7 +153,7 @@ func New(config Config) (*Client, error) {
 		if _, err := rand.Read(value[:]); err != nil {
 			return nil, err
 		}
-		config.ClientIncarnation = int32(binary.LittleEndian.Uint32(value[:]) | 1)
+		config.ClientIncarnation = int32(binary.LittleEndian.Uint32(value[:])&math.MaxInt32 | 1)
 	}
 	if config.SessionFactory == nil {
 		if config.AuthoritySource == nil {
@@ -175,19 +195,63 @@ func (client *Client) Stat(ctx context.Context, target Target) (Result, error) {
 	return result, nil
 }
 
+func (client *Client) ReadOperations(ctx context.Context, target Target, operations []osd.Operation) (Result, error) {
+	if len(operations) == 0 {
+		return Result{}, wire.ErrMalformed
+	}
+	for _, operation := range operations {
+		if !isReadOperation(operation.Code) {
+			return Result{}, wire.ErrMalformed
+		}
+	}
+	return client.executeOperations(ctx, target, operations, 0, false)
+}
+
+func isReadOperation(code uint16) bool {
+	switch code {
+	case osd.OpRead, osd.OpStat, osd.OpAssertVer, osd.OpOmapGetKeys, osd.OpOmapGetValues,
+		osd.OpOmapGetValuesByKeys, osd.OpOmapGetHeader, osd.OpOmapCompare,
+		osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr:
+		return true
+	default:
+		return false
+	}
+}
+
 func (client *Client) execute(ctx context.Context, target Target, operation osd.Operation) (Result, error) {
 	return client.executeOperation(ctx, target, operation, 0, false)
 }
 
 func (client *Client) executeOperation(ctx context.Context, target Target, operation osd.Operation, transactionID uint64, mutation bool) (Result, error) {
+	return client.executeOperations(ctx, target, []osd.Operation{operation}, transactionID, mutation)
+}
+
+func (client *Client) executeOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, mutation bool) (Result, error) {
+	return client.executeRoutedOperations(ctx, target, operations, transactionID, mutation, 0, client.config.Router.Route)
+}
+
+func (client *Client) executeRoutedOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, mutation bool, initialFlags uint32, routeTarget func(Target) (Route, error)) (Result, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if transactionID == 0 {
+		var err error
+		transactionID, err = client.takeTransactionID()
+		if err != nil {
+			return Result{}, err
+		}
+	}
+	if len(operations) == 0 || uint64(len(operations)) > uint64(client.config.MessageLimits.MaxOperations) {
+		return Result{}, wire.ErrLimitExceeded
+	}
 	currentTarget := target
-	requestFlags := uint32(0)
+	requestFlags := initialFlags
+	if len(operations) > 1 {
+		requestFlags |= osd.FlagReturnVector
+	}
 	var lastErr error
 	for attempt := 0; attempt < client.config.MaxAttempts; attempt++ {
-		route, err := client.config.Router.Route(currentTarget)
+		route, err := routeTarget(currentTarget)
 		if err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
@@ -201,11 +265,17 @@ func (client *Client) executeOperation(ctx context.Context, target Target, opera
 		if err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
+		var clientGlobalID uint64
+		if client.config.AuthoritySource != nil {
+			if authority := client.config.AuthoritySource(); authority != nil {
+				clientGlobalID = authority.AuthMetadata().GlobalID
+			}
+		}
 		request, err := osd.EncodeRequest(osd.Request{
 			MapEpoch: route.Epoch, PG: route.PG, ObjectHash: route.RawHash,
 			PoolID: currentTarget.PoolID, Object: currentTarget.Object, Locator: currentTarget.Locator,
-			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, TransactionID: transactionID, ClientIncarnation: client.config.ClientIncarnation, Retry: int32(attempt), Flags: requestFlags,
-			Features: uint64(protocol.FeatureOSDClient), Operations: []osd.Operation{operation},
+			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, TransactionID: transactionID, ClientGlobalID: clientGlobalID, ClientIncarnation: client.config.ClientIncarnation, Retry: int32(attempt), Flags: requestFlags,
+			Features: uint64(protocol.FeatureOSDClient), Operations: operations,
 		}, client.config.MessageLimits)
 		if err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
@@ -303,25 +373,26 @@ func (client *Client) executeOperation(ctx context.Context, target Target, opera
 			}
 			continue
 		}
-		if reply.Result != 0 {
-			return Result{}, protocol.WireErrno(reply.Result)
-		}
-		if len(reply.Operations) != 1 {
+		if len(reply.Operations) != len(operations) {
 			client.invalidate(route.Primary, active)
 			if mutation {
 				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
 			}
 			return Result{}, osd.ErrMalformedReply
 		}
-		if reply.Operations[0].Operation != operation.Code {
-			client.invalidate(route.Primary, active)
-			if mutation {
-				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
+		retry := reply.Result == -11
+		for index := range operations {
+			if reply.Operations[index].Operation != operations[index].Code {
+				client.invalidate(route.Primary, active)
+				if mutation {
+					return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
+				}
+				return Result{}, osd.ErrMalformedReply
 			}
-			return Result{}, osd.ErrMalformedReply
+			retry = retry || reply.Operations[index].Code == -11
 		}
-		if reply.Operations[0].Code == -11 {
-			lastErr = protocol.WireErrno(reply.Operations[0].Code)
+		if retry {
+			lastErr = protocol.WireErrno(-11)
 			client.refresh(ctx, route.Epoch)
 			if mutation {
 				transactionID, err = client.takeTransactionID()
@@ -331,20 +402,157 @@ func (client *Client) executeOperation(ctx context.Context, target Target, opera
 			}
 			continue
 		}
-		if reply.Operations[0].Code != 0 {
-			return Result{}, protocol.WireErrno(reply.Operations[0].Code)
-		}
-		if mutation && uint64(reply.Flags)&uint64(osd.FlagOnDisk) == 0 {
+		if mutation && reply.Result == 0 && uint64(reply.Flags)&uint64(osd.FlagOnDisk) == 0 {
 			client.invalidate(route.Primary, active)
 			return Result{}, fmt.Errorf("%w: mutation reply is not durable", msgr.ErrOutcomeUnknown)
 		}
-		if operation.Code == osd.OpRead && uint64(len(reply.Operations[0].Data)) > operation.Length {
-			client.invalidate(route.Primary, active)
-			return Result{}, osd.ErrMalformedReply
+		result := Result{Version: reply.Version, Operations: make([]OperationResult, len(reply.Operations))}
+		for index, operationResult := range reply.Operations {
+			if operations[index].Code == osd.OpRead && uint64(len(operationResult.Data)) > operations[index].Length {
+				client.invalidate(route.Primary, active)
+				return Result{}, osd.ErrMalformedReply
+			}
+			result.Operations[index] = OperationResult{Data: append([]byte(nil), operationResult.Data...), Code: operationResult.Code}
 		}
-		return Result{Data: append([]byte(nil), reply.Operations[0].Data...), Version: reply.Version}, nil
+		result.Data = append([]byte(nil), result.Operations[0].Data...)
+		if reply.Result < 0 {
+			return result, protocol.WireErrno(reply.Result)
+		}
+		for index, operationResult := range result.Operations {
+			if operationResult.Code < 0 && operations[index].Flags&osd.OpFlagFailOK == 0 {
+				return result, protocol.WireErrno(operationResult.Code)
+			}
+		}
+		return result, nil
 	}
 	return Result{}, fmt.Errorf("%w: %w", ErrRecovery, lastErr)
+}
+
+func (client *Client) PGNLS(ctx context.Context, poolID int64, namespace string, cursor osd.HObject, count uint64) (osd.ListPage, error) {
+	if count == 0 || (!cursor.IsMin() && (cursor.Pool != poolID || cursor.Snapshot != osd.NoSnap || cursor.IsMax())) {
+		return osd.ListPage{}, wire.ErrMalformed
+	}
+	route, err := client.routeRawHash(poolID, cursor.Hash)
+	if err != nil {
+		return osd.ListPage{}, err
+	}
+	operation, err := osd.EncodePGNLSOperation(cursor, count, route.Epoch, client.config.MessageLimits.MaxBytes)
+	if err != nil {
+		return osd.ListPage{}, err
+	}
+	first := true
+	routeTarget := func(Target) (Route, error) {
+		if first {
+			first = false
+			return route, nil
+		}
+		return client.routeRawHash(poolID, cursor.Hash)
+	}
+	result, err := client.executeRoutedOperations(ctx, Target{PoolID: poolID, Namespace: namespace, Snapshot: osd.NoSnap}, []osd.Operation{operation}, 0, false, osd.FlagPGOp|osd.FlagIgnoreOverlay, routeTarget)
+	if err != nil {
+		return osd.ListPage{}, err
+	}
+	return osd.DecodePGNLSPage(result.Data, client.config.MessageLimits.MaxBytes, client.config.MessageLimits.MaxBytes/12)
+}
+
+func (client *Client) Enumerate(ctx context.Context, poolID int64, namespace string, start, end osd.HObject, limit uint64) (EnumerationResult, error) {
+	if limit == 0 || limit > client.MaxEnumerationEntries() || start.IsMax() || (!end.IsMax() && osd.CompareHObject(start, end) > 0) {
+		return EnumerationResult{}, wire.ErrMalformed
+	}
+	return enumeratePages(poolID, start, end, limit, func(cursor osd.HObject, count uint64) (osd.ListPage, []osd.HObject, error) {
+		page, err := client.PGNLS(ctx, poolID, namespace, cursor, count)
+		if err != nil {
+			return osd.ListPage{}, nil, err
+		}
+		entryCursors, err := client.enumerationEntryCursors(poolID, namespace, page.Entries)
+		return page, entryCursors, err
+	})
+}
+
+func enumeratePages(poolID int64, start, end osd.HObject, limit uint64, fetch func(osd.HObject, uint64) (osd.ListPage, []osd.HObject, error)) (EnumerationResult, error) {
+	if osd.CompareHObject(start, end) == 0 {
+		return EnumerationResult{Next: end}, nil
+	}
+	result := EnumerationResult{Entries: make([]osd.ListEntry, 0, limit), Next: start}
+	for uint64(len(result.Entries)) < limit && osd.CompareHObject(result.Next, end) < 0 {
+		remaining := limit - uint64(len(result.Entries))
+		page, entryCursors, err := fetch(result.Next, remaining)
+		if err != nil {
+			return EnumerationResult{}, err
+		}
+		if len(entryCursors) != len(page.Entries) {
+			return EnumerationResult{}, osd.ErrMalformedReply
+		}
+		if err := validateEnumerationPage(poolID, result.Next, page.Next, entryCursors); err != nil {
+			return EnumerationResult{}, err
+		}
+		next := page.Next
+		entryCount := len(page.Entries)
+		if osd.CompareHObject(next, end) > 0 {
+			next = end
+			for entryCount > 0 && osd.CompareHObject(entryCursors[entryCount-1], end) >= 0 {
+				entryCount--
+			}
+		}
+		available := int(limit - uint64(len(result.Entries)))
+		if entryCount > available {
+			next = entryCursors[available]
+			entryCount = available
+		}
+		result.Entries = append(result.Entries, page.Entries[:entryCount]...)
+		result.Next = next
+	}
+	return result, nil
+}
+
+func (client *Client) enumerationEntryCursors(poolID int64, namespace string, entries []osd.ListEntry) ([]osd.HObject, error) {
+	osdMap := client.config.Maps.OSDMap()
+	if osdMap == nil {
+		return nil, ErrNoPrimary
+	}
+	if _, ok := osdMap.PoolByID(poolID); !ok {
+		return nil, protocol.WireErrno(-2)
+	}
+	result := make([]osd.HObject, len(entries))
+	for index, entry := range entries {
+		if namespace != "\x01" && entry.Namespace != namespace {
+			return nil, osd.ErrMalformedReply
+		}
+		placement, err := osdMap.MapObject(poolID, entry.Object, entry.Locator, entry.Namespace)
+		if err != nil {
+			return nil, err
+		}
+		result[index] = osd.HObject{Key: entry.Locator, Object: entry.Object, Snapshot: osd.NoSnap, Hash: placement.RawHash, Namespace: entry.Namespace, Pool: poolID}
+	}
+	return result, nil
+}
+
+func validateEnumerationPage(poolID int64, start, next osd.HObject, entries []osd.HObject) error {
+	if !next.IsMax() && (next.IsMin() || next.Snapshot != osd.NoSnap || next.Pool != poolID) {
+		return osd.ErrMalformedReply
+	}
+	previous := start
+	for _, entry := range entries {
+		if osd.CompareHObject(entry, previous) < 0 || (!next.IsMax() && osd.CompareHObject(entry, next) >= 0) {
+			return osd.ErrMalformedReply
+		}
+		previous = entry
+	}
+	if !next.IsMax() && osd.CompareHObject(next, start) <= 0 {
+		return osd.ErrMalformedReply
+	}
+	return nil
+}
+
+func (client *Client) routeRawHash(poolID int64, hash uint32) (Route, error) {
+	if router, ok := client.config.Router.(rawHashRouter); ok {
+		return router.RouteRawHash(poolID, hash)
+	}
+	osdMap := client.config.Maps.OSDMap()
+	if osdMap == nil {
+		return Route{}, ErrNoPrimary
+	}
+	return mapRouter{source: client.config.Maps}.RouteRawHash(poolID, hash)
 }
 
 func preserveOutcomeUnknown(previous, current error) error {
@@ -362,6 +570,28 @@ func (router mapRouter) Route(target Target) (Route, error) {
 		return Route{}, ErrNoPrimary
 	}
 	placement, err := osdMap.PlaceObject(target.PoolID, target.Object, target.Locator, target.Namespace)
+	if err != nil {
+		return Route{}, err
+	}
+	addresses, ok := osdMap.OSDClientAddresses(placement.ActingPrimary)
+	if !ok {
+		return Route{}, ErrNoPrimary
+	}
+	return Route{Epoch: osdMap.Epoch(), PG: placement.PG, RawHash: placement.RawHash, Primary: placement.ActingPrimary, Addresses: addresses}, nil
+}
+
+func (router mapRouter) RouteRawHash(poolID int64, hash uint32) (Route, error) {
+	osdMap := router.source.OSDMap()
+	if osdMap == nil {
+		return Route{}, ErrNoPrimary
+	}
+	if !osdMap.SortBitwise() {
+		return Route{}, ErrNoSortBitwise
+	}
+	if _, ok := osdMap.PoolByID(poolID); !ok {
+		return Route{}, protocol.WireErrno(-2)
+	}
+	placement, err := osdMap.PlaceRawHash(poolID, hash)
 	if err != nil {
 		return Route{}, err
 	}

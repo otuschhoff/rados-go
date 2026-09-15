@@ -29,6 +29,10 @@ type ObjectPlacement struct {
 }
 
 func (osdMap *OSDMap) MapObject(poolID int64, object, locator, namespace string) (ObjectPlacement, error) {
+	return osdMap.MapRawHash(poolID, crush.ObjectHash(object, locator, namespace))
+}
+
+func (osdMap *OSDMap) MapRawHash(poolID int64, hash uint32) (ObjectPlacement, error) {
 	if poolID < 0 {
 		return ObjectPlacement{}, fmt.Errorf("%w: negative pool %d", ErrUnsupportedPlacement, poolID)
 	}
@@ -45,7 +49,6 @@ func (osdMap *OSDMap) MapObject(poolID int64, object, locator, namespace string)
 	if pool.pgCount == 0 || pool.placementPGCount == 0 || pool.placementPGCount > pool.pgCount {
 		return ObjectPlacement{}, fmt.Errorf("%w: pool %d has invalid PG geometry", ErrUnsupportedPlacement, poolID)
 	}
-	hash := crush.ObjectHash(object, locator, namespace)
 	raw := PG{Pool: uint64(poolID), Seed: hash, Preferred: -1}
 	actual := raw
 	actual.Seed = crush.StableMod(hash, pool.pgCount)
@@ -59,6 +62,18 @@ func (osdMap *OSDMap) PlaceObject(poolID int64, object, locator, namespace strin
 	if err != nil {
 		return ObjectPlacement{}, err
 	}
+	return osdMap.placeMapped(poolID, placement)
+}
+
+func (osdMap *OSDMap) PlaceRawHash(poolID int64, hash uint32) (ObjectPlacement, error) {
+	placement, err := osdMap.MapRawHash(poolID, hash)
+	if err != nil {
+		return ObjectPlacement{}, err
+	}
+	return osdMap.placeMapped(poolID, placement)
+}
+
+func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (ObjectPlacement, error) {
 	pool := osdMap.pools[poolID]
 	if pool.poolType != poolTypeReplicated {
 		return ObjectPlacement{}, fmt.Errorf("%w: pool type %d", ErrUnsupportedPlacement, pool.poolType)

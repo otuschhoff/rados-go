@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "server", "native_runtime", "cluster", "scenarios", "probe", "native"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "status": { "const": "passed" },
+    "command": { "const": "make integration-p08" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "identity", "artifacts"],
+      "properties": {
+        "repository": { "const": "https://github.com/otuschhoff/go-librados.git" },
+        "identity": { "const": "content-addressed-artifacts" },
+        "artifacts": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source_anchor_commit", "version", "image", "platform", "binaries"],
+      "properties": {
+        "repository": { "const": "https://github.com/ceph/ceph.git" },
+        "source_anchor_commit": { "const": "7f793731f1b39eb4f465e960113d2363c311b964" },
+        "version": { "const": "ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)" },
+        "image": { "type": "string", "pattern": "^quay\\.io/ceph/ceph@sha256:[0-9a-f]{64}$" },
+        "platform": { "enum": ["linux/amd64", "linux/arm64"] },
+        "binaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mon_sha256", "osd_sha256"],
+          "properties": {
+            "mon_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "osd_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        }
+      }
+    },
+    "native_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soname", "path", "package", "sha256"],
+      "properties": {
+        "soname": { "const": "librados.so.2" },
+        "path": { "type": "string", "pattern": "^/.+" },
+        "package": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fsid", "osds", "pool", "replicas", "osd_device_bytes"],
+      "properties": {
+        "fsid": { "const": "11111111-2222-4333-8444-888888888888" },
+        "osds": { "const": 3 },
+        "pool": { "const": "p08-data" },
+        "replicas": { "const": 2 },
+        "osd_device_bytes": { "const": 8589934592 }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metadata_interoperability", "compound_atomicity", "cross_client_contention", "enumeration_conformance", "namespace_isolation", "cursor_pagination_and_partitioning"],
+      "properties": {
+        "metadata_interoperability": { "const": "passed" },
+        "compound_atomicity": { "const": "passed" },
+        "cross_client_contention": { "const": "passed" },
+        "enumeration_conformance": { "const": "passed" },
+        "namespace_isolation": { "const": "passed" },
+        "cursor_pagination_and_partitioning": { "const": "passed" }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["native_metadata", "binary_metadata", "omap_pagination", "compound_read", "compound_atomicity", "cross_client_contention", "enumeration", "namespaces", "cursor_continuation", "cursor_partitioning"],
+      "properties": {
+        "native_metadata": { "const": true },
+        "binary_metadata": { "const": true },
+        "omap_pagination": { "const": true },
+        "compound_read": { "const": true },
+        "compound_atomicity": { "const": true },
+        "cross_client_contention": { "const": true },
+        "enumeration": { "const": true },
+        "namespaces": { "const": true },
+        "cursor_continuation": { "const": true },
+        "cursor_partitioning": { "const": true }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "verify"],
+      "properties": {
+        "seed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["native_binary_metadata", "native_compound_seed"],
+          "properties": {
+            "native_binary_metadata": { "const": true },
+            "native_compound_seed": { "const": true }
+          }
+        },
+        "verify": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["go_binary_metadata", "go_omap_native_read", "go_enumeration_native_read", "namespace_filtering"],
+          "properties": {
+            "go_binary_metadata": { "const": true },
+            "go_omap_native_read": { "const": true },
+            "go_enumeration_native_read": { "const": true },
+            "namespace_filtering": { "const": true }
+          }
+        }
+      }
+    }
+  }
+}

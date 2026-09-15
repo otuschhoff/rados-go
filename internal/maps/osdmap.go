@@ -57,6 +57,8 @@ type Interval struct {
 
 const defaultPrimaryAffinity = uint32(0x10000)
 
+const osdMapFlagSortBitwise = uint32(1 << 15)
+
 func DecodeOSDMap(data []byte, limits Limits) (*OSDMap, error) {
 	if err := validateOSDMapLimits(limits); err != nil {
 		return nil, err
@@ -360,6 +362,7 @@ func decodePoolIntervalMap(decoder *wire.Decoder, limits Limits) (map[int64][]In
 
 func (osdMap *OSDMap) FSID() FSID               { return osdMap.fsid }
 func (osdMap *OSDMap) Epoch() uint32            { return osdMap.epoch }
+func (osdMap *OSDMap) SortBitwise() bool        { return osdMap.flags&osdMapFlagSortBitwise != 0 }
 func (osdMap *OSDMap) CRC() uint32              { return osdMap.crc }
 func (osdMap *OSDMap) CRCVerified() bool        { return osdMap.crcVerified }
 func (osdMap *OSDMap) AppliedIncremental() bool { return osdMap.appliedIncremental }

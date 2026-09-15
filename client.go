@@ -2,6 +2,8 @@ package rados
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -108,7 +110,11 @@ func (client *Client) Connect(ctx context.Context) error {
 	if err != nil {
 		return client.wrapError("connect", "monitors", err)
 	}
-	clientAddress, err := protocol.IPv4EntityAddr(protocol.AddressV2, 0, netip.MustParseAddrPort("0.0.0.0:0"))
+	clientNonce, err := randomClientNonce()
+	if err != nil {
+		return client.wrapError("connect", "client", err)
+	}
+	clientAddress, err := protocol.IPv4EntityAddr(protocol.AddressV2, clientNonce, netip.MustParseAddrPort("0.0.0.0:0"))
 	if err != nil {
 		return client.wrapError("connect", "client", err)
 	}
@@ -168,6 +174,18 @@ func (client *Client) Connect(ctx context.Context) error {
 	client.connected = true
 	client.mu.Unlock()
 	return nil
+}
+
+func randomClientNonce() (uint32, error) {
+	for {
+		var value [4]byte
+		if _, err := rand.Read(value[:]); err != nil {
+			return 0, err
+		}
+		if nonce := binary.LittleEndian.Uint32(value[:]); nonce != 0 {
+			return nonce, nil
+		}
+	}
 }
 
 func (client *Client) OpenPool(ctx context.Context, name string) (Pool, error) {
@@ -320,7 +338,7 @@ func (client *Client) wrapError(op, target string, err error) error {
 		classified = errors.Join(ErrCanceled, classified)
 	case errors.Is(err, mon.ErrClosed), errors.Is(err, objecter.ErrClosed), errors.Is(err, msgr.ErrSessionClosed):
 		classified = errors.Join(ErrClosed, err)
-	case errors.Is(err, msgr.ErrUnsupportedFeature), errors.Is(err, wire.ErrUnsupportedVersion):
+	case errors.Is(err, msgr.ErrUnsupportedFeature), errors.Is(err, wire.ErrUnsupportedVersion), errors.Is(err, objecter.ErrNoSortBitwise), errors.Is(err, maps.ErrUnsupportedPlacement):
 		classified = errors.Join(ErrUnsupported, err)
 	case errors.Is(err, wire.ErrLimitExceeded), errors.Is(err, wire.ErrMalformed):
 		classified = errors.Join(ErrInvalidArgument, err)

@@ -28,6 +28,33 @@ func TestMapObjectP00OracleVector(t *testing.T) {
 	}
 }
 
+func TestMapRawHashMatchesObjectPlacement(t *testing.T) {
+	osdMap := &OSDMap{pools: map[int64]Pool{7: {
+		id: 7, objectHash: objectHashRJenkins, pgCount: 12, placementPGCount: 8,
+		flags: poolFlagHashPSPool,
+	}}}
+	objectPlacement, err := osdMap.MapObject(7, "object", "locator", "namespace")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rawPlacement, err := osdMap.MapRawHash(7, objectPlacement.RawHash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(rawPlacement, objectPlacement) {
+		t.Fatalf("raw=%+v object=%+v", rawPlacement, objectPlacement)
+	}
+}
+
+func TestSortBitwiseFlag(t *testing.T) {
+	if (&OSDMap{}).SortBitwise() {
+		t.Fatal("SORTBITWISE reported for an unset map flag")
+	}
+	if !(&OSDMap{flags: osdMapFlagSortBitwise}).SortBitwise() {
+		t.Fatal("SORTBITWISE flag was not reported")
+	}
+}
+
 func TestMapObjectIdentityInputs(t *testing.T) {
 	osdMap := &OSDMap{pools: map[int64]Pool{7: {
 		id: 7, objectHash: objectHashRJenkins, pgCount: 12, placementPGCount: 8,

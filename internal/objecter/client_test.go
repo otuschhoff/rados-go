@@ -395,6 +395,48 @@ func testReplyRetryFlags(t *testing.T, epoch uint32, version uint64, result int3
 	return msgr.Message{Header: msgr.MessageHeader{Type: protocol.MessageOSDOpReply, Version: 8, CompatVersion: 2}, Front: encoded, Data: append([]byte(nil), data...), Lengths: msgr.MessageLengths{Front: uint32(len(encoded)), Data: uint32(len(data))}}
 }
 
+func testReplyOperations(t *testing.T, epoch uint32, version uint64, flags int64, operations []osd.OperationResult) msgr.Message {
+	t.Helper()
+	front := wire.NewEncoder(4096)
+	front.String("object")
+	front.Uint8(1)
+	front.Uint64(7)
+	front.Uint32(8)
+	front.Int32(-1)
+	front.Int64(flags)
+	front.Int32(0)
+	front.Uint32(0)
+	front.Uint64(0)
+	front.Uint32(epoch)
+	front.Uint32(uint32(len(operations)))
+	for _, operation := range operations {
+		front.Uint16(operation.Operation)
+		front.Uint32(0)
+		front.Raw(make([]byte, 28))
+		front.Uint32(uint32(len(operation.Data)))
+	}
+	front.Int32(-1)
+	for _, operation := range operations {
+		front.Int32(operation.Code)
+	}
+	front.Uint32(0)
+	front.Uint64(0)
+	front.Uint64(version)
+	front.Bool(false)
+	front.Int64(0)
+	front.Int64(0)
+	front.Int64(0)
+	encoded, err := front.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := make([]byte, 0)
+	for _, operation := range operations {
+		data = append(data, operation.Data...)
+	}
+	return msgr.Message{Header: msgr.MessageHeader{Type: protocol.MessageOSDOpReply, Version: 8, CompatVersion: 2}, Front: encoded, Data: data, Lengths: msgr.MessageLengths{Front: uint32(len(encoded)), Data: uint32(len(data))}}
+}
+
 func testRedirectReply(t *testing.T, epoch uint32) msgr.Message {
 	t.Helper()
 	message := testReply(t, epoch, 0, 0, nil)
@@ -502,4 +544,36 @@ func decodeRequestIdentityForTest(t testing.TB, message msgr.Message) (string, u
 	decoder.Uint64()
 	decoder.Uint32()
 	return object, flags, decoder.Int32()
+}
+
+func decodeRequestOperationsForTest(t testing.TB, message msgr.Message) ([]uint16, uint32, int32) {
+	t.Helper()
+	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: 4096})
+	_, spg := decoder.Versioned(1)
+	_, _ = decodeRequestPGForTest(spg)
+	spg.Uint8()
+	decoder.Uint32()
+	decoder.Uint32()
+	flags := decoder.Uint32()
+	_, requestID := decoder.Versioned(2)
+	requestID.Raw(uint32(requestID.Remaining()))
+	for range 3 {
+		decoder.Int64()
+	}
+	decoder.Uint32()
+	decoder.Uint32()
+	decoder.Uint32()
+	_, locator := decoder.Versioned(6)
+	locator.Raw(uint32(locator.Remaining()))
+	_ = decoder.String()
+	count := decoder.Uint16()
+	codes := make([]uint16, count)
+	for index := range codes {
+		codes[index] = decoder.Uint16()
+		decoder.Raw(36)
+	}
+	decoder.Uint64()
+	decoder.Uint64()
+	decoder.Uint32()
+	return codes, flags, decoder.Int32()
 }

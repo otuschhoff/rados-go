@@ -29,6 +29,30 @@ type classification struct {
 }
 
 var implementedClassifications = map[string]classification{
+	"rados_read_op_set_flags": {
+		"rados.ReadOp.SetFlags", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+		"Exposes the qualified FAILOK sub-operation flag; rejects unknown flags", "P08 unit and live compound FAILOK tests",
+	},
+	"rados_write_op_set_flags": {
+		"rados.WriteOp.SetFlags", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+		"Exposes the qualified FAILOK sub-operation flag; preserves typed create flags", "P08 unit and live compound FAILOK tests",
+	},
+	"rados_write_op_omap_rm_range2": {
+		"rados.WriteOp.RemoveOMAPRange", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+		"Binary-safe half-open key range in a server-owned compound", "P08 codec and live metadata tests",
+	},
+	"IoCtx::omap_get_header": {
+		"rados.ObjectRef.GetOMAPHeader", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+		"Returns caller-owned header bytes", "P08 unit and live metadata tests",
+	},
+	"IoCtx::omap_get_vals_by_keys": {
+		"rados.ObjectRef.GetOMAP", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+		"Binary-safe key selection returns caller-owned entries", "P08 codec and live metadata tests",
+	},
+	"ObjectReadOperation::omap_get_header": {
+		"rados.ReadOp.GetOMAPHeader", "implemented", "P08", "replicated pools on certified Ceph 20.2.4",
+		"Ordered compound result uses Go-owned bytes", "P08 unit and live compound tests",
+	},
 	"rados_aio_flush": {
 		"rados.Client.Flush", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
 		"Watermark-based context-aware drain; no public C completion allocation", "P07 mutation/flush unit and live-cluster tests",
@@ -248,15 +272,15 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "snap"):
 		return "rados snapshot methods and immutable snapshot views", disposition, "P10", difference, test
 	case containsAny(lower, "omap", "xattr"):
-		return "rados metadata methods / operation builders", disposition, "P08", difference, test
+		return classifyP08(item, "rados metadata methods / operation builders")
 	case containsAny(lower, "nobjects", "object_list", "objectiterator", "listobject", "objectcursor", "get_locator", "get_nspace"):
-		return "rados object iterator and cursor", disposition, "P08", difference, test
+		return classifyP08(item, "rados object iterator and cursor")
 	case containsAny(lower, "exec"):
 		return "rados class execution methods", disposition, "P09", difference, test
 	case containsAny(lower, "checksum", "writesame", "sparse", "clone", "copy", "alloc_hint", "mapext", "alignment"):
 		return "rados specialized object methods", disposition, "P10", difference, test
 	case containsAny(lower, "read_op", "write_op", "objectreadoperation", "objectwriteoperation", "operate", "assert", "cmp", "objectoperation", "set_op_flags", "full_try", "full_force", "::size"):
-		return "rados.ReadOp / rados.WriteOp", disposition, "P08", difference, test
+		return classifyP08(item, "rados.ReadOp / rados.WriteOp")
 	case containsAny(lower, "read", "stat"):
 		return "rados.ObjectRef read/stat methods", disposition, "P06", difference, test
 	case containsAny(lower, "write", "append", "truncate", "trunc", "remove", "zero", "ioctx::create"):
@@ -278,6 +302,17 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	default:
 		return "none", "review-required", "P00", "Must be classified before P00 exit", "classification validator"
 	}
+}
+
+func classifyP08(item entry, equivalent string) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	if containsAny(lower, "_end", "_next", "_close", "_free", "::listobject", "::nobjectiterator", "::objectcursor", "::objectreadoperation", "::objectwriteoperation", "objectoperationcompletion") {
+		return equivalent, "go-native", "P08", "Go values, pages, and builders replace native iterator and allocation lifetimes", "P08 ownership, pagination, and builder lifecycle tests"
+	}
+	if isAny(lower, "rados_read_op_cmpext", "rados_read_op_omap_cmp", "rados_read_op_omap_cmp2") || containsAny(lower, "cmpxattr", "full_try", "full_force", "set_filter", "set_chunk", "is_dirty", "tier_", "::mtime", "redirect", "undirty", "manifest", "get_pg_hash_position", "::size") {
+		return equivalent, "intentional-omission: non-frozen P08 variant", "P08", "Not exposed by the certified P08 Go contract", "P08 API inventory review; no runtime conformance claim"
+	}
+	return equivalent, "implemented", "P08", "Context-aware Go values, pages, and builders preserve the operation semantics", "P08 unit and live metadata, compound, enumeration, and map-change tests"
 }
 
 func isAny(value string, candidates ...string) bool {

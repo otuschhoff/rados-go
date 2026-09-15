@@ -41,7 +41,7 @@ func TestEncodeReadRequestV8(t *testing.T) {
 		t.Fatal("map epoch or flags mismatch")
 	}
 	requestIDVersion, requestID := decoder.Versioned(2)
-	if requestIDVersion != 2 || !bytes.Equal(requestID.Raw(21), make([]byte, 21)) || requestID.Remaining() != 0 || !bytes.Equal(decoder.Raw(24), make([]byte, 24)) || decoder.Uint32() != 0 {
+	if requestIDVersion != 2 || requestID.Uint8() != uint8(protocol.EntityClient) || requestID.Uint64() != 0 || requestID.Uint64() != 0 || requestID.Int32() != 0 || requestID.Remaining() != 0 || !bytes.Equal(decoder.Raw(24), make([]byte, 24)) || decoder.Uint32() != 0 {
 		t.Fatal("request identity or client incarnation mismatch")
 	}
 	if !bytes.Equal(decoder.Raw(8), make([]byte, 8)) {
@@ -89,7 +89,7 @@ func TestEncodeMutationRequestsV8(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			message, err := EncodeRequest(Request{
 				PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap,
-				TransactionID: 41, ClientIncarnation: 17, Retry: 2, Operations: []Operation{test.operation},
+				TransactionID: 41, ClientGlobalID: 23, ClientIncarnation: 17, Retry: 2, Operations: []Operation{test.operation},
 			}, testLimits)
 			if err != nil {
 				t.Fatal(err)
@@ -106,7 +106,9 @@ func TestEncodeMutationRequestsV8(t *testing.T) {
 				t.Fatalf("flags=%#x", flags)
 			}
 			_, requestID := decoder.Versioned(2)
-			requestID.Raw(17)
+			if entityType, globalID, transactionID := requestID.Uint8(), requestID.Uint64(), requestID.Uint64(); entityType != uint8(protocol.EntityClient) || globalID != 23 || transactionID != 41 {
+				t.Fatalf("request identity=%d/%d/%d", entityType, globalID, transactionID)
+			}
 			if incarnation := requestID.Int32(); incarnation != 17 {
 				t.Fatalf("incarnation=%d", incarnation)
 			}
@@ -136,6 +138,44 @@ func TestEncodeMutationRejectsPayloadMismatchAndLimit(t *testing.T) {
 	request.Operations[0].Data = make([]byte, testLimits.MaxBytes)
 	if _, err := EncodeRequest(request, testLimits); !errors.Is(err, wire.ErrLimitExceeded) {
 		t.Fatalf("oversize payload error=%v", err)
+	}
+}
+
+func TestEncodeOperationUnionFixtures(t *testing.T) {
+	tests := []struct {
+		name      string
+		operation Operation
+		union     []byte
+	}{
+		{name: "extent", operation: Operation{Code: OpCompareExtent, Offset: 0x0102030405060708, Length: 9}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9}},
+		{name: "xattr", operation: Operation{Code: OpCompareXattr, XattrNameLength: 3, XattrValueLength: 5, CompareOperator: 6, CompareMode: 7}, union: []byte{3, 0, 0, 0, 5, 0, 0, 0, 6, 7}},
+		{name: "assert version", operation: Operation{Code: OpAssertVer, AssertVersion: 0x0102030405060708}, union: []byte{0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 6, 5, 4, 3, 2, 1}},
+		{name: "pg list", operation: Operation{Code: OpPGNList, ListCount: 9, ListStartEpoch: 10}, union: []byte{9, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			encoder := wire.NewEncoder(64)
+			encodeOperation(encoder, test.operation)
+			encoded, err := encoder.BytesResult()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(encoded) != int(operationDescriptorSize) {
+				t.Fatalf("descriptor length=%d", len(encoded))
+			}
+			union := encoded[6:34]
+			want := append(append([]byte(nil), test.union...), make([]byte, 28-len(test.union))...)
+			if !bytes.Equal(union, want) {
+				t.Fatalf("union=%x want=%x", union, want)
+			}
+		})
+	}
+}
+
+func TestEncodeRequestRejectsMalformedXattr(t *testing.T) {
+	request := Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Operations: []Operation{{Code: OpSetXattr, XattrNameLength: 2, XattrValueLength: 2, Data: []byte("abc")}}}
+	if _, err := EncodeRequest(request, testLimits); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("malformed xattr error=%v", err)
 	}
 }
 

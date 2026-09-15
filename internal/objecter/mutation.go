@@ -11,31 +11,66 @@ import (
 )
 
 func (client *Client) Mutate(ctx context.Context, target Target, operation osd.Operation) (Result, error) {
+	return client.MutateOperations(ctx, target, []osd.Operation{operation})
+}
+
+func (client *Client) MutateOperations(ctx context.Context, target Target, operations []osd.Operation) (Result, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if target.Snapshot != osd.NoSnap || !isMutationOperation(operation.Code) || operation.Length > math.MaxUint64-operation.Offset {
+	if target.Snapshot != osd.NoSnap || len(operations) == 0 || uint64(len(operations)) > uint64(client.config.MessageLimits.MaxOperations) {
 		return Result{}, wire.ErrMalformed
 	}
-	if operation.Code == osd.OpWrite || operation.Code == osd.OpWriteFull || operation.Code == osd.OpAppend {
-		if uint64(len(operation.Data)) != operation.Length {
+	mutation := false
+	for _, operation := range operations {
+		if operation.Length > math.MaxUint64-operation.Offset || !isCompoundWriteOperation(operation.Code) || !validCompoundPayload(operation) {
 			return Result{}, wire.ErrMalformed
 		}
-	} else if len(operation.Data) != 0 {
+		mutation = mutation || isMutationOperation(operation.Code)
+	}
+	if !mutation {
 		return Result{}, wire.ErrMalformed
 	}
-	sequence, transactionID, owned, err := client.admitMutation(ctx, operation)
+	sequence, transactionID, owned, err := client.admitMutationOperations(ctx, operations)
 	if err != nil {
 		return Result{}, err
 	}
-	result, mutationErr := client.executeOperation(ctx, target, owned, transactionID, true)
+	result, mutationErr := client.executeOperations(ctx, target, owned, transactionID, true)
 	client.completeMutation(sequence, mutationErr)
 	return result, mutationErr
 }
 
+func validCompoundPayload(operation osd.Operation) bool {
+	switch operation.Code {
+	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpCompareExtent,
+		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange, osd.OpOmapCompare:
+		return uint64(len(operation.Data)) == operation.Length
+	case osd.OpSetXattr, osd.OpCompareXattr:
+		return uint64(operation.XattrNameLength)+uint64(operation.XattrValueLength) == uint64(len(operation.Data))
+	case osd.OpRemoveXattr:
+		return operation.XattrValueLength == 0 && uint64(operation.XattrNameLength) == uint64(len(operation.Data))
+	default:
+		return len(operation.Data) == 0
+	}
+}
+
 func isMutationOperation(code uint16) bool {
 	switch code {
-	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpTruncate, osd.OpZero, osd.OpDelete, osd.OpCreate:
+	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpTruncate, osd.OpZero, osd.OpDelete, osd.OpCreate,
+		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapClear, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange,
+		osd.OpSetXattr, osd.OpRemoveXattr:
+		return true
+	default:
+		return false
+	}
+}
+
+func isCompoundWriteOperation(code uint16) bool {
+	if isMutationOperation(code) {
+		return true
+	}
+	switch code {
+	case osd.OpAssertVer, osd.OpCompareExtent, osd.OpOmapCompare, osd.OpCompareXattr:
 		return true
 	default:
 		return false
@@ -43,37 +78,55 @@ func isMutationOperation(code uint16) bool {
 }
 
 func (client *Client) admitMutation(ctx context.Context, operation osd.Operation) (uint64, uint64, osd.Operation, error) {
-	bytes := uint64(len(operation.Data))
+	sequence, transactionID, operations, err := client.admitMutationOperations(ctx, []osd.Operation{operation})
+	if err != nil {
+		return 0, 0, osd.Operation{}, err
+	}
+	return sequence, transactionID, operations[0], nil
+}
+
+func (client *Client) admitMutationOperations(ctx context.Context, operations []osd.Operation) (uint64, uint64, []osd.Operation, error) {
+	bytes := uint64(0)
+	for _, operation := range operations {
+		if uint64(len(operation.Data)) > math.MaxUint64-bytes {
+			return 0, 0, nil, wire.ErrLimitExceeded
+		}
+		bytes += uint64(len(operation.Data))
+	}
 	if bytes > client.config.MaxMutationBytes {
-		return 0, 0, osd.Operation{}, wire.ErrLimitExceeded
+		return 0, 0, nil, wire.ErrLimitExceeded
 	}
 	for {
 		client.mu.Lock()
 		if client.closed || client.mutationClosed {
 			client.mu.Unlock()
-			return 0, 0, osd.Operation{}, ErrClosed
+			return 0, 0, nil, ErrClosed
 		}
 		if len(client.pendingMutations) < client.config.MaxMutations && bytes <= client.config.MaxMutationBytes-client.retainedMutationBytes {
 			if client.nextMutation == math.MaxUint64 || client.nextTransaction == math.MaxUint64 {
 				client.mu.Unlock()
-				return 0, 0, osd.Operation{}, wire.ErrLimitExceeded
+				return 0, 0, nil, wire.ErrLimitExceeded
 			}
 			client.nextMutation++
 			sequence := client.nextMutation
 			transactionID := client.takeTransactionIDLocked()
-			operation.Data = append([]byte(nil), operation.Data...)
-			operation.PayloadLength = uint32(len(operation.Data))
+			owned := make([]osd.Operation, len(operations))
+			for index, operation := range operations {
+				owned[index] = operation
+				owned[index].Data = append([]byte(nil), operation.Data...)
+				owned[index].PayloadLength = uint32(len(operation.Data))
+			}
 			client.pendingMutations[sequence] = bytes
 			client.retainedMutationBytes += bytes
 			client.mu.Unlock()
-			return sequence, transactionID, operation, nil
+			return sequence, transactionID, owned, nil
 		}
 		changed := client.mutationChanged
 		client.mu.Unlock()
 		select {
 		case <-changed:
 		case <-ctx.Done():
-			return 0, 0, osd.Operation{}, ctx.Err()
+			return 0, 0, nil, ctx.Err()
 		}
 	}
 }

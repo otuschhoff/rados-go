@@ -2,7 +2,9 @@ package rados
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
 	"time"
 
 	"github.com/otuschhoff/go-librados/internal/objecter"
@@ -40,6 +42,30 @@ type SubOpResult struct {
 	Err   error
 }
 
+type ObjectEntry struct {
+	Name      string
+	Namespace string
+	Locator   string
+}
+
+type ObjectCursor struct {
+	poolID    int64
+	namespace string
+	value     string
+	end       bool
+}
+
+type ObjectPage struct {
+	Values []ObjectEntry
+	Next   ObjectCursor
+	More   bool
+}
+
+const (
+	objectCursorMaxBytes = uint32(1024)
+	maxCursorPartitions  = uint32(1 << 20)
+)
+
 func (pool Pool) ID() int64    { return pool.id }
 func (pool Pool) Name() string { return pool.name }
 
@@ -59,6 +85,159 @@ func (pool Pool) WithReadSnapshot(id uint64) Pool {
 }
 
 func (pool Pool) Object(name string) ObjectRef { return ObjectRef{pool: pool, name: name} }
+
+func (pool Pool) BeginObjectCursor() ObjectCursor {
+	return newObjectCursor(pool.id, pool.namespace, osd.HObject{Pool: math.MinInt64})
+}
+
+func (pool Pool) EndObjectCursor() ObjectCursor {
+	return ObjectCursor{poolID: pool.id, namespace: pool.namespace, end: true}
+}
+
+func (cursor ObjectCursor) IsEnd() bool { return cursor.end }
+
+func CompareObjectCursors(left, right ObjectCursor) (int, error) {
+	if !left.valid() || !right.valid() || left.poolID != right.poolID || left.namespace != right.namespace {
+		return 0, ErrInvalidArgument
+	}
+	if left.end || right.end {
+		switch {
+		case left.end == right.end:
+			return 0, nil
+		case left.end:
+			return 1, nil
+		default:
+			return -1, nil
+		}
+	}
+	leftObject, leftErr := left.hobject()
+	rightObject, rightErr := right.hobject()
+	if leftErr != nil || rightErr != nil {
+		return 0, ErrInvalidArgument
+	}
+	return osd.CompareHObject(leftObject, rightObject), nil
+}
+
+func (pool Pool) SplitCursor(begin, end ObjectCursor, partitions uint32) ([]ObjectCursor, error) {
+	if partitions == 0 || partitions > maxCursorPartitions || !pool.ownsCursor(begin) || !pool.ownsCursor(end) {
+		return nil, ErrInvalidArgument
+	}
+	comparison, err := CompareObjectCursors(begin, end)
+	if err != nil || comparison > 0 {
+		return nil, ErrInvalidArgument
+	}
+	startObject, err := begin.hobject()
+	if err != nil {
+		return nil, ErrInvalidArgument
+	}
+	finishObject, err := end.hobject()
+	if err != nil {
+		return nil, ErrInvalidArgument
+	}
+	startHash := uint64(osd.ReverseBits(startObject.Hash))
+	finishHash := uint64(1) << 32
+	if !finishObject.IsMax() {
+		finishHash = uint64(osd.ReverseBits(finishObject.Hash))
+	}
+	difference := finishHash - startHash
+	boundaries := make([]ObjectCursor, partitions+1)
+	boundaries[0] = begin
+	boundaries[partitions] = end
+	for index := uint32(1); index < partitions; index++ {
+		reversed := startHash + difference/uint64(partitions)*uint64(index) + difference%uint64(partitions)*uint64(index)/uint64(partitions)
+		if reversed >= uint64(1)<<32 {
+			boundaries[index] = pool.EndObjectCursor()
+			continue
+		}
+		boundaries[index] = newObjectCursor(pool.id, pool.namespace, osd.HObject{Snapshot: osd.NoSnap, Hash: osd.ReverseBits(uint32(reversed)), Pool: pool.id})
+	}
+	return boundaries, nil
+}
+
+func (pool Pool) ListObjects(ctx context.Context, after ObjectCursor, limit uint64) (ObjectPage, error) {
+	return pool.ListObjectsRange(ctx, after, pool.EndObjectCursor(), limit)
+}
+
+func (pool Pool) ListObjectsRange(ctx context.Context, after, end ObjectCursor, limit uint64) (ObjectPage, error) {
+	if pool.client == nil || !pool.ownsCursor(after) || !pool.ownsCursor(end) || limit == 0 || limit > uint64(math.MaxInt) {
+		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: ErrInvalidArgument}
+	}
+	comparison, err := CompareObjectCursors(after, end)
+	if err != nil || comparison > 0 {
+		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: ErrInvalidArgument}
+	}
+	_, objects, err := pool.client.active()
+	if err != nil {
+		return ObjectPage{}, pool.client.wrapError("list objects", fmt.Sprintf("pool %d", pool.id), err)
+	}
+	if limit > objects.MaxEnumerationEntries() {
+		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: ErrInvalidArgument}
+	}
+	if comparison == 0 {
+		return ObjectPage{Values: []ObjectEntry{}, Next: end}, nil
+	}
+	start, err := after.hobject()
+	if err != nil {
+		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: errors.Join(ErrInvalidArgument, err)}
+	}
+	finish, err := end.hobject()
+	if err != nil {
+		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: errors.Join(ErrInvalidArgument, err)}
+	}
+	operationCtx, cancel := pool.client.operationContext(ctx)
+	defer cancel()
+	result, err := objects.Enumerate(operationCtx, pool.id, pool.namespace, start, finish, limit)
+	if err != nil {
+		return ObjectPage{}, pool.client.wrapError("list objects", fmt.Sprintf("pool %d", pool.id), err)
+	}
+	page := ObjectPage{Values: make([]ObjectEntry, len(result.Entries))}
+	for index, entry := range result.Entries {
+		page.Values[index] = ObjectEntry{Name: entry.Object, Namespace: entry.Namespace, Locator: entry.Locator}
+	}
+	if result.Next.IsMax() {
+		page.Next = pool.EndObjectCursor()
+	} else {
+		page.Next = newObjectCursor(pool.id, pool.namespace, result.Next)
+	}
+	page.More, err = cursorBefore(page.Next, end)
+	if err != nil {
+		return ObjectPage{}, &OpError{Op: "list objects", Target: fmt.Sprintf("pool %d", pool.id), Err: ErrInvalidArgument}
+	}
+	return page, nil
+}
+
+func (pool Pool) ownsCursor(cursor ObjectCursor) bool {
+	return cursor.valid() && cursor.poolID == pool.id && cursor.namespace == pool.namespace
+}
+
+func cursorBefore(left, right ObjectCursor) (bool, error) {
+	comparison, err := CompareObjectCursors(left, right)
+	return comparison < 0, err
+}
+
+func (cursor ObjectCursor) valid() bool { return cursor.end || cursor.value != "" }
+
+func (cursor ObjectCursor) hobject() (osd.HObject, error) {
+	if cursor.end {
+		return osd.HObject{Max: true}, nil
+	}
+	if cursor.value == "" {
+		return osd.HObject{}, ErrInvalidArgument
+	}
+	object, err := osd.UnmarshalHObject([]byte(cursor.value), objectCursorMaxBytes)
+	if err != nil || object.IsMax() || (!object.IsMin() && (object.Pool != cursor.poolID || object.Snapshot != osd.NoSnap)) {
+		return osd.HObject{}, ErrInvalidArgument
+	}
+	return object, nil
+}
+
+func newObjectCursor(poolID int64, namespace string, object osd.HObject) ObjectCursor {
+	value, err := osd.MarshalHObject(object, objectCursorMaxBytes)
+	if err != nil {
+		panic("fixed-size object cursor exceeded its encoding bound")
+	}
+	return ObjectCursor{poolID: poolID, namespace: namespace, value: string(value)}
+}
 
 func (object ObjectRef) Read(ctx context.Context, offset, length uint64) ([]byte, ObjectInfo, error) {
 	objects, operationCtx, cancel, err := object.begin(ctx)

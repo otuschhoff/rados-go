@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 CEPH_SOURCE ?= /tmp/go-librados-ceph
 
-.PHONY: inventory verify-p00 verify-p01 verify-p01-all quality-p01 reproduce-p01 unit-p01 differential-p01 integration-p01 cross-p01 fuzz-p01 fuzz-p01-nightly verify-p02 verify-p02-all quality-p02 reproduce-p02 reproduce-p02-upstream unit-p02 differential-p02 integration-p02 cross-p02 fuzz-p02 fuzz-p02-nightly verify-p03 verify-p03-all verify-manifests quality-p03 reproduce-p03-fixtures unit-p03 differential-p03 integration-p03 cross-p03 fuzz-p03 fuzz-p03-nightly verify-p04 verify-p04-all quality-p04 reproduce-p04-fixtures unit-p04 differential-p04 integration-p04 cross-p04 fuzz-p04 fuzz-p04-nightly verify-p05 verify-p05-all quality-p05 reproduce-p05 unit-p05 differential-p05 integration-p05 cross-p05 fuzz-p05 fuzz-p05-nightly verify-p06 verify-p06-all quality-p06 unit-p06 integration-p06 cross-p06 fuzz-p06 fuzz-p06-nightly verify-p07 verify-p07-all quality-p07 unit-p07 integration-p07 cross-p07 fuzz-p07 fuzz-p07-nightly p00-preflight p00-smoke
+.PHONY: inventory verify-p00 verify-p01 verify-p01-all quality-p01 reproduce-p01 unit-p01 differential-p01 integration-p01 cross-p01 fuzz-p01 fuzz-p01-nightly verify-p02 verify-p02-all quality-p02 reproduce-p02 reproduce-p02-upstream unit-p02 differential-p02 integration-p02 cross-p02 fuzz-p02 fuzz-p02-nightly verify-p03 verify-p03-all verify-manifests quality-p03 reproduce-p03-fixtures unit-p03 differential-p03 integration-p03 cross-p03 fuzz-p03 fuzz-p03-nightly verify-p04 verify-p04-all quality-p04 reproduce-p04-fixtures unit-p04 differential-p04 integration-p04 cross-p04 fuzz-p04 fuzz-p04-nightly verify-p05 verify-p05-all quality-p05 reproduce-p05 unit-p05 differential-p05 integration-p05 cross-p05 fuzz-p05 fuzz-p05-nightly verify-p06 verify-p06-all quality-p06 unit-p06 integration-p06 cross-p06 fuzz-p06 fuzz-p06-nightly verify-p07 verify-p07-all quality-p07 unit-p07 integration-p07 cross-p07 fuzz-p07 fuzz-p07-nightly verify-p08 verify-p08-all quality-p08 unit-p08 integration-p08 cross-p08 fuzz-p08 fuzz-p08-nightly p00-preflight p00-smoke
 
 inventory:
 	GO111MODULE=off go run ./tools/api-inventory \
@@ -144,6 +144,7 @@ verify-manifests:
 	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p04/report.schema.json -d docs/p04/integration-report.json
 	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p06/report.schema.json -d docs/p06/integration-report.json
 	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p07/report.schema.json -d docs/p07/integration-report.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p08/report.schema.json -d docs/p08/integration-report.json
 
 verify-p03-all:
 	$(MAKE) quality-p03
@@ -385,6 +386,57 @@ fuzz-p07:
 fuzz-p07-nightly:
 	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeReply$$' -fuzztime=5m
 	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeBackoff$$' -fuzztime=5m
+	CGO_ENABLED=0 go test ./internal/msgr -run '^$$' -fuzz '^FuzzSessionScript$$' -fuzztime=5m
+
+verify-p08: verify-p07
+	test -z "$$(gofmt -l $$(find . -name '*.go' -not -path './.git/*'))"
+	$(MAKE) verify-manifests
+	$(MAKE) unit-p08
+	CGO_ENABLED=0 go test ./...
+	CGO_ENABLED=0 go build ./...
+	go vet ./...
+	go mod verify
+	CGO_ENABLED=0 go run ./tools/p08-verify
+	$(MAKE) cross-p08
+
+verify-p08-all:
+	$(MAKE) quality-p08
+	$(MAKE) integration-p08
+	$(MAKE) verify-p08
+	$(MAKE) fuzz-p08
+
+quality-p08:
+	test -z "$$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+	go mod verify
+	go test -race ./...
+	go run "honnef.co/go/tools/cmd/staticcheck@$$(jq -r '.quality_tools.staticcheck' docs/p01/evidence.json)" ./...
+	go run "golang.org/x/vuln/cmd/govulncheck@$$(jq -r '.quality_tools.govulncheck' docs/p01/evidence.json)" ./...
+
+unit-p08:
+	CGO_ENABLED=0 go test . ./internal/maps ./internal/objecter ./internal/osd ./tools/p08-verify
+
+integration-p08:
+	./integration/p08/reproduce.sh
+	CGO_ENABLED=0 go run ./tools/p08-verify
+
+cross-p08:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./...
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build ./...
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build ./...
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build ./...
+
+fuzz-p08:
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeReply$$' -fuzztime=60s
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeBackoff$$' -fuzztime=60s
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodePGNLSPage$$' -fuzztime=60s
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzMetadataDecoders$$' -fuzztime=60s
+	CGO_ENABLED=0 go test ./internal/msgr -run '^$$' -fuzz '^FuzzSessionScript$$' -fuzztime=60s
+
+fuzz-p08-nightly:
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeReply$$' -fuzztime=5m
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeBackoff$$' -fuzztime=5m
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodePGNLSPage$$' -fuzztime=5m
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzMetadataDecoders$$' -fuzztime=5m
 	CGO_ENABLED=0 go test ./internal/msgr -run '^$$' -fuzz '^FuzzSessionScript$$' -fuzztime=5m
 
 p00-preflight:

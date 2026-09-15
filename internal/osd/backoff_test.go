@@ -35,6 +35,21 @@ func TestDecodeBackoffAndEncodeAcknowledgment(t *testing.T) {
 	}
 }
 
+func TestHObjectPublicCodecRoundTrip(t *testing.T) {
+	want := HObject{Key: "key", Object: "object", Snapshot: NoSnap, Hash: 0x12345678, Namespace: "ns", Pool: 7}
+	encoded, err := MarshalHObject(want, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := UnmarshalHObject(encoded, 1024)
+	if err != nil || got != want {
+		t.Fatalf("object = %+v, %v", got, err)
+	}
+	if _, err := UnmarshalHObject(append(encoded, 0), 1024); err == nil {
+		t.Fatal("trailing cursor bytes accepted")
+	}
+}
+
 func TestBackoffContainsSingleAndRange(t *testing.T) {
 	object := HObject{Object: "object", Snapshot: NoSnap, Hash: 1, Pool: 7}
 	single := Backoff{Begin: object, End: object}

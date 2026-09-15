@@ -14,37 +14,67 @@ import (
 var ErrMalformedReply = errors.New("malformed OSD reply")
 
 const (
-	OpRead      = uint16(0x1201)
-	OpStat      = uint16(0x1202)
-	OpWrite     = uint16(0x2201)
-	OpWriteFull = uint16(0x2202)
-	OpTruncate  = uint16(0x2203)
-	OpZero      = uint16(0x2204)
-	OpDelete    = uint16(0x2205)
-	OpAppend    = uint16(0x2206)
-	OpCreate    = uint16(0x220d)
+	OpRead                = uint16(0x1201)
+	OpStat                = uint16(0x1202)
+	OpAssertVer           = uint16(0x1208)
+	OpOmapGetKeys         = uint16(0x1211)
+	OpOmapGetValues       = uint16(0x1212)
+	OpOmapGetHeader       = uint16(0x1213)
+	OpOmapGetValuesByKeys = uint16(0x1214)
+	OpOmapCompare         = uint16(0x1219)
+	OpCompareExtent       = uint16(0x1220)
+	OpGetXattr            = uint16(0x1301)
+	OpGetXattrs           = uint16(0x1302)
+	OpCompareXattr        = uint16(0x1303)
+	OpPGList              = uint16(0x1501)
+	OpPGNList             = uint16(0x1505)
+	OpWrite               = uint16(0x2201)
+	OpWriteFull           = uint16(0x2202)
+	OpTruncate            = uint16(0x2203)
+	OpZero                = uint16(0x2204)
+	OpDelete              = uint16(0x2205)
+	OpAppend              = uint16(0x2206)
+	OpCreate              = uint16(0x220d)
+	OpOmapSetValues       = uint16(0x2215)
+	OpOmapSetHeader       = uint16(0x2216)
+	OpOmapClear           = uint16(0x2217)
+	OpOmapRemoveKeys      = uint16(0x2218)
+	OpOmapRemoveRange     = uint16(0x222c)
+	OpSetXattr            = uint16(0x2301)
+	OpRemoveXattr         = uint16(0x2304)
 
 	OpFlagExclusive = uint32(0x0001)
+	OpFlagFailOK    = uint32(0x0002)
 
 	FlagAck           = uint32(0x0001)
 	FlagWrite         = uint32(0x0020)
 	FlagOnDisk        = uint32(0x0004)
 	FlagRead          = uint32(0x0010)
 	FlagRetry         = uint32(0x0008)
+	FlagPGOp          = uint32(0x0400)
 	FlagIgnoreCache   = uint32(0x8000)
 	FlagIgnoreOverlay = uint32(0x20000)
 	FlagRedirected    = uint32(0x200000)
+	FlagReturnVector  = uint32(0x04000000)
 
-	NoSnap = ^uint64(1)
+	NoSnap                  = ^uint64(1)
+	operationDescriptorSize = uint64(38)
 )
 
 type Operation struct {
-	Code          uint16
-	Flags         uint32
-	Offset        uint64
-	Length        uint64
-	PayloadLength uint32
-	Data          []byte
+	Code             uint16
+	Flags            uint32
+	Offset           uint64
+	Length           uint64
+	XattrNameLength  uint32
+	XattrValueLength uint32
+	CompareOperator  uint8
+	CompareMode      uint8
+	AssertVersion    uint64
+	ListCount        uint64
+	ListStartEpoch   uint32
+	PayloadLength    uint32
+	Data             []byte
 }
 
 type Request struct {
@@ -57,6 +87,7 @@ type Request struct {
 	Namespace         string
 	Snapshot          uint64
 	TransactionID     uint64
+	ClientGlobalID    uint64
 	ClientIncarnation int32
 	Retry             int32
 	Flags             uint32
@@ -114,6 +145,9 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 		if operation.PayloadLength != 0 && operation.PayloadLength != uint32(len(operation.Data)) {
 			return msgr.Message{}, wire.ErrMalformed
 		}
+		if err := validateOperation(*operation); err != nil {
+			return msgr.Message{}, err
+		}
 		operation.PayloadLength = uint32(len(operation.Data))
 		dataLength += uint64(len(operation.Data))
 		if dataLength > uint64(limits.MaxBytes) {
@@ -129,7 +163,7 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 		flags = FlagWrite | FlagOnDisk
 	}
 	encoder.Uint32(flags | request.Flags)
-	encodeRequestID(encoder, request.ClientIncarnation)
+	encodeRequestID(encoder, request.ClientGlobalID, request.TransactionID, request.ClientIncarnation)
 	encodeTrace(encoder)
 	encoder.Int32(request.ClientIncarnation)
 	encodeUTime(encoder, 0, 0)
@@ -160,11 +194,34 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 
 func supportedOperation(code uint16) bool {
 	switch code {
-	case OpRead, OpStat, OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpCreate:
+	case OpRead, OpStat, OpAssertVer, OpOmapGetKeys, OpOmapGetValues,
+		OpOmapGetValuesByKeys, OpOmapGetHeader, OpOmapCompare, OpCompareExtent,
+		OpGetXattr, OpGetXattrs, OpCompareXattr, OpPGList, OpPGNList,
+		OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpCreate,
+		OpOmapSetValues, OpOmapSetHeader, OpOmapClear, OpOmapRemoveKeys,
+		OpOmapRemoveRange, OpSetXattr, OpRemoveXattr:
 		return true
 	default:
 		return false
 	}
+}
+
+func validateOperation(operation Operation) error {
+	switch operation.Code {
+	case OpPGNList:
+		if operation.ListCount == 0 || len(operation.Data) == 0 {
+			return wire.ErrMalformed
+		}
+	case OpGetXattr, OpRemoveXattr:
+		if operation.XattrValueLength != 0 || uint64(operation.XattrNameLength) != uint64(len(operation.Data)) {
+			return wire.ErrMalformed
+		}
+	case OpSetXattr, OpCompareXattr:
+		if uint64(operation.XattrNameLength)+uint64(operation.XattrValueLength) != uint64(len(operation.Data)) {
+			return wire.ErrMalformed
+		}
+	}
+	return nil
 }
 
 func isMutation(code uint16) bool { return code&0x2000 != 0 }
@@ -188,7 +245,7 @@ func DecodeReply(message msgr.Message, limits Limits) (Reply, error) {
 	if err := decoder.Finish(); err != nil {
 		return Reply{}, err
 	}
-	if count > limits.MaxOperations || uint64(count)*42 > decoder.Remaining() {
+	if count > limits.MaxOperations || uint64(count)*operationDescriptorSize > decoder.Remaining() {
 		return Reply{}, wire.ErrLimitExceeded
 	}
 	reply.Operations = make([]OperationResult, count)
@@ -264,20 +321,34 @@ func decodePG(decoder *wire.Decoder) (maps.PG, error) {
 func encodeOperation(encoder *wire.Encoder, operation Operation) {
 	encoder.Uint16(operation.Code)
 	encoder.Uint32(operation.Flags)
-	encoder.Uint64(operation.Offset)
-	encoder.Uint64(operation.Length)
-	encoder.Uint64(0)
-	encoder.Uint32(0)
+	switch operation.Code {
+	case OpGetXattr, OpGetXattrs, OpCompareXattr, OpSetXattr, OpRemoveXattr:
+		encoder.Uint32(operation.XattrNameLength)
+		encoder.Uint32(operation.XattrValueLength)
+		encoder.Uint8(operation.CompareOperator)
+		encoder.Uint8(operation.CompareMode)
+		encoder.Raw(make([]byte, 18))
+	case OpAssertVer:
+		encoder.Uint64(0)
+		encoder.Uint64(operation.AssertVersion)
+		encoder.Raw(make([]byte, 12))
+	case OpPGList, OpPGNList:
+		encoder.Uint64(operation.ListCount)
+		encoder.Uint32(operation.ListStartEpoch)
+		encoder.Raw(make([]byte, 16))
+	default:
+		encoder.Uint64(operation.Offset)
+		encoder.Uint64(operation.Length)
+		encoder.Uint64(0)
+		encoder.Uint32(0)
+	}
 	encoder.Uint32(operation.PayloadLength)
 }
 
 func decodeOperation(decoder *wire.Decoder) (uint16, uint32) {
 	code := decoder.Uint16()
 	decoder.Uint32()
-	decoder.Uint64()
-	decoder.Uint64()
-	decoder.Uint64()
-	decoder.Uint32()
+	decoder.Raw(28)
 	return code, decoder.Uint32()
 }
 
@@ -328,11 +399,11 @@ func decodeRedirect(decoder *wire.Decoder) (Redirect, error) {
 	return redirect, nil
 }
 
-func encodeRequestID(encoder *wire.Encoder, incarnation int32) {
+func encodeRequestID(encoder *wire.Encoder, globalID, transactionID uint64, incarnation int32) {
 	encoder.Versioned(2, 2, func(requestID *wire.Encoder) {
-		requestID.Uint8(0)
-		requestID.Uint64(0)
-		requestID.Uint64(0)
+		requestID.Uint8(uint8(protocol.EntityClient))
+		requestID.Uint64(globalID)
+		requestID.Uint64(transactionID)
 		requestID.Int32(incarnation)
 	})
 }
