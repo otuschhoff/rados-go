@@ -28,6 +28,19 @@ type fakeMonitorSession struct {
 	once        sync.Once
 }
 
+func TestAuthoritySessionPublishesOnceAfterFSIDAcceptance(t *testing.T) {
+	observed := 0
+	active := &authoritySession{publish: func() { observed++ }}
+	if observed != 0 {
+		t.Fatal("authority published before accepted FSID")
+	}
+	publishAuthority(active)
+	publishAuthority(active)
+	if observed != 1 {
+		t.Fatalf("observed=%d", observed)
+	}
+}
+
 func newFakeMonitorSession() *fakeMonitorSession {
 	return &fakeMonitorSession{incoming: make(chan msgr.Message, 8), events: make(chan msgr.SessionEvent, 8), terminal: make(chan error, 1), done: make(chan struct{}), sends: make(chan msgr.Message, 8)}
 }

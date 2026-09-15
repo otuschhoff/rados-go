@@ -1,6 +1,6 @@
 # Project Specification: Pure-Go RADOS Client
 
-Status: proposed implementation contract; no client implementation exists yet.
+Status: implementation contract; phases P00 through P06 are implemented and qualified.
 
 ## 1. Purpose
 

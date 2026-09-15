@@ -11,6 +11,9 @@ const (
 	FeatureServerMimicIncarnation GlobalFeatures = 1<<57 | 1<<28
 	FeatureServerNautilusMask                    = FeatureServerNautilus | FeatureServerMimicIncarnation
 	FeatureMessageAddress2        GlobalFeatures = 1 << 59
+	FeatureOSDReplyMux            GlobalFeatures = 1 << 12
+	FeatureNewOSDOpEncoding       GlobalFeatures = 1 << 56
+	FeatureNewOSDOpReplyEncoding  GlobalFeatures = 1 << 58
 	FeatureReserved               GlobalFeatures = 1 << 62
 	// FeatureOSDMapEncoding is Ceph's SIGNIFICANT_FEATURES subset: precisely
 	// the capabilities that can alter full or incremental OSDMap bytes.
@@ -18,6 +21,7 @@ const (
 	// FeatureMonitorClient combines the map formats decoded by P04 with modern
 	// MonMap encoding and the pinned monitor's CephX admission requirements.
 	FeatureMonitorClient GlobalFeatures = 0x2e070282d2354004 | FeatureMonitorNames | FeatureMonitorEncoding | FeatureOSDMapEncoding
+	FeatureOSDClient     GlobalFeatures = FeatureMonitorClient | FeatureOSDReplyMux | FeaturePGID64 | FeatureNewOSDOpEncoding | FeatureNewOSDOpReplyEncoding | FeatureMessageAddress2
 )
 
 func (features GlobalFeatures) Has(mask GlobalFeatures) bool {

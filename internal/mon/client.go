@@ -101,6 +101,10 @@ func NewClient(config ClientConfig, factory SessionFactory) (*Client, error) {
 }
 
 func NewAuthenticatedSessionFactory(connector cephx.ConnectorConfig, sessionConfig msgr.SessionConfig) SessionFactory {
+	return NewAuthenticatedSessionFactoryWithObserver(connector, sessionConfig, nil)
+}
+
+func NewAuthenticatedSessionFactoryWithObserver(connector cephx.ConnectorConfig, sessionConfig msgr.SessionConfig, observe func(*cephx.Connector)) SessionFactory {
 	return func(_ context.Context, endpoint Endpoint) (session, error) {
 		connectorConfig := connector
 		connectorConfig.Address = endpoint.Address.String()
@@ -112,7 +116,30 @@ func NewAuthenticatedSessionFactory(connector cephx.ConnectorConfig, sessionConf
 		config := sessionConfig
 		config.ClientIdent.Addresses = cloneEntityAddresses(sessionConfig.ClientIdent.Addresses)
 		config.ClientIdent.TargetAddress = endpoint.EntityAddress
-		return msgr.NewSession(nil, authenticated, config)
+		opened, err := msgr.NewSession(nil, authenticated, config)
+		if err != nil {
+			return nil, err
+		}
+		if observe == nil {
+			return opened, nil
+		}
+		return &authoritySession{Session: opened, publish: func() { observe(authenticated) }}, nil
+	}
+}
+
+type authoritySession struct {
+	*msgr.Session
+	publish     func()
+	publishOnce sync.Once
+}
+
+func (session *authoritySession) publishAuthority() {
+	session.publishOnce.Do(session.publish)
+}
+
+func publishAuthority(active session) {
+	if publisher, ok := active.(interface{ publishAuthority() }); ok {
+		publisher.publishAuthority()
 	}
 }
 
@@ -230,6 +257,26 @@ func (client *Client) PoolByName(name string) (maps.Pool, bool) {
 	return osdMap.PoolByName(name)
 }
 
+func (client *Client) RefreshOSDMap(ctx context.Context, after uint32) error {
+	if err := client.requestFullMap(); err != nil {
+		return err
+	}
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if current := client.osdMap.Load(); current != nil && current.Epoch() > after {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-client.done:
+			return ErrClosed
+		case <-ticker.C:
+		}
+	}
+}
+
 func (client *Client) ReadOnlyCommand(ctx context.Context, command []string, input []byte) (CommandReply, error) {
 	if !isReadOnlyCommand(command) {
 		return CommandReply{}, ErrReadOnlyCommand
@@ -338,6 +385,7 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 		if err := client.pinFSID(ack.FSID); err != nil {
 			return 0, err
 		}
+		publishAuthority(active)
 		if ack.IntervalSeconds == 0 {
 			return client.config.SubscribePeriod, nil
 		}
@@ -350,6 +398,7 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 		if err := client.pinFSID(monMap.FSID()); err != nil {
 			return 0, err
 		}
+		publishAuthority(active)
 		current := client.monMap.Load()
 		if current == nil || monMap.Epoch() > current.Epoch() {
 			activePresent := client.replaceMonMapEndpoints(monMap)
@@ -369,6 +418,7 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 		if err := client.pinFSID(batch.FSID); err != nil {
 			return 0, err
 		}
+		publishAuthority(active)
 		appliedFull, err := client.applyBatch(batch)
 		if err != nil {
 			if errors.Is(err, ErrMapGap) {

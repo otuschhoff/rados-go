@@ -582,6 +582,42 @@ func TestSessionKeepsMatchedRepliesOutOfIncoming(t *testing.T) {
 	}
 }
 
+func TestSessionIsolatesLateReplyAfterCancellation(t *testing.T) {
+	transport := newFakeTransport()
+	session := newTestSession(t, transport, nil, testSessionConfig(t))
+	defer session.Stop()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	firstResult := submitAsync(session, ctx, testMessage("first request"))
+	first := decodeWrittenMessage(t, transport)
+	cancel()
+	if err := waitOutcome(t, firstResult).err; !errors.Is(err, context.Canceled) || !errors.Is(err, ErrOutcomeUnknown) {
+		t.Fatalf("canceled request error = %v", err)
+	}
+
+	secondResult := submitAsync(session, context.Background(), testMessage("second request"))
+	second := decodeWrittenMessage(t, transport)
+	late := testMessage("late first reply")
+	late.Header.Sequence = 1
+	late.Header.TransactionID = first.Header.TransactionID
+	transport.inject(messageFrame(t, late))
+	if incoming := <-session.Incoming(); string(incoming.Front) != "late first reply" {
+		t.Fatalf("late reply = %+v", incoming)
+	}
+	select {
+	case outcome := <-secondResult:
+		t.Fatalf("late reply completed second request: %+v", outcome)
+	default:
+	}
+	reply := testMessage("second reply")
+	reply.Header.Sequence = 2
+	reply.Header.TransactionID = second.Header.TransactionID
+	transport.inject(messageFrame(t, reply))
+	if outcome := waitOutcome(t, secondResult); outcome.err != nil || string(outcome.message.Front) != "second reply" {
+		t.Fatalf("second outcome = %+v", outcome)
+	}
+}
+
 func TestSessionFailsExplicitlyWhenIncomingQueueIsFull(t *testing.T) {
 	transport := newFakeTransport()
 	config := testSessionConfig(t)
@@ -680,10 +716,11 @@ func TestSessionRejectsInvalidServerIdent(t *testing.T) {
 	tests := []struct {
 		name  string
 		ident ServerIdent
+		want  error
 	}{
 		{name: "missing target address", ident: ServerIdent{}},
-		{name: "unsupported required feature", ident: ServerIdent{RequiredFeatures: 1 << 63}},
-		{name: "missing client required feature", ident: ServerIdent{SupportedFeatures: 1}},
+		{name: "unsupported required feature", ident: ServerIdent{RequiredFeatures: 1 << 63}, want: ErrUnsupportedFeature},
+		{name: "missing client required feature", ident: ServerIdent{SupportedFeatures: 1}, want: ErrUnsupportedFeature},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -699,6 +736,9 @@ func TestSessionRejectsInvalidServerIdent(t *testing.T) {
 			owner.handleControl(test.ident)
 			if owner.state != StateDisconnected || owner.terminalErr == nil {
 				t.Fatalf("invalid server ident left state=%d error=%v", owner.state, owner.terminalErr)
+			}
+			if test.want != nil && !errors.Is(owner.terminalErr, test.want) {
+				t.Fatalf("error=%v want=%v", owner.terminalErr, test.want)
 			}
 		})
 	}

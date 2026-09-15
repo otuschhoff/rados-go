@@ -383,17 +383,23 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 }
 
 func (session *Session) Submit(ctx context.Context, message Message) (Message, error) {
-	return session.submit(ctx, message, false)
+	return session.submit(ctx, message, false, nil)
+}
+
+// SubmitAdmitted invokes admitted after the request is registered by the
+// session owner and before waiting for its reply.
+func (session *Session) SubmitAdmitted(ctx context.Context, message Message, admitted func()) (Message, error) {
+	return session.submit(ctx, message, false, admitted)
 }
 
 // Send transmits a one-way message and returns after its frame has been
 // accepted by the transport. Callers must resubmit it after reconnect.
 func (session *Session) Send(ctx context.Context, message Message) error {
-	_, err := session.submit(ctx, message, true)
+	_, err := session.submit(ctx, message, true, nil)
 	return err
 }
 
-func (session *Session) submit(ctx context.Context, message Message, oneWay bool) (Message, error) {
+func (session *Session) submit(ctx context.Context, message Message, oneWay bool, admitted func()) (Message, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -407,6 +413,9 @@ func (session *Session) submit(ctx context.Context, message Message, oneWay bool
 	}
 	select {
 	case <-request.admitted:
+		if admitted != nil {
+			admitted()
+		}
 	case <-session.done:
 		return Message{}, ErrSessionClosed
 	}
@@ -757,11 +766,11 @@ func (owner *sessionOwner) handleControl(payload any) {
 			return
 		}
 		if unsupported := value.RequiredFeatures &^ owner.config.ClientIdent.SupportedFeatures; unsupported != 0 {
-			owner.handleFault(fmt.Errorf("%w: server requires unsupported features %#x", ErrMalformed, unsupported))
+			owner.failTerminal(fmt.Errorf("%w: server requires unsupported features %#x", ErrUnsupportedFeature, unsupported))
 			return
 		}
 		if missing := owner.config.ClientIdent.RequiredFeatures &^ value.SupportedFeatures; missing != 0 {
-			owner.handleFault(fmt.Errorf("%w: server lacks required features %#x", ErrMalformed, missing))
+			owner.failTerminal(fmt.Errorf("%w: server lacks required features %#x", ErrUnsupportedFeature, missing))
 			return
 		}
 		if !containsEntityEndpoint(value.Addresses, owner.config.ClientIdent.TargetAddress) {
@@ -929,7 +938,7 @@ func (owner *sessionOwner) prepareReplay() {
 }
 
 func (owner *sessionOwner) handleFault(err error) {
-	if owner.state == StateStopped || owner.state == StateDisconnected && owner.connectPending {
+	if owner.terminalErr != nil || owner.state == StateStopped || owner.state == StateDisconnected && owner.connectPending {
 		return
 	}
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})

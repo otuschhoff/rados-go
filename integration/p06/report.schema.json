@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "server", "cluster", "scenarios", "probe"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"const": "passed"},
+    "command": {"const": "make integration-p06"},
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": "string", "format": "date-time"},
+    "source": {"type":"object","additionalProperties":false,"required":["repository","identity","artifacts"],"properties":{"repository":{"const":"https://github.com/otuschhoff/go-librados.git"},"identity":{"const":"content-addressed-artifacts"},"artifacts":{"type":"object","minProperties":1,"additionalProperties":{"type":"string","pattern":"^[0-9a-f]{64}$"}}}},
+    "server": {"type":"object","additionalProperties":false,"required":["repository","source_anchor_commit","version","image","platform","binary_sha256"],"properties":{"repository":{"const":"https://github.com/ceph/ceph.git"},"source_anchor_commit":{"const":"7f793731f1b39eb4f465e960113d2363c311b964"},"version":{"const":"ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)"},"image":{"type":"string","pattern":"^quay.io/ceph/ceph@sha256:[0-9a-f]{64}$"},"platform":{"enum":["linux/amd64","linux/arm64"]},"binary_sha256":{"type":"string","pattern":"^[0-9a-f]{64}$"}}},
+    "cluster": {"type":"object","additionalProperties":false,"required":["fsid","osds","pool","replicas"],"properties":{"fsid":{"const":"11111111-2222-4333-8444-666666666666"},"osds":{"const":3},"pool":{"const":"p06-data"},"replicas":{"const":2}}},
+    "scenarios": {"type":"object","additionalProperties":false,"required":["native_contents","ranged_read","empty_read","namespace_read","locator_read","stat_metadata","missing_object","operation_version","primary_change"],"properties":{"native_contents":{"const":"passed"},"ranged_read":{"const":"passed"},"empty_read":{"const":"passed"},"namespace_read":{"const":"passed"},"locator_read":{"const":"passed"},"stat_metadata":{"const":"passed"},"missing_object":{"const":"passed"},"operation_version":{"const":"passed"},"primary_change":{"const":"passed"}}},
+    "probe": {"type":"object","additionalProperties":false,"required":["ranged_read","full_read","empty_read","namespace_read","locator_read","stat","missing","primary_change","version"],"properties":{"ranged_read":{"const":true},"full_read":{"const":true},"empty_read":{"const":true},"namespace_read":{"const":true},"locator_read":{"const":true},"stat":{"const":true},"missing":{"const":true},"primary_change":{"const":true},"version":{"type":"integer","minimum":1}}}
+  }
+}

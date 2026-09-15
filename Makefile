@@ -1,7 +1,7 @@
 SHELL := /bin/sh
 CEPH_SOURCE ?= /tmp/go-librados-ceph
 
-.PHONY: inventory verify-p00 verify-p01 verify-p01-all quality-p01 reproduce-p01 unit-p01 differential-p01 integration-p01 cross-p01 fuzz-p01 fuzz-p01-nightly verify-p02 verify-p02-all quality-p02 reproduce-p02 reproduce-p02-upstream unit-p02 differential-p02 integration-p02 cross-p02 fuzz-p02 fuzz-p02-nightly verify-p03 verify-p03-all verify-manifests quality-p03 reproduce-p03-fixtures unit-p03 differential-p03 integration-p03 cross-p03 fuzz-p03 fuzz-p03-nightly verify-p04 verify-p04-all quality-p04 reproduce-p04-fixtures unit-p04 differential-p04 integration-p04 cross-p04 fuzz-p04 fuzz-p04-nightly verify-p05 verify-p05-all quality-p05 reproduce-p05 unit-p05 differential-p05 integration-p05 cross-p05 fuzz-p05 fuzz-p05-nightly p00-preflight p00-smoke
+.PHONY: inventory verify-p00 verify-p01 verify-p01-all quality-p01 reproduce-p01 unit-p01 differential-p01 integration-p01 cross-p01 fuzz-p01 fuzz-p01-nightly verify-p02 verify-p02-all quality-p02 reproduce-p02 reproduce-p02-upstream unit-p02 differential-p02 integration-p02 cross-p02 fuzz-p02 fuzz-p02-nightly verify-p03 verify-p03-all verify-manifests quality-p03 reproduce-p03-fixtures unit-p03 differential-p03 integration-p03 cross-p03 fuzz-p03 fuzz-p03-nightly verify-p04 verify-p04-all quality-p04 reproduce-p04-fixtures unit-p04 differential-p04 integration-p04 cross-p04 fuzz-p04 fuzz-p04-nightly verify-p05 verify-p05-all quality-p05 reproduce-p05 unit-p05 differential-p05 integration-p05 cross-p05 fuzz-p05 fuzz-p05-nightly verify-p06 verify-p06-all quality-p06 unit-p06 integration-p06 cross-p06 fuzz-p06 fuzz-p06-nightly p00-preflight p00-smoke
 
 inventory:
 	GO111MODULE=off go run ./tools/api-inventory \
@@ -142,6 +142,7 @@ verify-manifests:
 	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s testdata/manifest.schema.json -d 'testdata/p01/*.bin.json' -d 'testdata/p02/*.bin.json' -d 'testdata/p02/upstream/*.bin.json' -d 'testdata/p03/*.manifest.json' -d 'testdata/p04/*.manifest.json' -d 'testdata/p05/*.manifest.json'
 	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p03/report.schema.json -d docs/p03/integration-report.json
 	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p04/report.schema.json -d docs/p04/integration-report.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p06/report.schema.json -d docs/p06/integration-report.json
 
 verify-p03-all:
 	$(MAKE) quality-p03
@@ -292,6 +293,51 @@ fuzz-p05:
 fuzz-p05-nightly:
 	CGO_ENABLED=0 go test ./internal/crush -run '^$$' -fuzz '^FuzzDecodeMap$$' -fuzztime=5m
 	CGO_ENABLED=0 go test ./internal/crush -run '^$$' -fuzz '^FuzzDecodeAndPlace$$' -fuzztime=5m
+
+verify-p06: verify-p03 verify-p04 verify-p05
+	test -z "$$(gofmt -l $$(find . -name '*.go' -not -path './.git/*'))"
+	$(MAKE) verify-manifests
+	$(MAKE) unit-p06
+	CGO_ENABLED=0 go test ./...
+	CGO_ENABLED=0 go build ./...
+	go vet ./...
+	go mod verify
+	CGO_ENABLED=0 go run ./tools/p06-verify
+	$(MAKE) cross-p06
+
+verify-p06-all:
+	$(MAKE) quality-p06
+	$(MAKE) integration-p06
+	$(MAKE) verify-p06
+	$(MAKE) fuzz-p06
+
+quality-p06:
+	test -z "$$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+	go mod verify
+	go test -race ./...
+	go run "honnef.co/go/tools/cmd/staticcheck@$$(jq -r '.quality_tools.staticcheck' docs/p01/evidence.json)" ./...
+	go run "golang.org/x/vuln/cmd/govulncheck@$$(jq -r '.quality_tools.govulncheck' docs/p01/evidence.json)" ./...
+
+unit-p06:
+	CGO_ENABLED=0 go test . ./internal/cephx ./internal/maps ./internal/mon ./internal/msgr ./internal/objecter ./internal/osd ./tools/p06-verify
+
+integration-p06:
+	./integration/p06/reproduce.sh
+	CGO_ENABLED=0 go run ./tools/p06-verify
+
+cross-p06:
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./...
+	CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build ./...
+	CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build ./...
+	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build ./...
+
+fuzz-p06:
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeReply$$' -fuzztime=60s
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeBackoff$$' -fuzztime=60s
+
+fuzz-p06-nightly:
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeReply$$' -fuzztime=5m
+	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeBackoff$$' -fuzztime=5m
 
 p00-preflight:
 	./integration/p00/preflight.sh --require-linux-host

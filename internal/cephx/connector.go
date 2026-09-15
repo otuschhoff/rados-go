@@ -127,12 +127,17 @@ func (connector *Connector) NeedsRenewal(serviceID uint32, now time.Time) bool {
 
 // BuildServiceAuthorizer constructs an authorizer from a currently valid retained ticket.
 func (connector *Connector) BuildServiceAuthorizer(serviceID uint32) (Authorizer, error) {
+	_, _, authorizer, err := connector.serviceAuthorization(serviceID)
+	return authorizer, err
+}
+
+func (connector *Connector) serviceAuthorization(serviceID uint32) (uint64, ServiceTicket, Authorizer, error) {
 	now := connector.now()
 	connector.mu.Lock()
 	ticket, ok := connector.state.tickets[serviceID]
 	if !ok {
 		connector.mu.Unlock()
-		return Authorizer{}, ErrMissingTicket
+		return 0, ServiceTicket{}, Authorizer{}, ErrMissingTicket
 	}
 	if ticket.ExpiresAt.IsZero() || !now.Before(ticket.ExpiresAt) {
 		if serviceID == uint32(protocol.EntityAuth) {
@@ -141,14 +146,15 @@ func (connector *Connector) BuildServiceAuthorizer(serviceID uint32) (Authorizer
 			delete(connector.state.tickets, serviceID)
 		}
 		connector.mu.Unlock()
-		return Authorizer{}, ErrExpiredTicket
+		return 0, ServiceTicket{}, Authorizer{}, ErrExpiredTicket
 	}
 	globalID := connector.state.globalID
 	ticket = cloneServiceTicket(ticket)
 	connector.mu.Unlock()
 	connector.hooksMu.Lock()
 	defer connector.hooksMu.Unlock()
-	return BuildAuthorizer(serviceID, globalID, ticket, now, connector.config.Rand, connector.config.Limits)
+	authorizer, err := BuildAuthorizer(serviceID, globalID, ticket, now, connector.config.Rand, connector.config.Limits)
+	return globalID, ticket, authorizer, err
 }
 
 func (connector *Connector) Connect(ctx context.Context) (msgr.Transport, error) {
@@ -625,7 +631,7 @@ func (config ConnectorConfig) withDefaults() ConnectorConfig {
 		config.ClientEntityType = protocol.EntityClient
 	}
 	if config.RequestedKeys == 0 {
-		config.RequestedKeys = uint32(protocol.EntityAuth | protocol.EntityMonitor)
+		config.RequestedKeys = uint32(protocol.EntityAuth | protocol.EntityMonitor | protocol.EntityOSD)
 	}
 	config.Limits = config.Limits.withDefaults()
 	if config.Now == nil {

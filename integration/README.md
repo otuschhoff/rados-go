@@ -30,3 +30,20 @@ sudo env P00_DISPOSABLE_CLUSTER=I_UNDERSTAND_THIS_DESTROYS_DATA make p00-smoke
 
 Successful reports are written to `integration/reports/` and contain no keys.
 The report must validate against `integration/manifest.schema.json`.
+
+## P06 host requirements
+
+The P06 read-path gate runs on macOS or Linux with Docker, Go, `jq`, Python 3,
+`shasum`, and network access to the pinned multi-architecture Ceph image. Docker
+must support privileged containers, bridge networks with fixed addresses, and
+managed volumes. Allow at least 4 CPUs, 8 GiB RAM, and 8 GiB free disk for three
+ephemeral BlueStore OSDs. The workflow does not access host block devices or an
+existing Ceph installation; it removes its containers, volumes, network, keys,
+and temporary data on exit.
+
+Run the serialized quality, real-cluster, semantic-verifier, cross-build, and
+fuzz gates with:
+
+```sh
+make verify-p06-all
+```

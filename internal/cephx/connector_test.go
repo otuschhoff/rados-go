@@ -392,6 +392,14 @@ func TestValidAuthenticatedGlobalID(t *testing.T) {
 	}
 }
 
+func TestConnectorDefaultsRequestOSDTicket(t *testing.T) {
+	config := (ConnectorConfig{}).withDefaults()
+	want := uint32(protocol.EntityAuth | protocol.EntityMonitor | protocol.EntityOSD)
+	if config.RequestedKeys != want {
+		t.Fatalf("requested keys=%#x want=%#x", config.RequestedKeys, want)
+	}
+}
+
 func TestConnectorFragmentedHandshake(t *testing.T) {
 	credential, target := testConnectorIdentity(t)
 	clientConn, serverConn := net.Pipe()

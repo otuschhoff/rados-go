@@ -3,9 +3,11 @@ package maps
 import (
 	"encoding/binary"
 	"errors"
+	"net/netip"
 	"testing"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	"github.com/otuschhoff/go-librados/internal/protocol"
 )
 
 var testOSDMapLimits = Limits{
@@ -62,6 +64,28 @@ func TestDecodeOSDMapRejectsCRCAndLimits(t *testing.T) {
 				t.Fatalf("error = %v, want %v", err, test.want)
 			}
 		})
+	}
+}
+
+func TestOSDClientAddressesAreImmutable(t *testing.T) {
+	address, err := protocol.IPv4EntityAddr(protocol.AddressV2, 9, netip.MustParseAddrPort("192.0.2.8:6800"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	osdMap := &OSDMap{clientAddresses: []protocol.EntityAddrVec{{address}}}
+	addresses, ok := osdMap.OSDClientAddresses(0)
+	if !ok || len(addresses) != 1 {
+		t.Fatalf("addresses=%v found=%t", addresses, ok)
+	}
+	addresses[0].SocketData[0] ^= 0xff
+	again, ok := osdMap.OSDClientAddresses(0)
+	if !ok || again[0].SocketData[0] == addresses[0].SocketData[0] {
+		t.Fatal("caller mutation changed immutable OSD address")
+	}
+	for _, id := range []int32{-1, 1} {
+		if _, ok := osdMap.OSDClientAddresses(id); ok {
+			t.Fatalf("out-of-range OSD %d found", id)
+		}
 	}
 }
 

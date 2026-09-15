@@ -375,6 +375,16 @@ func (osdMap *OSDMap) PoolByName(name string) (Pool, bool) {
 	}
 	return osdMap.PoolByID(id)
 }
+func (osdMap *OSDMap) OSDClientAddresses(id int32) (protocol.EntityAddrVec, bool) {
+	if id < 0 || int(id) >= len(osdMap.clientAddresses) {
+		return nil, false
+	}
+	addresses := osdMap.clientAddresses[id]
+	if len(addresses) == 0 {
+		return nil, false
+	}
+	return cloneAddressVector(addresses), true
+}
 func (osdMap *OSDMap) CrushData() []byte { return append([]byte(nil), osdMap.crushData...) }
 
 // Equivalent reports whether two snapshots contain identical retained map
