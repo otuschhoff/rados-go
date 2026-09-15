@@ -19,6 +19,46 @@ type entry struct {
 	signature string
 }
 
+type classification struct {
+	goEquivalent string
+	disposition  string
+	phase        string
+	prerequisite string
+	difference   string
+	test         string
+}
+
+var implementedClassifications = map[string]classification{
+	"rados_aio_flush": {
+		"rados.Client.Flush", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Watermark-based context-aware drain; no public C completion allocation", "P07 mutation/flush unit and live-cluster tests",
+	},
+	"rados_aio_flush_async": {
+		"rados.Client.Flush", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Unified context-aware drain; no callback completion allocation", "P07 mutation/flush unit and live-cluster tests",
+	},
+	"rados_append": {
+		"rados.ObjectRef.Append", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Returns OpResult version; ambiguity is surfaced as outcome unknown", "P07 native/Go CRUD and primary-remap append-once tests",
+	},
+	"rados_remove": {
+		"rados.ObjectRef.Remove", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Context-aware and returns OpResult version", "P07 native/Go CRUD and missing-object tests",
+	},
+	"rados_trunc": {
+		"rados.ObjectRef.Truncate", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Context-aware and returns OpResult version", "P07 native/Go CRUD tests",
+	},
+	"rados_write": {
+		"rados.ObjectRef.Write", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Checked offsets; copied input; returns OpResult version", "P07 native/Go CRUD tests",
+	},
+	"rados_write_full": {
+		"rados.ObjectRef.WriteFull", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+		"Atomic full replacement; copied input; returns OpResult version", "P07 native/Go CRUD and benchmark tests",
+	},
+}
+
 var (
 	commentRE = regexp.MustCompile(`(?s)/\*.*?\*/|//[^\n]*`)
 	spaceRE   = regexp.MustCompile(`\s+`)
@@ -71,8 +111,12 @@ func main() {
 			fatalf("duplicate extracted API key %q", key)
 		}
 		seen[key] = struct{}{}
-		goEquivalent, disposition, phase, difference, test := classify(item)
-		must(writer.Write([]string{item.language, item.owner, item.symbol, item.signature, goEquivalent, disposition, phase, prerequisites(phase), difference, test}))
+		result, implemented := implementedClassifications[item.symbol]
+		if !implemented {
+			result.goEquivalent, result.disposition, result.phase, result.difference, result.test = classify(item)
+			result.prerequisite = prerequisites(result.phase)
+		}
+		must(writer.Write([]string{item.language, item.owner, item.symbol, item.signature, result.goEquivalent, result.disposition, result.phase, result.prerequisite, result.difference, result.test}))
 	}
 	writer.Flush()
 	if err := writer.Error(); err != nil {

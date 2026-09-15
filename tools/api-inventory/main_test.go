@@ -88,3 +88,44 @@ func TestClassifyAsyncByUnderlyingOperation(t *testing.T) {
 		})
 	}
 }
+
+func TestImplementedClassifications(t *testing.T) {
+	want := map[string]classification{
+		"rados_aio_flush": {
+			"rados.Client.Flush", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Watermark-based context-aware drain; no public C completion allocation", "P07 mutation/flush unit and live-cluster tests",
+		},
+		"rados_aio_flush_async": {
+			"rados.Client.Flush", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Unified context-aware drain; no callback completion allocation", "P07 mutation/flush unit and live-cluster tests",
+		},
+		"rados_append": {
+			"rados.ObjectRef.Append", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Returns OpResult version; ambiguity is surfaced as outcome unknown", "P07 native/Go CRUD and primary-remap append-once tests",
+		},
+		"rados_remove": {
+			"rados.ObjectRef.Remove", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Context-aware and returns OpResult version", "P07 native/Go CRUD and missing-object tests",
+		},
+		"rados_trunc": {
+			"rados.ObjectRef.Truncate", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Context-aware and returns OpResult version", "P07 native/Go CRUD tests",
+		},
+		"rados_write": {
+			"rados.ObjectRef.Write", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Checked offsets; copied input; returns OpResult version", "P07 native/Go CRUD tests",
+		},
+		"rados_write_full": {
+			"rados.ObjectRef.WriteFull", "implemented", "P07", "replicated pools on certified Ceph 20.2.4",
+			"Atomic full replacement; copied input; returns OpResult version", "P07 native/Go CRUD and benchmark tests",
+		},
+	}
+	if len(implementedClassifications) != len(want) {
+		t.Fatalf("implemented classifications = %d, want %d", len(implementedClassifications), len(want))
+	}
+	for symbol, expected := range want {
+		if actual := implementedClassifications[symbol]; actual != expected {
+			t.Errorf("%s classification = %#v, want %#v", symbol, actual, expected)
+		}
+	}
+}
