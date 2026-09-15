@@ -23,7 +23,7 @@ const (
 	dockerfileSHA256         = "bfaa51f4f49af164a94e82156c745e2ea21c620dac561658a37b230f3fd579a8"
 	repositorySHA256         = "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b"
 	upstreamOracleSHA256     = "043d94bfb9f590e9987e7ae15509d3a75813c1765e43a99ba4d7fbe06d49ee34"
-	upstreamDockerfileSHA256 = "01546be09168474a7c6151693f19ca1e5a97102478e887c80734207d9e6c590b"
+	upstreamDockerfileSHA256 = "56c8b8d8f461c41c35991cf46781eb556e6267940e32a92a9c5fc3b67ca505e5"
 	upstreamReproduceSHA256  = "8f5e3f8404872c51bfc9c8bca7cdb2a505dee70d4e9a8f847f13687d4243b2b7"
 	generatorTool            = "source-derived independent C++/OpenSSL oracle"
 	generatorVersion         = "Ceph 20.2.0 contract"

@@ -1,6 +1,7 @@
 ARG CEPH_IMAGE=quay.io/ceph/ceph@sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a779fd8f9
 FROM ${CEPH_IMAGE} AS build
 ARG BOOST_SHA256=af57be25cb4c4f4b413ed692fe378affb4352ea50fbe294a11ef548f4d527d89
+ARG TARGETARCH
 COPY centos-stream.repo /etc/yum.repos.d/centos.repo
 RUN dnf install -y dnf-utils selinux-policy-targeted && \
       dnf config-manager --set-enabled crb && \
@@ -27,7 +28,7 @@ COPY --from=ceph-deps-source /src/rocksdb /ceph/src/rocksdb
 COPY --from=ceph-deps-source /src/xxHash /ceph/src/xxHash
 COPY --from=ceph-deps-source /src/zstd /ceph/src/zstd
 COPY upstream_oracle.cc /ceph/src/test/msgr/p02_upstream_vectors.cc
-RUN --mount=type=cache,target=/build \
+RUN --mount=type=cache,id=p02-upstream-build-${TARGETARCH}-v2,target=/build \
   rm -f /ceph/.git && \
   cmake -S /ceph -B /build -GNinja \
       -DCMAKE_BUILD_TYPE=Release \
@@ -56,6 +57,7 @@ RUN --mount=type=cache,target=/build \
       -DWITH_OPENLDAP=OFF \
       -DWITH_EC_ISA_PLUGIN=OFF \
       -DALLOCATOR=libc && \
+      cmake --build /build --target legacy-option-headers && \
       c++ \
         -DBOOST_ASIO_DISABLE_THREAD_KEYWORD_EXTENSION \
         -DBOOST_ASIO_NO_TS_EXECUTORS \
