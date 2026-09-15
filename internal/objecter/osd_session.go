@@ -65,6 +65,9 @@ func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object 
 			var unlock sync.Once
 			result, err := session.raw.SubmitAdmitted(ctx, message, func() { unlock.Do(session.mu.Unlock) })
 			unlock.Do(session.mu.Unlock)
+			if err != nil {
+				err = errors.Join(err, session.failure(err))
+			}
 			return result, err
 		}
 		changed := session.changed

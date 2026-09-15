@@ -70,6 +70,75 @@ func TestEncodeRequestPreservesSnapshotZero(t *testing.T) {
 	}
 }
 
+func TestEncodeMutationRequestsV8(t *testing.T) {
+	tests := []struct {
+		name      string
+		operation Operation
+		data      []byte
+	}{
+		{name: "write", operation: Operation{Code: OpWrite, Offset: 9, Length: 3, Data: []byte("abc")}, data: []byte("abc")},
+		{name: "write full", operation: Operation{Code: OpWriteFull, Length: 3, Data: []byte("abc")}, data: []byte("abc")},
+		{name: "append", operation: Operation{Code: OpAppend, Length: 3, Data: []byte("abc")}, data: []byte("abc")},
+		{name: "truncate", operation: Operation{Code: OpTruncate, Offset: 9}},
+		{name: "zero", operation: Operation{Code: OpZero, Offset: 9, Length: 3}},
+		{name: "delete", operation: Operation{Code: OpDelete}},
+		{name: "create", operation: Operation{Code: OpCreate}},
+		{name: "exclusive create", operation: Operation{Code: OpCreate, Flags: OpFlagExclusive}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			message, err := EncodeRequest(Request{
+				PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap,
+				TransactionID: 41, ClientIncarnation: 17, Retry: 2, Operations: []Operation{test.operation},
+			}, testLimits)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if message.Header.TransactionID != 41 || !bytes.Equal(message.Data, test.data) || message.Lengths.Data != uint32(len(test.data)) {
+				t.Fatalf("header=%+v data=%x lengths=%+v", message.Header, message.Data, message.Lengths)
+			}
+			decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: testLimits.MaxBytes})
+			_, spg := decoder.Versioned(1)
+			spg.Raw(18)
+			decoder.Uint32()
+			decoder.Uint32()
+			if flags := decoder.Uint32(); flags != FlagWrite|FlagOnDisk {
+				t.Fatalf("flags=%#x", flags)
+			}
+			_, requestID := decoder.Versioned(2)
+			requestID.Raw(17)
+			if incarnation := requestID.Int32(); incarnation != 17 {
+				t.Fatalf("incarnation=%d", incarnation)
+			}
+			decoder.Raw(24)
+			if clientIncarnation := decoder.Int32(); clientIncarnation != 17 {
+				t.Fatalf("client incarnation=%d", clientIncarnation)
+			}
+			decoder.Raw(8)
+			_, locator := decoder.Versioned(6)
+			locator.Raw(uint32(locator.Remaining()))
+			_ = decoder.String()
+			decoder.Uint16()
+			code, payloadLength := decodeOperation(decoder)
+			if code != test.operation.Code || payloadLength != uint32(len(test.data)) {
+				t.Fatalf("code=%#x payload=%d", code, payloadLength)
+			}
+		})
+	}
+}
+
+func TestEncodeMutationRejectsPayloadMismatchAndLimit(t *testing.T) {
+	request := Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Operations: []Operation{{Code: OpWrite, Length: 1, PayloadLength: 2, Data: []byte("x")}}}
+	if _, err := EncodeRequest(request, testLimits); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("payload mismatch error=%v", err)
+	}
+	request.Operations[0].PayloadLength = 0
+	request.Operations[0].Data = make([]byte, testLimits.MaxBytes)
+	if _, err := EncodeRequest(request, testLimits); !errors.Is(err, wire.ErrLimitExceeded) {
+		t.Fatalf("oversize payload error=%v", err)
+	}
+}
+
 func TestDecodeReadReplyV8(t *testing.T) {
 	front := wire.NewEncoder(testLimits.MaxBytes)
 	front.String("object")

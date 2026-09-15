@@ -1,0 +1,492 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "command",
+    "started_at",
+    "finished_at",
+    "source",
+    "server",
+    "native_runtime",
+    "cluster",
+    "scenarios",
+    "probe",
+    "native",
+    "benchmark"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "status": {
+      "const": "passed"
+    },
+    "command": {
+      "const": "make integration-p07"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "identity", "artifacts"],
+      "properties": {
+        "repository": {
+          "const": "https://github.com/otuschhoff/go-librados.git"
+        },
+        "identity": {
+          "const": "content-addressed-artifacts"
+        },
+        "artifacts": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source_anchor_commit", "version", "image", "platform", "binaries"],
+      "properties": {
+        "repository": {
+          "const": "https://github.com/ceph/ceph.git"
+        },
+        "source_anchor_commit": {
+          "const": "7f793731f1b39eb4f465e960113d2363c311b964"
+        },
+        "version": {
+          "const": "ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)"
+        },
+        "image": {
+          "type": "string",
+          "pattern": "^quay\\.io/ceph/ceph@sha256:[0-9a-f]{64}$"
+        },
+        "platform": {
+          "enum": ["linux/amd64", "linux/arm64"]
+        },
+        "binaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mon_sha256", "osd_sha256"],
+          "properties": {
+            "mon_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "osd_sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "native_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soname", "path", "package", "sha256"],
+      "properties": {
+        "soname": {
+          "const": "librados.so.2"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/.+"
+        },
+        "package": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fsid", "osds", "pool", "replicas", "osd_device_bytes"],
+      "properties": {
+        "fsid": {
+          "const": "11111111-2222-4333-8444-777777777777"
+        },
+        "osds": {
+          "const": 3
+        },
+        "pool": {
+          "const": "p07-data"
+        },
+        "replicas": {
+          "const": 2
+        },
+        "osd_device_bytes": {
+          "const": 8589934592
+        }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "go_crud",
+        "native_crud",
+        "native_seed_go_mutate_native_verify",
+        "go_write_native_read",
+        "exclusive_create",
+        "missing_semantics",
+        "flush",
+        "primary_change_append_once"
+      ],
+      "properties": {
+        "go_crud": {
+          "const": "passed"
+        },
+        "native_crud": {
+          "const": "passed"
+        },
+        "native_seed_go_mutate_native_verify": {
+          "const": "passed"
+        },
+        "go_write_native_read": {
+          "const": "passed"
+        },
+        "exclusive_create": {
+          "const": "passed"
+        },
+        "missing_semantics": {
+          "const": "passed"
+        },
+        "flush": {
+          "const": "passed"
+        },
+        "primary_change_append_once": {
+          "const": "passed"
+        }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "create",
+        "exclusive",
+        "write",
+        "write_full",
+        "append",
+        "truncate",
+        "zero",
+        "remove",
+        "flush",
+        "primary_change",
+        "version"
+      ],
+      "properties": {
+        "create": {
+          "const": true
+        },
+        "exclusive": {
+          "const": true
+        },
+        "write": {
+          "const": true
+        },
+        "write_full": {
+          "const": true
+        },
+        "append": {
+          "const": true
+        },
+        "truncate": {
+          "const": true
+        },
+        "zero": {
+          "const": true
+        },
+        "remove": {
+          "const": true
+        },
+        "flush": {
+          "const": true
+        },
+        "primary_change": {
+          "const": true
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "verify"],
+      "properties": {
+        "seed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["native_crud", "mixed_seed"],
+          "properties": {
+            "native_crud": {
+              "const": true
+            },
+            "mixed_seed": {
+              "const": true
+            }
+          }
+        },
+        "verify": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mixed_go_native", "go_write_native_read", "remap_append_once"],
+          "properties": {
+            "mixed_go_native": {
+              "const": true
+            },
+            "go_write_native_read": {
+              "const": true
+            },
+            "remap_append_once": {
+              "const": true
+            }
+          }
+        }
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["execution_environment", "methodology", "runs"],
+      "properties": {
+        "execution_environment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kernel", "cpu_model", "logical_cpus", "cpu_max", "memory_max", "docker_server_version"],
+          "properties": {
+            "kernel": {"type": "string", "minLength": 1},
+            "cpu_model": {"type": "string", "minLength": 1},
+            "logical_cpus": {"type": "integer", "minimum": 1},
+            "cpu_max": {"type": "string", "minLength": 1},
+            "memory_max": {"type": "string", "minLength": 1},
+            "docker_server_version": {"type": "string", "minLength": 1}
+          }
+        },
+        "methodology": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sizes_bytes",
+            "concurrency",
+            "workloads",
+            "operations_per_worker",
+            "transports",
+            "allocation_measurement",
+            "results_are_baseline_not_parity_claim"
+          ],
+          "properties": {
+            "sizes_bytes": {
+              "type": "array",
+              "minItems": 4,
+              "maxItems": 4,
+              "prefixItems": [
+                {"const": 4096},
+                {"const": 65536},
+                {"const": 1048576},
+                {"const": 4194304}
+              ],
+              "items": false
+            },
+            "concurrency": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "prefixItems": [
+                {"const": 1},
+                {"const": 16},
+                {"const": 64}
+              ],
+              "items": false
+            },
+            "workloads": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "prefixItems": [
+                {"const": "read"},
+                {"const": "write"},
+                {"const": "mixed"}
+              ],
+              "items": false
+            },
+            "operations_per_worker": {
+              "const": 2
+            },
+            "transports": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "prefixItems": [
+                {"const": "secure"},
+                {"const": "crc"}
+              ],
+              "items": false
+            },
+            "allocation_measurement": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["go", "native"],
+              "properties": {
+                "go": {"const": "runtime.MemStats deltas"},
+                "native": {"const": "unavailable from the dynamically loaded librados ABI"}
+              }
+            },
+            "results_are_baseline_not_parity_claim": {
+              "const": true
+            }
+          }
+        },
+        "runs": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["implementation", "transport", "environment", "resources", "rows"],
+            "properties": {
+              "implementation": {
+                "enum": ["go", "native"]
+              },
+              "transport": {
+                "enum": ["secure", "crc"]
+              },
+              "environment": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["GOOS", "GOARCH", "go_version"],
+                    "properties": {
+                      "GOOS": {"const": "linux"},
+                      "GOARCH": {"enum": ["amd64", "arm64"]},
+                      "go_version": {"type": "string", "minLength": 1}
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["library"],
+                    "properties": {
+                      "library": {"const": "librados.so.2"}
+                    }
+                  }
+                ]
+              },
+              "resources": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["cpu_user_ns", "cpu_system_ns", "allocations", "allocated_bytes", "max_rss_bytes"],
+                "properties": {
+                  "cpu_user_ns": {"type": "integer", "minimum": 0},
+                  "cpu_system_ns": {"type": "integer", "minimum": 0},
+                  "allocations": {
+                    "oneOf": [
+                      {"type": "integer", "minimum": 0},
+                      {"type": "null"}
+                    ]
+                  },
+                  "allocated_bytes": {
+                    "oneOf": [
+                      {"type": "integer", "minimum": 0},
+                      {"type": "null"}
+                    ]
+                  },
+                  "max_rss_bytes": {"type": "integer", "minimum": 0}
+                }
+              },
+              "rows": {
+                "type": "array",
+                "minItems": 36,
+                "maxItems": 36,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "size_bytes",
+                    "concurrency",
+                    "workload",
+                    "operations",
+                    "bytes",
+                    "elapsed_ns",
+                    "throughput_bytes_per_second",
+                    "iops",
+                    "p50_ns",
+                    "p95_ns",
+                    "p99_ns"
+                  ],
+                  "properties": {
+                    "size_bytes": {
+                      "enum": [4096, 65536, 1048576, 4194304]
+                    },
+                    "concurrency": {
+                      "enum": [1, 16, 64]
+                    },
+                    "workload": {
+                      "enum": ["read", "write", "mixed"]
+                    },
+                    "operations": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "bytes": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "elapsed_ns": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "throughput_bytes_per_second": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "iops": {
+                      "type": "number",
+                      "exclusiveMinimum": 0
+                    },
+                    "p50_ns": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "p95_ns": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "p99_ns": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -83,6 +83,25 @@ func TestReadRecoversToNewPrimary(t *testing.T) {
 	}
 }
 
+func TestQueueSaturationDoesNotInvalidateSession(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	active := &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) {
+		return msgr.Message{}, msgr.ErrQueueSaturated
+	}}
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return active, nil
+	})
+	defer client.Close()
+
+	_, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpWriteFull, Data: []byte("data"), Length: 4})
+	if !errors.Is(err, msgr.ErrQueueSaturated) {
+		t.Fatalf("error=%v, want queue saturation", err)
+	}
+	if active.stop {
+		t.Fatal("locally saturated session was invalidated")
+	}
+}
+
 func TestStatDecodesMetadata(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	data := make([]byte, 16)
@@ -332,6 +351,14 @@ func testReplyOperation(t *testing.T, epoch uint32, version uint64, result int32
 }
 
 func testReplyRetry(t *testing.T, epoch uint32, version uint64, result int32, operation uint16, retry int32, data []byte) msgr.Message {
+	flags := int64(0)
+	if operation&0x2000 != 0 {
+		flags = int64(osd.FlagOnDisk)
+	}
+	return testReplyRetryFlags(t, epoch, version, result, operation, retry, flags, data)
+}
+
+func testReplyRetryFlags(t *testing.T, epoch uint32, version uint64, result int32, operation uint16, retry int32, flags int64, data []byte) msgr.Message {
 	t.Helper()
 	front := wire.NewEncoder(4096)
 	front.String("object")
@@ -339,7 +366,7 @@ func testReplyRetry(t *testing.T, epoch uint32, version uint64, result int32, op
 	front.Uint64(7)
 	front.Uint32(8)
 	front.Int32(retry)
-	front.Int64(0)
+	front.Int64(flags)
 	front.Int32(result)
 	front.Uint32(0)
 	front.Uint64(0)

@@ -1190,7 +1190,7 @@ func TestSessionStopInterruptsBlockedTransportPumps(t *testing.T) {
 		case <-time.After(time.Second):
 			t.Fatal("blocked write was not interrupted by close")
 		}
-		if err := waitOutcome(t, result).err; !errors.Is(err, ErrSessionClosed) {
+		if err := waitOutcome(t, result).err; !errors.Is(err, ErrSessionClosed) || !errors.Is(err, ErrOutcomeUnknown) {
 			t.Fatalf("blocked write submit error = %v", err)
 		}
 	})

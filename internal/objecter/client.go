@@ -3,6 +3,7 @@ package objecter
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -76,24 +77,34 @@ type targetSubmitter interface {
 type SessionFactory func(int32, protocol.EntityAddrVec) (session, error)
 
 type Config struct {
-	Maps             MapSource
-	Router           Router
-	Authority        *cephx.Connector
-	AuthoritySource  func() *cephx.Connector
-	ServiceConnector cephx.ServiceConnectorConfig
-	Session          msgr.SessionConfig
-	ClientAddresses  protocol.EntityAddrVec
-	MessageLimits    osd.Limits
-	MaxAttempts      int
-	RefreshWait      time.Duration
-	SessionFactory   SessionFactory
+	Maps              MapSource
+	Router            Router
+	Authority         *cephx.Connector
+	AuthoritySource   func() *cephx.Connector
+	ServiceConnector  cephx.ServiceConnectorConfig
+	Session           msgr.SessionConfig
+	ClientAddresses   protocol.EntityAddrVec
+	MessageLimits     osd.Limits
+	MaxAttempts       int
+	RefreshWait       time.Duration
+	MaxMutations      int
+	MaxMutationBytes  uint64
+	ClientIncarnation int32
+	SessionFactory    SessionFactory
 }
 
 type Client struct {
-	config   Config
-	mu       sync.Mutex
-	sessions map[int32]sessionEntry
-	closed   bool
+	config                Config
+	mu                    sync.Mutex
+	sessions              map[int32]sessionEntry
+	closed                bool
+	mutationClosed        bool
+	nextTransaction       uint64
+	nextMutation          uint64
+	pendingMutations      map[uint64]uint64
+	retainedMutationBytes uint64
+	unknownMutation       uint64
+	mutationChanged       chan struct{}
 }
 
 type sessionEntry struct {
@@ -108,6 +119,22 @@ func New(config Config) (*Client, error) {
 	if config.Router == nil {
 		config.Router = mapRouter{source: config.Maps}
 	}
+	if config.MaxMutations == 0 {
+		config.MaxMutations = 64
+	}
+	if config.MaxMutationBytes == 0 {
+		config.MaxMutationBytes = uint64(config.MessageLimits.MaxBytes) * uint64(config.MaxMutations)
+	}
+	if config.MaxMutations < 0 || config.MaxMutationBytes == 0 {
+		return nil, wire.ErrLimitExceeded
+	}
+	if config.ClientIncarnation == 0 {
+		var value [4]byte
+		if _, err := rand.Read(value[:]); err != nil {
+			return nil, err
+		}
+		config.ClientIncarnation = int32(binary.LittleEndian.Uint32(value[:]) | 1)
+	}
 	if config.SessionFactory == nil {
 		if config.AuthoritySource == nil {
 			config.AuthoritySource = func() *cephx.Connector { return config.Authority }
@@ -118,7 +145,7 @@ func New(config Config) (*Client, error) {
 		config.SessionFactory = productionSessionFactory(config)
 	}
 	config.ClientAddresses = cloneAddresses(config.ClientAddresses)
-	return &Client{config: config, sessions: make(map[int32]sessionEntry)}, nil
+	return &Client{config: config, sessions: make(map[int32]sessionEntry), nextTransaction: 1, pendingMutations: make(map[uint64]uint64), mutationChanged: make(chan struct{})}, nil
 }
 
 func (client *Client) Read(ctx context.Context, target Target, offset, length uint64) (Result, error) {
@@ -149,6 +176,10 @@ func (client *Client) Stat(ctx context.Context, target Target) (Result, error) {
 }
 
 func (client *Client) execute(ctx context.Context, target Target, operation osd.Operation) (Result, error) {
+	return client.executeOperation(ctx, target, operation, 0, false)
+}
+
+func (client *Client) executeOperation(ctx context.Context, target Target, operation osd.Operation, transactionID uint64, mutation bool) (Result, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -158,26 +189,26 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 	for attempt := 0; attempt < client.config.MaxAttempts; attempt++ {
 		route, err := client.config.Router.Route(currentTarget)
 		if err != nil {
-			return Result{}, err
+			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		if route.Primary < 0 || len(route.Addresses) == 0 {
-			return Result{}, ErrNoPrimary
+			return Result{}, preserveOutcomeUnknown(lastErr, ErrNoPrimary)
 		}
 		if attempt > 0 {
 			requestFlags |= osd.FlagRetry
 		}
 		active, err := client.getSession(route.Primary, route.Addresses)
 		if err != nil {
-			return Result{}, err
+			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		request, err := osd.EncodeRequest(osd.Request{
 			MapEpoch: route.Epoch, PG: route.PG, ObjectHash: route.RawHash,
 			PoolID: currentTarget.PoolID, Object: currentTarget.Object, Locator: currentTarget.Locator,
-			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, Retry: int32(attempt), Flags: requestFlags,
+			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, TransactionID: transactionID, ClientIncarnation: client.config.ClientIncarnation, Retry: int32(attempt), Flags: requestFlags,
 			Features: uint64(protocol.FeatureOSDClient), Operations: []osd.Operation{operation},
 		}, client.config.MessageLimits)
 		if err != nil {
-			return Result{}, err
+			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		object := osd.HObject{Key: currentTarget.Locator, Object: currentTarget.Object, Snapshot: currentTarget.Snapshot, Hash: route.RawHash, Namespace: currentTarget.Namespace, Pool: currentTarget.PoolID}
 		var message msgr.Message
@@ -187,9 +218,9 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 			if waiter, ok := active.(backoffWaiter); ok {
 				if err := waiter.Wait(ctx, route.PG, object); err != nil {
 					if ctx.Err() != nil {
-						return Result{}, ctx.Err()
+						return Result{}, preserveOutcomeUnknown(lastErr, ctx.Err())
 					}
-					lastErr = err
+					lastErr = preserveOutcomeUnknown(lastErr, err)
 					client.invalidate(route.Primary, active)
 					client.refresh(ctx, route.Epoch)
 					continue
@@ -198,10 +229,26 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 			message, err = active.Submit(ctx, request)
 		}
 		if err != nil {
-			if ctx.Err() != nil {
-				return Result{}, ctx.Err()
+			if errors.Is(err, msgr.ErrQueueSaturated) {
+				return Result{}, preserveOutcomeUnknown(lastErr, err)
 			}
-			lastErr = err
+			if mutation && errors.Is(err, msgr.ErrOutcomeUnknown) {
+				lastErr = preserveOutcomeUnknown(lastErr, err)
+				client.invalidate(route.Primary, active)
+				if !errors.Is(err, msgr.ErrReconnectExhausted) && !errors.Is(err, ErrStaleMap) {
+					changed, refreshErr := client.waitForPrimaryChange(ctx, currentTarget, route)
+					if !changed {
+						return Result{}, errors.Join(err, refreshErr)
+					}
+				} else {
+					client.refresh(ctx, route.Epoch)
+				}
+				continue
+			}
+			if ctx.Err() != nil {
+				return Result{}, preserveOutcomeUnknown(lastErr, ctx.Err())
+			}
+			lastErr = preserveOutcomeUnknown(lastErr, err)
 			client.invalidate(route.Primary, active)
 			client.refresh(ctx, route.Epoch)
 			continue
@@ -209,14 +256,23 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 		reply, err := osd.DecodeReply(message, client.config.MessageLimits)
 		if err != nil {
 			client.invalidate(route.Primary, active)
+			if mutation {
+				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, err)
+			}
 			return Result{}, fmt.Errorf("%w: %v", osd.ErrMalformedReply, err)
 		}
 		if reply.Object != currentTarget.Object || reply.PG != route.PG {
 			client.invalidate(route.Primary, active)
+			if mutation {
+				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
+			}
 			return Result{}, osd.ErrMalformedReply
 		}
 		if reply.Retry >= 0 && reply.Retry != int32(attempt) {
 			client.invalidate(route.Primary, active)
+			if mutation {
+				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
+			}
 			return Result{}, osd.ErrMalformedReply
 		}
 		if reply.Redirect != nil {
@@ -228,11 +284,23 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 			currentTarget.Namespace = reply.Redirect.Namespace
 			requestFlags |= osd.FlagRedirected | osd.FlagIgnoreCache | osd.FlagIgnoreOverlay
 			lastErr = errors.New("OSD redirected read")
+			if mutation {
+				transactionID, err = client.takeTransactionID()
+				if err != nil {
+					return Result{}, err
+				}
+			}
 			continue
 		}
 		if reply.Result == -11 {
 			lastErr = protocol.WireErrno(reply.Result)
 			client.refresh(ctx, route.Epoch)
+			if mutation {
+				transactionID, err = client.takeTransactionID()
+				if err != nil {
+					return Result{}, err
+				}
+			}
 			continue
 		}
 		if reply.Result != 0 {
@@ -240,19 +308,35 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 		}
 		if len(reply.Operations) != 1 {
 			client.invalidate(route.Primary, active)
+			if mutation {
+				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
+			}
 			return Result{}, osd.ErrMalformedReply
 		}
 		if reply.Operations[0].Operation != operation.Code {
 			client.invalidate(route.Primary, active)
+			if mutation {
+				return Result{}, fmt.Errorf("%w: %v", msgr.ErrOutcomeUnknown, osd.ErrMalformedReply)
+			}
 			return Result{}, osd.ErrMalformedReply
 		}
 		if reply.Operations[0].Code == -11 {
 			lastErr = protocol.WireErrno(reply.Operations[0].Code)
 			client.refresh(ctx, route.Epoch)
+			if mutation {
+				transactionID, err = client.takeTransactionID()
+				if err != nil {
+					return Result{}, err
+				}
+			}
 			continue
 		}
 		if reply.Operations[0].Code != 0 {
 			return Result{}, protocol.WireErrno(reply.Operations[0].Code)
+		}
+		if mutation && uint64(reply.Flags)&uint64(osd.FlagOnDisk) == 0 {
+			client.invalidate(route.Primary, active)
+			return Result{}, fmt.Errorf("%w: mutation reply is not durable", msgr.ErrOutcomeUnknown)
 		}
 		if operation.Code == osd.OpRead && uint64(len(reply.Operations[0].Data)) > operation.Length {
 			client.invalidate(route.Primary, active)
@@ -261,6 +345,13 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 		return Result{Data: append([]byte(nil), reply.Operations[0].Data...), Version: reply.Version}, nil
 	}
 	return Result{}, fmt.Errorf("%w: %w", ErrRecovery, lastErr)
+}
+
+func preserveOutcomeUnknown(previous, current error) error {
+	if errors.Is(previous, msgr.ErrOutcomeUnknown) {
+		return errors.Join(previous, current)
+	}
+	return current
 }
 
 type mapRouter struct{ source MapSource }
@@ -285,6 +376,39 @@ func (client *Client) refresh(ctx context.Context, epoch uint32) {
 	refreshCtx, cancel := context.WithTimeout(ctx, client.config.RefreshWait)
 	defer cancel()
 	_ = client.config.Maps.RefreshOSDMap(refreshCtx, epoch)
+}
+
+func (client *Client) waitForPrimaryChange(ctx context.Context, target Target, failed Route) (bool, error) {
+	epoch := failed.Epoch
+	var lastErr error
+	for range client.config.MaxAttempts {
+		refreshCtx, cancel := context.WithTimeout(ctx, client.config.RefreshWait)
+		err := client.config.Maps.RefreshOSDMap(refreshCtx, epoch)
+		cancel()
+		if err != nil {
+			if ctx.Err() != nil {
+				return false, ctx.Err()
+			}
+			lastErr = err
+			continue
+		}
+		refreshed, err := client.config.Router.Route(target)
+		if err != nil {
+			return false, err
+		}
+		if refreshed.Primary != failed.Primary {
+			return true, nil
+		}
+		if refreshed.Epoch <= epoch {
+			lastErr = fmt.Errorf("OSD map did not advance past epoch %d", epoch)
+			continue
+		}
+		epoch = refreshed.Epoch
+	}
+	if lastErr != nil {
+		return false, fmt.Errorf("OSD map refresh after epoch %d with acting primary %d unchanged: %w", epoch, failed.Primary, lastErr)
+	}
+	return false, fmt.Errorf("acting primary %d unchanged through epoch %d", failed.Primary, epoch)
 }
 
 func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) (session, error) {
@@ -328,6 +452,8 @@ func (client *Client) Close() {
 		return
 	}
 	client.closed = true
+	client.mutationClosed = true
+	client.notifyMutationWaitersLocked()
 	sessions := client.sessions
 	client.sessions = nil
 	client.mu.Unlock()
@@ -360,6 +486,7 @@ func productionSessionFactory(config Config) SessionFactory {
 		sessionConfig.ClientIdent.TargetAddress = selected
 		sessionConfig.ClientIdent.SupportedFeatures = uint64(protocol.FeatureOSDClient)
 		sessionConfig.ClientIdent.RequiredFeatures = uint64(protocol.FeatureOSDReplyMux | protocol.FeaturePGID64 | protocol.FeatureNewOSDOpReplyEncoding | protocol.FeatureMessageAddress2)
+		sessionConfig.ReconnectPolicy = msgr.ReplayPending
 		raw, err := msgr.NewSession(nil, connector, sessionConfig)
 		if err != nil {
 			return nil, err

@@ -419,6 +419,32 @@ func TestClientResendsPendingFullMapRequestAfterFailover(t *testing.T) {
 	client.Close()
 }
 
+func TestClientSuccessfulMapResponseFinishesRefresh(t *testing.T) {
+	active := newFakeMonitorSession()
+	client, err := NewClient(testClientConfig(), func(context.Context, Endpoint) (session, error) {
+		return active, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fsid := testFSID()
+	base, err := maps.DecodeOSDMap(encodeEmptyOSDMap(t, fsid, 1), client.config.MapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.pinnedFSID = &fsid
+	client.osdMap.Store(base)
+	client.refreshPending = true
+	if _, err := client.handleMessage(active, lifecycleOSDMapBatchMessage(t, fsid, 1)); err != nil {
+		t.Fatal(err)
+	}
+	assertSubscription(t, <-active.sends, 0, 2)
+	if client.refreshPending {
+		t.Fatal("successful map response left refresh pending")
+	}
+	client.Close()
+}
+
 func TestClientCloseCancelsBlockedStartupAndWaiters(t *testing.T) {
 	factoryStarted := make(chan struct{})
 	client, err := NewClient(testClientConfig(), func(ctx context.Context, _ Endpoint) (session, error) {

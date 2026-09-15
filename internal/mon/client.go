@@ -165,7 +165,13 @@ func (client *Client) Connect(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-client.done:
-		return ErrClosed
+		<-client.startDone
+		client.mu.Lock()
+		err := client.startErr
+		client.mu.Unlock()
+		if err != nil {
+			return err
+		}
 	}
 	select {
 	case <-client.ready:
@@ -178,6 +184,19 @@ func (client *Client) Connect(ctx context.Context) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	case <-client.done:
+		select {
+		case <-client.ready:
+			return nil
+		default:
+		}
+		select {
+		case <-client.readyFailure:
+			client.mu.Lock()
+			err := client.readyErr
+			client.mu.Unlock()
+			return err
+		default:
+		}
 		return ErrClosed
 	}
 }
@@ -419,7 +438,7 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 			return 0, err
 		}
 		publishAuthority(active)
-		appliedFull, err := client.applyBatch(batch)
+		_, err = client.applyBatch(batch)
 		if err != nil {
 			if errors.Is(err, ErrMapGap) {
 				if refreshErr := client.requestFullMap(); refreshErr != nil {
@@ -428,7 +447,7 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 			}
 			return 0, err
 		}
-		if appliedFull && client.finishRefresh() {
+		if client.finishRefresh() {
 			if err := client.subscribe(active); err != nil {
 				return 0, err
 			}

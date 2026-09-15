@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/otuschhoff/go-librados/internal/objecter"
+	"github.com/otuschhoff/go-librados/internal/osd"
 )
 
 type Pool struct {
@@ -26,6 +27,17 @@ type ObjectInfo struct {
 	Size    uint64
 	ModTime time.Time
 	Version uint64
+}
+
+type OpResult struct {
+	Version uint64
+	Results []SubOpResult
+}
+
+type SubOpResult struct {
+	Data  []byte
+	Value uint64
+	Err   error
 }
 
 func (pool Pool) ID() int64    { return pool.id }
@@ -72,6 +84,51 @@ func (object ObjectRef) Stat(ctx context.Context) (ObjectInfo, error) {
 		return ObjectInfo{}, object.pool.client.wrapError("stat", object.safeTarget(), err)
 	}
 	return ObjectInfo{Size: result.Size, ModTime: result.ModificationTime, Version: result.Version}, nil
+}
+
+func (object ObjectRef) Write(ctx context.Context, offset uint64, data []byte) (OpResult, error) {
+	return object.mutate(ctx, "write", osd.Operation{Code: osd.OpWrite, Offset: offset, Length: uint64(len(data)), Data: data})
+}
+
+func (object ObjectRef) WriteFull(ctx context.Context, data []byte) (OpResult, error) {
+	return object.mutate(ctx, "write full", osd.Operation{Code: osd.OpWriteFull, Length: uint64(len(data)), Data: data})
+}
+
+func (object ObjectRef) Append(ctx context.Context, data []byte) (OpResult, error) {
+	return object.mutate(ctx, "append", osd.Operation{Code: osd.OpAppend, Length: uint64(len(data)), Data: data})
+}
+
+func (object ObjectRef) Truncate(ctx context.Context, size uint64) (OpResult, error) {
+	return object.mutate(ctx, "truncate", osd.Operation{Code: osd.OpTruncate, Offset: size})
+}
+
+func (object ObjectRef) Zero(ctx context.Context, offset, length uint64) (OpResult, error) {
+	return object.mutate(ctx, "zero", osd.Operation{Code: osd.OpZero, Offset: offset, Length: length})
+}
+
+func (object ObjectRef) Remove(ctx context.Context) (OpResult, error) {
+	return object.mutate(ctx, "remove", osd.Operation{Code: osd.OpDelete})
+}
+
+func (object ObjectRef) Create(ctx context.Context, exclusive bool) (OpResult, error) {
+	operation := osd.Operation{Code: osd.OpCreate}
+	if exclusive {
+		operation.Flags = osd.OpFlagExclusive
+	}
+	return object.mutate(ctx, "create", operation)
+}
+
+func (object ObjectRef) mutate(ctx context.Context, operation string, request osd.Operation) (OpResult, error) {
+	objects, operationCtx, cancel, err := object.begin(ctx)
+	if err != nil {
+		return OpResult{}, object.wrapBeginError(operation, err)
+	}
+	defer cancel()
+	result, err := objects.Mutate(operationCtx, object.target(), request)
+	if err != nil {
+		return OpResult{}, object.pool.client.wrapError(operation, object.safeTarget(), err)
+	}
+	return OpResult{Version: result.Version}, nil
 }
 
 func (object ObjectRef) begin(ctx context.Context) (*objecter.Client, context.Context, context.CancelFunc, error) {

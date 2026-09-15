@@ -14,9 +14,21 @@ import (
 var ErrMalformedReply = errors.New("malformed OSD reply")
 
 const (
-	OpRead = uint16(0x1201)
-	OpStat = uint16(0x1202)
+	OpRead      = uint16(0x1201)
+	OpStat      = uint16(0x1202)
+	OpWrite     = uint16(0x2201)
+	OpWriteFull = uint16(0x2202)
+	OpTruncate  = uint16(0x2203)
+	OpZero      = uint16(0x2204)
+	OpDelete    = uint16(0x2205)
+	OpAppend    = uint16(0x2206)
+	OpCreate    = uint16(0x220d)
 
+	OpFlagExclusive = uint32(0x0001)
+
+	FlagAck           = uint32(0x0001)
+	FlagWrite         = uint32(0x0020)
+	FlagOnDisk        = uint32(0x0004)
 	FlagRead          = uint32(0x0010)
 	FlagRetry         = uint32(0x0008)
 	FlagIgnoreCache   = uint32(0x8000)
@@ -28,24 +40,28 @@ const (
 
 type Operation struct {
 	Code          uint16
+	Flags         uint32
 	Offset        uint64
 	Length        uint64
 	PayloadLength uint32
+	Data          []byte
 }
 
 type Request struct {
-	MapEpoch   uint32
-	PG         maps.PG
-	ObjectHash uint32
-	PoolID     int64
-	Object     string
-	Locator    string
-	Namespace  string
-	Snapshot   uint64
-	Retry      int32
-	Flags      uint32
-	Features   uint64
-	Operations []Operation
+	MapEpoch          uint32
+	PG                maps.PG
+	ObjectHash        uint32
+	PoolID            int64
+	Object            string
+	Locator           string
+	Namespace         string
+	Snapshot          uint64
+	TransactionID     uint64
+	ClientIncarnation int32
+	Retry             int32
+	Flags             uint32
+	Features          uint64
+	Operations        []Operation
 }
 
 type OperationResult struct {
@@ -82,22 +98,45 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	if limits.MaxBytes == 0 || limits.MaxOperations == 0 || len(request.Operations) == 0 || uint64(len(request.Operations)) > uint64(limits.MaxOperations) || len(request.Operations) > int(^uint16(0)) || request.PoolID < 0 {
 		return msgr.Message{}, wire.ErrLimitExceeded
 	}
+	mutation := false
+	dataLength := uint64(0)
+	for index := range request.Operations {
+		operation := &request.Operations[index]
+		if !supportedOperation(operation.Code) {
+			return msgr.Message{}, fmt.Errorf("%w: operation %#x", wire.ErrUnsupportedVersion, operation.Code)
+		}
+		if isMutation(operation.Code) {
+			mutation = true
+		}
+		if len(operation.Data) > int(^uint32(0)) {
+			return msgr.Message{}, wire.ErrLimitExceeded
+		}
+		if operation.PayloadLength != 0 && operation.PayloadLength != uint32(len(operation.Data)) {
+			return msgr.Message{}, wire.ErrMalformed
+		}
+		operation.PayloadLength = uint32(len(operation.Data))
+		dataLength += uint64(len(operation.Data))
+		if dataLength > uint64(limits.MaxBytes) {
+			return msgr.Message{}, wire.ErrLimitExceeded
+		}
+	}
 	encoder := wire.NewEncoder(limits.MaxBytes)
 	encodeSPG(encoder, request.PG)
 	encoder.Uint32(request.ObjectHash)
 	encoder.Uint32(request.MapEpoch)
-	encoder.Uint32(FlagRead | request.Flags)
-	encodeDefaultRequestID(encoder)
+	flags := FlagRead
+	if mutation {
+		flags = FlagWrite | FlagOnDisk
+	}
+	encoder.Uint32(flags | request.Flags)
+	encodeRequestID(encoder, request.ClientIncarnation)
 	encodeTrace(encoder)
-	encoder.Uint32(0)
+	encoder.Int32(request.ClientIncarnation)
 	encodeUTime(encoder, 0, 0)
 	encodeLocator(encoder, request.PoolID, request.Locator, request.Namespace)
 	encoder.String(request.Object)
 	encoder.Uint16(uint16(len(request.Operations)))
 	for _, operation := range request.Operations {
-		if operation.Code != OpRead && operation.Code != OpStat {
-			return msgr.Message{}, fmt.Errorf("%w: operation %#x", wire.ErrUnsupportedVersion, operation.Code)
-		}
 		encodeOperation(encoder, operation)
 	}
 	encoder.Uint64(request.Snapshot)
@@ -109,8 +148,26 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	if err != nil {
 		return msgr.Message{}, err
 	}
-	return msgr.Message{Header: msgr.MessageHeader{Type: protocol.MessageOSDOp, Version: 8, CompatVersion: 3}, Front: front, Lengths: msgr.MessageLengths{Front: uint32(len(front))}}, nil
+	if uint64(len(front))+dataLength > uint64(limits.MaxBytes) {
+		return msgr.Message{}, wire.ErrLimitExceeded
+	}
+	data := make([]byte, 0, dataLength)
+	for _, operation := range request.Operations {
+		data = append(data, operation.Data...)
+	}
+	return msgr.Message{Header: msgr.MessageHeader{TransactionID: request.TransactionID, Type: protocol.MessageOSDOp, Version: 8, CompatVersion: 3}, Front: front, Data: data, Lengths: msgr.MessageLengths{Front: uint32(len(front)), Data: uint32(len(data))}}, nil
 }
+
+func supportedOperation(code uint16) bool {
+	switch code {
+	case OpRead, OpStat, OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpCreate:
+		return true
+	default:
+		return false
+	}
+}
+
+func isMutation(code uint16) bool { return code&0x2000 != 0 }
 
 func DecodeReply(message msgr.Message, limits Limits) (Reply, error) {
 	if limits.MaxBytes == 0 || limits.MaxOperations == 0 || message.Header.Type != protocol.MessageOSDOpReply || message.Header.Version < 4 || message.Header.CompatVersion > 8 || uint64(len(message.Front))+uint64(len(message.Middle))+uint64(len(message.Data)) > uint64(limits.MaxBytes) {
@@ -206,7 +263,7 @@ func decodePG(decoder *wire.Decoder) (maps.PG, error) {
 
 func encodeOperation(encoder *wire.Encoder, operation Operation) {
 	encoder.Uint16(operation.Code)
-	encoder.Uint32(0)
+	encoder.Uint32(operation.Flags)
 	encoder.Uint64(operation.Offset)
 	encoder.Uint64(operation.Length)
 	encoder.Uint64(0)
@@ -271,12 +328,12 @@ func decodeRedirect(decoder *wire.Decoder) (Redirect, error) {
 	return redirect, nil
 }
 
-func encodeDefaultRequestID(encoder *wire.Encoder) {
+func encodeRequestID(encoder *wire.Encoder, incarnation int32) {
 	encoder.Versioned(2, 2, func(requestID *wire.Encoder) {
 		requestID.Uint8(0)
 		requestID.Uint64(0)
 		requestID.Uint64(0)
-		requestID.Int32(0)
+		requestID.Int32(incarnation)
 	})
 }
 

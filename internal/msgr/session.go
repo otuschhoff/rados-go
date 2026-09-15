@@ -255,11 +255,12 @@ type writeTask struct {
 }
 
 type pendingRequest struct {
-	request *submitCommand
-	message Message
-	bytes   uint64
-	seq     uint64
-	sent    bool
+	request         *submitCommand
+	message         Message
+	bytes           uint64
+	seq             uint64
+	sent            bool
+	mayHaveExecuted bool
 }
 
 type sessionOwner struct {
@@ -417,7 +418,16 @@ func (session *Session) submit(ctx context.Context, message Message, oneWay bool
 			admitted()
 		}
 	case <-session.done:
-		return Message{}, ErrSessionClosed
+		select {
+		case <-request.admitted:
+			if admitted != nil {
+				admitted()
+			}
+			result := <-request.result
+			return result.message, result.err
+		default:
+			return Message{}, ErrSessionClosed
+		}
 	}
 	select {
 	case result := <-request.result:
@@ -431,12 +441,8 @@ func (session *Session) submit(ctx context.Context, message Message, oneWay bool
 		result := <-request.result
 		return result.message, result.err
 	case <-session.done:
-		select {
-		case result := <-request.result:
-			return result.message, result.err
-		default:
-			return Message{}, ErrSessionClosed
-		}
+		result := <-request.result
+		return result.message, result.err
 	}
 }
 
@@ -572,7 +578,7 @@ func (owner *sessionOwner) cancel(command cancelCommand) {
 		return
 	}
 	owner.removePending(pending)
-	if pending.sent {
+	if pending.mayHaveExecuted {
 		command.request.result <- submitResult{err: fmt.Errorf("%w: %w", ErrOutcomeUnknown, command.err)}
 		return
 	}
@@ -620,6 +626,7 @@ func (owner *sessionOwner) dispatch() {
 			return
 		}
 		pending.sent = true
+		pending.mayHaveExecuted = true
 		if !containsPending(owner.replay, pending) {
 			owner.replay = append(owner.replay, pending)
 		}
@@ -1083,7 +1090,7 @@ func (owner *sessionOwner) failSentUnknown(cause error) {
 			continue
 		}
 		owner.removePending(pending)
-		pending.request.result <- submitResult{err: fmt.Errorf("%w: %v", ErrOutcomeUnknown, cause)}
+		pending.request.result <- submitResult{err: fmt.Errorf("%w: %w", ErrOutcomeUnknown, cause)}
 	}
 	owner.replay = nil
 }
@@ -1187,7 +1194,11 @@ func (owner *sessionOwner) stop(done chan struct{}) {
 
 func (owner *sessionOwner) failAll(err error) {
 	for _, pending := range owner.pending {
-		pending.request.result <- submitResult{err: err}
+		resultErr := err
+		if pending.mayHaveExecuted && !errors.Is(err, ErrOutcomeUnknown) {
+			resultErr = fmt.Errorf("%w: %w", ErrOutcomeUnknown, err)
+		}
+		pending.request.result <- submitResult{err: resultErr}
 	}
 	owner.pending = nil
 	owner.replay = nil

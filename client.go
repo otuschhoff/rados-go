@@ -114,7 +114,7 @@ func (client *Client) Connect(ctx context.Context) error {
 	}
 	messageLimits := msgr.Limits{MaxSegmentBytes: 32 << 20, MaxFrameBytes: 64 << 20, MaxAddresses: 64, MaxAuthBytes: 1 << 20}
 	sessionConfig := msgr.SessionConfig{
-		Limits: messageLimits, MaxQueuedMessages: 128, MaxRetainedBytes: 64 << 20, MaxInFlightTransactions: 64,
+		Limits: messageLimits, MaxQueuedMessages: 128, MaxRetainedBytes: 320 << 20, MaxInFlightTransactions: 64,
 		MaxReconnectAttempts: 2, MaxHandshakeTransitions: 32, EventBuffer: 16,
 		ClientIdent: msgr.ClientIdent{Addresses: protocol.EntityAddrVec{clientAddress}, SupportedFeatures: uint64(protocol.FeatureMonitorClient), RequiredFeatures: uint64(protocol.FeatureMessageAddress2)},
 	}
@@ -151,7 +151,7 @@ func (client *Client) Connect(ctx context.Context) error {
 	objectClient, err := objecter.New(objecter.Config{
 		Maps: monitorClient, AuthoritySource: func() *cephx.Connector { return client.authority.Load() }, ClientAddresses: protocol.EntityAddrVec{clientAddress},
 		ServiceConnector: cephx.ServiceConnectorConfig{DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout, MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC},
-		Session:          sessionConfig, MessageLimits: osd.Limits{MaxBytes: 32 << 20, MaxOperations: 16}, MaxAttempts: 4, RefreshWait: 250 * time.Millisecond,
+		Session:          sessionConfig, MessageLimits: osd.Limits{MaxBytes: 32 << 20, MaxOperations: 16}, MaxAttempts: 4, RefreshWait: 2 * time.Second,
 	})
 	if err != nil {
 		monitorClient.Close()
@@ -210,24 +210,32 @@ func (client *Client) OpenPoolByID(ctx context.Context, id int64) (Pool, error) 
 }
 
 func (client *Client) Flush(ctx context.Context) error {
-	_, _, err := client.active()
+	_, objects, err := client.active()
 	if err != nil {
 		return err
 	}
 	operationCtx, cancel := client.operationContext(ctx)
 	defer cancel()
-	select {
-	case <-operationCtx.Done():
-		return client.wrapError("flush", "client", operationCtx.Err())
-	default:
-		return nil
+	if err := objects.Flush(operationCtx); err != nil {
+		return client.wrapError("flush", "client", err)
 	}
+	return nil
 }
 
 func (client *Client) Shutdown(ctx context.Context) error {
-	if err := client.Flush(ctx); err != nil && !errors.Is(err, ErrClosed) {
-		_ = client.Close()
+	_, objects, err := client.active()
+	if err != nil {
+		if errors.Is(err, ErrClosed) {
+			return client.Close()
+		}
 		return err
+	}
+	objects.BeginShutdown()
+	operationCtx, cancel := client.operationContext(ctx)
+	defer cancel()
+	if err := objects.Flush(operationCtx); err != nil {
+		_ = client.Close()
+		return client.wrapError("shutdown", "client", err)
 	}
 	return client.Close()
 }
@@ -302,11 +310,14 @@ func (client *Client) wrapError(op, target string, err error) error {
 		return &OpError{Op: op, Target: target, Code: int32(wireErr), Err: err}
 	}
 	classified := err
+	if errors.Is(err, msgr.ErrOutcomeUnknown) {
+		classified = errors.Join(ErrOutcomeUnknown, classified)
+	}
 	switch {
 	case errors.Is(err, context.DeadlineExceeded):
-		classified = errors.Join(ErrTimeout, err)
+		classified = errors.Join(ErrTimeout, classified)
 	case errors.Is(err, context.Canceled):
-		classified = errors.Join(ErrCanceled, err)
+		classified = errors.Join(ErrCanceled, classified)
 	case errors.Is(err, mon.ErrClosed), errors.Is(err, objecter.ErrClosed), errors.Is(err, msgr.ErrSessionClosed):
 		classified = errors.Join(ErrClosed, err)
 	case errors.Is(err, msgr.ErrUnsupportedFeature), errors.Is(err, wire.ErrUnsupportedVersion):

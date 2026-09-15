@@ -1,6 +1,7 @@
 package rados
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -23,6 +24,18 @@ func TestWrapErrorDistinguishesPeerAndCallerFailures(t *testing.T) {
 	unsupported := client.wrapError("read", "object", msgr.ErrUnsupportedFeature)
 	if !errors.Is(unsupported, ErrUnsupported) {
 		t.Fatalf("unsupported error=%v", unsupported)
+	}
+	unknown := client.wrapError("append", "object", msgr.ErrOutcomeUnknown)
+	if !errors.Is(unknown, ErrOutcomeUnknown) || !errors.Is(unknown, msgr.ErrOutcomeUnknown) {
+		t.Fatalf("unknown outcome error=%v", unknown)
+	}
+}
+
+func TestWrapErrorPreservesOutcomeUnknownWithTimeout(t *testing.T) {
+	client := &Client{}
+	err := client.wrapError("append", "object", errors.Join(msgr.ErrOutcomeUnknown, context.DeadlineExceeded))
+	if !errors.Is(err, ErrOutcomeUnknown) || !errors.Is(err, ErrTimeout) || !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error=%v", err)
 	}
 }
 
@@ -94,5 +107,24 @@ func TestCloseIsIdempotentAndRejectsWork(t *testing.T) {
 	var statOp *OpError
 	if !errors.As(statErr, &statOp) || statOp.Op != "stat" || statOp.Target != "pool 7 object" || !errors.Is(statErr, ErrClosed) {
 		t.Fatalf("stat error=%#v", statErr)
+	}
+	mutations := []struct {
+		operation string
+		invoke    func() error
+	}{
+		{operation: "write", invoke: func() error { _, err := object.Write(t.Context(), 1, []byte("x")); return err }},
+		{operation: "write full", invoke: func() error { _, err := object.WriteFull(t.Context(), []byte("x")); return err }},
+		{operation: "append", invoke: func() error { _, err := object.Append(t.Context(), []byte("x")); return err }},
+		{operation: "truncate", invoke: func() error { _, err := object.Truncate(t.Context(), 1); return err }},
+		{operation: "zero", invoke: func() error { _, err := object.Zero(t.Context(), 1, 1); return err }},
+		{operation: "remove", invoke: func() error { _, err := object.Remove(t.Context()); return err }},
+		{operation: "create", invoke: func() error { _, err := object.Create(t.Context(), true); return err }},
+	}
+	for _, mutation := range mutations {
+		err := mutation.invoke()
+		var operationError *OpError
+		if !errors.As(err, &operationError) || operationError.Op != mutation.operation || operationError.Target != "pool 7 object" || !errors.Is(err, ErrClosed) {
+			t.Fatalf("%s error=%#v", mutation.operation, err)
+		}
 	}
 }
