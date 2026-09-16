@@ -267,7 +267,7 @@ func isReadOperation(code uint16) bool {
 	switch code {
 	case osd.OpRead, osd.OpStat, osd.OpSparseRead, osd.OpAssertVer, osd.OpOmapGetKeys, osd.OpOmapGetValues,
 		osd.OpOmapGetValuesByKeys, osd.OpOmapGetHeader, osd.OpOmapCompare,
-		osd.OpChecksum, osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr, osd.OpListWatchers:
+		osd.OpChecksum, osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr, osd.OpListWatchers, osd.OpScrubList:
 		return true
 	default:
 		return false

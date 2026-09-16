@@ -10,6 +10,7 @@ const (
 	FeatureServerNautilus         GlobalFeatures = 1 << 2
 	FeatureServerMimicIncarnation GlobalFeatures = 1<<57 | 1<<28
 	FeatureServerNautilusMask                    = FeatureServerNautilus | FeatureServerMimicIncarnation
+	FeatureServerOctopusMask                     = 1<<16 | FeatureServerMimicIncarnation
 	FeatureMessageAddress2        GlobalFeatures = 1 << 59
 	FeatureOSDReplyMux            GlobalFeatures = 1 << 12
 	FeatureNewOSDOpEncoding       GlobalFeatures = 1 << 56

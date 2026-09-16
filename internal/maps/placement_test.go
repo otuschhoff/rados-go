@@ -121,6 +121,17 @@ func TestPlaceObjectAppliesUpAndActingOverrides(t *testing.T) {
 	}
 }
 
+func TestPlaceObjectDoesNotBoundCrushNamesByOSDCount(t *testing.T) {
+	osdMap := &OSDMap{
+		pools:  map[int64]Pool{2: {id: 2, poolType: poolTypeReplicated, size: 1, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},
+		maxOSD: 4, osdState: []uint32{3, 3, 3, 3}, osdWeight: []uint32{0x10000, 0x10000, 0x10000, 0x10000},
+		crushData: encodePlacementCrushMapWithNames(t, 40),
+	}
+	if _, err := osdMap.PlaceObject(2, "object", "", ""); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestPlaceObjectSupportsErasurePoolShardSet(t *testing.T) {
 	osdMap := &OSDMap{
 		pools:  map[int64]Pool{2: {id: 2, poolType: poolTypeErasure, size: 2, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},
@@ -334,6 +345,10 @@ func TestUpmapItemsCanReplaceNonexistentRawOSD(t *testing.T) {
 }
 
 func encodePlacementCrushMap(t *testing.T) []byte {
+	return encodePlacementCrushMapWithNames(t, 0)
+}
+
+func encodePlacementCrushMapWithNames(t *testing.T, nameCount uint32) []byte {
 	t.Helper()
 	encoder := wire.NewEncoder(4096)
 	encoder.Uint32(crush.Magic)
@@ -370,8 +385,16 @@ func encodePlacementCrushMap(t *testing.T) []byte {
 		encoder.Int32(step.Argument1)
 		encoder.Int32(step.Argument2)
 	}
-	for range 3 {
-		encoder.Uint32(0)
+	for nameMap := range 3 {
+		if nameMap == 0 {
+			encoder.Uint32(nameCount)
+			for index := range nameCount {
+				encoder.Int32(int32(index))
+				encoder.String(fmt.Sprintf("name-%d", index))
+			}
+		} else {
+			encoder.Uint32(0)
+		}
 	}
 	encoder.Uint32(0)
 	encoder.Uint32(0)

@@ -42,6 +42,8 @@ type CommandReply struct {
 type PoolOperation uint32
 
 const (
+	PoolOperationCreate            PoolOperation = 0x01
+	PoolOperationDelete            PoolOperation = 0x02
 	PoolOperationCreateSnapshot    PoolOperation = 0x11
 	PoolOperationDeleteSnapshot    PoolOperation = 0x12
 	PoolOperationCreateSelfManaged PoolOperation = 0x21
@@ -54,6 +56,28 @@ type PoolOperationReply struct {
 	Result       int32
 	Epoch        uint32
 	ResponseData []byte
+}
+
+type StatFSReply struct {
+	FSID        maps.FSID
+	Version     uint64
+	KB          uint64
+	KBUsed      uint64
+	KBAvailable uint64
+	Objects     uint64
+}
+
+type PoolStats struct {
+	BytesUsed  uint64
+	Objects    uint64
+	ReadBytes  uint64
+	WriteBytes uint64
+}
+
+type PoolStatsReply struct {
+	FSID    maps.FSID
+	Version uint64
+	Pools   map[string]PoolStats
 }
 
 type MessageLimits struct {
@@ -107,11 +131,264 @@ func EncodeCommand(fsid maps.FSID, command []string, input []byte, maxBytes uint
 	return message, nil
 }
 
+func EncodeStatFS(fsid maps.FSID, version uint64, maxBytes uint32) (msgr.Message, error) {
+	if maxBytes == 0 {
+		return msgr.Message{}, wire.ErrLimitExceeded
+	}
+	encoder := wire.NewEncoder(maxBytes)
+	encodePaxosHeader(encoder, version)
+	encoder.Raw(fsid[:])
+	encoder.Uint8(0)
+	front, err := encoder.BytesResult()
+	if err != nil {
+		return msgr.Message{}, err
+	}
+	return frontMessage(protocol.MessageStatFS, 2, 1, front), nil
+}
+
+func DecodeStatFSReply(message msgr.Message, maxBytes uint32) (StatFSReply, error) {
+	if err := validateFrontMessage(message, protocol.MessageStatFSReply, maxBytes); err != nil {
+		return StatFSReply{}, err
+	}
+	if message.Header.Version < 1 || message.Header.CompatVersion > 1 {
+		return StatFSReply{}, fmt.Errorf("%w: statfs reply version=%d compat=%d", wire.ErrUnsupportedVersion, message.Header.Version, message.Header.CompatVersion)
+	}
+	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: maxBytes})
+	var result StatFSReply
+	copy(result.FSID[:], decoder.Raw(16))
+	result.Version = decoder.Uint64()
+	result.KB = decoder.Uint64()
+	result.KBUsed = decoder.Uint64()
+	result.KBAvailable = decoder.Uint64()
+	result.Objects = decoder.Uint64()
+	if err := decoder.Finish(); err != nil {
+		return StatFSReply{}, err
+	}
+	if decoder.Remaining() != 0 || len(message.Middle) != 0 || len(message.Data) != 0 {
+		return StatFSReply{}, wire.ErrMalformed
+	}
+	return result, nil
+}
+
+func EncodeGetPoolStats(fsid maps.FSID, version uint64, pools []string, maxBytes uint32) (msgr.Message, error) {
+	if maxBytes == 0 || len(pools) == 0 || uint64(len(pools)) > uint64(^uint32(0)) {
+		return msgr.Message{}, wire.ErrLimitExceeded
+	}
+	encoder := wire.NewEncoder(maxBytes)
+	encodePaxosHeader(encoder, version)
+	encoder.Raw(fsid[:])
+	encoder.Uint32(uint32(len(pools)))
+	for _, pool := range pools {
+		if pool == "" {
+			return msgr.Message{}, wire.ErrMalformed
+		}
+		encoder.String(pool)
+	}
+	front, err := encoder.BytesResult()
+	if err != nil {
+		return msgr.Message{}, err
+	}
+	return frontMessage(protocol.MessageGetPoolStats, 1, 0, front), nil
+}
+
+func DecodeGetPoolStatsReply(message msgr.Message, maxBytes, maxPools uint32) (PoolStatsReply, error) {
+	if maxPools == 0 {
+		return PoolStatsReply{}, wire.ErrLimitExceeded
+	}
+	if err := validateFrontMessage(message, protocol.MessageGetPoolStatsReply, maxBytes); err != nil {
+		return PoolStatsReply{}, err
+	}
+	if message.Header.Version < 1 || message.Header.Version > 2 || message.Header.CompatVersion > 1 {
+		return PoolStatsReply{}, wire.ErrUnsupportedVersion
+	}
+	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: maxBytes})
+	result := PoolStatsReply{Version: decodePaxosHeader(decoder)}
+	copy(result.FSID[:], decoder.Raw(16))
+	count := decoder.Uint32()
+	if count > maxPools {
+		return PoolStatsReply{}, wire.ErrLimitExceeded
+	}
+	type rawPoolStats struct {
+		numBytes, objects, readKB, writeKB, hitSetBytes, omapBytes int64
+		allocated, omapAllocated                                   int64
+	}
+	raw := make(map[string]rawPoolStats, count)
+	for range count {
+		name := decoder.String()
+		if _, exists := raw[name]; exists {
+			return PoolStatsReply{}, wire.ErrMalformed
+		}
+		stats, err := decodePoolStats(decoder, maxPools)
+		if err != nil {
+			return PoolStatsReply{}, err
+		}
+		raw[name] = stats
+	}
+	perPool := false
+	if message.Header.Version >= 2 {
+		perPool = decoder.Bool()
+	}
+	if err := decoder.Finish(); err != nil {
+		return PoolStatsReply{}, err
+	}
+	if decoder.Remaining() != 0 || len(message.Middle) != 0 || len(message.Data) != 0 {
+		return PoolStatsReply{}, wire.ErrMalformed
+	}
+	result.Pools = make(map[string]PoolStats, len(raw))
+	for name, stats := range raw {
+		values := []int64{stats.numBytes, stats.objects, stats.readKB, stats.writeKB, stats.hitSetBytes, stats.omapBytes, stats.allocated, stats.omapAllocated}
+		for _, value := range values {
+			if value < 0 {
+				return PoolStatsReply{}, wire.ErrMalformed
+			}
+		}
+		used, overflow := addUint64(uint64(stats.numBytes), uint64(stats.hitSetBytes), uint64(stats.omapBytes))
+		if perPool {
+			used, overflow = addUint64(uint64(stats.allocated), uint64(stats.omapAllocated))
+		}
+		if overflow || uint64(stats.readKB) > ^uint64(0)>>10 || uint64(stats.writeKB) > ^uint64(0)>>10 {
+			return PoolStatsReply{}, wire.ErrLimitExceeded
+		}
+		result.Pools[name] = PoolStats{BytesUsed: used, Objects: uint64(stats.objects), ReadBytes: uint64(stats.readKB) << 10, WriteBytes: uint64(stats.writeKB) << 10}
+	}
+	return result, nil
+}
+
+func addUint64(values ...uint64) (uint64, bool) {
+	var result uint64
+	for _, value := range values {
+		if value > ^uint64(0)-result {
+			return 0, true
+		}
+		result += value
+	}
+	return result, false
+}
+
+func decodePoolStats(decoder *wire.Decoder, maxEntries uint32) (struct {
+	numBytes, objects, readKB, writeKB, hitSetBytes, omapBytes int64
+	allocated, omapAllocated                                   int64
+}, error) {
+	var result struct {
+		numBytes, objects, readKB, writeKB, hitSetBytes, omapBytes int64
+		allocated, omapAllocated                                   int64
+	}
+	version, payload := decoder.Versioned(7)
+	if err := decoder.Finish(); err != nil || version != 7 {
+		return result, firstError(err, wire.ErrUnsupportedVersion)
+	}
+	collectionVersion, collection := payload.Versioned(2)
+	if err := payload.Finish(); err != nil || collectionVersion != 2 {
+		return result, firstError(err, wire.ErrUnsupportedVersion)
+	}
+	sumVersion, sum := collection.Versioned(20)
+	if err := collection.Finish(); err != nil || sumVersion != 20 {
+		return result, firstError(err, wire.ErrUnsupportedVersion)
+	}
+	for index := 0; index < 40; index++ {
+		var value int64
+		if index >= 28 && index <= 31 {
+			value = int64(sum.Int32())
+		} else {
+			value = sum.Int64()
+		}
+		switch index {
+		case 0:
+			result.numBytes = value
+		case 1:
+			result.objects = value
+		case 8:
+			result.readKB = value
+		case 10:
+			result.writeKB = value
+		case 22:
+			result.hitSetBytes = value
+		case 37:
+			result.omapBytes = value
+		}
+	}
+	if err := sum.Finish(); err != nil || sum.Remaining() != 0 {
+		return result, firstError(err, wire.ErrMalformed)
+	}
+	categories := collection.Uint32()
+	if categories > maxEntries {
+		return result, wire.ErrLimitExceeded
+	}
+	for range categories {
+		_ = collection.String()
+		if err := skipObjectStatSum(collection); err != nil {
+			return result, err
+		}
+	}
+	if err := collection.Finish(); err != nil || collection.Remaining() != 0 {
+		return result, firstError(err, wire.ErrMalformed)
+	}
+	payload.Int64()
+	payload.Int64()
+	payload.Int32()
+	payload.Int32()
+	storeVersion, store := payload.Versioned(1)
+	if err := payload.Finish(); err != nil || storeVersion != 1 {
+		return result, firstError(err, wire.ErrUnsupportedVersion)
+	}
+	store.Uint64()
+	store.Uint64()
+	store.Uint64()
+	result.allocated = store.Int64()
+	store.Int64()
+	store.Int64()
+	store.Int64()
+	store.Int64()
+	result.omapAllocated = store.Int64()
+	store.Int64()
+	if err := store.Finish(); err != nil || store.Remaining() != 0 {
+		return result, firstError(err, wire.ErrMalformed)
+	}
+	payload.Int32()
+	if err := payload.Finish(); err != nil || payload.Remaining() != 0 {
+		return result, firstError(err, wire.ErrMalformed)
+	}
+	return result, nil
+}
+
+func skipObjectStatSum(decoder *wire.Decoder) error {
+	version, payload := decoder.Versioned(20)
+	if err := decoder.Finish(); err != nil || version != 20 {
+		return firstError(err, wire.ErrUnsupportedVersion)
+	}
+	for index := 0; index < 40; index++ {
+		if index >= 28 && index <= 31 {
+			payload.Int32()
+		} else {
+			payload.Int64()
+		}
+	}
+	if err := payload.Finish(); err != nil || payload.Remaining() != 0 {
+		return firstError(err, wire.ErrMalformed)
+	}
+	return nil
+}
+
+func firstError(actual, fallback error) error {
+	if actual != nil {
+		return actual
+	}
+	return fallback
+}
+
 func EncodePoolOperation(fsid maps.FSID, pool uint32, operation PoolOperation, snapID uint64, name string, version uint64, maxBytes uint32) (msgr.Message, error) {
 	if maxBytes == 0 {
 		return msgr.Message{}, wire.ErrLimitExceeded
 	}
 	switch operation {
+	case PoolOperationCreate:
+		if pool != 0 || name == "" || snapID != 0 {
+			return msgr.Message{}, fmt.Errorf("%w: pool creation arguments", wire.ErrMalformed)
+		}
+	case PoolOperationDelete:
+		if pool == 0 || name != "delete" || snapID != 0 {
+			return msgr.Message{}, fmt.Errorf("%w: pool deletion arguments", wire.ErrMalformed)
+		}
 	case PoolOperationCreateSnapshot, PoolOperationDeleteSnapshot:
 		if name == "" || snapID != 0 {
 			return msgr.Message{}, fmt.Errorf("%w: named snapshot operation arguments", wire.ErrMalformed)

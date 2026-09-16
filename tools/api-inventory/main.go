@@ -262,7 +262,7 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case isAny(lower, "rados_create", "rados_create2", "rados_create_with_context", "rados_version", "rados::version") || containsAny(lower, "::init", "connect", "shutdown", "conf_", "config", "cct", "instance_id", "ioctx::close", "ioctx_destroy", "ioctx_get_cluster"):
 		return "rados.Client / rados.Config", disposition, "P01/P04", difference, test
 	case containsAny(lower, "pool_create", "pool_delete", "application_", "cluster_stat", "pool_stat", "mon_command", "mgr_command", "osd_command", "pg_command", "blocklist", "blacklist"):
-		return "rados.Client administrative methods", disposition, "P11", difference, test
+		return classifyP11(item, "rados.Client administrative methods")
 	case containsAny(lower, "pool_list", "pool_lookup", "pool_reverse", "ioctx_create", "get_pool_name", "get_id", "cluster_fsid", "wait_for_latest_osdmap", "min_compatible", "ping_monitor"):
 		return "rados.Client pool/map discovery methods", disposition, "P04", difference, test
 	case containsAny(lower, "watch", "notify"):
@@ -290,9 +290,9 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "set_namespace", "get_namespace", "locator_set_key", "get_object_pg_hash_position", "get_object_hash_position", "placementgroup::parse"):
 		return "immutable rados.Pool/ObjectRef views and placement diagnostics", disposition, "P05", difference, test
 	case containsAny(lower, "inconsistent"):
-		return "rados.Client administrative consistency methods", disposition, "P11", difference, test
+		return classifyP11(item, "rados.Client administrative consistency methods")
 	case lower == "rados_getaddrs" || containsAny(lower, "get_addrs"):
-		return "rados.Client session addresses", disposition, "P11", difference, test
+		return classifyP11(item, "rados.Client session addresses")
 	case containsAny(lower, "from_rados_t", "from_rados_ioctx_t"):
 		return "none", "intentional-omission: native handle interoperation violates pure-Go boundary", "P00", "No C handle exists in the distributed client", "dependency and cgo audit"
 	case containsAny(lower, "full_try", "full_force"):
@@ -302,6 +302,17 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	default:
 		return "none", "review-required", "P00", "Must be classified before P00 exit", "classification validator"
 	}
+}
+
+func classifyP11(item entry, equivalent string) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	if containsAny(lower, "command_target", "pool_create_with_crush_rule", "test_blocklist_self") {
+		return equivalent, "intentional-omission: non-frozen P11 variant", "P11", "Not exposed by the certified P11 Go contract", "P11 API inventory review; no runtime conformance claim"
+	}
+	if containsAny(lower, "_async") {
+		return equivalent, "go-native", "P11", "Context-aware Go calls replace native completion allocation", "P11 context, ownership, and live administrative tests"
+	}
+	return equivalent, "implemented", "P11", "Context-aware Go values preserve native semantics with Go-owned command and metadata results", "P11 unit and live administrative interoperability tests"
 }
 
 func classifyP10(item entry, equivalent, surface string) (goEquivalent, disposition, phase, difference, test string) {

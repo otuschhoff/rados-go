@@ -41,6 +41,24 @@ func TestPlaceChooseFirstN(t *testing.T) {
 	}
 }
 
+func TestPlaceChooseleafFirstN(t *testing.T) {
+	crushMap := testPlacementMap()
+	crushMap.Rules[0] = Rule{Type: RuleTypeReplicated, Steps: []RuleStep{
+		{Operation: RuleTake, Argument1: -1},
+		{Operation: RuleChooseleafFirstN, Argument2: 1},
+		{Operation: RuleEmit},
+	}}
+	for seed := range uint32(32) {
+		got, err := crushMap.Place(0, seed, 2, []uint32{0x10000, 0x10000, 0x10000, 0x10000})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 2 || got[0] == got[1] || got[0] < 0 || got[1] < 0 {
+			t.Fatalf("seed %d invalid chooseleaf placement = %v", seed, got)
+		}
+	}
+}
+
 func TestPlaceChooseIndep(t *testing.T) {
 	crushMap := testPlacementMap()
 	crushMap.Rules[0] = Rule{Type: RuleTypeErasure, Steps: []RuleStep{
@@ -115,7 +133,7 @@ func TestPlaceRejectsOutsideCertifiedProfile(t *testing.T) {
 	tests := []func(*Map){
 		func(value *Map) { value.ChooseTotalTries = 51 },
 		func(value *Map) {
-			value.Rules[0] = Rule{Type: RuleTypeReplicated, Steps: []RuleStep{{Operation: RuleTake, Argument1: -1}, {Operation: RuleChooseleafFirstN, Argument2: 1}, {Operation: RuleEmit}}}
+			value.Rules[0] = Rule{Type: RuleTypeReplicated, Steps: []RuleStep{{Operation: RuleTake, Argument1: -1}, {Operation: RuleChooseleafFirstN, Argument2: 99}, {Operation: RuleEmit}}}
 		},
 		func(value *Map) { value.classShadowBuckets = map[int32]struct{}{-1: {}} },
 		func(value *Map) { value.Rules[0].Steps[0].Argument1 = -99 },

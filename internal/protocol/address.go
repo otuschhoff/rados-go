@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/netip"
+	"strconv"
+	"strings"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 )
@@ -35,6 +37,51 @@ type EntityAddr struct {
 	Nonce      uint32
 	Family     uint16
 	SocketData []byte
+}
+
+func ParseEntityAddr(value string) (EntityAddr, error) {
+	addressType := AddressV2
+	for prefix, candidate := range map[string]AddressType{"v1:": AddressLegacy, "v2:": AddressV2, "any:": AddressAny} {
+		if strings.HasPrefix(value, prefix) {
+			addressType = candidate
+			value = strings.TrimPrefix(value, prefix)
+			break
+		}
+	}
+	if value == "-" {
+		return EntityAddr{Type: AddressNone, Family: linuxAFUnspec, SocketData: make([]byte, 26)}, nil
+	}
+	endpointText, nonceText, hasNonce := strings.Cut(value, "/")
+	if hasNonce && (nonceText == "" || strings.Contains(nonceText, "/")) {
+		return EntityAddr{}, ErrInvalidAddress
+	}
+	var nonce uint64
+	var err error
+	if hasNonce {
+		nonce, err = strconv.ParseUint(nonceText, 10, 32)
+		if err != nil {
+			return EntityAddr{}, fmt.Errorf("%w: invalid nonce", ErrInvalidAddress)
+		}
+	}
+	endpoint, err := parseEntityEndpoint(endpointText)
+	if err != nil {
+		return EntityAddr{}, err
+	}
+	if endpoint.Addr().Is4() {
+		return IPv4EntityAddr(addressType, uint32(nonce), endpoint)
+	}
+	return IPv6EntityAddr(addressType, uint32(nonce), endpoint, 0, 0)
+}
+
+func parseEntityEndpoint(value string) (netip.AddrPort, error) {
+	if address, err := netip.ParseAddr(value); err == nil {
+		return netip.AddrPortFrom(address, 0), nil
+	}
+	endpoint, err := netip.ParseAddrPort(value)
+	if err != nil {
+		return netip.AddrPort{}, fmt.Errorf("%w: invalid endpoint", ErrInvalidAddress)
+	}
+	return endpoint, nil
 }
 
 func IPv4EntityAddr(addressType AddressType, nonce uint32, endpoint netip.AddrPort) (EntityAddr, error) {

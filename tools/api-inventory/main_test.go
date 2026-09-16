@@ -220,3 +220,30 @@ func TestP10Classifications(t *testing.T) {
 		}
 	}
 }
+
+func TestP11Classifications(t *testing.T) {
+	for _, test := range []struct {
+		symbol      string
+		disposition string
+	}{
+		{symbol: "rados_cluster_stat", disposition: "implemented"},
+		{symbol: "rados_ioctx_pool_stat", disposition: "implemented"},
+		{symbol: "rados_mon_command", disposition: "implemented"},
+		{symbol: "rados_mgr_command", disposition: "implemented"},
+		{symbol: "rados_osd_command", disposition: "implemented"},
+		{symbol: "rados_pg_command", disposition: "implemented"},
+		{symbol: "rados_pool_create", disposition: "implemented"},
+		{symbol: "rados_pool_delete_async", disposition: "go-native"},
+		{symbol: "rados_getaddrs", disposition: "implemented"},
+		{symbol: "rados_inconsistent_pg_list", disposition: "implemented"},
+		{symbol: "rados_mgr_command_target", disposition: "intentional-omission: non-frozen P11 variant"},
+		{symbol: "rados_mon_command_target", disposition: "intentional-omission: non-frozen P11 variant"},
+		{symbol: "rados_pool_create_with_crush_rule", disposition: "intentional-omission: non-frozen P11 variant"},
+		{symbol: "Rados::test_blocklist_self", disposition: "intentional-omission: non-frozen P11 variant"},
+	} {
+		_, disposition, phase, _, _ := classify(entry{symbol: test.symbol})
+		if disposition != test.disposition || phase != "P11" {
+			t.Errorf("%s classification disposition=%q phase=%q", test.symbol, disposition, phase)
+		}
+	}
+}

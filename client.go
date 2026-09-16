@@ -16,6 +16,7 @@ import (
 	"github.com/otuschhoff/go-librados/internal/cephx"
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 	"github.com/otuschhoff/go-librados/internal/maps"
+	"github.com/otuschhoff/go-librados/internal/mgr"
 	"github.com/otuschhoff/go-librados/internal/mon"
 	"github.com/otuschhoff/go-librados/internal/msgr"
 	"github.com/otuschhoff/go-librados/internal/objecter"
@@ -59,7 +60,9 @@ type Client struct {
 	closeDone   chan struct{}
 	connected   bool
 	monitor     *mon.Client
+	manager     *mgr.Client
 	objects     *objecter.Client
+	addresses   protocol.EntityAddrVec
 	authority   atomic.Pointer[cephx.Connector]
 	workers     sync.WaitGroup
 	lifetime    context.Context
@@ -179,14 +182,27 @@ func (client *Client) Connect(ctx context.Context) error {
 		monitorClient.Close()
 		return client.wrapError("connect", "OSDs", err)
 	}
+	managerClient, err := mgr.New(mgr.Config{
+		Maps: monitorClient, FSID: monitorClient.OSDMap().FSID(), AuthoritySource: func() *cephx.Connector { return client.authority.Load() }, ClientAddresses: protocol.EntityAddrVec{clientAddress},
+		ServiceConnector: cephx.ServiceConnectorConfig{DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout, MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC},
+		Session:          sessionConfig, MessageLimits: 32 << 20, RetryDelay: 100 * time.Millisecond, MaxAttempts: 4,
+	})
+	if err != nil {
+		objectClient.Close()
+		monitorClient.Close()
+		return client.wrapError("connect", "manager", err)
+	}
 	client.mu.Lock()
 	if client.closed || client.closing {
 		client.mu.Unlock()
+		managerClient.Close()
 		objectClient.Close()
 		monitorClient.Close()
 		return &OpError{Op: "connect", Err: ErrClosed}
 	}
+	client.manager = managerClient
 	client.objects = objectClient
+	client.addresses = protocol.EntityAddrVec{clientAddress}
 	client.connected = true
 	client.mu.Unlock()
 	return nil
@@ -320,8 +336,8 @@ func (client *Client) finishClose(closeDone chan struct{}) {
 	client.mu.Lock()
 	client.closed = true
 	cancelLifetime := client.cancel
-	objects, monitorClient := client.objects, client.monitor
-	client.objects, client.monitor = nil, nil
+	objects, managerClient, monitorClient := client.objects, client.manager, client.monitor
+	client.objects, client.manager, client.monitor, client.addresses = nil, nil, nil, nil
 	client.connected = false
 	client.mu.Unlock()
 	if cancelLifetime != nil {
@@ -329,6 +345,9 @@ func (client *Client) finishClose(closeDone chan struct{}) {
 	}
 	if objects != nil {
 		objects.Close()
+	}
+	if managerClient != nil {
+		managerClient.Close()
 	}
 	if monitorClient != nil {
 		monitorClient.Close()
@@ -388,6 +407,16 @@ func (client *Client) beginOperation() (*mon.Client, *objecter.Client, func(), e
 	return client.monitor, client.objects, client.workers.Done, nil
 }
 
+func (client *Client) beginAdministrativeOperation() (*mon.Client, *mgr.Client, *objecter.Client, func(), error) {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	if client.closed || client.closing || !client.connected || client.monitor == nil || client.manager == nil || client.objects == nil {
+		return nil, nil, nil, nil, &OpError{Err: ErrClosed}
+	}
+	client.workers.Add(1)
+	return client.monitor, client.manager, client.objects, client.workers.Done, nil
+}
+
 func (client *Client) operationContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	operationCtx, cancel := client.boundedContext(ctx)
 	if client.lifetime == nil {
@@ -431,7 +460,7 @@ func (client *Client) wrapError(op, target string, err error) error {
 		classified = errors.Join(ErrTimeout, classified)
 	case errors.Is(err, context.Canceled):
 		classified = errors.Join(ErrCanceled, classified)
-	case errors.Is(err, mon.ErrClosed), errors.Is(err, objecter.ErrClosed), errors.Is(err, msgr.ErrSessionClosed):
+	case errors.Is(err, mon.ErrClosed), errors.Is(err, mgr.ErrClosed), errors.Is(err, objecter.ErrClosed), errors.Is(err, msgr.ErrSessionClosed):
 		classified = errors.Join(ErrClosed, classified)
 	case errors.Is(err, msgr.ErrUnsupportedFeature), errors.Is(err, wire.ErrUnsupportedVersion), errors.Is(err, objecter.ErrNoSortBitwise), errors.Is(err, maps.ErrUnsupportedPlacement):
 		classified = errors.Join(ErrUnsupported, classified)

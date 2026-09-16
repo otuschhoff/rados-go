@@ -599,6 +599,41 @@ func TestReadOnlyCommandReturnsWireError(t *testing.T) {
 	client.Close()
 }
 
+func TestCommandAllowsAdministrativePrefix(t *testing.T) {
+	active := newFakeMonitorSession()
+	command := `{"prefix":"osd pool create","pool":"p11-test"}`
+	front := wire.NewEncoder(1024)
+	encodePaxosHeader(front, 4)
+	front.Int32(0)
+	front.String("")
+	front.Uint32(1)
+	front.String(command)
+	encoded, err := front.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	active.submitReply = frontMessage(protocol.MessageMonCommandAck, 1, 0, encoded)
+	client, err := NewClient(testClientConfig(), func(context.Context, Endpoint) (session, error) { return active, nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	fsid := testFSID()
+	client.pinnedFSID = &fsid
+	client.session = active
+	if _, err := client.ReadOnlyCommand(context.Background(), []string{command}, nil); !errors.Is(err, ErrReadOnlyCommand) {
+		t.Fatalf("read-only error = %v, want %v", err, ErrReadOnlyCommand)
+	}
+	reply, err := client.Command(context.Background(), []string{command}, []byte("input"))
+	if err != nil || reply.Version != 4 {
+		t.Fatalf("reply=%+v error=%v", reply, err)
+	}
+	request := <-active.submits
+	if string(request.Data) != "input" {
+		t.Fatalf("request input = %q", request.Data)
+	}
+	client.Close()
+}
+
 func TestApplyPoolOperationValidatesReplyAndCurrentMap(t *testing.T) {
 	active := newFakeMonitorSession()
 	fsid := testFSID()
@@ -707,7 +742,11 @@ func testClientConfig() ClientConfig {
 func assertSubscription(t *testing.T, message msgr.Message, monStart, osdStart uint64) {
 	t.Helper()
 	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: 1024})
-	if decoder.Uint32() != 2 || decoder.String() != "monmap" || decoder.Uint64() != monStart {
+	if decoder.Uint32() != 3 || decoder.String() != "mgrmap" || decoder.Uint64() != 0 {
+		t.Fatalf("unexpected mgrmap subscription: %x", message.Front)
+	}
+	decoder.Uint8()
+	if decoder.String() != "monmap" || decoder.Uint64() != monStart {
 		t.Fatalf("unexpected monmap subscription: %x", message.Front)
 	}
 	decoder.Uint8()

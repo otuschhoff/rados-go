@@ -51,7 +51,13 @@ func (crushMap *Map) Place(ruleID, seed uint32, replicas int, osdWeights []uint3
 func (crushMap *Map) validateCertifiedRule(rule Rule) error {
 	takeIndex := 0
 	if rule.Type == RuleTypeReplicated {
-		if len(rule.Steps) != 3 || rule.Steps[0].Operation != RuleTake || rule.Steps[1] != (RuleStep{Operation: RuleChooseFirstN}) || rule.Steps[2].Operation != RuleEmit {
+		if len(rule.Steps) != 3 || rule.Steps[0].Operation != RuleTake || rule.Steps[2] != (RuleStep{Operation: RuleEmit}) {
+			return fmt.Errorf("%w: rule is outside certified replicated profile", ErrPlacement)
+		}
+		choose := rule.Steps[1]
+		if choose == (RuleStep{Operation: RuleChooseFirstN}) {
+			// Flat replicated rule.
+		} else if choose.Operation != RuleChooseleafFirstN || choose.Argument1 != 0 || choose.Argument2 <= 0 || !crushMap.hasBucketType(uint16(choose.Argument2)) {
 			return fmt.Errorf("%w: rule is outside certified replicated profile", ErrPlacement)
 		}
 	} else {
@@ -70,6 +76,15 @@ func (crushMap *Map) validateCertifiedRule(rule Rule) error {
 		return fmt.Errorf("%w: tunables are outside certified Tentacle profile", ErrPlacement)
 	}
 	return nil
+}
+
+func (crushMap *Map) hasBucketType(bucketType uint16) bool {
+	for _, bucket := range crushMap.Buckets {
+		if bucket.Type == bucketType {
+			return true
+		}
+	}
+	return false
 }
 
 func (executor *placement) rule(rule Rule, seed uint32, resultMaximum int) ([]int32, error) {

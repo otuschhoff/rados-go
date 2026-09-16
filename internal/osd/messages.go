@@ -35,6 +35,7 @@ const (
 	OpCall                = uint16(0x1401)
 	OpPGList              = uint16(0x1501)
 	OpPGNList             = uint16(0x1505)
+	OpScrubList           = uint16(0x1507)
 	OpWrite               = uint16(0x2201)
 	OpWriteFull           = uint16(0x2202)
 	OpTruncate            = uint16(0x2203)
@@ -253,7 +254,7 @@ func supportedOperation(code uint16) bool {
 	switch code {
 	case OpRead, OpStat, OpSparseRead, OpNotify, OpNotifyAck, OpListWatchers, OpAssertVer, OpOmapGetKeys, OpOmapGetValues,
 		OpOmapGetValuesByKeys, OpOmapGetHeader, OpOmapCompare, OpChecksum, OpCompareExtent,
-		OpGetXattr, OpGetXattrs, OpCompareXattr, OpCall, OpPGList, OpPGNList,
+		OpGetXattr, OpGetXattrs, OpCompareXattr, OpCall, OpPGList, OpPGNList, OpScrubList,
 		OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpWatch, OpCreate, OpRollback,
 		OpOmapSetValues, OpOmapSetHeader, OpOmapClear, OpOmapRemoveKeys, OpCopyFrom,
 		OpSetAllocationHint, OpWriteSame, OpCopyFrom2, OpOmapRemoveRange, OpSetXattr, OpRemoveXattr:
@@ -291,6 +292,10 @@ func validateOperation(operation Operation) error {
 		}
 	case OpPGNList:
 		if operation.ListCount == 0 || len(operation.Data) == 0 {
+			return wire.ErrMalformed
+		}
+	case OpScrubList:
+		if len(operation.Data) == 0 {
 			return wire.ErrMalformed
 		}
 	case OpGetXattr, OpRemoveXattr:

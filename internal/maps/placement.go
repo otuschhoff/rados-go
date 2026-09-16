@@ -82,9 +82,10 @@ func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (Obje
 	if pool.size == 0 {
 		return ObjectPlacement{}, fmt.Errorf("%w: pool %d has zero replicas", ErrUnsupportedPlacement, poolID)
 	}
+	structuralLimit := max(uint32(len(osdMap.crushData))/4, 1)
 	crushMap, err := crush.DecodeMap(osdMap.crushData, crush.DecodeLimits{
-		MaxBytes: uint32(len(osdMap.crushData)), MaxBuckets: uint32(max(osdMap.maxOSD*8, 1)),
-		MaxRules: 256, MaxItems: uint32(max(osdMap.maxOSD*8, 1)), MaxNames: uint32(max(osdMap.maxOSD*8, 1)),
+		MaxBytes: uint32(len(osdMap.crushData)), MaxBuckets: structuralLimit,
+		MaxRules: structuralLimit, MaxItems: structuralLimit, MaxNames: structuralLimit,
 	})
 	if err != nil {
 		return ObjectPlacement{}, fmt.Errorf("%w: %v", ErrUnsupportedPlacement, err)

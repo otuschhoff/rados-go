@@ -185,6 +185,27 @@ func (o ObjectRef) CopyFrom2(ctx context.Context, source ObjectRef, sourceVersio
 func (o ObjectRef) SetAllocationHint(ctx context.Context, expectedObjectSize, expectedWriteSize uint64) (OpResult, error)
 ```
 
+Administrative command arguments are one bounded JSON object passed as one
+Ceph command-vector element. Returned output and status are caller-owned and
+remain available when the server returns a negative errno. Manager commands
+follow the active daemon published by `MgrMap`; manager absence does not gate
+connection setup or ordinary object I/O. Targeted monitor/manager variants and
+pool creation with an explicit CRUSH rule are not part of the frozen v1 API.
+
+Pool creation/deletion and application metadata mutations wait for the
+resulting OSD map to become visible before returning. `Blocklist` accepts a
+complete Ceph entity address with an optional `v1:`, `v2:`, or `any:` prefix,
+optional port, and optional 32-bit nonce; durations are whole seconds in the
+native unsigned 32-bit range. It also waits for a newer OSD map. Session
+addresses are copied from the nonce-bearing messenger identity and returned as
+new Go strings.
+
+Administrative methods require the corresponding Ceph monitor, manager, or
+OSD capabilities. A client used only for ordinary object I/O does not require
+manager capabilities or manager availability. Pool deletion and blocklisting
+are intentionally explicit and must only be used against resources whose
+ownership the application has established.
+
 Iteration pages are bounded and cursors are opaque. Begin/end cursors come from
 the owning pool; the zero cursor is invalid. Cursors may be stored and reused
 while that pool ID exists, but using one with another pool or comparing cursors

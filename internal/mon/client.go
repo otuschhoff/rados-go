@@ -14,6 +14,7 @@ import (
 	"github.com/otuschhoff/go-librados/internal/cephx"
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 	"github.com/otuschhoff/go-librados/internal/maps"
+	"github.com/otuschhoff/go-librados/internal/mgr"
 	"github.com/otuschhoff/go-librados/internal/msgr"
 	"github.com/otuschhoff/go-librados/internal/protocol"
 )
@@ -77,6 +78,7 @@ type Client struct {
 	hasActive      bool
 	pinnedFSID     *maps.FSID
 	monMap         atomic.Pointer[maps.MonMap]
+	mgrMap         atomic.Pointer[maps.MgrMap]
 	osdMap         atomic.Pointer[maps.OSDMap]
 }
 
@@ -266,6 +268,7 @@ func (client *Client) Close() {
 func (client *Client) Done() <-chan struct{} { return client.done }
 func (client *Client) Errors() <-chan error  { return client.errors }
 func (client *Client) MonMap() *maps.MonMap  { return client.monMap.Load() }
+func (client *Client) MgrMap() *maps.MgrMap  { return client.mgrMap.Load() }
 func (client *Client) OSDMap() *maps.OSDMap  { return client.osdMap.Load() }
 
 func (client *Client) PoolByName(name string) (maps.Pool, bool) {
@@ -300,6 +303,10 @@ func (client *Client) ReadOnlyCommand(ctx context.Context, command []string, inp
 	if !isReadOnlyCommand(command) {
 		return CommandReply{}, ErrReadOnlyCommand
 	}
+	return client.Command(ctx, command, input)
+}
+
+func (client *Client) Command(ctx context.Context, command []string, input []byte) (CommandReply, error) {
 	fsid, ok := client.currentFSID()
 	if !ok {
 		return CommandReply{}, fmt.Errorf("%w: cluster identity unavailable", ErrClosed)
@@ -324,6 +331,72 @@ func (client *Client) ReadOnlyCommand(ctx context.Context, command []string, inp
 	}
 	if decoded.Result != 0 {
 		return decoded, protocol.WireErrno(decoded.Result)
+	}
+	return decoded, nil
+}
+
+func (client *Client) StatFS(ctx context.Context) (StatFSReply, error) {
+	fsid, ok := client.currentFSID()
+	if !ok {
+		return StatFSReply{}, fmt.Errorf("%w: cluster identity unavailable", ErrClosed)
+	}
+	var version uint64
+	if current := client.osdMap.Load(); current != nil {
+		version = uint64(current.Epoch())
+	}
+	message, err := EncodeStatFS(fsid, version, client.config.MessageLimits.MaxBytes)
+	if err != nil {
+		return StatFSReply{}, err
+	}
+	client.mu.Lock()
+	active := client.session
+	client.mu.Unlock()
+	if active == nil {
+		return StatFSReply{}, ErrClosed
+	}
+	reply, err := active.Submit(ctx, message)
+	if err != nil {
+		return StatFSReply{}, err
+	}
+	decoded, err := DecodeStatFSReply(reply, client.config.MessageLimits.MaxBytes)
+	if err != nil {
+		return StatFSReply{}, err
+	}
+	if decoded.FSID != fsid {
+		return StatFSReply{}, ErrForeignCluster
+	}
+	return decoded, nil
+}
+
+func (client *Client) PoolStats(ctx context.Context, pools []string) (PoolStatsReply, error) {
+	fsid, ok := client.currentFSID()
+	if !ok {
+		return PoolStatsReply{}, fmt.Errorf("%w: cluster identity unavailable", ErrClosed)
+	}
+	var version uint64
+	if current := client.osdMap.Load(); current != nil {
+		version = uint64(current.Epoch())
+	}
+	message, err := EncodeGetPoolStats(fsid, version, pools, client.config.MessageLimits.MaxBytes)
+	if err != nil {
+		return PoolStatsReply{}, err
+	}
+	client.mu.Lock()
+	active := client.session
+	client.mu.Unlock()
+	if active == nil {
+		return PoolStatsReply{}, ErrClosed
+	}
+	reply, err := active.Submit(ctx, message)
+	if err != nil {
+		return PoolStatsReply{}, err
+	}
+	decoded, err := DecodeGetPoolStatsReply(reply, client.config.MessageLimits.MaxBytes, client.config.CommandItems)
+	if err != nil {
+		return PoolStatsReply{}, err
+	}
+	if decoded.FSID != fsid {
+		return PoolStatsReply{}, ErrForeignCluster
 	}
 	return decoded, nil
 }
@@ -493,6 +566,15 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 				return 0, errMonitorRemoved
 			}
 		}
+	case protocol.MessageMgrMap:
+		mgrMap, err := mgr.DecodeMgrMap(message, client.config.MapLimits)
+		if err != nil {
+			return 0, fmt.Errorf("decode manager map: %w", err)
+		}
+		current := client.mgrMap.Load()
+		if current == nil || mgrMap.Epoch() > current.Epoch() {
+			client.mgrMap.Store(mgrMap)
+		}
 	case protocol.MessageOSDMap:
 		batch, err := DecodeOSDMapBatch(message, client.config.MessageLimits)
 		if err != nil {
@@ -601,14 +683,17 @@ func (client *Client) finishRefresh() bool {
 }
 
 func (client *Client) subscribe(active session) error {
-	monStart, osdStart := uint64(0), uint64(0)
+	monStart, mgrStart, osdStart := uint64(0), uint64(0), uint64(0)
 	if current := client.monMap.Load(); current != nil {
 		monStart = uint64(current.Epoch()) + 1
 	}
 	if current := client.osdMap.Load(); current != nil {
 		osdStart = uint64(current.Epoch()) + 1
 	}
-	message, err := EncodeSubscribe(map[string]Subscription{"monmap": {Start: monStart}, "osdmap": {Start: osdStart}}, client.config.Hostname, client.config.MessageLimits.MaxBytes)
+	if current := client.mgrMap.Load(); current != nil {
+		mgrStart = uint64(current.Epoch()) + 1
+	}
+	message, err := EncodeSubscribe(map[string]Subscription{"monmap": {Start: monStart}, "mgrmap": {Start: mgrStart}, "osdmap": {Start: osdStart}}, client.config.Hostname, client.config.MessageLimits.MaxBytes)
 	if err != nil {
 		return err
 	}

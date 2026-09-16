@@ -23,6 +23,52 @@ func TestServiceConnectorSecureHandshake(t *testing.T) {
 	}
 }
 
+func TestServiceConnectorManagerSecureHandshake(t *testing.T) {
+	now := time.Now().UTC()
+	credential, _ := testConnectorIdentity(t)
+	managerAddress, err := protocol.IPv4EntityAddr(protocol.AddressV2, 8, netip.MustParseAddrPort("198.51.100.8:6800"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ticket := ServiceTicket{
+		ServiceID: uint32(protocol.EntityManager), SessionKey: mustSecretKey(t, "mgr-session-key!"),
+		Ticket: TicketBlob{SecretID: 11, Blob: []byte("manager-ticket")}, ExpiresAt: now.Add(time.Hour), RenewAfter: now.Add(30 * time.Minute),
+	}
+	authority, err := NewConnector(ConnectorConfig{
+		Address: "198.51.100.1:3300", Credential: credential, MessageLimits: connectorTestMsgLimits,
+		Limits: defaultTestLimits(), Now: func() time.Time { return now }, Rand: bytes.NewReader(bytes.Repeat([]byte{1}, 64)),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	authority.state = connectorState{globalID: 77, mode: ConModeSecure, tickets: map[uint32]ServiceTicket{uint32(protocol.EntityManager): ticket}}
+	clientConn, serverConn := net.Pipe()
+	serverErr := make(chan error, 1)
+	go func() {
+		serverErr <- runScriptedOSDHandshake(serverConn, managerAddress, ticket, 77, scriptedOSDOptions{helloEntity: protocol.EntityManager})
+	}()
+	connector, err := NewServiceConnector(ServiceConnectorConfig{
+		Authority: authority, ServiceType: protocol.EntityManager, Address: "198.51.100.8:6800", TargetAddress: managerAddress, Dial: oneShotDial(clientConn),
+		MessageLimits: connectorTestMsgLimits, HandshakeTimeout: 2 * time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	transport, err := connector.Connect(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if authenticated, ok := transport.(msgr.AuthenticatedTransport); !ok || authenticated.AuthenticatedGlobalID() != 77 {
+		t.Fatalf("authenticated transport=%T", transport)
+	}
+	if err := transport.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-serverErr; err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testServiceConnectorSecureHandshake(t *testing.T, challenge bool) {
 	now := time.Now().UTC()
 	credential, _ := testConnectorIdentity(t)

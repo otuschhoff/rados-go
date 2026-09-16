@@ -13,6 +13,7 @@ import (
 type ServiceConnectorConfig struct {
 	Authority        *Connector
 	AuthoritySource  func() *Connector
+	ServiceType      protocol.EntityType
 	Network          string
 	Address          string
 	TargetAddress    protocol.EntityAddr
@@ -34,6 +35,9 @@ func NewServiceConnector(config ServiceConnectorConfig) (*ServiceConnector, erro
 		return nil, fmt.Errorf("%w: invalid OSD service connector", ErrConnectConfig)
 	}
 	config = config.withDefaults()
+	if config.ServiceType != protocol.EntityOSD && config.ServiceType != protocol.EntityManager {
+		return nil, fmt.Errorf("%w: invalid service type %d", ErrConnectConfig, config.ServiceType)
+	}
 	if config.MaxBannerPayload < 16 || config.MessageLimits.MaxSegmentBytes == 0 || config.MessageLimits.MaxFrameBytes == 0 || config.MessageLimits.MaxAuthBytes == 0 {
 		return nil, fmt.Errorf("%w: invalid OSD service connector limits", ErrConnectConfig)
 	}
@@ -52,9 +56,10 @@ func (connector *ServiceConnector) Connect(ctx context.Context) (msgr.Transport,
 	if authority == nil {
 		return nil, fmt.Errorf("%w: OSD authorizer: %w", ErrAuthHandshake, ErrMissingTicket)
 	}
-	globalID, ticket, authorizer, err := authority.serviceAuthorization(uint32(protocol.EntityOSD))
+	serviceType := cfg.ServiceType
+	globalID, ticket, authorizer, err := authority.serviceAuthorization(uint32(serviceType))
 	if err != nil {
-		return nil, fmt.Errorf("%w: OSD authorizer: %w", ErrAuthHandshake, err)
+		return nil, fmt.Errorf("%w: service %d authorizer: %w", ErrAuthHandshake, serviceType, err)
 	}
 	conn, err := cfg.Dial(ctx, cfg.Network, cfg.Address)
 	if err != nil {
@@ -102,8 +107,8 @@ func (connector *ServiceConnector) Connect(ctx context.Context) (msgr.Transport,
 		return nil, handshakeError(ctx, "read hello", err)
 	}
 	hello, ok := helloPayload.(msgr.Hello)
-	if !ok || hello.EntityType != protocol.EntityOSD {
-		return nil, fmt.Errorf("%w: OSD hello payload %T entity %d", ErrPeerEntity, helloPayload, hello.EntityType)
+	if !ok || hello.EntityType != serviceType {
+		return nil, fmt.Errorf("%w: service %d hello payload %T entity %d", ErrPeerEntity, serviceType, helloPayload, hello.EntityType)
 	}
 	if err := writeControl(crcCodec, tap, cfg.MessageLimits, msgr.AuthRequest{Method: AuthMethodCephX, PreferredModes: cfg.preferredModes(), AuthPayload: authorizer.Payload}); err != nil {
 		return nil, handshakeError(ctx, "send OSD auth request", err)
@@ -171,11 +176,14 @@ func (connector *ServiceConnector) Connect(ctx context.Context) (msgr.Transport,
 		return nil, err
 	}
 	success = true
-	metadata := AuthMetadata{GlobalID: globalID, Method: AuthMethodCephX, Mode: authDone.ConnectionMode, Tickets: sanitizeTickets(map[uint32]ServiceTicket{uint32(protocol.EntityOSD): ticket})}
+	metadata := AuthMetadata{GlobalID: globalID, Method: AuthMethodCephX, Mode: authDone.ConnectionMode, Tickets: sanitizeTickets(map[uint32]ServiceTicket{uint32(serviceType): ticket})}
 	return newAuthTransport(baseTransport, metadata, ticket.RenewAfter, authority.now()), nil
 }
 
 func (config ServiceConnectorConfig) withDefaults() ServiceConnectorConfig {
+	if config.ServiceType == 0 {
+		config.ServiceType = protocol.EntityOSD
+	}
 	if config.Network == "" {
 		config.Network = "tcp"
 	}

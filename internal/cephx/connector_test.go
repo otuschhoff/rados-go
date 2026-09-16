@@ -392,9 +392,9 @@ func TestValidAuthenticatedGlobalID(t *testing.T) {
 	}
 }
 
-func TestConnectorDefaultsRequestOSDTicket(t *testing.T) {
+func TestConnectorDefaultsRequestServiceTickets(t *testing.T) {
 	config := (ConnectorConfig{}).withDefaults()
-	want := uint32(protocol.EntityAuth | protocol.EntityMonitor | protocol.EntityOSD)
+	want := uint32(protocol.EntityAuth | protocol.EntityMonitor | protocol.EntityOSD | protocol.EntityManager)
 	if config.RequestedKeys != want {
 		t.Fatalf("requested keys=%#x want=%#x", config.RequestedKeys, want)
 	}

@@ -631,7 +631,7 @@ func (config ConnectorConfig) withDefaults() ConnectorConfig {
 		config.ClientEntityType = protocol.EntityClient
 	}
 	if config.RequestedKeys == 0 {
-		config.RequestedKeys = uint32(protocol.EntityAuth | protocol.EntityMonitor | protocol.EntityOSD)
+		config.RequestedKeys = uint32(protocol.EntityAuth | protocol.EntityMonitor | protocol.EntityOSD | protocol.EntityManager)
 	}
 	config.Limits = config.Limits.withDefaults()
 	if config.Now == nil {

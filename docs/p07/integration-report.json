@@ -2,8 +2,8 @@
   "schema_version": 1,
   "status": "passed",
   "command": "make integration-p07",
-  "started_at": "2026-09-16T01:05:50Z",
-  "finished_at": "2026-09-16T01:07:19Z",
+  "started_at": "2026-09-16T07:25:19Z",
+  "finished_at": "2026-09-16T07:26:51Z",
   "source": {
     "repository": "https://github.com/otuschhoff/go-librados.git",
     "identity": "content-addressed-artifacts",
@@ -11,18 +11,18 @@
       "internal/cephx/fuzz_test.go": "987b6da5615ac292e35d14b5d30e02b9711c1870f8ab58d0480da09046825b65",
       "internal/cephx/credentials.go": "198c5383ffe3daa520bef39ddcbbb1d096475c59237859c408b7c4cbcf125b52",
       "internal/cephx/core_test.go": "921389a25e03b63a9d655cd5de2fbbb86c311a7c09a7cf9a6fa53ec4bf6fe711",
-      "internal/cephx/service_connector.go": "269db1fb74f714f049d61fc5bcdc2a4d318be0beedcebd410870fc215c1b468c",
+      "internal/cephx/service_connector.go": "981ece84de184e41f166dfc9cbb13b17cffe1b446f9fedada6494a835ba03260",
       "internal/cephx/core.go": "04021d27aa9845683decb8ad9558af311ee7e12c86fe70d68e9d522eacc9a49f",
       "internal/cephx/fixture_test.go": "670a390a9e0a58f6a9cf949ea3297a40753b3839364b5a0de4baf625b09ef104",
-      "internal/cephx/connector.go": "5959718bfb21811ff5e5380d657d0b788054cdf6152fc3f27606d2900cd2de18",
-      "internal/cephx/service_connector_test.go": "e4c4dafa719cb4a009e0595e5c322d0aec54b0bf636dd7a55f9a558cac034703",
-      "internal/cephx/connector_test.go": "bcf37198838cf0eef97dd73520137b6a3651cc84c364b0f93ed7a9c5dee99aaf",
+      "internal/cephx/connector.go": "ba0ea118e4167b73cb12652d6bf1b5216199241f83e0f8198893dc82ea21f70e",
+      "internal/cephx/service_connector_test.go": "737bf46fa7ca9aa49ee3fc0282c8dd409a183637ff3a4169bb263ffe685f0073",
+      "internal/cephx/connector_test.go": "a9de3f79b932fd3d9a77f53a89fda753622fc3f28c6b7a90e1c4470014497004",
       "internal/cephx/credentials_test.go": "f44c53c9253881f630c98345219516f61dd33a501aff74a5039827ccec9dce53",
       "internal/crush/p10_fixture_test.go": "dc94467418fafd41c5fb2e916039684c18d8f45bfbdc8e23f23c634282f3ea82",
-      "internal/crush/place.go": "348335138a1fee98f4657f1629c22cb1a277ca984b7d4f98c21cfa6f6d46033d",
+      "internal/crush/place.go": "6637777ca25ad08a363ee0fde11214717086b887b3ef66fa5e23730734ac9ea3",
       "internal/crush/ln.go": "c06d4879ed78ea648a89cd8763bbd6b0a8bb773572d6359d78c54701b8c104b7",
       "internal/crush/hash_test.go": "31fc74bfe4c1df7077a21b12397c7e978f5c7d290513738c18948bd1ec79eaca",
-      "internal/crush/place_test.go": "3ea82f41ae2a621dd66213cdf17a284348ff20b978ce7cb2a7e9e9cfa6ccd6c3",
+      "internal/crush/place_test.go": "b9ca6f2877732c2280bf05afda56ede67b4e430cf58ef5b55f666db898ead699",
       "internal/crush/map_test.go": "ca22d60b4e3701a93cdeb61ba7f0af3010b64750863bb18c4c27f4e5a863a543",
       "internal/crush/p05_fixture_test.go": "089e93c6716e2e3df1ff5a96beefaa3697270f12b2fb09a48818ac1a236b1de5",
       "internal/crush/hash.go": "21fb469ca5af7d8008c278d534a949732155ff8b2546f5db3ba94bd2c21f973f",
@@ -32,21 +32,24 @@
       "internal/encoding/codec.go": "6352b11ed23db97a34bd63f33b272caf162b69cad2da7b9accd51e05f3c6068d",
       "internal/maps/incremental_test.go": "52b848b261ea549b23e16d8fff15e22617c4d05fbbe81f61353664f503a0c876",
       "internal/maps/monmap.go": "21e1afd7c41a0420a2b89b4e1d2fff7a1896155d151b98a3e119262264cb9eb7",
+      "internal/maps/mgrmap.go": "b7020ca66168b828317106fc8c2af553a28e1b912279b78755f752999d1eaa08",
       "internal/maps/osdmap_test.go": "2857e96be614822375afc6f3aea8771fe8a3ab38d63aea83cb033f123dddc099",
+      "internal/maps/mgrmap_test.go": "5d28e4d8cbc699006abd3f61eb98111ae7d21104534815749b0db9e0f7f401e3",
       "internal/maps/monmap_test.go": "0a7172d7ded005caffcaac996e0ed79c1bbaa4f411ac92d8fcb9482c7d725bae",
       "internal/maps/osdmap.go": "b0fd9568daf0bd7e651d028d44c56683bf5ec3ef6374415070d0629521849e3e",
-      "internal/maps/placement_test.go": "97e0f839dcd8fd633b865094f0b78cc8b63ff508c3fcf53ae2965f77a0468e48",
+      "internal/maps/placement_test.go": "7cffeb4ab098b4fd80810d1b30e04d064d66fd938287ec1e2abd9645280d9e86",
       "internal/maps/incremental.go": "6c4b2f8993c5480cf8ad25c9b11aa7e555eef67d9bb141c6f0eea89f1079cbea",
       "internal/maps/p04_fixture_test.go": "98953880e9e9d7633d0ad10206491523f223125698fffa788616035245ac7088",
       "internal/maps/pool_test.go": "d68a2cc20f9c8e106d9196e115096f584068059253ab595469cc7f8a8de6ffb5",
       "internal/maps/pool.go": "461b097e3c1b30580147436e91b3dc50c48b95cf3adf3f77fa5b3f37e3f0828c",
-      "internal/maps/placement.go": "9ab3754a7fab46e9ab54073ef7682a92fa55f238491eadd487cf6058ec9f1c4e",
+      "internal/maps/placement.go": "833bbea840dd666d69b5a31527d7732a80cfb2f26d6acd59da26af258e8b6801",
       "internal/mon/config.go": "6f905491df5b566dd387b7b48ad4dcfe3d26aa3f2a0c895aa8a2062ff01c79d9",
+      "internal/mon/statfs_test.go": "2ebad3ce88bd74df0e91e7d95ff216652fa688547f01900097a824c75bb9284a",
       "internal/mon/messages_test.go": "14ce290255dec0b954d56b5a8ff0327cf5401c830e031d1a89f832bd8699e634",
-      "internal/mon/client.go": "e219eee9c4fa1318e0b153822e48bfd34cc578412f3f03a221b48baaed5df3e7",
-      "internal/mon/messages.go": "877a1371deb713e104823067f9cfacd2c06088ccdef736551e8149712b75697a",
+      "internal/mon/client.go": "ce4bada6538d31af33dc6b6f8d6e4ec63e90272e0f5efb28a58f1075fef31abd",
+      "internal/mon/messages.go": "e653b7f508b1ed63a8dce1c8fa1fb5e0ed8e5de6b06d1b07e56f553bd6b9c58e",
       "internal/mon/config_test.go": "b87a61cec510df8ddc2fbb59d284e0d5ebbdf469ab304d1873afdbd5dbe388f0",
-      "internal/mon/client_test.go": "36dff34142f1722c18f4a63ce72fa6a933836b94a21da67aa0acfaa67a836943",
+      "internal/mon/client_test.go": "2147f8cf701b8d175c5dc4415c57d51293a7781819e2b946032611db6e859aa9",
       "internal/mon/seeds.go": "b3f32b58186ad037654d21f9f0070d5f625a386361453e2096a90aceb9f989f0",
       "internal/msgr/transport.go": "72117d4104ed08c4200e1e2270f0e1fced17dd6311b96f33544395b07157a34b",
       "internal/msgr/fuzz_test.go": "7a5f00b111204bdad98c0c0f421585ad4c558800c5b93988fff111bf20984ba9",
@@ -64,47 +67,55 @@
       "internal/msgr/session_test.go": "13eb09d004fef512fdeb18788c0f4023c60dfad8803a3070b215af6d3422e431",
       "internal/msgr/transport_test.go": "bfeeb5b3a42b266edd67f2e619241d3d96e9f6aacd77aa1f212d9f2c1e0b7fb7",
       "internal/msgr/banner.go": "b756636fadabf4d1dddeffd31088a1c88ae056e070d9b5e964ef516a2ff5f602",
-      "internal/objecter/client.go": "2f56a5c4e62d0e00208db5fb9210249a41b42657091d97d0831a3c6da74b0006",
+      "internal/objecter/command.go": "99f5b3eaa8536bb17d6c18c5c1574fe53c0c2af13e36998b76f64cd342126d5f",
+      "internal/objecter/command_test.go": "dc323ae8724bb2b66ec64d835aaf5a2206811ab8c1884156e93c872850d94d81",
+      "internal/objecter/client.go": "7023cb4a28e7c1826458375352bbd6caebc06384b98a72d4205d8bf6eadd81a6",
       "internal/objecter/mutation_test.go": "1497770b3ce5f36f464394071e03917b0b8c0ce0fd259309213fd5514217a790",
       "internal/objecter/mutation.go": "70bc91eff11cea57dab03f6490a9af380cdcc431c851295c7e279392e70a86d7",
       "internal/objecter/enumeration_test.go": "9509fbd12e4e755d6939a2e24947f4ae4661f96b481fbb3f3dadcdd9560baf0a",
       "internal/objecter/osd_session.go": "872d1d9387bdac053a0aa4aef6b88791e0c8396ca3216fcb6ea9ca1e3e15e462",
       "internal/objecter/watch_test.go": "51612ef9ebf61b5aa1809bbe986a90980562ab614825d62c75657fdcd438e294",
       "internal/objecter/osd_session_test.go": "550dfdb181be7c8fc910c69a0d3c8567d05beac020d873a731a4a0731ddf38d4",
+      "internal/objecter/inconsistent.go": "cb0110481dbd0804732ea4f320f065a453be7a269453c1afa8ce29094f5f1c7e",
       "internal/objecter/client_test.go": "ae6a8eb131f80f380b87191f7eb6a5a8d64d2101e0f7b9f76521993a691dce6a",
       "internal/objecter/watch.go": "a2989d03751c7fe65b72954657333714a4c6b3260a9b1dec10c25ff785b34446",
       "internal/osd/enumeration.go": "9dfd58609c9fc835971482975ba95ce80ac87f2876351444d73a1561f2043cdc",
       "internal/osd/metadata.go": "8e3685716158d710631086dd4450081c1861c86fe939ddba7142bb3bd644c976",
       "internal/osd/checksum_test.go": "fe81835356512544e5eee3b3f6936095c4e219e0f9f53d733c9b1da1068036bd",
+      "internal/osd/command.go": "af201baa5d98d496255636429a2d893b0f4b9acb38ccc7baa95dc85f0332f9cb",
       "internal/osd/checksum.go": "6a69191fe84993c7890f628cee1b80764370eeb9ca300b57034b7c0fbd886eac",
       "internal/osd/messages_test.go": "4b708bead957320ec910674a0884cfb0adeed930ff9ee0fc78eacec548f4d035",
       "internal/osd/backoff_test.go": "eeee5650ea8f549e058683f4be7307da7f0478d24b711a29e4bfc49c3eedd142",
       "internal/osd/backoff.go": "b39e1bf8a7f40eae4f5f69edde5406c913441aad0f0161cfa004261f37f2c864",
+      "internal/osd/command_test.go": "f4ff7ccfbb9bc2cf86782bcfc88411d5778ec29910557b78f51f591fee47042e",
       "internal/osd/lock_test.go": "b516f8259985a357f379a608e06fc3cff8b07f5effa16c410892e726d6beb75e",
+      "internal/osd/inconsistent_test.go": "336033fbc4575190e9f1cf4602abfc7a89e3d88648fec24d562e0e55d49bdf0d",
       "internal/osd/enumeration_test.go": "be7ae604b087e0a5b786aaaf265e6b513309b9d9de61cb65265972ff1a19198e",
       "internal/osd/sparse.go": "d162c1105fbeb2eb35332a3ff297dea6c83858da3e0688aa9fdf875c25f92308",
-      "internal/osd/messages.go": "abd7b8d49cce309b8000c513bc508ba3729cd0bd3dc9ff4bb7384e59310a39b4",
+      "internal/osd/messages.go": "ddc2112402d83aa5c27707c13ae73836e14291fc13a1163d922988e06af79e5c",
       "internal/osd/lock.go": "92fd0c0ff01d7232a5e91d41d2cbfa2b920ad50dc9345f4ce0374b4002bc194b",
       "internal/osd/watch_test.go": "ac366b0390582f06fb8d194e9ae22302fae2dca0495816366c36aa8babef3be1",
       "internal/osd/metadata_test.go": "0878fea5f9565de399c653d635218c00126879e03ef7186b71fdf98d4822b98a",
       "internal/osd/sparse_test.go": "c3e33b2a593646ba660c5b7dd81c1d3a32b25f80659a7e218d6b5e201718d5e6",
+      "internal/osd/inconsistent.go": "277faf6690d67749eee6b520109eaeac0cc886211c9e831cc6e58058258d237a",
       "internal/osd/watch.go": "d89e88c0c0be5dac19eecb95418381530ce95189ae22a667e81be32946538d6f",
-      "internal/protocol/protocol_test.go": "f0e4a578c7e7756bf94581920e8bf33450d1f4ff66f831582029d12e8d355fb0",
+      "internal/protocol/protocol_test.go": "fb31e88e50b26a76c3d29a9af375a64f97c44f0989952d57de6dd73a7755a358",
       "internal/protocol/errno.go": "9e5c9e026589ee64a6b6da2a5863e1d8cce56a434be4eeb2bad249afe904607f",
-      "internal/protocol/address.go": "6f23301ae7f53ade1887d27ada00ecb07331a15b5ff629c697f2c6251f059560",
-      "internal/protocol/features.go": "b044cf63f93243f72df21abdae75ccd04f0cd72afe845695742ecfd5a9c28c8e",
+      "internal/protocol/address.go": "2065472ed7d6dfb1546e40a58ef31e6441f8e5f447f1aeaa7f5808bcfbaf4af4",
+      "internal/protocol/message_types_test.go": "2d4397612a4ac944ee1442e719718ecf387b84ceed5a68290e96f49289bb89b1",
+      "internal/protocol/features.go": "1031cd9b04982627ed180d948c4f0961f0afeff01d3dfc6aa1ed1b6c951b415e",
       "internal/protocol/entity.go": "5025b974107672555f4dbd50121f4edff27aba03a824b584b492a75ab2d3e410",
-      "internal/protocol/message_types.go": "f54397c3b8c35e3ec048eb1511026549e36efc1f66ddc98b41f01db4bb79113b",
-      "Makefile": "80b2d91a4fa71c277c9d2f8f4eed3613940a234421f34b79d6e2827fbfbb6111",
+      "internal/protocol/message_types.go": "57f3a95b49e8e4002a91ec99206f703cedd38aa86d12911c52ad1a8ea2169fe6",
+      "Makefile": "1e1ce860d3a0ad54c0e9ec9cd673e0d32e7f35491e57f1f19e6a159d800c4300",
       "README.md": "2ffc5caf010934a31bca62ab3862599d9f46811bb628560556b16ad5ad41a476",
-      "SPEC.md": "9a358c3811c47b48195f79df9d54207f3e30cd663bd73ae6d842f4a764d8ccff",
-      "client.go": "423e7c51a8d21921a9cb648eed5e72ba1cd7348fc35b56b06f9f3af9a371a4c5",
+      "SPEC.md": "8c758d8e428c3c636499acd3a976d5af7efb2e4b711bff0233c5fad142fb69b3",
+      "client.go": "c1cadac8f56990130b1b462b1e1f23fbedc3bbce5d4596324d88897d5f8015eb",
       "client_test.go": "15e8fce8668f8a8f3f6031c24c3939827fb2fb86862e3e5dc8498e38016629e4",
       "doc.go": "029e90e8a1a61bb7e92db5d30d97c26c6adb73e4afc11ea22e1f7d82c30f3f6e",
       "errors.go": "3c677e89fa2e729024fb91e6ae1323bc687b0283ef9415d7f50a812a0d3ee31c",
       "errors_test.go": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7",
       "object.go": "9789eb4a776c68620a19d54be11d9e3c1bc5e809fd40ac67f452ec8caf4b51a3",
-      "docs/p00/api-inventory.csv": "286375d667fe34110a6d112859ac2c33684255ea3e0536536e2980d853e06829",
+      "docs/p00/api-inventory.csv": "94b1057a879bdda3e18c25ad27b6f2c46eeac07d2e15f59948672c1f8ba2e966",
       "integration/README.md": "e6d640ca6572d4516acaac89b0d4af5eb08d09e51b866dedd91646c0e9e44d6f",
       "integration/p07/benchmark/main.go": "088f3747c1a82fe3fb3d82837389c635ddaf55dd9a32ea9e16dbc488966b05f0",
       "integration/p07/benchmark/main_unsupported.go": "a44582b32ee261f2897b99c926cd23554053fe3d9b21ed7a18b0135dcb8ee1e2",
@@ -166,7 +177,7 @@
     "remove": true,
     "flush": true,
     "primary_change": true,
-    "version": 557
+    "version": 599
   },
   "native": {
     "seed": {
@@ -226,11 +237,11 @@
           "go_version": "go1.27.1"
         },
         "resources": {
-          "cpu_user_ns": 7167141000,
-          "cpu_system_ns": 1616418000,
-          "allocations": 577470,
-          "allocated_bytes": 28479939272,
-          "max_rss_bytes": 1801244672
+          "cpu_user_ns": 8704700000,
+          "cpu_system_ns": 2668955000,
+          "allocations": 577473,
+          "allocated_bytes": 28479920096,
+          "max_rss_bytes": 1749118976
         },
         "rows": [
           {
@@ -239,12 +250,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 294045,
-            "throughput_bytes_per_second": 27859681.3412913,
-            "iops": 6801.6800149636965,
-            "p50_ns": 94793,
-            "p95_ns": 179169,
-            "p99_ns": 179169
+            "elapsed_ns": 641378,
+            "throughput_bytes_per_second": 12772499.212632801,
+            "iops": 3118.28594058418,
+            "p50_ns": 254252,
+            "p95_ns": 357627,
+            "p99_ns": 357627
           },
           {
             "size_bytes": 4096,
@@ -252,12 +263,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 7999099,
-            "throughput_bytes_per_second": 1024115.3409902789,
-            "iops": 250.0281594214548,
-            "p50_ns": 3890298,
-            "p95_ns": 4046674,
-            "p99_ns": 4046674
+            "elapsed_ns": 5884534,
+            "throughput_bytes_per_second": 1392123.8283269329,
+            "iops": 339.8739815251301,
+            "p50_ns": 2660390,
+            "p95_ns": 3196018,
+            "p99_ns": 3196018
           },
           {
             "size_bytes": 4096,
@@ -265,12 +276,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 4711391,
-            "throughput_bytes_per_second": 1738764.6238658605,
-            "iops": 424.5030819985011,
-            "p50_ns": 235294,
-            "p95_ns": 4372013,
-            "p99_ns": 4372013
+            "elapsed_ns": 2791016,
+            "throughput_bytes_per_second": 2935131.86595849,
+            "iops": 716.584928212522,
+            "p50_ns": 233043,
+            "p95_ns": 2514222,
+            "p99_ns": 2514222
           },
           {
             "size_bytes": 4096,
@@ -278,12 +289,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 7128546,
-            "throughput_bytes_per_second": 18386919.296024743,
-            "iops": 4488.993968756041,
-            "p50_ns": 3008245,
-            "p95_ns": 5971449,
-            "p99_ns": 6050825
+            "elapsed_ns": 7684294,
+            "throughput_bytes_per_second": 17057129.776658725,
+            "iops": 4164.3383243795715,
+            "p50_ns": 868213,
+            "p95_ns": 6137951,
+            "p99_ns": 6356786
           },
           {
             "size_bytes": 4096,
@@ -291,12 +302,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 18026973,
-            "throughput_bytes_per_second": 7270882.360560477,
-            "iops": 1775.1177638087102,
-            "p50_ns": 7119505,
-            "p95_ns": 10302044,
-            "p99_ns": 10317085
+            "elapsed_ns": 10744603,
+            "throughput_bytes_per_second": 12198868.585465651,
+            "iops": 2978.23940074845,
+            "p50_ns": 4696652,
+            "p95_ns": 5864409,
+            "p99_ns": 5867575
           },
           {
             "size_bytes": 4096,
@@ -304,12 +315,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 9285864,
-            "throughput_bytes_per_second": 14115218.573091315,
-            "iops": 3446.098284446122,
-            "p50_ns": 1741397,
-            "p95_ns": 8694107,
-            "p99_ns": 8707441
+            "elapsed_ns": 7095207,
+            "throughput_bytes_per_second": 18473315.859565478,
+            "iops": 4510.086879776728,
+            "p50_ns": 1635260,
+            "p95_ns": 6296494,
+            "p99_ns": 6334911
           },
           {
             "size_bytes": 4096,
@@ -317,12 +328,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 16825249,
-            "throughput_bytes_per_second": 31160786.981518075,
-            "iops": 7607.614009159686,
-            "p50_ns": 4154177,
-            "p95_ns": 9462700,
-            "p99_ns": 12380069
+            "elapsed_ns": 16482177,
+            "throughput_bytes_per_second": 31809390.22800204,
+            "iops": 7765.964411133311,
+            "p50_ns": 6090743,
+            "p95_ns": 11379273,
+            "p99_ns": 13389076
           },
           {
             "size_bytes": 4096,
@@ -330,12 +341,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 36352990,
-            "throughput_bytes_per_second": 14422142.442753676,
-            "iops": 3521.0308698129093,
-            "p50_ns": 14161883,
-            "p95_ns": 22749406,
-            "p99_ns": 22873449
+            "elapsed_ns": 39718059,
+            "throughput_bytes_per_second": 13200242.237416485,
+            "iops": 3222.715389994259,
+            "p50_ns": 14345248,
+            "p95_ns": 22406711,
+            "p99_ns": 22618503
           },
           {
             "size_bytes": 4096,
@@ -343,12 +354,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 21340846,
-            "throughput_bytes_per_second": 24567348.45469575,
-            "iops": 5997.887806322205,
-            "p50_ns": 8099684,
-            "p95_ns": 15783111,
-            "p99_ns": 16735998
+            "elapsed_ns": 19373735,
+            "throughput_bytes_per_second": 27061792.679625276,
+            "iops": 6606.88297842414,
+            "p50_ns": 8036879,
+            "p95_ns": 14871626,
+            "p99_ns": 14915460
           },
           {
             "size_bytes": 65536,
@@ -356,12 +367,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 1223348,
-            "throughput_bytes_per_second": 107142039.71396528,
-            "iops": 1634.857783721394,
-            "p50_ns": 297337,
-            "p95_ns": 761009,
-            "p99_ns": 761009
+            "elapsed_ns": 1139131,
+            "throughput_bytes_per_second": 115063149.01446804,
+            "iops": 1755.7243196787726,
+            "p50_ns": 334960,
+            "p95_ns": 766171,
+            "p99_ns": 766171
           },
           {
             "size_bytes": 65536,
@@ -369,12 +380,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 13162829,
-            "throughput_bytes_per_second": 9957737.808490865,
-            "iops": 151.94302075944313,
-            "p50_ns": 5316274,
-            "p95_ns": 7759637,
-            "p99_ns": 7759637
+            "elapsed_ns": 13733286,
+            "throughput_bytes_per_second": 9544110.564652916,
+            "iops": 145.63156989521661,
+            "p50_ns": 6149452,
+            "p95_ns": 7516834,
+            "p99_ns": 7516834
           },
           {
             "size_bytes": 65536,
@@ -382,12 +393,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 5367441,
-            "throughput_bytes_per_second": 24419830.604565565,
-            "iops": 372.6170441370478,
-            "p50_ns": 309212,
-            "p95_ns": 5010312,
-            "p99_ns": 5010312
+            "elapsed_ns": 5277655,
+            "throughput_bytes_per_second": 24835272.483707253,
+            "iops": 378.95618413859944,
+            "p50_ns": 491211,
+            "p95_ns": 4657235,
+            "p99_ns": 4657235
           },
           {
             "size_bytes": 65536,
@@ -395,12 +406,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 24645137,
-            "throughput_bytes_per_second": 85093947.74311864,
-            "iops": 1298.4305991076453,
-            "p50_ns": 9401366,
-            "p95_ns": 13474583,
-            "p99_ns": 13541001
+            "elapsed_ns": 26012189,
+            "throughput_bytes_per_second": 80621896.14261222,
+            "iops": 1230.1925070589023,
+            "p50_ns": 8611966,
+            "p95_ns": 20616617,
+            "p99_ns": 20676701
           },
           {
             "size_bytes": 65536,
@@ -408,12 +419,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 30169206,
-            "throughput_bytes_per_second": 69512999.44718465,
-            "iops": 1060.6841956662697,
-            "p50_ns": 14454761,
-            "p95_ns": 18470770,
-            "p99_ns": 18482978
+            "elapsed_ns": 36928835,
+            "throughput_bytes_per_second": 56789010.53878358,
+            "iops": 866.5315328793881,
+            "p50_ns": 15398754,
+            "p95_ns": 21280580,
+            "p99_ns": 21323746
           },
           {
             "size_bytes": 65536,
@@ -421,12 +432,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 30088038,
-            "throughput_bytes_per_second": 69700523.51037313,
-            "iops": 1063.5455857906056,
-            "p50_ns": 14638139,
-            "p95_ns": 21668642,
-            "p99_ns": 23508540
+            "elapsed_ns": 29905295,
+            "throughput_bytes_per_second": 70126444.16314904,
+            "iops": 1070.0446191886756,
+            "p50_ns": 12159861,
+            "p95_ns": 19312443,
+            "p99_ns": 21459580
           },
           {
             "size_bytes": 65536,
@@ -434,12 +445,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 34012294,
-            "throughput_bytes_per_second": 246634584.54169545,
-            "iops": 3763.345101039054,
-            "p50_ns": 9110904,
-            "p95_ns": 16020698,
-            "p99_ns": 17660260
+            "elapsed_ns": 57037824,
+            "throughput_bytes_per_second": 147070968.20523867,
+            "iops": 2244.124881061381,
+            "p50_ns": 17029138,
+            "p95_ns": 34156527,
+            "p99_ns": 35357409
           },
           {
             "size_bytes": 65536,
@@ -447,12 +458,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 63174196,
-            "throughput_bytes_per_second": 132785354.32409777,
-            "iops": 2026.14371222073,
-            "p50_ns": 20514087,
-            "p95_ns": 44479257,
-            "p99_ns": 44777719
+            "elapsed_ns": 64629408,
+            "throughput_bytes_per_second": 129795525.90053123,
+            "iops": 1980.5225509724614,
+            "p50_ns": 20826951,
+            "p95_ns": 45565884,
+            "p99_ns": 46107053
           },
           {
             "size_bytes": 65536,
@@ -460,12 +471,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 31338262,
-            "throughput_bytes_per_second": 267679426.5106342,
-            "iops": 4084.463905496738,
-            "p50_ns": 13248330,
-            "p95_ns": 21274846,
-            "p99_ns": 23259454
+            "elapsed_ns": 41692570,
+            "throughput_bytes_per_second": 201201509.0458564,
+            "iops": 3070.0913855874082,
+            "p50_ns": 16506719,
+            "p95_ns": 26799110,
+            "p99_ns": 29853836
           },
           {
             "size_bytes": 1048576,
@@ -473,12 +484,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 7281173,
-            "throughput_bytes_per_second": 288023921.42035353,
-            "iops": 274.6810163692031,
-            "p50_ns": 2748409,
-            "p95_ns": 4443305,
-            "p99_ns": 4443305
+            "elapsed_ns": 5498781,
+            "throughput_bytes_per_second": 381384892.39706033,
+            "iops": 363.7169765444377,
+            "p50_ns": 1933428,
+            "p95_ns": 3508353,
+            "p99_ns": 3508353
           },
           {
             "size_bytes": 1048576,
@@ -486,12 +497,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 24004379,
-            "throughput_bytes_per_second": 87365392.78937398,
-            "iops": 83.31813124596975,
-            "p50_ns": 10574672,
-            "p95_ns": 13406457,
-            "p99_ns": 13406457
+            "elapsed_ns": 16748386,
+            "throughput_bytes_per_second": 125215169.98712592,
+            "iops": 119.4144916411647,
+            "p50_ns": 7173332,
+            "p95_ns": 9473637,
+            "p99_ns": 9473637
           },
           {
             "size_bytes": 1048576,
@@ -499,12 +510,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 10780383,
-            "throughput_bytes_per_second": 194534090.30087337,
-            "iops": 185.52216558539712,
-            "p50_ns": 1602353,
-            "p95_ns": 9127196,
-            "p99_ns": 9127196
+            "elapsed_ns": 14033496,
+            "throughput_bytes_per_second": 149439027.8801519,
+            "iops": 142.5161627580184,
+            "p50_ns": 2140262,
+            "p95_ns": 11808567,
+            "p99_ns": 11808567
           },
           {
             "size_bytes": 1048576,
@@ -512,12 +523,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 34554885,
-            "throughput_bytes_per_second": 971047422.093866,
-            "iops": 926.062986463419,
-            "p50_ns": 12655573,
-            "p95_ns": 23979796,
-            "p99_ns": 25953112
+            "elapsed_ns": 46629890,
+            "throughput_bytes_per_second": 719590631.674233,
+            "iops": 686.2551037542657,
+            "p50_ns": 18788606,
+            "p95_ns": 27352697,
+            "p99_ns": 28076910
           },
           {
             "size_bytes": 1048576,
@@ -525,12 +536,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 106615523,
-            "throughput_bytes_per_second": 314723701.1631036,
-            "iops": 300.1439105635677,
-            "p50_ns": 45664771,
-            "p95_ns": 74192915,
-            "p99_ns": 90988330
+            "elapsed_ns": 101508493,
+            "throughput_bytes_per_second": 330557877.55611736,
+            "iops": 315.2445579110311,
+            "p50_ns": 43103620,
+            "p95_ns": 81134752,
+            "p99_ns": 82821303
           },
           {
             "size_bytes": 1048576,
@@ -538,12 +549,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 76443068,
-            "throughput_bytes_per_second": 438946694.2901873,
-            "iops": 418.6121886159776,
-            "p50_ns": 22851949,
-            "p95_ns": 65032344,
-            "p99_ns": 69414523
+            "elapsed_ns": 70308649,
+            "throughput_bytes_per_second": 477244727.0320896,
+            "iops": 455.1360388108154,
+            "p50_ns": 34238694,
+            "p95_ns": 52383881,
+            "p99_ns": 54935062
           },
           {
             "size_bytes": 1048576,
@@ -551,12 +562,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 106233894,
-            "throughput_bytes_per_second": 1263417191.5038717,
-            "iops": 1204.888526443359,
-            "p50_ns": 39540946,
-            "p95_ns": 57512168,
-            "p99_ns": 63625743
+            "elapsed_ns": 110403127,
+            "throughput_bytes_per_second": 1215705855.8676512,
+            "iops": 1159.3874510456574,
+            "p50_ns": 38369635,
+            "p95_ns": 67963595,
+            "p99_ns": 82793929
           },
           {
             "size_bytes": 1048576,
@@ -564,12 +575,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 410690357,
-            "throughput_bytes_per_second": 326810030.2632623,
-            "iops": 311.6703322060225,
-            "p50_ns": 161834329,
-            "p95_ns": 357512493,
-            "p99_ns": 384548327
+            "elapsed_ns": 469135872,
+            "throughput_bytes_per_second": 286095640.96603554,
+            "iops": 272.8420648250919,
+            "p50_ns": 165848566,
+            "p95_ns": 389749088,
+            "p99_ns": 411343461
           },
           {
             "size_bytes": 1048576,
@@ -577,12 +588,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 218407819,
-            "throughput_bytes_per_second": 614528035.7385007,
-            "iops": 586.0596043953902,
-            "p50_ns": 74756922,
-            "p95_ns": 152907136,
-            "p99_ns": 154389862
+            "elapsed_ns": 286144874,
+            "throughput_bytes_per_second": 469055154.20835394,
+            "iops": 447.3258535464801,
+            "p50_ns": 94832330,
+            "p95_ns": 217669319,
+            "p99_ns": 245120226
           },
           {
             "size_bytes": 4194304,
@@ -590,12 +601,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 13896963,
-            "throughput_bytes_per_second": 603628864.8102467,
-            "iops": 143.91633625274818,
-            "p50_ns": 6697041,
-            "p95_ns": 7051920,
-            "p99_ns": 7051920
+            "elapsed_ns": 14050122,
+            "throughput_bytes_per_second": 597048765.839898,
+            "iops": 142.34751840588999,
+            "p50_ns": 6716372,
+            "p95_ns": 7246874,
+            "p99_ns": 7246874
           },
           {
             "size_bytes": 4194304,
@@ -603,12 +614,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 52511064,
-            "throughput_bytes_per_second": 159749343.4907356,
-            "iops": 38.08721148746862,
-            "p50_ns": 25862069,
-            "p95_ns": 26530244,
-            "p99_ns": 26530244
+            "elapsed_ns": 35196783,
+            "throughput_bytes_per_second": 238334509.15102097,
+            "iops": 56.823375022654766,
+            "p50_ns": 15715547,
+            "p95_ns": 19414777,
+            "p99_ns": 19414777
           },
           {
             "size_bytes": 4194304,
@@ -616,12 +627,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 26207740,
-            "throughput_bytes_per_second": 320081319.48805964,
-            "iops": 76.31333338929645,
-            "p50_ns": 5781904,
-            "p95_ns": 20305500,
-            "p99_ns": 20305500
+            "elapsed_ns": 32916853,
+            "throughput_bytes_per_second": 254842344.74054974,
+            "iops": 60.75914972795242,
+            "p50_ns": 6206577,
+            "p95_ns": 26585734,
+            "p99_ns": 26585734
           },
           {
             "size_bytes": 4194304,
@@ -629,12 +640,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 88628801,
-            "throughput_bytes_per_second": 1514380500.3071182,
-            "iops": 361.05644710233645,
-            "p50_ns": 30207331,
-            "p95_ns": 54153127,
-            "p99_ns": 56564739
+            "elapsed_ns": 93081528,
+            "throughput_bytes_per_second": 1441937308.9792855,
+            "iops": 343.78464436037194,
+            "p50_ns": 33857359,
+            "p95_ns": 53993390,
+            "p99_ns": 58777292
           },
           {
             "size_bytes": 4194304,
@@ -642,12 +653,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 420489811,
-            "throughput_bytes_per_second": 319193769.95320344,
-            "iops": 76.10172509031378,
-            "p50_ns": 174929408,
-            "p95_ns": 359306431,
-            "p99_ns": 360714449
+            "elapsed_ns": 439300411,
+            "throughput_bytes_per_second": 305526069.7217968,
+            "iops": 72.84309142155571,
+            "p50_ns": 189092407,
+            "p95_ns": 355768770,
+            "p99_ns": 371209608
           },
           {
             "size_bytes": 4194304,
@@ -655,12 +666,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 237645431,
-            "throughput_bytes_per_second": 564781436.9298773,
-            "iops": 134.65438769576008,
-            "p50_ns": 59498984,
-            "p95_ns": 200066926,
-            "p99_ns": 208415904
+            "elapsed_ns": 260435645,
+            "throughput_bytes_per_second": 515358517.8403671,
+            "iops": 122.87104555138757,
+            "p50_ns": 76474517,
+            "p95_ns": 223317684,
+            "p99_ns": 229697555
           },
           {
             "size_bytes": 4194304,
@@ -668,12 +679,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 272067356,
-            "throughput_bytes_per_second": 1973301464.3623767,
-            "iops": 470.4717312723104,
-            "p50_ns": 90979872,
-            "p95_ns": 189377919,
-            "p99_ns": 202350663
+            "elapsed_ns": 670930726,
+            "throughput_bytes_per_second": 800188292.4646381,
+            "iops": 190.77975570312455,
+            "p50_ns": 243103589,
+            "p95_ns": 532652150,
+            "p99_ns": 578900787
           },
           {
             "size_bytes": 4194304,
@@ -681,12 +692,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 1524775015,
-            "throughput_bytes_per_second": 352098445.159793,
-            "iops": 83.94681099886728,
-            "p50_ns": 453635387,
-            "p95_ns": 1254301138,
-            "p99_ns": 1435677000
+            "elapsed_ns": 2103825903,
+            "throughput_bytes_per_second": 255187898.9770191,
+            "iops": 60.84153627801397,
+            "p50_ns": 673659825,
+            "p95_ns": 1730525283,
+            "p99_ns": 1774277783
           },
           {
             "size_bytes": 4194304,
@@ -694,12 +705,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 778022055,
-            "throughput_bytes_per_second": 690045877.9410822,
-            "iops": 164.51975773360306,
-            "p50_ns": 220297425,
-            "p95_ns": 562942110,
-            "p99_ns": 602812602
+            "elapsed_ns": 901976580,
+            "throughput_bytes_per_second": 595216022.1277585,
+            "iops": 141.91055825418437,
+            "p50_ns": 267938896,
+            "p95_ns": 658920866,
+            "p99_ns": 684192926
           }
         ]
       },
@@ -712,11 +723,11 @@
           "go_version": "go1.27.1"
         },
         "resources": {
-          "cpu_user_ns": 7334157000,
-          "cpu_system_ns": 1779972000,
-          "allocations": 577628,
-          "allocated_bytes": 28479928232,
-          "max_rss_bytes": 1848619008
+          "cpu_user_ns": 7592900000,
+          "cpu_system_ns": 1892015000,
+          "allocations": 577408,
+          "allocated_bytes": 28479898432,
+          "max_rss_bytes": 1772765184
         },
         "rows": [
           {
@@ -725,12 +736,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 928261,
-            "throughput_bytes_per_second": 8825104.146355389,
-            "iops": 2154.566441981296,
-            "p50_ns": 196544,
-            "p95_ns": 273503,
-            "p99_ns": 273503
+            "elapsed_ns": 458711,
+            "throughput_bytes_per_second": 17858738.944564223,
+            "iops": 4360.04368763775,
+            "p50_ns": 155000,
+            "p95_ns": 263210,
+            "p99_ns": 263210
           },
           {
             "size_bytes": 4096,
@@ -738,12 +749,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 7704679,
-            "throughput_bytes_per_second": 1063250.0069113846,
-            "iops": 259.58252121859977,
-            "p50_ns": 3399501,
-            "p95_ns": 4190969,
-            "p99_ns": 4190969
+            "elapsed_ns": 9417804,
+            "throughput_bytes_per_second": 869841.8442346008,
+            "iops": 212.36373150258808,
+            "p50_ns": 4296566,
+            "p95_ns": 5026071,
+            "p99_ns": 5026071
           },
           {
             "size_bytes": 4096,
@@ -751,12 +762,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 3905256,
-            "throughput_bytes_per_second": 2097685.785515725,
-            "iops": 512.1303187294251,
-            "p50_ns": 165336,
-            "p95_ns": 3718670,
-            "p99_ns": 3718670
+            "elapsed_ns": 4618484,
+            "throughput_bytes_per_second": 1773742.2063170513,
+            "iops": 433.04253083912386,
+            "p50_ns": 326585,
+            "p95_ns": 4249233,
+            "p99_ns": 4249233
           },
           {
             "size_bytes": 4096,
@@ -764,12 +775,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 9071570,
-            "throughput_bytes_per_second": 14448656.627243135,
-            "iops": 3527.504059385531,
-            "p50_ns": 1193182,
-            "p95_ns": 8159601,
-            "p99_ns": 8222893
+            "elapsed_ns": 4870194,
+            "throughput_bytes_per_second": 26913096.275014915,
+            "iops": 6570.580145267313,
+            "p50_ns": 776880,
+            "p95_ns": 3755605,
+            "p99_ns": 3796480
           },
           {
             "size_bytes": 4096,
@@ -777,12 +788,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 15133395,
-            "throughput_bytes_per_second": 8661110.081379624,
-            "iops": 2114.5288284618223,
-            "p50_ns": 6194618,
-            "p95_ns": 8448730,
-            "p99_ns": 8517980
+            "elapsed_ns": 18070895,
+            "throughput_bytes_per_second": 7253210.203479131,
+            "iops": 1770.8032723337722,
+            "p50_ns": 6618746,
+            "p95_ns": 9019676,
+            "p99_ns": 9474262
           },
           {
             "size_bytes": 4096,
@@ -790,12 +801,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 10288252,
-            "throughput_bytes_per_second": 12739967.87792523,
-            "iops": 3110.3437201965894,
-            "p50_ns": 1738563,
-            "p95_ns": 8860026,
-            "p99_ns": 9275406
+            "elapsed_ns": 12779614,
+            "throughput_bytes_per_second": 10256334.815746391,
+            "iops": 2503.987992125584,
+            "p50_ns": 5885742,
+            "p95_ns": 6834539,
+            "p99_ns": 8955384
           },
           {
             "size_bytes": 4096,
@@ -803,12 +814,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 14531429,
-            "throughput_bytes_per_second": 36079589.97012613,
-            "iops": 8808.493645050325,
-            "p50_ns": 5585361,
-            "p95_ns": 10145209,
-            "p99_ns": 11111053
+            "elapsed_ns": 16203717,
+            "throughput_bytes_per_second": 32356032.87813531,
+            "iops": 7899.422089388503,
+            "p50_ns": 3278977,
+            "p95_ns": 10881187,
+            "p99_ns": 14166997
           },
           {
             "size_bytes": 4096,
@@ -816,12 +827,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 28401768,
-            "throughput_bytes_per_second": 18459695.889354493,
-            "iops": 4506.761691736937,
-            "p50_ns": 10864217,
-            "p95_ns": 16614330,
-            "p99_ns": 16753082
+            "elapsed_ns": 33710442,
+            "throughput_bytes_per_second": 15552688.392516479,
+            "iops": 3797.0430645792185,
+            "p50_ns": 12154277,
+            "p95_ns": 20103365,
+            "p99_ns": 22200126
           },
           {
             "size_bytes": 4096,
@@ -829,12 +840,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 20600046,
-            "throughput_bytes_per_second": 25450816.95448641,
-            "iops": 6213.578358028909,
-            "p50_ns": 7532843,
-            "p95_ns": 13267247,
-            "p99_ns": 13608834
+            "elapsed_ns": 24108428,
+            "throughput_bytes_per_second": 21747083.63398891,
+            "iops": 5309.346590329324,
+            "p50_ns": 8207172,
+            "p95_ns": 15633089,
+            "p99_ns": 15850632
           },
           {
             "size_bytes": 65536,
@@ -842,12 +853,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 747176,
-            "throughput_bytes_per_second": 175423193.46445817,
-            "iops": 2676.7455057442958,
-            "p50_ns": 339130,
-            "p95_ns": 371380,
-            "p99_ns": 371380
+            "elapsed_ns": 846172,
+            "throughput_bytes_per_second": 154899949.419267,
+            "iops": 2363.5856539805145,
+            "p50_ns": 292293,
+            "p95_ns": 515003,
+            "p99_ns": 515003
           },
           {
             "size_bytes": 65536,
@@ -855,12 +866,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 14473137,
-            "throughput_bytes_per_second": 9056226.02757094,
-            "iops": 138.1870426570273,
-            "p50_ns": 5573069,
-            "p95_ns": 8859693,
-            "p99_ns": 8859693
+            "elapsed_ns": 12655197,
+            "throughput_bytes_per_second": 10357167.889207888,
+            "iops": 158.03784010632154,
+            "p50_ns": 5955908,
+            "p95_ns": 6639871,
+            "p99_ns": 6639871
           },
           {
             "size_bytes": 65536,
@@ -868,12 +879,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 6950836,
-            "throughput_bytes_per_second": 18857012.307584297,
-            "iops": 287.73517315039516,
-            "p50_ns": 298421,
-            "p95_ns": 6624998,
-            "p99_ns": 6624998
+            "elapsed_ns": 6764496,
+            "throughput_bytes_per_second": 19376462.045361545,
+            "iops": 295.6613471277091,
+            "p50_ns": 441044,
+            "p95_ns": 6248952,
+            "p99_ns": 6248952
           },
           {
             "size_bytes": 65536,
@@ -881,12 +892,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 16565538,
-            "throughput_bytes_per_second": 126597276.82855818,
-            "iops": 1931.7211430138882,
-            "p50_ns": 5532735,
-            "p95_ns": 11353723,
-            "p99_ns": 14775141
+            "elapsed_ns": 13002448,
+            "throughput_bytes_per_second": 161289012.65361723,
+            "iops": 2461.0750221804387,
+            "p50_ns": 5219780,
+            "p95_ns": 8838675,
+            "p99_ns": 10908562
           },
           {
             "size_bytes": 65536,
@@ -894,12 +905,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 34436258,
-            "throughput_bytes_per_second": 60899532.11524899,
-            "iops": 929.2531145515288,
-            "p50_ns": 15065519,
-            "p95_ns": 25071143,
-            "p99_ns": 25856235
+            "elapsed_ns": 25075143,
+            "throughput_bytes_per_second": 83634697.51697926,
+            "iops": 1276.164207717579,
+            "p50_ns": 11676941,
+            "p95_ns": 15169378,
+            "p99_ns": 15197837
           },
           {
             "size_bytes": 65536,
@@ -907,12 +918,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 20738755,
-            "throughput_bytes_per_second": 101122367.27807431,
-            "iops": 1543.0048717967882,
-            "p50_ns": 9915331,
-            "p95_ns": 15320773,
-            "p99_ns": 15355648
+            "elapsed_ns": 27187112,
+            "throughput_bytes_per_second": 77137726.1402388,
+            "iops": 1177.0282919347962,
+            "p50_ns": 13124825,
+            "p95_ns": 20950744,
+            "p99_ns": 23129173
           },
           {
             "size_bytes": 65536,
@@ -920,12 +931,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 67663710,
-            "throughput_bytes_per_second": 123974993.39010526,
-            "iops": 1891.708273164448,
-            "p50_ns": 20307209,
-            "p95_ns": 39620822,
-            "p99_ns": 44353298
+            "elapsed_ns": 27869284,
+            "throughput_bytes_per_second": 300998332.0705333,
+            "iops": 4592.870057228596,
+            "p50_ns": 9610013,
+            "p95_ns": 14889668,
+            "p99_ns": 16971555
           },
           {
             "size_bytes": 65536,
@@ -933,12 +944,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 46766202,
-            "throughput_bytes_per_second": 179373300.4018586,
-            "iops": 2737.019354276407,
-            "p50_ns": 21701226,
-            "p95_ns": 31973020,
-            "p99_ns": 32541985
+            "elapsed_ns": 57569118,
+            "throughput_bytes_per_second": 145713679.33759207,
+            "iops": 2223.414296533082,
+            "p50_ns": 17067931,
+            "p95_ns": 39092097,
+            "p99_ns": 39786851
           },
           {
             "size_bytes": 65536,
@@ -946,12 +957,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 36079278,
-            "throughput_bytes_per_second": 232504874.4046375,
-            "iops": 3547.7428345434187,
-            "p50_ns": 16512412,
-            "p95_ns": 23828711,
-            "p99_ns": 25000391
+            "elapsed_ns": 37409421,
+            "throughput_bytes_per_second": 224237846.3970346,
+            "iops": 3421.5979980016264,
+            "p50_ns": 15934341,
+            "p95_ns": 23954761,
+            "p99_ns": 24892558
           },
           {
             "size_bytes": 1048576,
@@ -959,12 +970,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 8050225,
-            "throughput_bytes_per_second": 260508495.10417414,
-            "iops": 248.4402609864942,
-            "p50_ns": 1599854,
-            "p95_ns": 6391079,
-            "p99_ns": 6391079
+            "elapsed_ns": 6196827,
+            "throughput_bytes_per_second": 338423519.0041613,
+            "iops": 322.7458181420911,
+            "p50_ns": 2353638,
+            "p95_ns": 3821563,
+            "p99_ns": 3821563
           },
           {
             "size_bytes": 1048576,
@@ -972,12 +983,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 20531462,
-            "throughput_bytes_per_second": 102143334.94614266,
-            "iops": 97.41147513021723,
-            "p50_ns": 9943248,
-            "p95_ns": 10491212,
-            "p99_ns": 10491212
+            "elapsed_ns": 18675231,
+            "throughput_bytes_per_second": 112295906.80832809,
+            "iops": 107.09372216065225,
+            "p50_ns": 8834342,
+            "p95_ns": 9754014,
+            "p99_ns": 9754014
           },
           {
             "size_bytes": 1048576,
@@ -985,12 +996,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 11663394,
-            "throughput_bytes_per_second": 179806323.95681736,
-            "iops": 171.47667308503853,
-            "p50_ns": 2033984,
-            "p95_ns": 9576993,
-            "p99_ns": 9576993
+            "elapsed_ns": 15261379,
+            "throughput_bytes_per_second": 137415629.34778044,
+            "iops": 131.04975638177913,
+            "p50_ns": 2243180,
+            "p95_ns": 12949490,
+            "p99_ns": 12949490
           },
           {
             "size_bytes": 1048576,
@@ -998,12 +1009,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 44084336,
-            "throughput_bytes_per_second": 761141825.9764647,
-            "iops": 725.8814105763099,
-            "p50_ns": 13060953,
-            "p95_ns": 29437489,
-            "p99_ns": 30440834
+            "elapsed_ns": 46678473,
+            "throughput_bytes_per_second": 718841681.0464215,
+            "iops": 685.5408487762656,
+            "p50_ns": 15695339,
+            "p95_ns": 39144139,
+            "p99_ns": 39415516
           },
           {
             "size_bytes": 1048576,
@@ -1011,12 +1022,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 108364504,
-            "throughput_bytes_per_second": 309644124.79569876,
-            "iops": 295.2996490437496,
-            "p50_ns": 39828116,
-            "p95_ns": 78268633,
-            "p99_ns": 91788800
+            "elapsed_ns": 125954590,
+            "throughput_bytes_per_second": 266401025.95705324,
+            "iops": 254.05981631951641,
+            "p50_ns": 51464500,
+            "p95_ns": 79158866,
+            "p99_ns": 99615565
           },
           {
             "size_bytes": 1048576,
@@ -1024,12 +1035,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 69014143,
-            "throughput_bytes_per_second": 486196459.7604291,
-            "iops": 463.67307640116604,
-            "p50_ns": 28827605,
-            "p95_ns": 51412093,
-            "p99_ns": 52479397
+            "elapsed_ns": 65879832,
+            "throughput_bytes_per_second": 509327831.9228258,
+            "iops": 485.7328719356783,
+            "p50_ns": 31103843,
+            "p95_ns": 49550448,
+            "p99_ns": 50872330
           },
           {
             "size_bytes": 1048576,
@@ -1037,12 +1048,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 117249321,
-            "throughput_bytes_per_second": 1144720727.2100108,
-            "iops": 1091.6907569980724,
-            "p50_ns": 39676823,
-            "p95_ns": 69604443,
-            "p99_ns": 87096949
+            "elapsed_ns": 109131369,
+            "throughput_bytes_per_second": 1229873034.9474494,
+            "iops": 1172.8983258699889,
+            "p50_ns": 41415527,
+            "p95_ns": 71313780,
+            "p99_ns": 79584910
           },
           {
             "size_bytes": 1048576,
@@ -1050,12 +1061,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 382942309,
-            "throughput_bytes_per_second": 350490726.2675956,
-            "iops": 334.2540037799793,
-            "p50_ns": 148811586,
-            "p95_ns": 264999645,
-            "p99_ns": 348783513
+            "elapsed_ns": 411886505,
+            "throughput_bytes_per_second": 325860950.4576995,
+            "iops": 310.76521917123745,
+            "p50_ns": 135900105,
+            "p95_ns": 303477557,
+            "p99_ns": 324689177
           },
           {
             "size_bytes": 1048576,
@@ -1063,12 +1074,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 238988908,
-            "throughput_bytes_per_second": 561606516.0647539,
-            "iops": 535.5897102973498,
-            "p50_ns": 78569428,
-            "p95_ns": 169834095,
-            "p99_ns": 176014463
+            "elapsed_ns": 225212154,
+            "throughput_bytes_per_second": 595961299.6730186,
+            "iops": 568.3529850702463,
+            "p50_ns": 90449597,
+            "p95_ns": 149678683,
+            "p99_ns": 153231120
           },
           {
             "size_bytes": 4194304,
@@ -1076,12 +1087,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 10895843,
-            "throughput_bytes_per_second": 769890682.1619952,
-            "iops": 183.55624250459556,
-            "p50_ns": 4943145,
-            "p95_ns": 5844072,
-            "p99_ns": 5844072
+            "elapsed_ns": 11408524,
+            "throughput_bytes_per_second": 735293014.2409308,
+            "iops": 175.30751567862768,
+            "p50_ns": 5195279,
+            "p95_ns": 6073618,
+            "p99_ns": 6073618
           },
           {
             "size_bytes": 4194304,
@@ -1089,12 +1100,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 42809570,
-            "throughput_bytes_per_second": 195951699.58492926,
-            "iops": 46.71852578757507,
-            "p50_ns": 19288155,
-            "p95_ns": 23445289,
-            "p99_ns": 23445289
+            "elapsed_ns": 44617586,
+            "throughput_bytes_per_second": 188011247.40365827,
+            "iops": 44.82537446109254,
+            "p50_ns": 20973911,
+            "p95_ns": 23462174,
+            "p99_ns": 23462174
           },
           {
             "size_bytes": 4194304,
@@ -1102,12 +1113,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 30496293,
-            "throughput_bytes_per_second": 275069760.1180576,
-            "iops": 65.58174136115494,
-            "p50_ns": 5800197,
-            "p95_ns": 24549719,
-            "p99_ns": 24549719
+            "elapsed_ns": 33327273,
+            "throughput_bytes_per_second": 251704002.30465904,
+            "iops": 60.01091058365322,
+            "p50_ns": 6617746,
+            "p95_ns": 26635609,
+            "p99_ns": 26635609
           },
           {
             "size_bytes": 4194304,
@@ -1115,12 +1126,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 93927326,
-            "throughput_bytes_per_second": 1428952933.2496912,
-            "iops": 340.6889279484013,
-            "p50_ns": 35191393,
-            "p95_ns": 54387379,
-            "p99_ns": 68498512
+            "elapsed_ns": 93373030,
+            "throughput_bytes_per_second": 1437435713.503139,
+            "iops": 342.7113803632591,
+            "p50_ns": 33628066,
+            "p95_ns": 65601706,
+            "p99_ns": 69553728
           },
           {
             "size_bytes": 4194304,
@@ -1128,12 +1139,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 397782283,
-            "throughput_bytes_per_second": 337415047.7184526,
-            "iops": 80.44601624451937,
-            "p50_ns": 160234644,
-            "p95_ns": 295450187,
-            "p99_ns": 295666565
+            "elapsed_ns": 436407687,
+            "throughput_bytes_per_second": 307551246.2272462,
+            "iops": 73.32593112641483,
+            "p50_ns": 167205699,
+            "p95_ns": 292501869,
+            "p99_ns": 296244932
           },
           {
             "size_bytes": 4194304,
@@ -1141,12 +1152,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 238009771,
-            "throughput_bytes_per_second": 563916882.2190918,
-            "iops": 134.44826179005904,
-            "p50_ns": 68683515,
-            "p95_ns": 198039944,
-            "p99_ns": 199107582
+            "elapsed_ns": 256016786,
+            "throughput_bytes_per_second": 524253624.5260106,
+            "iops": 124.9918042483355,
+            "p50_ns": 68332721,
+            "p95_ns": 183642334,
+            "p99_ns": 193295514
           },
           {
             "size_bytes": 4194304,
@@ -1154,12 +1165,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 327750544,
-            "throughput_bytes_per_second": 1638047355.9183476,
-            "iops": 390.54092309912386,
-            "p50_ns": 103497110,
-            "p95_ns": 222330244,
-            "p99_ns": 234107180
+            "elapsed_ns": 312587691,
+            "throughput_bytes_per_second": 1717504967.2701283,
+            "iops": 409.4850938964196,
+            "p50_ns": 122367070,
+            "p95_ns": 197185495,
+            "p99_ns": 208157390
           },
           {
             "size_bytes": 4194304,
@@ -1167,12 +1178,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 1548539192,
-            "throughput_bytes_per_second": 346695075.44501334,
-            "iops": 82.65854726910909,
-            "p50_ns": 520416255,
-            "p95_ns": 1209203879,
-            "p99_ns": 1341031756
+            "elapsed_ns": 1674997010,
+            "throughput_bytes_per_second": 320520519.6157335,
+            "iops": 76.41804685967767,
+            "p50_ns": 527984498,
+            "p95_ns": 1391404442,
+            "p99_ns": 1417627966
           },
           {
             "size_bytes": 4194304,
@@ -1180,12 +1191,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 787926223,
-            "throughput_bytes_per_second": 681372057.8506498,
-            "iops": 162.45175787225958,
-            "p50_ns": 237249303,
-            "p95_ns": 548410851,
-            "p99_ns": 559475653
+            "elapsed_ns": 866802631,
+            "throughput_bytes_per_second": 619369269.0810487,
+            "iops": 147.66914107347696,
+            "p50_ns": 265185339,
+            "p95_ns": 649723612,
+            "p99_ns": 677224213
           }
         ]
       },
@@ -1196,11 +1207,11 @@
           "library": "librados.so.2"
         },
         "resources": {
-          "cpu_user_ns": 5502484000,
-          "cpu_system_ns": 980170000,
+          "cpu_user_ns": 6364647000,
+          "cpu_system_ns": 1238922000,
           "allocations": null,
           "allocated_bytes": null,
-          "max_rss_bytes": 922284032
+          "max_rss_bytes": 929247232
         },
         "rows": [
           {
@@ -1209,12 +1220,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 378713,
-            "throughput_bytes_per_second": 21631156.046927,
-            "iops": 5281.043957,
-            "p50_ns": 138168,
-            "p95_ns": 224877,
-            "p99_ns": 224877
+            "elapsed_ns": 368252,
+            "throughput_bytes_per_second": 22245636.140469,
+            "iops": 5431.063511,
+            "p50_ns": 86876,
+            "p95_ns": 270501,
+            "p99_ns": 270501
           },
           {
             "size_bytes": 4096,
@@ -1222,12 +1233,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 8388603,
-            "throughput_bytes_per_second": 976563.082077,
-            "iops": 238.418721,
-            "p50_ns": 3724879,
-            "p95_ns": 4640474,
-            "p99_ns": 4640474
+            "elapsed_ns": 11501523,
+            "throughput_bytes_per_second": 712253.498950,
+            "iops": 173.890014,
+            "p50_ns": 5415490,
+            "p95_ns": 5975826,
+            "p99_ns": 5975826
           },
           {
             "size_bytes": 4096,
@@ -1235,12 +1246,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 5092688,
-            "throughput_bytes_per_second": 1608580.773061,
-            "iops": 392.719915,
-            "p50_ns": 203336,
-            "p95_ns": 4832477,
-            "p99_ns": 4832477
+            "elapsed_ns": 6819080,
+            "throughput_bytes_per_second": 1201335.077459,
+            "iops": 293.294697,
+            "p50_ns": 210918,
+            "p95_ns": 6514578,
+            "p99_ns": 6514578
           },
           {
             "size_bytes": 4096,
@@ -1248,12 +1259,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 1427934,
-            "throughput_bytes_per_second": 91791357.303629,
-            "iops": 22409.999342,
-            "p50_ns": 486131,
-            "p95_ns": 860469,
-            "p99_ns": 870552
+            "elapsed_ns": 1818761,
+            "throughput_bytes_per_second": 72066643.170818,
+            "iops": 17594.395305,
+            "p50_ns": 390919,
+            "p95_ns": 1108090,
+            "p99_ns": 1151465
           },
           {
             "size_bytes": 4096,
@@ -1261,12 +1272,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 21037051,
-            "throughput_bytes_per_second": 6230531.075862,
-            "iops": 1521.125751,
-            "p50_ns": 9011569,
-            "p95_ns": 11986690,
-            "p99_ns": 12066149
+            "elapsed_ns": 25132143,
+            "throughput_bytes_per_second": 5215313.314109,
+            "iops": 1273.269852,
+            "p50_ns": 11703275,
+            "p95_ns": 12939323,
+            "p99_ns": 13230701
           },
           {
             "size_bytes": 4096,
@@ -1274,12 +1285,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 14879517,
-            "throughput_bytes_per_second": 8808888.084203,
-            "iops": 2150.607442,
-            "p50_ns": 943887,
-            "p95_ns": 14485554,
-            "p99_ns": 14489220
+            "elapsed_ns": 10880062,
+            "throughput_bytes_per_second": 12046990.173402,
+            "iops": 2941.159710,
+            "p50_ns": 1648010,
+            "p95_ns": 9911514,
+            "p99_ns": 10339600
           },
           {
             "size_bytes": 4096,
@@ -1287,12 +1298,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 10322794,
-            "throughput_bytes_per_second": 50789350.247617,
-            "iops": 12399.743713,
-            "p50_ns": 1855856,
-            "p95_ns": 4689933,
-            "p99_ns": 5325149
+            "elapsed_ns": 8640591,
+            "throughput_bytes_per_second": 60677330.983494,
+            "iops": 14813.801510,
+            "p50_ns": 1267924,
+            "p95_ns": 4365608,
+            "p99_ns": 4474942
           },
           {
             "size_bytes": 4096,
@@ -1300,12 +1311,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 46077985,
-            "throughput_bytes_per_second": 11378275.330399,
-            "iops": 2777.899251,
-            "p50_ns": 19819287,
-            "p95_ns": 28712229,
-            "p99_ns": 29337820
+            "elapsed_ns": 51319916,
+            "throughput_bytes_per_second": 10216072.840026,
+            "iops": 2494.158408,
+            "p50_ns": 22551836,
+            "p95_ns": 29855627,
+            "p99_ns": 30128422
           },
           {
             "size_bytes": 4096,
@@ -1313,12 +1324,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 29001691,
-            "throughput_bytes_per_second": 18077842.426499,
-            "iops": 4413.535749,
-            "p50_ns": 5504526,
-            "p95_ns": 23266495,
-            "p99_ns": 23357580
+            "elapsed_ns": 18089602,
+            "throughput_bytes_per_second": 28982837.765032,
+            "iops": 7075.888126,
+            "p50_ns": 4049773,
+            "p95_ns": 16775387,
+            "p99_ns": 16990263
           },
           {
             "size_bytes": 65536,
@@ -1326,12 +1337,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 664258,
-            "throughput_bytes_per_second": 197320920.485715,
-            "iops": 3010.878303,
-            "p50_ns": 176169,
-            "p95_ns": 461173,
-            "p99_ns": 461173
+            "elapsed_ns": 766963,
+            "throughput_bytes_per_second": 170897422.691838,
+            "iops": 2607.687724,
+            "p50_ns": 217835,
+            "p95_ns": 526628,
+            "p99_ns": 526628
           },
           {
             "size_bytes": 65536,
@@ -1339,12 +1350,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 13901588,
-            "throughput_bytes_per_second": 9428563.125306,
-            "iops": 143.868456,
-            "p50_ns": 6180035,
-            "p95_ns": 7692803,
-            "p99_ns": 7692803
+            "elapsed_ns": 9532554,
+            "throughput_bytes_per_second": 13749935.221977,
+            "iops": 209.807361,
+            "p50_ns": 4625609,
+            "p95_ns": 4839653,
+            "p99_ns": 4839653
           },
           {
             "size_bytes": 65536,
@@ -1352,12 +1363,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 7105129,
-            "throughput_bytes_per_second": 18447518.686853,
-            "iops": 281.486796,
-            "p50_ns": 659967,
-            "p95_ns": 6371204,
-            "p99_ns": 6371204
+            "elapsed_ns": 4401859,
+            "throughput_bytes_per_second": 29776510.333475,
+            "iops": 454.353490,
+            "p50_ns": 405128,
+            "p95_ns": 3954772,
+            "p99_ns": 3954772
           },
           {
             "size_bytes": 65536,
@@ -1365,12 +1376,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 2906244,
-            "throughput_bytes_per_second": 721602177.931378,
-            "iops": 11010.775420,
-            "p50_ns": 1115472,
-            "p95_ns": 1479351,
-            "p99_ns": 1515560
+            "elapsed_ns": 4466025,
+            "throughput_bytes_per_second": 469579099.982647,
+            "iops": 7165.208435,
+            "p50_ns": 991381,
+            "p95_ns": 3575854,
+            "p99_ns": 3626104
           },
           {
             "size_bytes": 65536,
@@ -1378,12 +1389,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 41322593,
-            "throughput_bytes_per_second": 50750735.802083,
-            "iops": 774.394772,
-            "p50_ns": 18708564,
-            "p95_ns": 23006909,
-            "p99_ns": 23049951
+            "elapsed_ns": 39869184,
+            "throughput_bytes_per_second": 52600825.740502,
+            "iops": 802.624904,
+            "p50_ns": 19343026,
+            "p95_ns": 24540014,
+            "p99_ns": 24960225
           },
           {
             "size_bytes": 65536,
@@ -1391,12 +1402,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 21485307,
-            "throughput_bytes_per_second": 97608658.791797,
-            "iops": 1489.389935,
-            "p50_ns": 2281320,
-            "p95_ns": 20320709,
-            "p99_ns": 20399752
+            "elapsed_ns": 20000697,
+            "throughput_bytes_per_second": 104853945.839987,
+            "iops": 1599.944242,
+            "p50_ns": 5416073,
+            "p95_ns": 18549605,
+            "p99_ns": 18563314
           },
           {
             "size_bytes": 65536,
@@ -1404,12 +1415,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 11636977,
-            "throughput_bytes_per_second": 720858002.898863,
-            "iops": 10999.420210,
-            "p50_ns": 3947340,
-            "p95_ns": 5721154,
-            "p99_ns": 5996490
+            "elapsed_ns": 12035110,
+            "throughput_bytes_per_second": 697011327.690399,
+            "iops": 10635.548823,
+            "p50_ns": 3534520,
+            "p95_ns": 6777080,
+            "p99_ns": 7883003
           },
           {
             "size_bytes": 65536,
@@ -1417,12 +1428,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 57475043,
-            "throughput_bytes_per_second": 145952183.106675,
-            "iops": 2227.053575,
-            "p50_ns": 27355004,
-            "p95_ns": 34206838,
-            "p99_ns": 40046493
+            "elapsed_ns": 77295731,
+            "throughput_bytes_per_second": 108526148.746818,
+            "iops": 1655.977611,
+            "p50_ns": 33201480,
+            "p95_ns": 53273594,
+            "p99_ns": 63132858
           },
           {
             "size_bytes": 65536,
@@ -1430,12 +1441,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 31685516,
-            "throughput_bytes_per_second": 264745822.665473,
-            "iops": 4039.700663,
-            "p50_ns": 7201880,
-            "p95_ns": 21415764,
-            "p99_ns": 22500569
+            "elapsed_ns": 29546709,
+            "throughput_bytes_per_second": 283910062.538606,
+            "iops": 4332.123757,
+            "p50_ns": 7317541,
+            "p95_ns": 20935661,
+            "p99_ns": 25348936
           },
           {
             "size_bytes": 1048576,
@@ -1443,12 +1454,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 3243081,
-            "throughput_bytes_per_second": 646654215.543799,
-            "iops": 616.697517,
-            "p50_ns": 1054513,
-            "p95_ns": 2048359,
-            "p99_ns": 2048359
+            "elapsed_ns": 3456853,
+            "throughput_bytes_per_second": 606665079.481251,
+            "iops": 578.560905,
+            "p50_ns": 794171,
+            "p95_ns": 2540514,
+            "p99_ns": 2540514
           },
           {
             "size_bytes": 1048576,
@@ -1456,12 +1467,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 37308294,
-            "throughput_bytes_per_second": 56211415.081054,
-            "iops": 53.607383,
-            "p50_ns": 14255843,
-            "p95_ns": 23007492,
-            "p99_ns": 23007492
+            "elapsed_ns": 34426404,
+            "throughput_bytes_per_second": 60916963.618971,
+            "iops": 58.094944,
+            "p50_ns": 14804751,
+            "p95_ns": 19578736,
+            "p99_ns": 19578736
           },
           {
             "size_bytes": 1048576,
@@ -1469,12 +1480,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 14160008,
-            "throughput_bytes_per_second": 148103871.127756,
-            "iops": 141.242858,
-            "p50_ns": 1938857,
-            "p95_ns": 12124108,
-            "p99_ns": 12124108
+            "elapsed_ns": 14590291,
+            "throughput_bytes_per_second": 143736132.473300,
+            "iops": 137.077458,
+            "p50_ns": 2068095,
+            "p95_ns": 12446446,
+            "p99_ns": 12446446
           },
           {
             "size_bytes": 1048576,
@@ -1482,12 +1493,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 18970276,
-            "throughput_bytes_per_second": 1768789868.950773,
-            "iops": 1686.849469,
-            "p50_ns": 7265839,
-            "p95_ns": 12158317,
-            "p99_ns": 12672948
+            "elapsed_ns": 17652851,
+            "throughput_bytes_per_second": 1900793928.414169,
+            "iops": 1812.738350,
+            "p50_ns": 6829580,
+            "p95_ns": 12006985,
+            "p99_ns": 12770240
           },
           {
             "size_bytes": 1048576,
@@ -1495,12 +1506,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 105059337,
-            "throughput_bytes_per_second": 319385529.722123,
-            "iops": 304.589777,
-            "p50_ns": 44404298,
-            "p95_ns": 78396342,
-            "p99_ns": 78798430
+            "elapsed_ns": 97015968,
+            "throughput_bytes_per_second": 345865043.577156,
+            "iops": 329.842609,
+            "p50_ns": 38168758,
+            "p95_ns": 69084017,
+            "p99_ns": 71926908
           },
           {
             "size_bytes": 1048576,
@@ -1508,12 +1519,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 66883117,
-            "throughput_bytes_per_second": 501687623.200934,
-            "iops": 478.446601,
-            "p50_ns": 11888439,
-            "p95_ns": 59145313,
-            "p99_ns": 60031782
+            "elapsed_ns": 59538088,
+            "throughput_bytes_per_second": 563579267.107133,
+            "iops": 537.471072,
+            "p50_ns": 17385682,
+            "p95_ns": 46411597,
+            "p99_ns": 50537495
           },
           {
             "size_bytes": 1048576,
@@ -1521,12 +1532,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 51732930,
-            "throughput_bytes_per_second": 2594435072.593027,
-            "iops": 2474.246094,
-            "p50_ns": 20029039,
-            "p95_ns": 32615653,
-            "p99_ns": 43712289
+            "elapsed_ns": 68674014,
+            "throughput_bytes_per_second": 1954417984.071821,
+            "iops": 1863.878235,
+            "p50_ns": 27785783,
+            "p95_ns": 39117431,
+            "p99_ns": 44624961
           },
           {
             "size_bytes": 1048576,
@@ -1534,12 +1545,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 366200934,
-            "throughput_bytes_per_second": 366513887.700789,
-            "iops": 349.534881,
-            "p50_ns": 113052770,
-            "p95_ns": 301509927,
-            "p99_ns": 336391691
+            "elapsed_ns": 375088212,
+            "throughput_bytes_per_second": 357829768.321272,
+            "iops": 341.253060,
+            "p50_ns": 134662306,
+            "p95_ns": 267678436,
+            "p99_ns": 307773498
           },
           {
             "size_bytes": 1048576,
@@ -1547,12 +1558,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 194618817,
-            "throughput_bytes_per_second": 689644146.793884,
-            "iops": 657.695910,
-            "p50_ns": 51655595,
-            "p95_ns": 154283445,
-            "p99_ns": 158221951
+            "elapsed_ns": 248982331,
+            "throughput_bytes_per_second": 539065272.065430,
+            "iops": 514.092705,
+            "p50_ns": 54132516,
+            "p95_ns": 208240099,
+            "p99_ns": 210593612
           },
           {
             "size_bytes": 4194304,
@@ -1560,12 +1571,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 10068958,
-            "throughput_bytes_per_second": 833115800.065906,
-            "iops": 198.630285,
-            "p50_ns": 3211998,
-            "p95_ns": 6520163,
-            "p99_ns": 6520163
+            "elapsed_ns": 11603024,
+            "throughput_bytes_per_second": 722967391.948857,
+            "iops": 172.368858,
+            "p50_ns": 3744688,
+            "p95_ns": 7482417,
+            "p99_ns": 7482417
           },
           {
             "size_bytes": 4194304,
@@ -1573,12 +1584,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 37343585,
-            "throughput_bytes_per_second": 224633173.274607,
-            "iops": 53.556722,
-            "p50_ns": 18627730,
-            "p95_ns": 18675730,
-            "p99_ns": 18675730
+            "elapsed_ns": 41829779,
+            "throughput_bytes_per_second": 200541532.863466,
+            "iops": 47.812827,
+            "p50_ns": 18254270,
+            "p95_ns": 23531509,
+            "p99_ns": 23531509
           },
           {
             "size_bytes": 4194304,
@@ -1586,12 +1597,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 25987821,
-            "throughput_bytes_per_second": 322789971.502420,
-            "iops": 76.959126,
-            "p50_ns": 6246493,
-            "p95_ns": 19536574,
-            "p99_ns": 19536574
+            "elapsed_ns": 24173887,
+            "throughput_bytes_per_second": 347011136.438257,
+            "iops": 82.733902,
+            "p50_ns": 6109076,
+            "p95_ns": 17883143,
+            "p99_ns": 17883143
           },
           {
             "size_bytes": 4194304,
@@ -1599,12 +1610,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 64745132,
-            "throughput_bytes_per_second": 2073016516.515867,
-            "iops": 494.245652,
-            "p50_ns": 20913092,
-            "p95_ns": 41707931,
-            "p99_ns": 44214879
+            "elapsed_ns": 89801510,
+            "throughput_bytes_per_second": 1494604355.761946,
+            "iops": 356.341447,
+            "p50_ns": 28602621,
+            "p95_ns": 55686025,
+            "p99_ns": 63196650
           },
           {
             "size_bytes": 4194304,
@@ -1612,12 +1623,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 368377836,
-            "throughput_bytes_per_second": 364348000.567548,
-            "iops": 86.867333,
-            "p50_ns": 142577134,
-            "p95_ns": 301765389,
-            "p99_ns": 323420240
+            "elapsed_ns": 433222210,
+            "throughput_bytes_per_second": 309812666.345061,
+            "iops": 73.865096,
+            "p50_ns": 162592548,
+            "p95_ns": 363772732,
+            "p99_ns": 364544320
           },
           {
             "size_bytes": 4194304,
@@ -1625,12 +1636,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 190559517,
-            "throughput_bytes_per_second": 704334950.639070,
-            "iops": 167.926538,
-            "p50_ns": 43541370,
-            "p95_ns": 159267839,
-            "p99_ns": 161219364
+            "elapsed_ns": 229650678,
+            "throughput_bytes_per_second": 584442986.055543,
+            "iops": 139.342066,
+            "p50_ns": 55278647,
+            "p95_ns": 191713255,
+            "p99_ns": 198050874
           },
           {
             "size_bytes": 4194304,
@@ -1638,12 +1649,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 232994373,
-            "throughput_bytes_per_second": 2304222651.763354,
-            "iops": 549.369491,
-            "p50_ns": 85372303,
-            "p95_ns": 135933510,
-            "p99_ns": 151877790
+            "elapsed_ns": 302381383,
+            "throughput_bytes_per_second": 1775476078.168476,
+            "iops": 423.306484,
+            "p50_ns": 105364265,
+            "p95_ns": 178177553,
+            "p99_ns": 190163913
           },
           {
             "size_bytes": 4194304,
@@ -1651,12 +1662,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 1477479974,
-            "throughput_bytes_per_second": 363369332.544334,
-            "iops": 86.634000,
-            "p50_ns": 622922309,
-            "p95_ns": 873618984,
-            "p99_ns": 937872443
+            "elapsed_ns": 1829293261,
+            "throughput_bytes_per_second": 293485426.009012,
+            "iops": 69.972378,
+            "p50_ns": 725760162,
+            "p95_ns": 1100284830,
+            "p99_ns": 1258107851
           },
           {
             "size_bytes": 4194304,
@@ -1664,12 +1675,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 856069726,
-            "throughput_bytes_per_second": 627134561.233158,
-            "iops": 149.520531,
-            "p50_ns": 164404153,
-            "p95_ns": 710821560,
-            "p99_ns": 721004268
+            "elapsed_ns": 1091881116,
+            "throughput_bytes_per_second": 491693559.063256,
+            "iops": 117.228880,
+            "p50_ns": 192576177,
+            "p95_ns": 884472355,
+            "p99_ns": 895729544
           }
         ]
       },
@@ -1680,11 +1691,11 @@
           "library": "librados.so.2"
         },
         "resources": {
-          "cpu_user_ns": 5254534000,
-          "cpu_system_ns": 932006000,
+          "cpu_user_ns": 5700973000,
+          "cpu_system_ns": 959237000,
           "allocations": null,
           "allocated_bytes": null,
-          "max_rss_bytes": 951619584
+          "max_rss_bytes": 1031544832
         },
         "rows": [
           {
@@ -1693,12 +1704,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 222670,
-            "throughput_bytes_per_second": 36789868.415143,
-            "iops": 8981.901469,
-            "p50_ns": 58000,
-            "p95_ns": 158044,
-            "p99_ns": 158044
+            "elapsed_ns": 521170,
+            "throughput_bytes_per_second": 15718479.574803,
+            "iops": 3837.519427,
+            "p50_ns": 90875,
+            "p95_ns": 262293,
+            "p99_ns": 262293
           },
           {
             "size_bytes": 4096,
@@ -1706,12 +1717,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 9479701,
-            "throughput_bytes_per_second": 864162.276848,
-            "iops": 210.977118,
-            "p50_ns": 4673725,
-            "p95_ns": 4770268,
-            "p99_ns": 4770268
+            "elapsed_ns": 9130635,
+            "throughput_bytes_per_second": 897199.373319,
+            "iops": 219.042816,
+            "p50_ns": 4463109,
+            "p95_ns": 4634318,
+            "p99_ns": 4634318
           },
           {
             "size_bytes": 4096,
@@ -1719,12 +1730,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8192,
-            "elapsed_ns": 5225440,
-            "throughput_bytes_per_second": 1567714.871858,
-            "iops": 382.742889,
-            "p50_ns": 156419,
-            "p95_ns": 5040104,
-            "p99_ns": 5040104
+            "elapsed_ns": 5233155,
+            "throughput_bytes_per_second": 1565403.661845,
+            "iops": 382.178628,
+            "p50_ns": 309876,
+            "p95_ns": 4871402,
+            "p99_ns": 4871402
           },
           {
             "size_bytes": 4096,
@@ -1732,12 +1743,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 933595,
-            "throughput_bytes_per_second": 140394924.994243,
-            "iops": 34276.104735,
-            "p50_ns": 338921,
-            "p95_ns": 502881,
-            "p99_ns": 510632
+            "elapsed_ns": 1933803,
+            "throughput_bytes_per_second": 67779396.350094,
+            "iops": 16547.704187,
+            "p50_ns": 437877,
+            "p95_ns": 1112631,
+            "p99_ns": 1696052
           },
           {
             "size_bytes": 4096,
@@ -1745,12 +1756,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 20007580,
-            "throughput_bytes_per_second": 6551117.126609,
-            "iops": 1599.393830,
-            "p50_ns": 9786871,
-            "p95_ns": 10037791,
-            "p99_ns": 10071041
+            "elapsed_ns": 12824448,
+            "throughput_bytes_per_second": 10220478.885329,
+            "iops": 2495.234103,
+            "p50_ns": 5973451,
+            "p95_ns": 7382292,
+            "p99_ns": 7389584
           },
           {
             "size_bytes": 4096,
@@ -1758,12 +1769,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 131072,
-            "elapsed_ns": 9208906,
-            "throughput_bytes_per_second": 14233178.186421,
-            "iops": 3474.897018,
-            "p50_ns": 707258,
-            "p95_ns": 8466521,
-            "p99_ns": 8468897
+            "elapsed_ns": 20747117,
+            "throughput_bytes_per_second": 6317600.657479,
+            "iops": 1542.382973,
+            "p50_ns": 1538217,
+            "p95_ns": 19908155,
+            "p99_ns": 20038489
           },
           {
             "size_bytes": 4096,
@@ -1771,12 +1782,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 4132426,
-            "throughput_bytes_per_second": 126871721.356898,
-            "iops": 30974.541347,
-            "p50_ns": 1393268,
-            "p95_ns": 2510490,
-            "p99_ns": 2573991
+            "elapsed_ns": 6367994,
+            "throughput_bytes_per_second": 82331735.865329,
+            "iops": 20100.521451,
+            "p50_ns": 1480050,
+            "p95_ns": 3161310,
+            "p99_ns": 3208810
           },
           {
             "size_bytes": 4096,
@@ -1784,12 +1795,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 35846109,
-            "throughput_bytes_per_second": 14626078.384128,
-            "iops": 3570.819918,
-            "p50_ns": 15303564,
-            "p95_ns": 23883128,
-            "p99_ns": 24064588
+            "elapsed_ns": 36733042,
+            "throughput_bytes_per_second": 14272926.266221,
+            "iops": 3484.601139,
+            "p50_ns": 15090252,
+            "p95_ns": 18520396,
+            "p99_ns": 23580967
           },
           {
             "size_bytes": 4096,
@@ -1797,12 +1808,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 524288,
-            "elapsed_ns": 17706385,
-            "throughput_bytes_per_second": 29610109.573467,
-            "iops": 7229.030658,
-            "p50_ns": 3286957,
-            "p95_ns": 14561138,
-            "p99_ns": 16037282
+            "elapsed_ns": 15129336,
+            "throughput_bytes_per_second": 34653734.968937,
+            "iops": 8460.384514,
+            "p50_ns": 4054190,
+            "p95_ns": 11660649,
+            "p99_ns": 13849120
           },
           {
             "size_bytes": 65536,
@@ -1810,12 +1821,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 523840,
-            "throughput_bytes_per_second": 250213805.742211,
-            "iops": 3817.959682,
-            "p50_ns": 149794,
-            "p95_ns": 339546,
-            "p99_ns": 339546
+            "elapsed_ns": 540503,
+            "throughput_bytes_per_second": 242500041.627891,
+            "iops": 3700.256983,
+            "p50_ns": 130334,
+            "p95_ns": 353502,
+            "p99_ns": 353502
           },
           {
             "size_bytes": 65536,
@@ -1823,12 +1834,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 10844175,
-            "throughput_bytes_per_second": 12086857.690880,
-            "iops": 184.430812,
-            "p50_ns": 5296482,
-            "p95_ns": 5528360,
-            "p99_ns": 5528360
+            "elapsed_ns": 8360839,
+            "throughput_bytes_per_second": 15676895.584283,
+            "iops": 239.210443,
+            "p50_ns": 3735230,
+            "p95_ns": 4587318,
+            "p99_ns": 4587318
           },
           {
             "size_bytes": 65536,
@@ -1836,12 +1847,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 131072,
-            "elapsed_ns": 7190172,
-            "throughput_bytes_per_second": 18229327.476450,
-            "iops": 278.157463,
-            "p50_ns": 379296,
-            "p95_ns": 6772792,
-            "p99_ns": 6772792
+            "elapsed_ns": 4305816,
+            "throughput_bytes_per_second": 30440687.665242,
+            "iops": 464.488032,
+            "p50_ns": 382418,
+            "p95_ns": 3881188,
+            "p99_ns": 3881188
           },
           {
             "size_bytes": 65536,
@@ -1849,12 +1860,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 2123943,
-            "throughput_bytes_per_second": 987386196.333894,
-            "iops": 15066.317693,
-            "p50_ns": 572799,
-            "p95_ns": 1116388,
-            "p99_ns": 1243848
+            "elapsed_ns": 4653109,
+            "throughput_bytes_per_second": 450699091.725554,
+            "iops": 6877.122371,
+            "p50_ns": 1260382,
+            "p95_ns": 2127554,
+            "p99_ns": 2505889
           },
           {
             "size_bytes": 65536,
@@ -1862,12 +1873,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 26573620,
-            "throughput_bytes_per_second": 78918566.608539,
-            "iops": 1204.201761,
-            "p50_ns": 12649656,
-            "p95_ns": 16258409,
-            "p99_ns": 16315784
+            "elapsed_ns": 21419080,
+            "throughput_bytes_per_second": 97910461.140254,
+            "iops": 1493.995074,
+            "p50_ns": 8543256,
+            "p95_ns": 12330195,
+            "p99_ns": 12344112
           },
           {
             "size_bytes": 65536,
@@ -1875,12 +1886,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 2097152,
-            "elapsed_ns": 14573222,
-            "throughput_bytes_per_second": 143904484.540207,
-            "iops": 2195.808175,
-            "p50_ns": 2971745,
-            "p95_ns": 13504834,
-            "p99_ns": 13525417
+            "elapsed_ns": 10151141,
+            "throughput_bytes_per_second": 206592736.717971,
+            "iops": 3152.354991,
+            "p50_ns": 2628307,
+            "p95_ns": 8469006,
+            "p99_ns": 8488215
           },
           {
             "size_bytes": 65536,
@@ -1888,12 +1899,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 6230411,
-            "throughput_bytes_per_second": 1346397211.997732,
-            "iops": 20544.391052,
-            "p50_ns": 1670688,
-            "p95_ns": 4442722,
-            "p99_ns": 4588473
+            "elapsed_ns": 12248570,
+            "throughput_bytes_per_second": 684864273.951980,
+            "iops": 10450.199493,
+            "p50_ns": 2937975,
+            "p95_ns": 5812408,
+            "p99_ns": 7641586
           },
           {
             "size_bytes": 65536,
@@ -1901,12 +1912,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 38596810,
-            "throughput_bytes_per_second": 217339412.246763,
-            "iops": 3316.336246,
-            "p50_ns": 17991097,
-            "p95_ns": 22272567,
-            "p99_ns": 22425027
+            "elapsed_ns": 34908698,
+            "throughput_bytes_per_second": 240301371.308664,
+            "iops": 3666.707936,
+            "p50_ns": 13933621,
+            "p95_ns": 22499503,
+            "p99_ns": 24346930
           },
           {
             "size_bytes": 65536,
@@ -1914,12 +1925,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 8388608,
-            "elapsed_ns": 28018095,
-            "throughput_bytes_per_second": 299399655.829563,
-            "iops": 4568.476194,
-            "p50_ns": 6188993,
-            "p95_ns": 22122523,
-            "p99_ns": 23795502
+            "elapsed_ns": 26831736,
+            "throughput_bytes_per_second": 312637542.349105,
+            "iops": 4770.470312,
+            "p50_ns": 12039610,
+            "p95_ns": 21906624,
+            "p99_ns": 24508139
           },
           {
             "size_bytes": 1048576,
@@ -1927,12 +1938,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 2103526,
-            "throughput_bytes_per_second": 996969849.671456,
-            "iops": 950.784540,
-            "p50_ns": 798760,
-            "p95_ns": 1171432,
-            "p99_ns": 1171432
+            "elapsed_ns": 2355805,
+            "throughput_bytes_per_second": 890206107.890933,
+            "iops": 848.966701,
+            "p50_ns": 514878,
+            "p95_ns": 1740093,
+            "p99_ns": 1740093
           },
           {
             "size_bytes": 1048576,
@@ -1940,12 +1951,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 20376626,
-            "throughput_bytes_per_second": 102919492.167153,
-            "iops": 98.151676,
-            "p50_ns": 9127155,
-            "p95_ns": 11217513,
-            "p99_ns": 11217513
+            "elapsed_ns": 13071366,
+            "throughput_bytes_per_second": 160438625.924789,
+            "iops": 153.006197,
+            "p50_ns": 6338286,
+            "p95_ns": 6688872,
+            "p99_ns": 6688872
           },
           {
             "size_bytes": 1048576,
@@ -1953,12 +1964,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 2097152,
-            "elapsed_ns": 10110166,
-            "throughput_bytes_per_second": 207430026.371476,
-            "iops": 197.820689,
-            "p50_ns": 1212973,
-            "p95_ns": 8770567,
-            "p99_ns": 8770567
+            "elapsed_ns": 8945176,
+            "throughput_bytes_per_second": 234445023.775944,
+            "iops": 223.584198,
+            "p50_ns": 1475508,
+            "p95_ns": 7401917,
+            "p99_ns": 7401917
           },
           {
             "size_bytes": 1048576,
@@ -1966,12 +1977,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 15967238,
-            "throughput_bytes_per_second": 2101454991.777538,
-            "iops": 2004.103653,
-            "p50_ns": 4080467,
-            "p95_ns": 12225193,
-            "p99_ns": 12498113
+            "elapsed_ns": 13429909,
+            "throughput_bytes_per_second": 2498485432.775456,
+            "iops": 2382.741387,
+            "p50_ns": 5077362,
+            "p95_ns": 9611971,
+            "p99_ns": 10090641
           },
           {
             "size_bytes": 1048576,
@@ -1979,12 +1990,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 100358363,
-            "throughput_bytes_per_second": 334346147.116808,
-            "iops": 318.857333,
-            "p50_ns": 39852117,
-            "p95_ns": 78855264,
-            "p99_ns": 78878349
+            "elapsed_ns": 77783608,
+            "throughput_bytes_per_second": 431381789.335357,
+            "iops": 411.397733,
+            "p50_ns": 33563066,
+            "p95_ns": 54760061,
+            "p99_ns": 66172667
           },
           {
             "size_bytes": 1048576,
@@ -1992,12 +2003,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 33554432,
-            "elapsed_ns": 63729120,
-            "throughput_bytes_per_second": 526516481.005857,
-            "iops": 502.125245,
-            "p50_ns": 11783312,
-            "p95_ns": 56789576,
-            "p99_ns": 57387000
+            "elapsed_ns": 51875253,
+            "throughput_bytes_per_second": 646829269.439900,
+            "iops": 616.864461,
+            "p50_ns": 11415648,
+            "p95_ns": 46796307,
+            "p99_ns": 48814819
           },
           {
             "size_bytes": 1048576,
@@ -2005,12 +2016,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 59861739,
-            "throughput_bytes_per_second": 2242128782.793965,
-            "iops": 2138.260634,
-            "p50_ns": 20146498,
-            "p95_ns": 43792082,
-            "p99_ns": 47228166
+            "elapsed_ns": 65166828,
+            "throughput_bytes_per_second": 2059601980.320417,
+            "iops": 1964.189511,
+            "p50_ns": 22009542,
+            "p95_ns": 39946560,
+            "p99_ns": 46377180
           },
           {
             "size_bytes": 1048576,
@@ -2018,12 +2029,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 380615280,
-            "throughput_bytes_per_second": 352633577.926772,
-            "iops": 336.297586,
-            "p50_ns": 121727211,
-            "p95_ns": 260115085,
-            "p99_ns": 260734259
+            "elapsed_ns": 488885776,
+            "throughput_bytes_per_second": 274538009.876565,
+            "iops": 261.819849,
+            "p50_ns": 191331253,
+            "p95_ns": 365985870,
+            "p99_ns": 385777149
           },
           {
             "size_bytes": 1048576,
@@ -2031,12 +2042,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 134217728,
-            "elapsed_ns": 218132025,
-            "throughput_bytes_per_second": 615305010.807102,
-            "iops": 586.800586,
-            "p50_ns": 50652000,
-            "p95_ns": 178638162,
-            "p99_ns": 180155973
+            "elapsed_ns": 239519068,
+            "throughput_bytes_per_second": 560363436.283912,
+            "iops": 534.404217,
+            "p50_ns": 85123192,
+            "p95_ns": 190843625,
+            "p99_ns": 202456441
           },
           {
             "size_bytes": 4194304,
@@ -2044,12 +2055,12 @@
             "workload": "read",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 7294548,
-            "throughput_bytes_per_second": 1149983247.762576,
-            "iops": 274.177372,
-            "p50_ns": 1742272,
-            "p95_ns": 5163189,
-            "p99_ns": 5163189
+            "elapsed_ns": 7588835,
+            "throughput_bytes_per_second": 1105388112.931695,
+            "iops": 263.545063,
+            "p50_ns": 2497014,
+            "p95_ns": 4645901,
+            "p99_ns": 4645901
           },
           {
             "size_bytes": 4194304,
@@ -2057,12 +2068,12 @@
             "workload": "write",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 35357686,
-            "throughput_bytes_per_second": 237249915.053830,
-            "iops": 56.564788,
-            "p50_ns": 17646592,
-            "p95_ns": 17664676,
-            "p99_ns": 17664676
+            "elapsed_ns": 29055707,
+            "throughput_bytes_per_second": 288707757.137006,
+            "iops": 68.833293,
+            "p50_ns": 13240284,
+            "p95_ns": 15737923,
+            "p99_ns": 15737923
           },
           {
             "size_bytes": 4194304,
@@ -2070,12 +2081,12 @@
             "workload": "mixed",
             "operations": 2,
             "bytes": 8388608,
-            "elapsed_ns": 23401288,
-            "throughput_bytes_per_second": 358467790.319917,
-            "iops": 85.465381,
-            "p50_ns": 4188593,
-            "p95_ns": 18999735,
-            "p99_ns": 18999735
+            "elapsed_ns": 23484592,
+            "throughput_bytes_per_second": 357196241.689019,
+            "iops": 85.162220,
+            "p50_ns": 4533984,
+            "p95_ns": 18761190,
+            "p99_ns": 18761190
           },
           {
             "size_bytes": 4194304,
@@ -2083,12 +2094,12 @@
             "workload": "read",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 56556531,
-            "throughput_bytes_per_second": 2373160546.215255,
-            "iops": 565.805565,
-            "p50_ns": 18762273,
-            "p95_ns": 37293502,
-            "p99_ns": 38808229
+            "elapsed_ns": 48695943,
+            "throughput_bytes_per_second": 2756240453.131794,
+            "iops": 657.138932,
+            "p50_ns": 15343087,
+            "p95_ns": 34255694,
+            "p99_ns": 36458874
           },
           {
             "size_bytes": 4194304,
@@ -2096,12 +2107,12 @@
             "workload": "write",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 410055977,
-            "throughput_bytes_per_second": 327315624.032472,
-            "iops": 78.038126,
-            "p50_ns": 169582593,
-            "p95_ns": 284203841,
-            "p99_ns": 284359925
+            "elapsed_ns": 433942630,
+            "throughput_bytes_per_second": 309298323.605588,
+            "iops": 73.742467,
+            "p50_ns": 158348899,
+            "p95_ns": 330051457,
+            "p99_ns": 376261928
           },
           {
             "size_bytes": 4194304,
@@ -2109,12 +2120,12 @@
             "workload": "mixed",
             "operations": 32,
             "bytes": 134217728,
-            "elapsed_ns": 238544360,
-            "throughput_bytes_per_second": 562653118.271168,
-            "iops": 134.146957,
-            "p50_ns": 47272500,
-            "p95_ns": 189918177,
-            "p99_ns": 191032149
+            "elapsed_ns": 253729524,
+            "throughput_bytes_per_second": 528979544.374978,
+            "iops": 126.118551,
+            "p50_ns": 39235306,
+            "p95_ns": 224617692,
+            "p99_ns": 224884110
           },
           {
             "size_bytes": 4194304,
@@ -2122,12 +2133,12 @@
             "workload": "read",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 219150246,
-            "throughput_bytes_per_second": 2449784665.083150,
-            "iops": 584.074179,
-            "p50_ns": 82004012,
-            "p95_ns": 130098398,
-            "p99_ns": 141614914
+            "elapsed_ns": 204031784,
+            "throughput_bytes_per_second": 2631310188.416526,
+            "iops": 627.353236,
+            "p50_ns": 81810840,
+            "p95_ns": 114551401,
+            "p99_ns": 130481408
           },
           {
             "size_bytes": 4194304,
@@ -2135,12 +2146,12 @@
             "workload": "write",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 1533400588,
-            "throughput_bytes_per_second": 350117846.700604,
-            "iops": 83.474600,
-            "p50_ns": 650856740,
-            "p95_ns": 875712639,
-            "p99_ns": 969039457
+            "elapsed_ns": 1626427067,
+            "throughput_bytes_per_second": 330092214.334748,
+            "iops": 78.700117,
+            "p50_ns": 700295935,
+            "p95_ns": 946629792,
+            "p99_ns": 1147732392
           },
           {
             "size_bytes": 4194304,
@@ -2148,12 +2159,12 @@
             "workload": "mixed",
             "operations": 128,
             "bytes": 536870912,
-            "elapsed_ns": 974744944,
-            "throughput_bytes_per_second": 550780914.848223,
-            "iops": 131.316403,
-            "p50_ns": 130144981,
-            "p95_ns": 847316997,
-            "p99_ns": 874005451
+            "elapsed_ns": 816866221,
+            "throughput_bytes_per_second": 657232357.267470,
+            "iops": 156.696405,
+            "p50_ns": 142075265,
+            "p95_ns": 704272082,
+            "p99_ns": 719112833
           }
         ]
       }

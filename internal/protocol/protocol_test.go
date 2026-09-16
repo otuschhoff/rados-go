@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"math"
 	"net/netip"
 	"os"
 	"path/filepath"
@@ -120,6 +121,38 @@ func TestIPv6AddressFixtureParity(t *testing.T) {
 	}
 	if got := binary.LittleEndian.Uint32(decoded.SocketData[22:26]); got != 0x05060708 {
 		t.Fatalf("scope ID = %#x", got)
+	}
+}
+
+func TestParseEntityAddr(t *testing.T) {
+	tests := []struct {
+		input    string
+		kind     AddressType
+		endpoint string
+		nonce    uint32
+	}{
+		{input: "192.0.2.1", kind: AddressV2, endpoint: "192.0.2.1:0"},
+		{input: "v1:192.0.2.1:6800/7", kind: AddressLegacy, endpoint: "192.0.2.1:6800", nonce: 7},
+		{input: "any:[2001:db8::1]:3300/4294967295", kind: AddressAny, endpoint: "[2001:db8::1]:3300", nonce: math.MaxUint32},
+		{input: "v2:2001:db8::1", kind: AddressV2, endpoint: "[2001:db8::1]:0"},
+	}
+	for _, test := range tests {
+		address, err := ParseEntityAddr(test.input)
+		if err != nil {
+			t.Fatalf("ParseEntityAddr(%q): %v", test.input, err)
+		}
+		endpoint, ok := address.AddrPort()
+		if !ok || address.Type != test.kind || endpoint.String() != test.endpoint || address.Nonce != test.nonce {
+			t.Fatalf("ParseEntityAddr(%q) = %+v endpoint=%s", test.input, address, endpoint)
+		}
+	}
+}
+
+func TestParseEntityAddrRejectsMalformedInput(t *testing.T) {
+	for _, input := range []string{"", "hostname:6800", "v3:192.0.2.1:6800", "192.0.2.1:", "192.0.2.1/", "192.0.2.1/1/2", "192.0.2.1/4294967296", "[2001:db8::1", "[2001:db8::1]:65536"} {
+		if _, err := ParseEntityAddr(input); !errors.Is(err, ErrInvalidAddress) {
+			t.Fatalf("ParseEntityAddr(%q) error=%v", input, err)
+		}
 	}
 }
 

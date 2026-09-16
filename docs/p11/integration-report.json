@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "status": "passed",
-  "command": "make integration-p10",
-  "started_at": "2026-09-16T07:28:22Z",
-  "finished_at": "2026-09-16T07:29:15Z",
+  "command": "make integration-p11",
+  "started_at": "2026-09-16T07:29:16Z",
+  "finished_at": "2026-09-16T07:30:42Z",
   "source": {
     "repository": "https://github.com/otuschhoff/go-librados.git",
     "identity": "content-addressed-artifacts",
@@ -110,9 +110,6 @@
       "internal/cephx/service_connector_test.go": "737bf46fa7ca9aa49ee3fc0282c8dd409a183637ff3a4169bb263ffe685f0073",
       "internal/cephx/connector_test.go": "a9de3f79b932fd3d9a77f53a89fda753622fc3f28c6b7a90e1c4470014497004",
       "internal/cephx/credentials_test.go": "f44c53c9253881f630c98345219516f61dd33a501aff74a5039827ccec9dce53",
-      "testdata/p10/crushmap.bin": "d2fcae471a000699a3ddd30ccb48b38a0f99a303e92332e52e134e71ea6b4a12",
-      "testdata/p10/mappings-osd1-out.txt": "696a2c45c271bb9d304029b8787d3997d151cc7abcb69abfabde4b574727c2c9",
-      "testdata/p10/mappings.txt": "9eec5c1a02050535d04e595b5d0340d4d8ba678277a7d4c0cb683b9f309c72cc",
       "object.go": "9789eb4a776c68620a19d54be11d9e3c1bc5e809fd40ac67f452ec8caf4b51a3",
       "metadata.go": "2992655bd3476d11b04f9779c2f316fb0cd7783c44506d0abdd7a93a9104aea6",
       "errors_test.go": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7",
@@ -133,16 +130,16 @@
       "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c",
       "tools/api-inventory/main.go": "6d164a5ded52183e8eb0712c28c317cca1cee28a0713c444ede2f29b4ad376d3",
       "tools/api-inventory/main_test.go": "410a49618bc77a9387b16e40013176c9cb8b48d2c2e88e05d5ddeb30512f3cc3",
-      "integration/p10/native_driver.c": "2b324e51591226c4cba33d74581266ffca0155efb5c25946962bad07c7f3bad1",
-      "integration/p10/probe/main.go": "273c4c01f0dc26424379a575bff1fcf91e86c5156333dc8fd89f0b1dae9dff2d",
-      "integration/p10/report.schema.json": "9513cc438c232aa20b6abbd68cbe2a4206b09274390e5abe843374938474d2d4",
-      "integration/p10/reproduce.sh": "a142f1f71e7a884057e728535ccd9595ca4700fce716bc4b50367e3a1eda3ed0",
-      "tools/p10-verify/main.go": "e4880c9336d58c1b30749b911e67299a42137b2ce0d29bd07d11dfc38c9a30b4",
-      "tools/p10-verify/main_test.go": "128d07bf2800214beaec2fce56e6fdcf6b52b9347f224540da63defd8124fa0e",
+      "integration/p11/native_driver.c": "815798ad34c1c0f93f7638944fd2a60f4076d3cc9c10b73d911e323de42a492a",
+      "integration/p11/probe/main.go": "e660611b27f6a176f2def3bc3d6e286161729f4fe21e23f3d7b393900867e608",
+      "integration/p11/report.schema.json": "6785fef6795cd0646cbe689b7c48519a8292c2c796a99aff275269108d355eea",
+      "integration/p11/reproduce.sh": "06c021b67557708c7dc8a7c0cfe0293e4cfdc550ea2023528107b60418a205fd",
+      "tools/p11-verify/main.go": "8e193bf4b478b519a12c6395c6db70ed28f41dbc85b965ebb670bb25bdee3afa",
+      "tools/p11-verify/main_test.go": "c1e40d78b74d9e66909c7574e066d5a71b449eeeabab591afd9e26962929c2f0",
       "docs/p00/api-inventory.csv": "94b1057a879bdda3e18c25ad27b6f2c46eeac07d2e15f59948672c1f8ba2e966",
       "docs/p01/public-api.md": "301838b2070803fbe85f94abd65f5706013011db5d6dddc8641cab882427a703",
-      "docs/p10/tasks.md": "f15b6c170e53ea8c4346e729eacd52b472aa939ba102114b00a68f63d02ecb0d",
-      "docs/p10/provenance.md": "104d2fae853014f049371c6d5851eba382e4a59d2423256b0549a7e4f43e69f5"
+      "docs/p11/tasks.md": "dfa0aade3a54b4e8bdf6aab78ba6473bebdda0009a2973e0e510db2eb3db4ea0",
+      "docs/p11/provenance.md": "3bde3fcd952d714e5450ef7642082ecd3c739780fb0449b5cf750911b8981c0d"
     }
   },
   "server": {
@@ -153,6 +150,7 @@
     "platform": "linux/arm64",
     "binaries": {
       "mon_sha256": "4b44a5660fdcc6bf7701f64fa41f707b8ff619d09042219d071e6d9ac45ab81b",
+      "mgr_sha256": "adf29ed6c3570427e6f2c539a850771a1b234f97bb7584abfec6ed201b10277d",
       "osd_sha256": "5fbad656b7f1bd900a0c40990a81be8dff523555ed0b2c957e38f29beb33608a"
     }
   },
@@ -163,95 +161,77 @@
     "sha256": "b630ea9d633d724bacfb116815915c852374d0a8ca351bdc488f0bbae4fb4bac"
   },
   "cluster": {
-    "fsid": "21000000-2222-4333-8444-101010101010",
-    "osds": 3,
+    "fsid": "21111111-2222-4333-8444-111111111111",
+    "network": "172.30.111.0/24",
+    "osds": 1,
     "objectstore": "bluestore",
-    "replicated_rule": "p10-replicated-rule",
-    "named_pool": {
-      "name": "p10-named",
-      "size": 2,
+    "osd_device_bytes": 4294967296,
+    "pool": {
+      "name": "p11-data",
+      "size": 1,
       "min_size": 1,
-      "pg_num": 16
+      "pg_num": 8
     },
-    "self_managed_pool": {
-      "name": "p10-self",
-      "size": 2,
-      "min_size": 1,
-      "pg_num": 16
+    "manager_daemons": 2,
+    "admin_client": {
+      "entity": "client.p11-admin",
+      "mon_caps": "allow *",
+      "mgr_caps": "allow *",
+      "osd_caps": "allow *"
     },
-    "ec_pool": {
-      "name": "p10-ec",
-      "size": 3,
-      "min_size": 2,
-      "pg_num": 16,
-      "profile": "p10-ec-profile",
-      "rule": "p10-ec-rule",
-      "plugin": "jerasure",
-      "k": 2,
-      "m": 1,
-      "failure_domain": "osd",
-      "allow_ec_overwrites": false,
-      "stripe_unit": 4096,
-      "stripe_width": 8192
-    },
-    "client": {
-      "entity": "client.p10",
-      "mon_caps": "allow rw",
-      "osd_caps": "allow rwx pool=p10-named, allow rwx pool=p10-self, allow rwx pool=p10-ec"
-    },
-    "network": "172.30.110.0/24",
-    "osd_device_bytes": 8589934592
+    "io_client": {
+      "entity": "client.p11-io",
+      "mon_caps": "allow r",
+      "mgr_caps": "",
+      "osd_caps": "allow rw pool=p11-data"
+    }
   },
   "scenarios": {
-    "named_snapshots": "passed",
-    "self_managed_snapshots": "passed",
-    "specialized_io": "passed",
-    "erasure_coded_io": "passed",
-    "native_interoperability": "passed"
+    "administration": "passed",
+    "native_conformance": "passed",
+    "manager_failover": "passed",
+    "manager_loss_io": "passed",
+    "least_privilege": "passed",
+    "destructive_resource_validation": "passed"
   },
   "probe": {
-    "named_create_list_lookup": true,
-    "named_read_snapshot": true,
-    "named_rollback": true,
-    "named_remove": true,
-    "self_managed_create": true,
-    "self_managed_write_context": true,
-    "self_managed_read": true,
-    "self_managed_rollback": true,
-    "self_managed_remove": true,
-    "write_same": true,
-    "checksum": true,
-    "checksum_hex": "02000000f5be862af5be862a",
-    "allocation_hint": true,
-    "sparse_read": true,
-    "copy_from": true,
-    "copy_from2": true,
-    "replicated_capabilities": true,
-    "ec_capabilities": true,
-    "ec_write_read": true,
-    "ec_overwrite_rejected": true,
-    "ec_write_same_rejected": true,
-    "ec_checksum": true,
-    "ec_allocation_hint": true,
-    "ec_sparse_read": true,
-    "ec_copy_from": true,
-    "ec_omap_rejected": true,
-    "ec_alignment_evidence": true,
-    "required_alignment": 8192
+    "admin": {
+      "cluster_stats": true,
+      "pool_stats": true,
+      "monitor_command": true,
+      "manager_command": true,
+      "osd_command": true,
+      "pg_command": true,
+      "pool_create_delete": true,
+      "application_metadata": true,
+      "session_addresses": [
+        "v2:0.0.0.0:0/3288998671"
+      ],
+      "blocklist": true,
+      "inconsistent_pgs": true,
+      "inconsistent_objects": true,
+      "command_error_output_preserved": true
+    },
+    "recovery": {
+      "manager_before_failover": true,
+      "manager_after_failover": true,
+      "io_after_manager_loss": true
+    },
+    "least_privilege": {
+      "write_read_without_manager": true
+    }
   },
   "native": {
-    "seed": {
-      "named_create_list_lookup_name_stamp": true,
-      "named_read_rollback_remove": true,
-      "self_managed_create_write_read_rollback_remove": true
-    },
-    "verify": {
-      "go_named_snapshot": true,
-      "go_named_head": true,
-      "go_copy": true,
-      "go_copy_from2": true,
-      "go_ec_copy": true,
-      "go_checksum_hex": "02000000f5be862af5be862a"
-    }
+    "cluster_stats": true,
+    "pool_stats": true,
+    "monitor_command": true,
+    "manager_command": true,
+    "osd_command": true,
+    "pg_command": true,
+    "pool_create_delete": true,
+    "application_metadata": true,
+    "session_addresses": true,
+    "blocklist": true,
+    "inconsistent_pgs": true
   }
 }
