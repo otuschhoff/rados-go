@@ -14,13 +14,14 @@ const (
 	FeatureOSDReplyMux            GlobalFeatures = 1 << 12
 	FeatureNewOSDOpEncoding       GlobalFeatures = 1 << 56
 	FeatureNewOSDOpReplyEncoding  GlobalFeatures = 1 << 58
+	FeatureCRUSHV2                GlobalFeatures = 1 << 36
 	FeatureReserved               GlobalFeatures = 1 << 62
 	// FeatureOSDMapEncoding is Ceph's SIGNIFICANT_FEATURES subset: precisely
 	// the capabilities that can alter full or incremental OSDMap bytes.
 	FeatureOSDMapEncoding GlobalFeatures = 0x0f04088090212a04
 	// FeatureMonitorClient combines the map formats decoded by P04 with modern
 	// MonMap encoding and the pinned monitor's CephX admission requirements.
-	FeatureMonitorClient GlobalFeatures = 0x2e070282d2354004 | FeatureMonitorNames | FeatureMonitorEncoding | FeatureOSDMapEncoding
+	FeatureMonitorClient GlobalFeatures = 0x2e070282d2354004 | FeatureMonitorNames | FeatureMonitorEncoding | FeatureOSDMapEncoding | FeatureCRUSHV2
 	FeatureOSDClient     GlobalFeatures = FeatureMonitorClient | FeatureOSDReplyMux | FeaturePGID64 | FeatureNewOSDOpEncoding | FeatureNewOSDOpReplyEncoding | FeatureMessageAddress2
 )
 

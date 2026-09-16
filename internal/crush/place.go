@@ -10,6 +10,8 @@ var ErrPlacement = errors.New("invalid CRUSH placement")
 
 const maxCertifiedReplicas = 64
 
+const itemNone = int32(0x7fffffff)
+
 type permutation struct {
 	x     uint32
 	count uint32
@@ -33,7 +35,7 @@ func (crushMap *Map) Place(ruleID, seed uint32, replicas int, osdWeights []uint3
 	if !ok {
 		return nil, fmt.Errorf("%w: rule %d does not exist", ErrPlacement, ruleID)
 	}
-	if rule.Type != RuleTypeReplicated {
+	if rule.Type != RuleTypeReplicated && rule.Type != RuleTypeErasure {
 		return nil, fmt.Errorf("%w: rule %d type %d", ErrPlacement, ruleID, rule.Type)
 	}
 	if err := crushMap.validateCertifiedRule(rule); err != nil {
@@ -47,13 +49,21 @@ func (crushMap *Map) Place(ruleID, seed uint32, replicas int, osdWeights []uint3
 }
 
 func (crushMap *Map) validateCertifiedRule(rule Rule) error {
-	if len(rule.Steps) != 3 || rule.Steps[0].Operation != RuleTake || rule.Steps[1] != (RuleStep{Operation: RuleChooseFirstN}) || rule.Steps[2].Operation != RuleEmit {
-		return fmt.Errorf("%w: rule is outside certified TAKE/CHOOSE_FIRSTN(osd)/EMIT profile", ErrPlacement)
+	takeIndex := 0
+	if rule.Type == RuleTypeReplicated {
+		if len(rule.Steps) != 3 || rule.Steps[0].Operation != RuleTake || rule.Steps[1] != (RuleStep{Operation: RuleChooseFirstN}) || rule.Steps[2].Operation != RuleEmit {
+			return fmt.Errorf("%w: rule is outside certified replicated profile", ErrPlacement)
+		}
+	} else {
+		if len(rule.Steps) != 5 || rule.Steps[0] != (RuleStep{Operation: RuleSetChooseleafTries, Argument1: 5}) || rule.Steps[1] != (RuleStep{Operation: RuleSetChooseTries, Argument1: 100}) || rule.Steps[2].Operation != RuleTake || rule.Steps[3] != (RuleStep{Operation: RuleChooseIndep}) || rule.Steps[4].Operation != RuleEmit {
+			return fmt.Errorf("%w: rule is outside certified erasure profile", ErrPlacement)
+		}
+		takeIndex = 2
 	}
-	if _, ok := crushMap.Buckets[rule.Steps[0].Argument1]; !ok {
-		return fmt.Errorf("%w: TAKE root %d does not exist", ErrPlacement, rule.Steps[0].Argument1)
+	if _, ok := crushMap.Buckets[rule.Steps[takeIndex].Argument1]; !ok {
+		return fmt.Errorf("%w: TAKE root %d does not exist", ErrPlacement, rule.Steps[takeIndex].Argument1)
 	}
-	if _, shadow := crushMap.classShadowBuckets[rule.Steps[0].Argument1]; shadow {
+	if _, shadow := crushMap.classShadowBuckets[rule.Steps[takeIndex].Argument1]; shadow {
 		return fmt.Errorf("%w: class-constrained root", ErrPlacement)
 	}
 	if crushMap.ChooseLocalTries != 0 || crushMap.ChooseLocalFallbackTries != 0 || crushMap.ChooseTotalTries != 50 || crushMap.ChooseleafDescendOnce != 1 || crushMap.ChooseleafVaryR != 1 || crushMap.ChooseleafStable != 1 {
@@ -69,6 +79,7 @@ func (executor *placement) rule(rule Rule, seed uint32, resultMaximum int) ([]in
 	workingSize := 0
 	result := make([]int32, 0, resultMaximum)
 	chooseTries := executor.crush.ChooseTotalTries + 1
+	chooseleafTries := uint32(0)
 	recurseTries := chooseTries
 	if executor.crush.ChooseleafDescendOnce != 0 {
 		recurseTries = 1
@@ -76,13 +87,21 @@ func (executor *placement) rule(rule Rule, seed uint32, resultMaximum int) ([]in
 
 	for _, step := range rule.Steps {
 		switch step.Operation {
+		case RuleSetChooseTries:
+			if step.Argument1 > 0 {
+				chooseTries = uint32(step.Argument1)
+			}
+		case RuleSetChooseleafTries:
+			if step.Argument1 > 0 {
+				chooseleafTries = uint32(step.Argument1)
+			}
 		case RuleTake:
 			if !executor.validTake(step.Argument1) {
 				continue
 			}
 			working[0] = step.Argument1
 			workingSize = 1
-		case RuleChooseFirstN, RuleChooseleafFirstN:
+		case RuleChooseFirstN, RuleChooseleafFirstN, RuleChooseIndep:
 			if workingSize == 0 {
 				continue
 			}
@@ -100,18 +119,28 @@ func (executor *placement) rule(rule Rule, seed uint32, resultMaximum int) ([]in
 					continue
 				}
 				recurseToLeaf := step.Operation == RuleChooseleafFirstN
-				chosen, err := executor.chooseFirstN(
-					bucket, seed, number, step.Argument2,
-					output[outputSize:], 0, resultMaximum-outputSize,
-					chooseTries, recurseTries, executor.crush.ChooseLocalTries,
-					executor.crush.ChooseLocalFallbackTries, recurseToLeaf,
-					uint32(executor.crush.ChooseleafVaryR), executor.crush.ChooseleafStable != 0,
-					leaves[outputSize:], 0,
-				)
-				if err != nil {
-					return nil, err
+				if step.Operation == RuleChooseIndep {
+					count := min(number, resultMaximum-outputSize)
+					recurse := chooseleafTries
+					if recurse == 0 {
+						recurse = 1
+					}
+					executor.chooseIndep(bucket, seed, count, number, int(step.Argument2), output, outputSize, chooseTries, recurse, recurseToLeaf, leaves, 0)
+					outputSize += count
+				} else {
+					chosen, err := executor.chooseFirstN(
+						bucket, seed, number, step.Argument2,
+						output[outputSize:], 0, resultMaximum-outputSize,
+						chooseTries, recurseTries, executor.crush.ChooseLocalTries,
+						executor.crush.ChooseLocalFallbackTries, recurseToLeaf,
+						uint32(executor.crush.ChooseleafVaryR), executor.crush.ChooseleafStable != 0,
+						leaves[outputSize:], 0,
+					)
+					if err != nil {
+						return nil, err
+					}
+					outputSize += chosen
 				}
-				outputSize += chosen
 			}
 			if step.Operation == RuleChooseleafFirstN {
 				copy(output[:outputSize], leaves[:outputSize])
@@ -130,6 +159,78 @@ func (executor *placement) rule(rule Rule, seed uint32, resultMaximum int) ([]in
 		}
 	}
 	return result, nil
+}
+
+func (executor *placement) chooseIndep(bucket Bucket, seed uint32, left, replicas, targetType int, output []int32, outputPosition int, tries, recurseTries uint32, recurseToLeaf bool, leaves []int32, parentR int) {
+	end := outputPosition + left
+	for position := outputPosition; position < end; position++ {
+		output[position] = itemNone
+		if leaves != nil {
+			leaves[position] = itemNone
+		}
+	}
+	for failure := uint32(0); left > 0 && failure < tries; failure++ {
+		for position := outputPosition; position < end; position++ {
+			if output[position] != itemNone {
+				continue
+			}
+			current := bucket
+			for {
+				r := position + parentR + replicas*int(failure)
+				if len(current.Items) == 0 {
+					break
+				}
+				item := straw2Choose(current, seed, r)
+				if item >= executor.crush.MaxDevices {
+					left--
+					break
+				}
+				itemType := int32(0)
+				if item < 0 {
+					child, ok := executor.crush.Buckets[item]
+					if !ok {
+						left--
+						break
+					}
+					itemType = int32(child.Type)
+				}
+				if itemType != int32(targetType) {
+					if item >= 0 {
+						left--
+						break
+					}
+					current = executor.crush.Buckets[item]
+					continue
+				}
+				collision := false
+				for index := outputPosition; index < end; index++ {
+					if output[index] == item {
+						collision = true
+						break
+					}
+				}
+				if collision {
+					break
+				}
+				if recurseToLeaf {
+					if item < 0 {
+						executor.chooseIndep(executor.crush.Buckets[item], seed, 1, replicas, 0, leaves, position, recurseTries, 0, false, nil, r)
+						if leaves[position] == itemNone {
+							break
+						}
+					} else {
+						leaves[position] = item
+					}
+				}
+				if itemType == 0 && executor.isOut(item, seed) {
+					break
+				}
+				output[position] = item
+				left--
+				break
+			}
+		}
+	}
 }
 
 func (executor *placement) validTake(item int32) bool {

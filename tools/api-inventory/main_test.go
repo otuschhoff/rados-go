@@ -171,3 +171,52 @@ func TestP09Classifications(t *testing.T) {
 		}
 	}
 }
+
+func TestP10Classifications(t *testing.T) {
+	for _, test := range []struct {
+		symbol      string
+		disposition string
+	}{
+		{symbol: "rados_ioctx_snap_create", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_remove", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_list", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_lookup", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_get_name", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_get_stamp", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_set_read", disposition: "implemented"},
+		{symbol: "rados_ioctx_snap_rollback", disposition: "implemented"},
+		{symbol: "rados_ioctx_selfmanaged_snap_create", disposition: "implemented"},
+		{symbol: "rados_ioctx_selfmanaged_snap_remove", disposition: "implemented"},
+		{symbol: "rados_ioctx_selfmanaged_snap_set_write_ctx", disposition: "implemented"},
+		{symbol: "rados_ioctx_selfmanaged_snap_rollback", disposition: "implemented"},
+		{symbol: "Rados::pool_is_in_selfmanaged_snaps_mode", disposition: "implemented"},
+		{symbol: "rados_writesame", disposition: "implemented"},
+		{symbol: "rados_write_op_writesame", disposition: "implemented"},
+		{symbol: "rados_checksum", disposition: "implemented"},
+		{symbol: "rados_read_op_checksum", disposition: "implemented"},
+		{symbol: "IoCtx::sparse_read", disposition: "implemented"},
+		{symbol: "ObjectReadOperation::sparse_read", disposition: "implemented"},
+		{symbol: "rados_set_alloc_hint", disposition: "implemented"},
+		{symbol: "rados_write_op_set_alloc_hint", disposition: "implemented"},
+		{symbol: "rados_ioctx_pool_required_alignment2", disposition: "implemented"},
+		{symbol: "rados_ioctx_pool_requires_alignment2", disposition: "implemented"},
+		{symbol: "ObjectWriteOperation::copy_from", disposition: "implemented"},
+		{symbol: "ObjectWriteOperation::copy_from2", disposition: "implemented"},
+		{symbol: "rados_aio_ioctx_selfmanaged_snap_create", disposition: "go-native"},
+		{symbol: "IoCtx::aio_selfmanaged_snap_remove", disposition: "go-native"},
+		{symbol: "rados_aio_writesame", disposition: "go-native"},
+		{symbol: "IoCtx::aio_sparse_read", disposition: "go-native"},
+		{symbol: "IoCtx::mapext", disposition: "intentional-omission: non-frozen P10 variant"},
+		{symbol: "IoCtx::list_snaps", disposition: "intentional-omission: non-frozen P10 variant"},
+		{symbol: "Rados::get_inconsistent_snapsets", disposition: "intentional-omission: non-frozen P10 variant"},
+		{symbol: "IoCtx::set_alloc_hint2", disposition: "intentional-omission: non-frozen P10 variant"},
+		{symbol: "ObjectWriteOperation::set_alloc_hint2", disposition: "intentional-omission: non-frozen P10 variant"},
+		{symbol: "IoCtx::pool_required_alignment", disposition: "intentional-omission: non-frozen P10 variant"},
+		{symbol: "IoCtx::pool_requires_alignment", disposition: "intentional-omission: non-frozen P10 variant"},
+	} {
+		_, disposition, phase, _, _ := classify(entry{symbol: test.symbol})
+		if disposition != test.disposition || phase != "P10" {
+			t.Errorf("%s classification disposition=%q phase=%q", test.symbol, disposition, phase)
+		}
+	}
+}

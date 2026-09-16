@@ -121,6 +121,21 @@ func TestPlaceObjectAppliesUpAndActingOverrides(t *testing.T) {
 	}
 }
 
+func TestPlaceObjectSupportsErasurePoolShardSet(t *testing.T) {
+	osdMap := &OSDMap{
+		pools:  map[int64]Pool{2: {id: 2, poolType: poolTypeErasure, size: 2, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},
+		maxOSD: 4, osdState: []uint32{3, 3, 3, 3}, osdWeight: []uint32{0x10000, 0x10000, 0x10000, 0x10000},
+		crushData: encodePlacementCrushMap(t),
+	}
+	placement, err := osdMap.PlaceObject(2, "object", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(placement.Raw) != 2 || len(placement.Up) != 2 || len(placement.Acting) != 2 || placement.ActingPrimary != placement.Acting[0] || !placement.Sharded || placement.PrimaryShard != 0 {
+		t.Fatalf("placement = %+v", placement)
+	}
+}
+
 func TestPlaceObjectRejectsInvalidReplicaAndTemporaryPrimary(t *testing.T) {
 	base := &OSDMap{
 		pools:     map[int64]Pool{2: {id: 2, poolType: poolTypeReplicated, size: 0, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},

@@ -10,14 +10,19 @@ import (
 var ErrUnsupported = errors.New("unsupported CRUSH feature")
 
 const (
-	Magic                = 0x00010000
-	BucketStraw2         = 5
-	HashRJenkins1        = 0
-	RuleTake             = 1
-	RuleChooseFirstN     = 2
-	RuleEmit             = 4
-	RuleChooseleafFirstN = 6
-	RuleTypeReplicated   = 1
+	Magic                  = 0x00010000
+	BucketStraw2           = 5
+	HashRJenkins1          = 0
+	RuleTake               = 1
+	RuleChooseFirstN       = 2
+	RuleChooseIndep        = 3
+	RuleEmit               = 4
+	RuleChooseleafFirstN   = 6
+	RuleChooseleafIndep    = 7
+	RuleSetChooseTries     = 8
+	RuleSetChooseleafTries = 9
+	RuleTypeReplicated     = 1
+	RuleTypeErasure        = 3
 )
 
 type DecodeLimits struct {

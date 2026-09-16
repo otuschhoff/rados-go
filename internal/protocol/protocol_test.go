@@ -47,12 +47,15 @@ func TestP04FeatureMasks(t *testing.T) {
 	if FeatureOSDMapEncoding != 0x0f04088090212a04 {
 		t.Fatalf("OSDMap encoding features = %#x", FeatureOSDMapEncoding)
 	}
-	if FeatureMonitorClient != 0x2f070a82d235ea24 {
+	if FeatureMonitorClient != 0x2f070a92d235ea24 {
 		t.Fatalf("monitor client features = %#x", FeatureMonitorClient)
 	}
 	required := FeatureMonitorNames | FeatureMonitorEncoding | FeaturePGID64 | FeatureMessageAddress2 | FeatureServerNautilusMask
 	if !FeatureMonitorClient.Has(required) {
 		t.Fatalf("monitor client features %#x lack required map formats %#x", FeatureMonitorClient, required)
+	}
+	if !FeatureOSDClient.Has(FeatureCRUSHV2) {
+		t.Fatalf("OSD client features %#x lack CRUSH_V2", FeatureOSDClient)
 	}
 	if FeatureMonitorClient.Has(FeatureReserved) {
 		t.Fatal("monitor client must not advertise Ceph's impossible reserved bit")

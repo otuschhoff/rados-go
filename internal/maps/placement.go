@@ -12,7 +12,6 @@ var ErrUnsupportedPlacement = errors.New("unsupported placement")
 const (
 	objectHashRJenkins = 2
 	poolFlagHashPSPool = 1 << 0
-	poolTypeReplicated = 1
 	crushItemNone      = int32(0x7fffffff)
 )
 
@@ -26,6 +25,8 @@ type ObjectPlacement struct {
 	UpPrimary     int32
 	Acting        []int32
 	ActingPrimary int32
+	PrimaryShard  int8
+	Sharded       bool
 }
 
 func (osdMap *OSDMap) MapObject(poolID int64, object, locator, namespace string) (ObjectPlacement, error) {
@@ -75,7 +76,7 @@ func (osdMap *OSDMap) PlaceRawHash(poolID int64, hash uint32) (ObjectPlacement, 
 
 func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (ObjectPlacement, error) {
 	pool := osdMap.pools[poolID]
-	if pool.poolType != poolTypeReplicated {
+	if pool.poolType != poolTypeReplicated && pool.poolType != poolTypeErasure {
 		return ObjectPlacement{}, fmt.Errorf("%w: pool type %d", ErrUnsupportedPlacement, pool.poolType)
 	}
 	if pool.size == 0 {
@@ -117,6 +118,18 @@ func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (Obje
 	placement.UpPrimary = upPrimary
 	placement.Acting = acting
 	placement.ActingPrimary = actingPrimary
+	if pool.poolType == poolTypeErasure {
+		for index, osd := range acting {
+			if osd == actingPrimary {
+				if index > 127 {
+					return ObjectPlacement{}, fmt.Errorf("%w: primary shard %d exceeds wire range", ErrUnsupportedPlacement, index)
+				}
+				placement.PrimaryShard = int8(index)
+				placement.Sharded = true
+				break
+			}
+		}
+	}
 	return placement, nil
 }
 

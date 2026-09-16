@@ -41,6 +41,41 @@ func TestPlaceChooseFirstN(t *testing.T) {
 	}
 }
 
+func TestPlaceChooseIndep(t *testing.T) {
+	crushMap := testPlacementMap()
+	crushMap.Rules[0] = Rule{Type: RuleTypeErasure, Steps: []RuleStep{
+		{Operation: RuleSetChooseleafTries, Argument1: 5},
+		{Operation: RuleSetChooseTries, Argument1: 100},
+		{Operation: RuleTake, Argument1: -1},
+		{Operation: RuleChooseIndep},
+		{Operation: RuleEmit},
+	}}
+	weights := []uint32{0x10000, 0x10000, 0x10000, 0x10000}
+	for seed := range uint32(32) {
+		got, err := crushMap.Place(0, seed, 3, weights)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 3 || got[0] == got[1] || got[0] == got[2] || got[1] == got[2] {
+			t.Fatalf("seed %d invalid independent placement = %v", seed, got)
+		}
+	}
+}
+
+func TestPlaceRejectsChooseleafIndep(t *testing.T) {
+	crushMap := testPlacementMap()
+	crushMap.Rules[0] = Rule{Type: RuleTypeErasure, Steps: []RuleStep{
+		{Operation: RuleSetChooseleafTries, Argument1: 5},
+		{Operation: RuleSetChooseTries, Argument1: 100},
+		{Operation: RuleTake, Argument1: -1},
+		{Operation: RuleChooseleafIndep, Argument2: 1},
+		{Operation: RuleEmit},
+	}}
+	if _, err := crushMap.Place(0, 7, 2, []uint32{0x10000, 0x10000, 0x10000, 0x10000}); !errors.Is(err, ErrPlacement) {
+		t.Fatalf("error=%v want ErrPlacement", err)
+	}
+}
+
 func TestPlaceFiltersOSDWeights(t *testing.T) {
 	crushMap := testPlacementMap()
 	got, err := crushMap.Place(0, 7, 2, []uint32{0, 0, 0, 0x10000})

@@ -29,8 +29,12 @@ func TestDecodeOSDMapV8(t *testing.T) {
 		t.Fatalf("osdmap epoch=%d pools=%d fsid=%x", osdMap.Epoch(), osdMap.PoolCount(), osdMap.FSID())
 	}
 	pool, ok := osdMap.PoolByName("data")
-	if !ok || pool.ID() != 7 || pool.Type() != 1 || pool.Size() != 3 || pool.MinimumSize() != 2 || pool.PGCount() != 32 || pool.PlacementPGCount() != 16 || pool.ErasureCodeProfile() != "ec-profile" {
+	if !ok || pool.ID() != 7 || pool.Type() != 1 || pool.Size() != 3 || pool.MinimumSize() != 2 || pool.PGCount() != 32 || pool.PlacementPGCount() != 16 || pool.StripeWidth() != 4096 || pool.ErasureCodeProfile() != "ec-profile" || pool.SnapshotSequence() != 9 || !pool.UsesPoolSnapshots() || pool.UsesSelfManagedSnapshots() {
 		t.Fatalf("pool = %+v found=%t", pool, ok)
+	}
+	snapshots := pool.Snapshots()
+	if len(snapshots) != 2 || snapshots[0] != (PoolSnapshot{ID: 4, Name: "older", Timestamp: UTime{Seconds: 10, Nanoseconds: 20}}) || snapshots[1] != (PoolSnapshot{ID: 9, Name: "newer", Timestamp: UTime{Seconds: 30, Nanoseconds: 40}}) {
+		t.Fatalf("snapshots = %+v", snapshots)
 	}
 	metadata := pool.ApplicationMetadata()
 	metadata["rados"]["key"] = "changed"
@@ -149,12 +153,26 @@ func encodeTestPool(encoder *wire.Encoder) {
 		pool.Uint32(0)
 		pool.Uint32(0)
 		pool.Uint32(10)
+		pool.Uint64(9)
+		pool.Uint32(0)
+		pool.Uint32(2)
+		pool.Uint64(9)
+		pool.Versioned(2, 2, func(snapshot *wire.Encoder) {
+			snapshot.Uint64(9)
+			snapshot.Uint32(30)
+			snapshot.Uint32(40)
+			snapshot.String("newer")
+		})
+		pool.Uint64(4)
+		pool.Versioned(2, 2, func(snapshot *wire.Encoder) {
+			snapshot.Uint64(4)
+			snapshot.Uint32(10)
+			snapshot.Uint32(20)
+			snapshot.String("older")
+		})
+		pool.Uint32(0)
 		pool.Uint64(0)
-		pool.Uint32(0)
-		pool.Uint32(0)
-		pool.Uint32(0)
-		pool.Uint64(0)
-		pool.Uint64(0x20)
+		pool.Uint64(0x20 | poolFlagPoolSnapshots)
 		pool.Uint32(0)
 		pool.Uint8(2)
 		pool.Uint64(0)

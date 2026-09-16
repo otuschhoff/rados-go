@@ -133,15 +133,19 @@ func (o ObjectRef) ListLockers(ctx context.Context, name string) ([]Locker, erro
 func (o ObjectRef) BreakLock(ctx context.Context, name, client, cookie string) error
 
 // Snapshots.
-type Snapshot struct { ID uint64; Name string; Timestamp time.Time }
+type Snapshot struct { ID uint64; Name string; CreatedAt time.Time }
 type SnapshotContext struct { Sequence uint64; Snapshots []uint64 }
-func (p Pool) CreateSnapshot(ctx context.Context, name string) (Snapshot, error)
+func (p Pool) CreateSnapshot(ctx context.Context, name string) error
 func (p Pool) RemoveSnapshot(ctx context.Context, name string) error
 func (p Pool) ListSnapshots(ctx context.Context) ([]Snapshot, error)
+func (p Pool) LookupSnapshot(ctx context.Context, name string) (Snapshot, error)
 func (p Pool) CreateSelfManagedSnapshot(ctx context.Context) (uint64, error)
 func (p Pool) RemoveSelfManagedSnapshot(ctx context.Context, id uint64) error
+func (p Pool) WithReadSnapshot(id uint64) Pool
 func (p Pool) WithWriteSnapshot(context SnapshotContext) Pool
-func (o ObjectRef) Rollback(ctx context.Context, snapshot string) (OpResult, error)
+func (p Pool) UsesSelfManagedSnapshots(ctx context.Context) (bool, error)
+func (o ObjectRef) RollbackToSnapshot(ctx context.Context, name string) (OpResult, error)
+func (o ObjectRef) RollbackToSelfManagedSnapshot(ctx context.Context, id uint64) (OpResult, error)
 
 // Administration and specialized I/O.
 type ClusterStats struct { KB, KBUsed, KBAvailable, Objects uint64 }
@@ -155,7 +159,9 @@ func (c *Client) ListPools(ctx context.Context) ([]string, error)
 func (c *Client) SessionAddresses() []string
 func (c *Client) ClusterStats(ctx context.Context) (ClusterStats, error)
 func (p Pool) Stats(ctx context.Context) (PoolStats, error)
-func (p Pool) RequiredAlignment(ctx context.Context) (uint64, bool, error)
+func (p Pool) IsErasureCoded(ctx context.Context) (bool, error)
+func (p Pool) RequiresAlignment(ctx context.Context) (bool, error)
+func (p Pool) RequiredAlignment(ctx context.Context) (uint64, error)
 func (c *Client) MonitorCommand(ctx context.Context, command []byte, input []byte) (CommandResult, error)
 func (c *Client) ManagerCommand(ctx context.Context, command []byte, input []byte) (CommandResult, error)
 func (c *Client) OSDCommand(ctx context.Context, id int, command []byte, input []byte) (CommandResult, error)
@@ -175,8 +181,8 @@ func (o ObjectRef) SparseRead(ctx context.Context, offset, length uint64) ([]Spa
 func (o ObjectRef) WriteSame(ctx context.Context, offset, length uint64, pattern []byte) (OpResult, error)
 func (o ObjectRef) Checksum(ctx context.Context, kind ChecksumType, seed []byte, offset, length, chunk uint64) ([]byte, error)
 func (o ObjectRef) CopyFrom(ctx context.Context, source ObjectRef, sourceVersion uint64) (OpResult, error)
+func (o ObjectRef) CopyFrom2(ctx context.Context, source ObjectRef, sourceVersion uint64, truncateSequence uint32, truncateSize uint64) (OpResult, error)
 func (o ObjectRef) SetAllocationHint(ctx context.Context, expectedObjectSize, expectedWriteSize uint64) (OpResult, error)
-func (o ObjectRef) CloneRange(ctx context.Context, source ObjectRef, sourceOffset, length, destinationOffset uint64) (OpResult, error)
 ```
 
 Iteration pages are bounded and cursors are opaque. Begin/end cursors come from

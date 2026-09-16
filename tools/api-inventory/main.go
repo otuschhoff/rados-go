@@ -270,7 +270,7 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "lock", "break_lock", "list_lockers"):
 		return classifyP09(item, "rados lock methods", "lock")
 	case containsAny(lower, "snap"):
-		return "rados snapshot methods and immutable snapshot views", disposition, "P10", difference, test
+		return classifyP10(item, "rados snapshot methods and immutable snapshot views", "snapshot and EC")
 	case containsAny(lower, "omap", "xattr"):
 		return classifyP08(item, "rados metadata methods / operation builders")
 	case containsAny(lower, "nobjects", "object_list", "objectiterator", "listobject", "objectcursor", "get_locator", "get_nspace"):
@@ -278,7 +278,7 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "exec"):
 		return classifyP09(item, "rados class execution methods", "class/lock/watch")
 	case containsAny(lower, "checksum", "writesame", "sparse", "clone", "copy", "alloc_hint", "mapext", "alignment"):
-		return "rados specialized object methods", disposition, "P10", difference, test
+		return classifyP10(item, "rados specialized object methods", "specialized object")
 	case containsAny(lower, "read_op", "write_op", "objectreadoperation", "objectwriteoperation", "operate", "assert", "cmp", "objectoperation", "set_op_flags", "full_try", "full_force", "::size"):
 		return classifyP08(item, "rados.ReadOp / rados.WriteOp")
 	case containsAny(lower, "read", "stat"):
@@ -302,6 +302,17 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	default:
 		return "none", "review-required", "P00", "Must be classified before P00 exit", "classification validator"
 	}
+}
+
+func classifyP10(item entry, equivalent, surface string) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	if containsAny(lower, "mapext", "list_snaps", "get_inconsistent_snapsets", "set_alloc_hint2") || isAny(lower, "ioctx::pool_required_alignment", "ioctx::pool_requires_alignment") {
+		return equivalent, "intentional-omission: non-frozen P10 variant", "P10", "Not exposed by the certified P10 Go contract", "P10 API inventory review; no runtime conformance claim"
+	}
+	if containsAny(lower, "rados_aio_", "::aio_") {
+		return equivalent, "go-native", "P10", "Context-aware Go calls and Go-owned results replace native completion and buffer lifetimes", "P10 context, ownership, and live " + surface + " tests"
+	}
+	return equivalent, "implemented", "P10", "Context-aware Go values preserve native semantics with Go-owned inputs and results", "P10 unit and live " + surface + " interoperability tests"
 }
 
 func classifyP09(item entry, equivalent, surface string) (goEquivalent, disposition, phase, difference, test string) {

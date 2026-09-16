@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/netip"
 	"sync"
 	"testing"
@@ -80,6 +81,74 @@ func TestReadRecoversToNewPrimary(t *testing.T) {
 	}
 	if string(result.Data) != "data" || result.Version != 42 || !created[0].stop {
 		t.Fatalf("result=%+v old_stopped=%t", result, created[0].stop)
+	}
+}
+
+func TestSparseReadUsesRoutedReadPath(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	payload := wire.NewEncoder(128)
+	payload.Uint32(2)
+	payload.Uint64(4)
+	payload.Uint64(2)
+	payload.Uint64(9)
+	payload.Uint64(3)
+	payload.Bytes([]byte("abcde"))
+	encoded, err := payload.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var request msgr.Message
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			return testReplyOperation(t, 10, 23, 0, osd.OpSparseRead, encoded), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.SparseRead(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 4, 8)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes, flags, _ := decodeRequestOperationsForTest(t, request)
+	if len(codes) != 1 || codes[0] != osd.OpSparseRead || flags&osd.FlagRead == 0 || flags&osd.FlagWrite != 0 || result.Version != 23 || len(result.Extents) != 2 || string(result.Extents[1].Data) != "cde" {
+		t.Fatalf("codes=%v flags=%#x result=%+v", codes, flags, result)
+	}
+}
+
+func TestSparseReadRejectsInvalidLengthBeforeRouting(t *testing.T) {
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return nil, errors.New("must not create session")
+	})
+	defer client.Close()
+	target := Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}
+	if _, err := client.SparseRead(context.Background(), target, 0, uint64(math.MaxInt32)+1); !errors.Is(err, wire.ErrLimitExceeded) {
+		t.Fatalf("length error=%v", err)
+	}
+	if _, err := client.SparseRead(context.Background(), target, math.MaxUint64, 2); !errors.Is(err, wire.ErrLimitExceeded) {
+		t.Fatalf("overflow error=%v", err)
+	}
+}
+
+func TestChecksumUsesRoutedReadPath(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	want := []byte{1, 0, 0, 0, 4, 3, 2, 1}
+	var request msgr.Message
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			return testReplyOperation(t, 10, 23, 0, osd.OpChecksum, want), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.Checksum(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.ChecksumCRC32C, []byte{0xff, 0xff, 0xff, 0xff}, 4, 8, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	codes, flags, _ := decodeRequestOperationsForTest(t, request)
+	if len(codes) != 1 || codes[0] != osd.OpChecksum || flags&osd.FlagRead == 0 || flags&osd.FlagWrite != 0 || string(request.Data) != "\xff\xff\xff\xff" || string(result) != string(want) {
+		t.Fatalf("codes=%v flags=%#x seed=%x result=%x", codes, flags, request.Data, result)
 	}
 }
 

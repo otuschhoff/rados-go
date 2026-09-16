@@ -72,8 +72,11 @@ func (client *Client) ClassOperations(ctx context.Context, target Target, operat
 func validCompoundPayload(operation osd.Operation) bool {
 	switch operation.Code {
 	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpCompareExtent,
-		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange, osd.OpOmapCompare, osd.OpCall:
+		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange, osd.OpOmapCompare, osd.OpCall,
+		osd.OpCopyFrom, osd.OpCopyFrom2:
 		return uint64(len(operation.Data)) == operation.Length
+	case osd.OpWriteSame:
+		return operation.PatternLength != 0 && operation.PatternLength == uint64(len(operation.Data)) && operation.Length != 0 && operation.Length%operation.PatternLength == 0
 	case osd.OpSetXattr, osd.OpCompareXattr:
 		return uint64(operation.XattrNameLength)+uint64(operation.XattrValueLength) == uint64(len(operation.Data))
 	case osd.OpRemoveXattr:
@@ -86,6 +89,7 @@ func validCompoundPayload(operation osd.Operation) bool {
 func isMutationOperation(code uint16) bool {
 	switch code {
 	case osd.OpWrite, osd.OpWriteFull, osd.OpAppend, osd.OpTruncate, osd.OpZero, osd.OpDelete, osd.OpCreate,
+		osd.OpRollback, osd.OpCopyFrom, osd.OpCopyFrom2, osd.OpSetAllocationHint, osd.OpWriteSame,
 		osd.OpOmapSetValues, osd.OpOmapSetHeader, osd.OpOmapClear, osd.OpOmapRemoveKeys, osd.OpOmapRemoveRange,
 		osd.OpSetXattr, osd.OpRemoveXattr, osd.OpCall, osd.OpWatch:
 		return true

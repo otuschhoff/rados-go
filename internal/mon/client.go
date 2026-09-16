@@ -328,6 +328,70 @@ func (client *Client) ReadOnlyCommand(ctx context.Context, command []string, inp
 	return decoded, nil
 }
 
+func (client *Client) ApplyPoolOperation(ctx context.Context, poolID int64, operation PoolOperation, snapID uint64, name string) (PoolOperationReply, error) {
+	if poolID < 0 || uint64(poolID) > uint64(^uint32(0)) {
+		return PoolOperationReply{}, fmt.Errorf("%w: pool id %d", wire.ErrMalformed, poolID)
+	}
+	fsid, ok := client.currentFSID()
+	if !ok {
+		return PoolOperationReply{}, fmt.Errorf("%w: cluster identity unavailable", ErrClosed)
+	}
+	var version uint64
+	if current := client.osdMap.Load(); current != nil {
+		version = uint64(current.Epoch())
+	}
+	message, err := EncodePoolOperation(fsid, uint32(poolID), operation, snapID, name, version, client.config.MessageLimits.MaxBytes)
+	if err != nil {
+		return PoolOperationReply{}, err
+	}
+	client.mu.Lock()
+	active := client.session
+	client.mu.Unlock()
+	if active == nil {
+		return PoolOperationReply{}, ErrClosed
+	}
+	reply, err := active.Submit(ctx, message)
+	if err != nil {
+		return PoolOperationReply{}, err
+	}
+	decoded, err := DecodePoolOperationReply(reply, client.config.MessageLimits.MaxBytes)
+	if err != nil {
+		return PoolOperationReply{}, err
+	}
+	if decoded.FSID != fsid {
+		return PoolOperationReply{}, ErrForeignCluster
+	}
+	if decoded.Result != 0 {
+		return decoded, protocol.WireErrno(decoded.Result)
+	}
+	if current := client.osdMap.Load(); current == nil || current.Epoch() < decoded.Epoch {
+		if err := client.waitForOSDMap(ctx, decoded.Epoch); err != nil {
+			return decoded, err
+		}
+	}
+	return decoded, nil
+}
+
+func (client *Client) waitForOSDMap(ctx context.Context, epoch uint32) error {
+	if err := client.requestFullMap(); err != nil {
+		return err
+	}
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if current := client.osdMap.Load(); current != nil && current.Epoch() >= epoch {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-client.done:
+			return ErrClosed
+		case <-ticker.C:
+		}
+	}
+}
+
 func (client *Client) run(active session) {
 	defer close(client.done)
 	timer := time.NewTimer(client.config.SubscribePeriod)

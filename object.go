@@ -12,12 +12,15 @@ import (
 )
 
 type Pool struct {
-	client    *Client
-	id        int64
-	name      string
-	namespace string
-	locator   string
-	snapshot  uint64
+	client                *Client
+	id                    int64
+	name                  string
+	namespace             string
+	locator               string
+	snapshot              uint64
+	writeSnapshotSequence uint64
+	writeSnapshots        []uint64
+	writeSnapshotValid    bool
 }
 
 type ObjectRef struct {
@@ -30,6 +33,24 @@ type ObjectInfo struct {
 	ModTime time.Time
 	Version uint64
 }
+
+type SnapshotContext struct {
+	Sequence  uint64
+	Snapshots []uint64
+}
+
+type SparseExtent struct {
+	Offset uint64
+	Data   []byte
+}
+
+type ChecksumType uint8
+
+const (
+	ChecksumXXHash32 ChecksumType = ChecksumType(osd.ChecksumXXHash32)
+	ChecksumXXHash64 ChecksumType = ChecksumType(osd.ChecksumXXHash64)
+	ChecksumCRC32C   ChecksumType = ChecksumType(osd.ChecksumCRC32C)
+)
 
 type OpResult struct {
 	Version uint64
@@ -88,6 +109,22 @@ func (pool Pool) WithLocator(locator string) Pool {
 func (pool Pool) WithReadSnapshot(id uint64) Pool {
 	pool.snapshot = id
 	return pool
+}
+
+func (pool Pool) WithWriteSnapshot(snapshotContext SnapshotContext) Pool {
+	pool.writeSnapshotSequence = snapshotContext.Sequence
+	pool.writeSnapshots = append([]uint64(nil), snapshotContext.Snapshots...)
+	pool.writeSnapshotValid = validSnapshotContext(snapshotContext)
+	return pool
+}
+
+func validSnapshotContext(snapshotContext SnapshotContext) bool {
+	for index, snapshot := range snapshotContext.Snapshots {
+		if snapshot > snapshotContext.Sequence || index > 0 && snapshot >= snapshotContext.Snapshots[index-1] {
+			return false
+		}
+	}
+	return true
 }
 
 func (pool Pool) Object(name string) ObjectRef { return ObjectRef{pool: pool, name: name} }
@@ -259,6 +296,43 @@ func (object ObjectRef) Read(ctx context.Context, offset, length uint64) ([]byte
 	return result.Data, ObjectInfo{Version: result.Version}, nil
 }
 
+func (object ObjectRef) SparseRead(ctx context.Context, offset, length uint64) ([]SparseExtent, ObjectInfo, error) {
+	if length > math.MaxInt32 || length > math.MaxUint64-offset {
+		return nil, ObjectInfo{}, object.invalidOperation("sparse read")
+	}
+	objects, operationCtx, cancel, err := object.begin(ctx)
+	if err != nil {
+		return nil, ObjectInfo{}, object.wrapBeginError("sparse read", err)
+	}
+	defer cancel()
+	result, err := objects.SparseRead(operationCtx, object.target(), offset, length)
+	if err != nil {
+		return nil, ObjectInfo{}, object.pool.client.wrapError("sparse read", object.safeTarget(), err)
+	}
+	extents := make([]SparseExtent, len(result.Extents))
+	for index, extent := range result.Extents {
+		extents[index] = SparseExtent{Offset: extent.Offset, Data: append([]byte(nil), extent.Data...)}
+	}
+	return extents, ObjectInfo{Version: result.Version}, nil
+}
+
+func (object ObjectRef) Checksum(ctx context.Context, kind ChecksumType, seed []byte, offset, length, chunk uint64) ([]byte, error) {
+	seedSize, validKind := osd.ChecksumSize(uint8(kind))
+	if !validKind || uint64(len(seed)) != seedSize || length > math.MaxInt32 || length > math.MaxUint64-offset || chunk > math.MaxUint32 || (chunk != 0 && (length == 0 || length%chunk != 0)) {
+		return nil, object.invalidOperation("checksum")
+	}
+	objects, operationCtx, cancel, err := object.begin(ctx)
+	if err != nil {
+		return nil, object.wrapBeginError("checksum", err)
+	}
+	defer cancel()
+	result, err := objects.Checksum(operationCtx, object.target(), uint8(kind), seed, offset, length, chunk)
+	if err != nil {
+		return nil, object.pool.client.wrapError("checksum", object.safeTarget(), err)
+	}
+	return append([]byte(nil), result...), nil
+}
+
 func (object ObjectRef) Stat(ctx context.Context) (ObjectInfo, error) {
 	objects, operationCtx, cancel, err := object.begin(ctx)
 	if err != nil {
@@ -292,6 +366,51 @@ func (object ObjectRef) Zero(ctx context.Context, offset, length uint64) (OpResu
 	return object.mutate(ctx, "zero", osd.Operation{Code: osd.OpZero, Offset: offset, Length: length})
 }
 
+func (object ObjectRef) WriteSame(ctx context.Context, offset, length uint64, pattern []byte) (OpResult, error) {
+	patternLength := uint64(len(pattern))
+	if patternLength == 0 || length == 0 || length%patternLength != 0 || length > math.MaxUint64-offset {
+		return OpResult{}, object.invalidOperation("write same")
+	}
+	return object.mutate(ctx, "write same", osd.Operation{Code: osd.OpWriteSame, Offset: offset, Length: length, PatternLength: patternLength, Data: pattern})
+}
+
+func (object ObjectRef) SetAllocationHint(ctx context.Context, expectedObjectSize, expectedWriteSize uint64) (OpResult, error) {
+	return object.mutate(ctx, "set allocation hint", osd.Operation{Code: osd.OpSetAllocationHint, Flags: osd.OpFlagFailOK, ExpectedObjectSize: expectedObjectSize, ExpectedWriteSize: expectedWriteSize})
+}
+
+func (object ObjectRef) CopyFrom(ctx context.Context, source ObjectRef, sourceVersion uint64) (OpResult, error) {
+	return object.copyFrom(ctx, source, sourceVersion, 0, 0, false)
+}
+
+func (object ObjectRef) CopyFrom2(ctx context.Context, source ObjectRef, sourceVersion uint64, truncateSequence uint32, truncateSize uint64) (OpResult, error) {
+	return object.copyFrom(ctx, source, sourceVersion, truncateSequence, truncateSize, true)
+}
+
+func (object ObjectRef) copyFrom(ctx context.Context, source ObjectRef, sourceVersion uint64, truncateSequence uint32, truncateSize uint64, includeTruncate bool) (OpResult, error) {
+	operationName := "copy from"
+	if includeTruncate {
+		operationName = "copy from2"
+	}
+	if object.pool.client == nil || source.pool.client != object.pool.client || source.name == "" {
+		return OpResult{}, object.invalidOperation(operationName)
+	}
+	payload, err := osd.EncodeCopyFromSource(source.name, source.pool.id, source.pool.locator, source.pool.namespace, truncateSequence, truncateSize, includeTruncate, math.MaxUint32)
+	if err != nil {
+		return OpResult{}, object.invalidOperation(operationName)
+	}
+	operation := osd.Operation{
+		Code:             osd.OpCopyFrom,
+		Length:           uint64(len(payload)),
+		Data:             payload,
+		SourceSnapshotID: source.pool.snapshot,
+		SourceVersion:    sourceVersion,
+	}
+	if includeTruncate {
+		operation.Code = osd.OpCopyFrom2
+	}
+	return object.mutate(ctx, operationName, operation)
+}
+
 func (object ObjectRef) Remove(ctx context.Context) (OpResult, error) {
 	return object.mutate(ctx, "remove", osd.Operation{Code: osd.OpDelete})
 }
@@ -305,6 +424,9 @@ func (object ObjectRef) Create(ctx context.Context, exclusive bool) (OpResult, e
 }
 
 func (object ObjectRef) mutate(ctx context.Context, operation string, request osd.Operation) (OpResult, error) {
+	if !object.pool.writeSnapshotValid && (object.pool.writeSnapshotSequence != 0 || object.pool.writeSnapshots != nil) {
+		return OpResult{}, object.invalidOperation(operation)
+	}
 	objects, operationCtx, cancel, err := object.begin(ctx)
 	if err != nil {
 		return OpResult{}, object.wrapBeginError(operation, err)
@@ -333,7 +455,11 @@ func (object ObjectRef) begin(ctx context.Context) (*objecter.Client, context.Co
 }
 
 func (object ObjectRef) target() objecter.Target {
-	return objecter.Target{PoolID: object.pool.id, Object: object.name, Locator: object.pool.locator, Namespace: object.pool.namespace, Snapshot: object.pool.snapshot}
+	return objecter.Target{
+		PoolID: object.pool.id, Object: object.name, Locator: object.pool.locator, Namespace: object.pool.namespace,
+		Snapshot: object.pool.snapshot, SnapshotSequence: object.pool.writeSnapshotSequence,
+		WriteSnapshots: object.pool.writeSnapshots,
+	}
 }
 
 func (object ObjectRef) safeTarget() string { return fmt.Sprintf("pool %d object", object.pool.id) }

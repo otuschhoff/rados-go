@@ -39,6 +39,23 @@ type CommandReply struct {
 	Data    []byte
 }
 
+type PoolOperation uint32
+
+const (
+	PoolOperationCreateSnapshot    PoolOperation = 0x11
+	PoolOperationDeleteSnapshot    PoolOperation = 0x12
+	PoolOperationCreateSelfManaged PoolOperation = 0x21
+	PoolOperationDeleteSelfManaged PoolOperation = 0x22
+)
+
+type PoolOperationReply struct {
+	Version      uint64
+	FSID         maps.FSID
+	Result       int32
+	Epoch        uint32
+	ResponseData []byte
+}
+
 type MessageLimits struct {
 	MaxBytes uint32
 	MaxMaps  uint32
@@ -88,6 +105,83 @@ func EncodeCommand(fsid maps.FSID, command []string, input []byte, maxBytes uint
 	message.Data = append([]byte(nil), input...)
 	message.Lengths.Data = uint32(len(message.Data))
 	return message, nil
+}
+
+func EncodePoolOperation(fsid maps.FSID, pool uint32, operation PoolOperation, snapID uint64, name string, version uint64, maxBytes uint32) (msgr.Message, error) {
+	if maxBytes == 0 {
+		return msgr.Message{}, wire.ErrLimitExceeded
+	}
+	switch operation {
+	case PoolOperationCreateSnapshot, PoolOperationDeleteSnapshot:
+		if name == "" || snapID != 0 {
+			return msgr.Message{}, fmt.Errorf("%w: named snapshot operation arguments", wire.ErrMalformed)
+		}
+	case PoolOperationCreateSelfManaged:
+		if name != "" || snapID != 0 {
+			return msgr.Message{}, fmt.Errorf("%w: self-managed snapshot allocation arguments", wire.ErrMalformed)
+		}
+	case PoolOperationDeleteSelfManaged:
+		if name != "" || snapID == 0 {
+			return msgr.Message{}, fmt.Errorf("%w: self-managed snapshot removal arguments", wire.ErrMalformed)
+		}
+	default:
+		return msgr.Message{}, fmt.Errorf("%w: pool operation %d", wire.ErrMalformed, operation)
+	}
+	encoder := wire.NewEncoder(maxBytes)
+	encodePaxosHeader(encoder, version)
+	encoder.Raw(fsid[:])
+	encoder.Uint32(pool)
+	encoder.Uint32(uint32(operation))
+	encoder.Uint64(0)
+	encoder.Uint64(snapID)
+	encoder.String(name)
+	encoder.Uint8(0)
+	encoder.Int16(0)
+	front, err := encoder.BytesResult()
+	if err != nil {
+		return msgr.Message{}, err
+	}
+	return frontMessage(protocol.MessagePoolOp, 4, 2, front), nil
+}
+
+func DecodePoolOperationReply(message msgr.Message, maxBytes uint32) (PoolOperationReply, error) {
+	if err := validateFrontMessage(message, protocol.MessagePoolOpReply, maxBytes); err != nil {
+		return PoolOperationReply{}, err
+	}
+	if message.Header.CompatVersion > 1 {
+		return PoolOperationReply{}, fmt.Errorf("%w: pool operation reply compat=%d", wire.ErrUnsupportedVersion, message.Header.CompatVersion)
+	}
+	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: maxBytes})
+	result := PoolOperationReply{Version: decodePaxosHeader(decoder)}
+	copy(result.FSID[:], decoder.Raw(16))
+	result.Result = decoder.Int32()
+	result.Epoch = decoder.Uint32()
+	hasResponseData := decoder.Uint8()
+	if hasResponseData > 1 {
+		return PoolOperationReply{}, fmt.Errorf("%w: pool operation response-data flag", wire.ErrMalformed)
+	}
+	if hasResponseData == 1 {
+		result.ResponseData = decoder.Bytes()
+	}
+	if err := finishExact(decoder, "pool operation reply"); err != nil {
+		return PoolOperationReply{}, err
+	}
+	return result, nil
+}
+
+func DecodeAllocatedSnapshotID(data []byte, maxBytes uint32) (uint64, error) {
+	if maxBytes == 0 || uint64(len(data)) > uint64(maxBytes) {
+		return 0, wire.ErrLimitExceeded
+	}
+	decoder := wire.NewDecoder(data, wire.Limits{MaxBytes: maxBytes})
+	snapshotID := decoder.Uint64()
+	if snapshotID == 0 {
+		return 0, fmt.Errorf("%w: zero allocated snapshot id", wire.ErrMalformed)
+	}
+	if err := finishExact(decoder, "allocated snapshot id"); err != nil {
+		return 0, err
+	}
+	return snapshotID, nil
 }
 
 func DecodeCommandReply(message msgr.Message, maxBytes, maxCommandItems uint32) (CommandReply, error) {

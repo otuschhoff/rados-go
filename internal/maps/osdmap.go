@@ -407,6 +407,11 @@ func (osdMap *OSDMap) Equivalent(other *OSDMap) bool {
 func clonePool(pool Pool) Pool {
 	pool.applicationMetadata = cloneNestedStringsMap(pool.applicationMetadata)
 	pool.options = pool.Options()
+	snapshots := pool.snapshots
+	pool.snapshots = make(map[uint64]PoolSnapshot, len(snapshots))
+	for id, snapshot := range snapshots {
+		pool.snapshots[id] = snapshot
+	}
 	return pool
 }
 

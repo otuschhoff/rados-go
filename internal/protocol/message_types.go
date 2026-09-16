@@ -7,6 +7,8 @@ const (
 	MessageOSDOp           uint16 = 42
 	MessageOSDOpReply      uint16 = 43
 	MessageWatchNotify     uint16 = 44
+	MessagePoolOpReply     uint16 = 48
+	MessagePoolOp          uint16 = 49
 	MessageOSDBackoff      uint16 = 61
 	MessageOSDMap          uint16 = 41
 	MessageMonCommand      uint16 = 50

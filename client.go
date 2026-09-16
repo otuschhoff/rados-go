@@ -221,7 +221,7 @@ func (client *Client) OpenPool(ctx context.Context, name string) (Pool, error) {
 	if !ok {
 		return Pool{}, &OpError{Op: "open pool", Target: "pool", Code: -2}
 	}
-	return Pool{client: client, id: pool.ID(), name: pool.Name(), snapshot: osd.NoSnap}, nil
+	return Pool{client: client, id: pool.ID(), name: pool.Name(), snapshot: osd.NoSnap, writeSnapshotValid: true}, nil
 }
 
 func (client *Client) OpenPoolByID(ctx context.Context, id int64) (Pool, error) {
@@ -242,7 +242,7 @@ func (client *Client) OpenPoolByID(ctx context.Context, id int64) (Pool, error) 
 	if !ok {
 		return Pool{}, &OpError{Op: "open pool", Target: "pool", Code: -2}
 	}
-	return Pool{client: client, id: pool.ID(), name: pool.Name(), snapshot: osd.NoSnap}, nil
+	return Pool{client: client, id: pool.ID(), name: pool.Name(), snapshot: osd.NoSnap, writeSnapshotValid: true}, nil
 }
 
 func (client *Client) Flush(ctx context.Context) error {

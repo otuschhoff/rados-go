@@ -3,6 +3,8 @@ package rados
 import (
 	"context"
 	"errors"
+	"math"
+	"reflect"
 	"testing"
 	"time"
 
@@ -253,7 +255,7 @@ func TestNewRejectsInvalidConfiguration(t *testing.T) {
 }
 
 func TestPoolViewsAreImmutableAndPreserveSnapshotZero(t *testing.T) {
-	base := Pool{id: 7, name: "data", namespace: "original", locator: "base", snapshot: ^uint64(0)}
+	base := Pool{id: 7, name: "data", namespace: "original", locator: "base", snapshot: ^uint64(0), writeSnapshotValid: true}
 	derived := base.WithNamespace("next").WithLocator("key").WithReadSnapshot(0)
 	if base.namespace != "original" || base.locator != "base" || base.snapshot != ^uint64(0) {
 		t.Fatalf("base changed=%+v", base)
@@ -262,6 +264,50 @@ func TestPoolViewsAreImmutableAndPreserveSnapshotZero(t *testing.T) {
 	target := object.target()
 	if target.PoolID != 7 || target.Namespace != "next" || target.Locator != "key" || target.Snapshot != 0 || target.Object != "name" {
 		t.Fatalf("target=%+v", target)
+	}
+}
+
+func TestSnapshotAPIsRejectInvalidPoolAndArguments(t *testing.T) {
+	pool := Pool{id: 7, name: "data"}
+	if err := pool.CreateSnapshot(context.Background(), ""); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("empty snapshot name error = %v", err)
+	}
+	if err := pool.RemoveSelfManagedSnapshot(context.Background(), 0); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("zero snapshot id error = %v", err)
+	}
+	if _, err := pool.ListSnapshots(context.Background()); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("detached pool list error = %v", err)
+	}
+	if _, err := pool.Object("object").RollbackToSelfManagedSnapshot(context.Background(), 0); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("zero rollback snapshot id error = %v", err)
+	}
+}
+
+func TestCopyFromRejectsDetachedAndCrossClientSources(t *testing.T) {
+	destination := Pool{id: 7, client: &Client{}}.Object("destination")
+	if _, err := destination.CopyFrom(context.Background(), Pool{id: 7}.Object("source"), 0); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("detached source error = %v", err)
+	}
+	other := Pool{id: 7, client: &Client{}}.Object("source")
+	if _, err := destination.CopyFrom(context.Background(), other, 0); !errors.Is(err, ErrInvalidArgument) {
+		t.Fatalf("cross-client source error = %v", err)
+	}
+}
+
+func TestPoolWriteSnapshotViewOwnsAndValidatesContext(t *testing.T) {
+	snapshots := []uint64{9, 7, 2}
+	base := Pool{id: 7, snapshot: osd.NoSnap, writeSnapshotValid: true}
+	derived := base.WithWriteSnapshot(SnapshotContext{Sequence: 9, Snapshots: snapshots})
+	snapshots[0] = 1
+	if !derived.writeSnapshotValid || derived.writeSnapshotSequence != 9 || !reflect.DeepEqual(derived.writeSnapshots, []uint64{9, 7, 2}) {
+		t.Fatalf("derived context = seq %d snapshots %v valid %v", derived.writeSnapshotSequence, derived.writeSnapshots, derived.writeSnapshotValid)
+	}
+	if base.writeSnapshotSequence != 0 || len(base.writeSnapshots) != 0 || !base.writeSnapshotValid {
+		t.Fatalf("base context changed: %+v", base)
+	}
+	invalid := base.WithWriteSnapshot(SnapshotContext{Sequence: 9, Snapshots: []uint64{7, 8}})
+	if invalid.writeSnapshotValid {
+		t.Fatal("unordered snapshot context accepted")
 	}
 }
 
@@ -290,6 +336,16 @@ func TestCloseIsIdempotentAndRejectsWork(t *testing.T) {
 	if !errors.As(statErr, &statOp) || statOp.Op != "stat" || statOp.Target != "pool 7 object" || !errors.Is(statErr, ErrClosed) {
 		t.Fatalf("stat error=%#v", statErr)
 	}
+	_, _, sparseReadErr := object.SparseRead(t.Context(), 0, 1)
+	var sparseReadOp *OpError
+	if !errors.As(sparseReadErr, &sparseReadOp) || sparseReadOp.Op != "sparse read" || sparseReadOp.Target != "pool 7 object" || !errors.Is(sparseReadErr, ErrClosed) {
+		t.Fatalf("sparse read error=%#v", sparseReadErr)
+	}
+	_, checksumErr := object.Checksum(t.Context(), ChecksumCRC32C, make([]byte, 4), 0, 1, 0)
+	var checksumOp *OpError
+	if !errors.As(checksumErr, &checksumOp) || checksumOp.Op != "checksum" || checksumOp.Target != "pool 7 object" || !errors.Is(checksumErr, ErrClosed) {
+		t.Fatalf("checksum error=%#v", checksumErr)
+	}
 	mutations := []struct {
 		operation string
 		invoke    func() error
@@ -299,6 +355,8 @@ func TestCloseIsIdempotentAndRejectsWork(t *testing.T) {
 		{operation: "append", invoke: func() error { _, err := object.Append(t.Context(), []byte("x")); return err }},
 		{operation: "truncate", invoke: func() error { _, err := object.Truncate(t.Context(), 1); return err }},
 		{operation: "zero", invoke: func() error { _, err := object.Zero(t.Context(), 1, 1); return err }},
+		{operation: "write same", invoke: func() error { _, err := object.WriteSame(t.Context(), 1, 1, []byte("x")); return err }},
+		{operation: "set allocation hint", invoke: func() error { _, err := object.SetAllocationHint(t.Context(), 1, 1); return err }},
 		{operation: "remove", invoke: func() error { _, err := object.Remove(t.Context()); return err }},
 		{operation: "create", invoke: func() error { _, err := object.Create(t.Context(), true); return err }},
 	}
@@ -307,6 +365,62 @@ func TestCloseIsIdempotentAndRejectsWork(t *testing.T) {
 		var operationError *OpError
 		if !errors.As(err, &operationError) || operationError.Op != mutation.operation || operationError.Target != "pool 7 object" || !errors.Is(err, ErrClosed) {
 			t.Fatalf("%s error=%#v", mutation.operation, err)
+		}
+	}
+}
+
+func TestWriteSameRejectsInvalidArgumentsBeforeClientAccess(t *testing.T) {
+	object := ObjectRef{}
+	for _, test := range []struct {
+		offset  uint64
+		length  uint64
+		pattern []byte
+	}{
+		{length: 1},
+		{length: 4, pattern: []byte("abc")},
+		{pattern: []byte("x")},
+		{offset: ^uint64(0) - 1, length: 4, pattern: []byte("x")},
+	} {
+		if _, err := object.WriteSame(t.Context(), test.offset, test.length, test.pattern); !errors.Is(err, ErrInvalidArgument) {
+			t.Fatalf("offset=%d length=%d pattern=%q error=%v", test.offset, test.length, test.pattern, err)
+		}
+	}
+}
+
+func TestSparseReadRejectsInvalidArgumentsBeforeClientAccess(t *testing.T) {
+	object := ObjectRef{}
+	for _, test := range []struct {
+		offset uint64
+		length uint64
+	}{
+		{length: uint64(math.MaxInt32) + 1},
+		{offset: math.MaxUint64, length: 2},
+	} {
+		if _, _, err := object.SparseRead(t.Context(), test.offset, test.length); !errors.Is(err, ErrInvalidArgument) {
+			t.Fatalf("offset=%d length=%d error=%v", test.offset, test.length, err)
+		}
+	}
+}
+
+func TestChecksumRejectsInvalidArgumentsBeforeClientAccess(t *testing.T) {
+	object := ObjectRef{}
+	for _, test := range []struct {
+		kind          ChecksumType
+		seed          []byte
+		offset        uint64
+		length, chunk uint64
+	}{
+		{kind: 3, seed: make([]byte, 4), length: 1},
+		{kind: ChecksumCRC32C, seed: make([]byte, 8), length: 1},
+		{kind: ChecksumXXHash64, seed: make([]byte, 4), length: 1},
+		{kind: ChecksumCRC32C, seed: make([]byte, 4), length: uint64(math.MaxInt32) + 1},
+		{kind: ChecksumCRC32C, seed: make([]byte, 4), offset: math.MaxUint64, length: 2},
+		{kind: ChecksumCRC32C, seed: make([]byte, 4), length: 1, chunk: uint64(math.MaxUint32) + 1},
+		{kind: ChecksumCRC32C, seed: make([]byte, 4), chunk: 1},
+		{kind: ChecksumCRC32C, seed: make([]byte, 4), length: 5, chunk: 2},
+	} {
+		if _, err := object.Checksum(t.Context(), test.kind, test.seed, test.offset, test.length, test.chunk); !errors.Is(err, ErrInvalidArgument) {
+			t.Fatalf("test=%+v error=%v", test, err)
 		}
 	}
 }

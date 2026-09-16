@@ -86,6 +86,104 @@ func TestMonitorCommandCodecs(t *testing.T) {
 	}
 }
 
+func TestPoolOperationCodecs(t *testing.T) {
+	fsid := maps.FSID{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+	request, err := EncodePoolOperation(fsid, 17, PoolOperationDeleteSelfManaged, 29, "", 23, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoder := wire.NewDecoder(request.Front, wire.Limits{MaxBytes: 1024})
+	if decoder.Uint64() != 23 || decoder.Int16() != -1 || decoder.Uint64() != 0 || !bytes.Equal(decoder.Raw(16), fsid[:]) || decoder.Uint32() != 17 || decoder.Uint32() != uint32(PoolOperationDeleteSelfManaged) || decoder.Uint64() != 0 || decoder.Uint64() != 29 || decoder.String() != "" || decoder.Uint8() != 0 || decoder.Int16() != 0 || decoder.Remaining() != 0 {
+		t.Fatalf("pool operation front = %x", request.Front)
+	}
+	if request.Header.Type != protocol.MessagePoolOp || request.Header.Version != 4 || request.Header.CompatVersion != 2 {
+		t.Fatalf("pool operation message = %+v", request.Header)
+	}
+
+	replyMessage := encodePoolOperationReply(t, fsid, -13, 31, []byte{1, 2, 3})
+	reply, err := DecodePoolOperationReply(replyMessage, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reply.Version != 31 || reply.FSID != fsid || reply.Result != -13 || reply.Epoch != 31 || !bytes.Equal(reply.ResponseData, []byte{1, 2, 3}) {
+		t.Fatalf("pool operation reply = %+v", reply)
+	}
+	replyMessage.Front[len(replyMessage.Front)-1] = 9
+	if !bytes.Equal(reply.ResponseData, []byte{1, 2, 3}) {
+		t.Fatal("pool operation reply data aliases message storage")
+	}
+}
+
+func TestPoolOperationCodecsRejectInvalidInput(t *testing.T) {
+	fsid := maps.FSID{}
+	requests := []struct {
+		operation PoolOperation
+		snapID    uint64
+		name      string
+	}{
+		{PoolOperationCreateSnapshot, 0, ""},
+		{PoolOperationDeleteSnapshot, 1, "named"},
+		{PoolOperationCreateSelfManaged, 0, "named"},
+		{PoolOperationDeleteSelfManaged, 0, ""},
+		{PoolOperation(0xff), 0, ""},
+	}
+	for _, test := range requests {
+		if _, err := EncodePoolOperation(fsid, 1, test.operation, test.snapID, test.name, 0, 1024); !errors.Is(err, wire.ErrMalformed) {
+			t.Fatalf("operation=%d snap=%d name=%q error=%v", test.operation, test.snapID, test.name, err)
+		}
+	}
+
+	message := encodePoolOperationReply(t, fsid, 0, 1, nil)
+	message.Front[len(message.Front)-1] = 2
+	if _, err := DecodePoolOperationReply(message, 1024); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("noncanonical response flag error = %v", err)
+	}
+	message = encodePoolOperationReply(t, fsid, 0, 1, []byte{1})
+	message.Front = message.Front[:len(message.Front)-1]
+	message.Lengths.Front--
+	if _, err := DecodePoolOperationReply(message, 1024); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("truncated response error = %v", err)
+	}
+	message = encodePoolOperationReply(t, fsid, 0, 1, nil)
+	message.Header.CompatVersion = 2
+	if _, err := DecodePoolOperationReply(message, 1024); !errors.Is(err, wire.ErrUnsupportedVersion) {
+		t.Fatalf("unsupported response compatibility error = %v", err)
+	}
+}
+
+func TestDecodeAllocatedSnapshotID(t *testing.T) {
+	encoder := wire.NewEncoder(8)
+	encoder.Uint64(0x0102030405060708)
+	data, _ := encoder.BytesResult()
+	snapshotID, err := DecodeAllocatedSnapshotID(data, 8)
+	if err != nil || snapshotID != 0x0102030405060708 {
+		t.Fatalf("snapshot id=%#x error=%v", snapshotID, err)
+	}
+	for _, invalid := range [][]byte{nil, make([]byte, 8), append(data, 0)} {
+		if _, err := DecodeAllocatedSnapshotID(invalid, 9); !errors.Is(err, wire.ErrMalformed) {
+			t.Fatalf("data=%x error=%v", invalid, err)
+		}
+	}
+}
+
+func encodePoolOperationReply(t *testing.T, fsid maps.FSID, result int32, epoch uint32, response []byte) msgr.Message {
+	t.Helper()
+	encoder := wire.NewEncoder(1024)
+	encodePaxosHeader(encoder, uint64(epoch))
+	encoder.Raw(fsid[:])
+	encoder.Int32(result)
+	encoder.Uint32(epoch)
+	encoder.Bool(len(response) != 0)
+	if len(response) != 0 {
+		encoder.Bytes(response)
+	}
+	front, err := encoder.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return frontMessage(protocol.MessagePoolOpReply, 1, 1, front)
+}
+
 func TestDecodeMonMapMessage(t *testing.T) {
 	encoded := encodeMinimalMonMap(t)
 	outer := wire.NewEncoder(1024)

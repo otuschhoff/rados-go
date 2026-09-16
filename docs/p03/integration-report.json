@@ -2,11 +2,11 @@
   "schema_version": 1,
   "status": "passed",
   "command": "make integration-p03",
-  "started_at": "2026-09-15T21:53:20Z",
-  "finished_at": "2026-09-15T21:53:32Z",
+  "started_at": "2026-09-16T00:48:16Z",
+  "finished_at": "2026-09-16T00:48:28Z",
   "source": {
     "repository": "https://github.com/otuschhoff/go-librados.git",
-    "repository_commit": "ba5587bf9507b09f9a0b2d0f6772b698007e57ca",
+    "repository_commit": "6862eda34b44eea59a6b1d9e36cd9376ce8945dd",
     "dirty": true,
     "identity": "content-addressed-artifacts",
     "artifacts": {
@@ -48,9 +48,9 @@
       "internal/protocol/address.go": "6f23301ae7f53ade1887d27ada00ecb07331a15b5ff629c697f2c6251f059560",
       "internal/protocol/entity.go": "5025b974107672555f4dbd50121f4edff27aba03a824b584b492a75ab2d3e410",
       "internal/protocol/errno.go": "9e5c9e026589ee64a6b6da2a5863e1d8cce56a434be4eeb2bad249afe904607f",
-      "internal/protocol/features.go": "671e1a0318f6550fa25146bf969ca893a7541b1f87a3538ced354467699df658",
-      "internal/protocol/message_types.go": "0bbafb5c029c3d3f2d1555ded4d6175a2ff2f8887130df082e8f0f1a35b0861c",
-      "internal/protocol/protocol_test.go": "1abe381d83131ea28f7ca7e7190d5ded7352d80715ce2387184ca09fefc4d85f"
+      "internal/protocol/features.go": "b044cf63f93243f72df21abdae75ccd04f0cd72afe845695742ecfd5a9c28c8e",
+      "internal/protocol/message_types.go": "f54397c3b8c35e3ec048eb1511026549e36efc1f66ddc98b41f01db4bb79113b",
+      "internal/protocol/protocol_test.go": "f0e4a578c7e7756bf94581920e8bf33450d1f4ff66f831582029d12e8d355fb0"
     }
   },
   "server": {
@@ -78,8 +78,8 @@
     "global_id": 4099,
     "reconnected": true,
     "ticket_renewed": true,
-    "initial_ticket_sha256": "59049f1dceac21673422eb75f245cf6b569b2e4a0a181bcb5b8c9c618436a908",
-    "renewed_ticket_sha256": "c0c05d53b67bd35004fc10a10741e3fa40879a7e8dbb219bed281aa54988df23",
+    "initial_ticket_sha256": "9846ee31d0d7e44ef67b1fe2dd2344e6d23332d314e69ed478e0e3775f3cf751",
+    "renewed_ticket_sha256": "af8782761af6e30d53c76f87ee32ff735792278fcbf71603adfdad101fa1ee02",
     "expiry_rejected": true,
     "expired_reconnect": true,
     "renewed_global_id": 4099,

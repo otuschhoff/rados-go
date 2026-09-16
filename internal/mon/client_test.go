@@ -23,6 +23,7 @@ type fakeMonitorSession struct {
 	terminal    chan error
 	done        chan struct{}
 	sends       chan msgr.Message
+	submits     chan msgr.Message
 	submitReply msgr.Message
 	submitErr   error
 	once        sync.Once
@@ -42,14 +43,16 @@ func TestAuthoritySessionPublishesOnceAfterFSIDAcceptance(t *testing.T) {
 }
 
 func newFakeMonitorSession() *fakeMonitorSession {
-	return &fakeMonitorSession{incoming: make(chan msgr.Message, 8), events: make(chan msgr.SessionEvent, 8), terminal: make(chan error, 1), done: make(chan struct{}), sends: make(chan msgr.Message, 8)}
+	return &fakeMonitorSession{incoming: make(chan msgr.Message, 8), events: make(chan msgr.SessionEvent, 8), terminal: make(chan error, 1), done: make(chan struct{}), sends: make(chan msgr.Message, 8), submits: make(chan msgr.Message, 8)}
 }
 
 func (session *fakeMonitorSession) Send(_ context.Context, message msgr.Message) error {
 	session.sends <- message
 	return nil
 }
-func (session *fakeMonitorSession) Submit(context.Context, msgr.Message) (msgr.Message, error) {
+
+func (session *fakeMonitorSession) Submit(_ context.Context, message msgr.Message) (msgr.Message, error) {
+	session.submits <- message
 	return session.submitReply, session.submitErr
 }
 func (session *fakeMonitorSession) Incoming() <-chan msgr.Message    { return session.incoming }
@@ -594,6 +597,68 @@ func TestReadOnlyCommandReturnsWireError(t *testing.T) {
 		t.Fatalf("reply=%+v error=%v", reply, err)
 	}
 	client.Close()
+}
+
+func TestApplyPoolOperationValidatesReplyAndCurrentMap(t *testing.T) {
+	active := newFakeMonitorSession()
+	fsid := testFSID()
+	active.submitReply = encodePoolOperationReply(t, fsid, 0, 4, nil)
+	client, err := NewClient(testClientConfig(), func(context.Context, Endpoint) (session, error) { return active, nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.pinnedFSID = &fsid
+	client.session = active
+	current, err := maps.DecodeOSDMap(encodeEmptyOSDMap(t, fsid, 4), client.config.MapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client.osdMap.Store(current)
+	reply, err := client.ApplyPoolOperation(context.Background(), 7, PoolOperationCreateSnapshot, 0, "daily")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if reply.Epoch != 4 {
+		t.Fatalf("reply = %+v", reply)
+	}
+	request := <-active.submits
+	if request.Header.Type != protocol.MessagePoolOp {
+		t.Fatalf("submitted message type = %d", request.Header.Type)
+	}
+	select {
+	case unexpected := <-active.sends:
+		t.Fatalf("unexpected map refresh: %+v", unexpected.Header)
+	default:
+	}
+	client.Close()
+}
+
+func TestApplyPoolOperationRejectsWireErrorAndForeignFSID(t *testing.T) {
+	fsid := testFSID()
+	for _, test := range []struct {
+		name    string
+		reply   msgr.Message
+		wantErr error
+	}{
+		{"wire error", encodePoolOperationReply(t, fsid, -13, 9, nil), protocol.WireErrno(-13)},
+		{"foreign fsid", encodePoolOperationReply(t, maps.FSID{99}, 0, 9, nil), ErrForeignCluster},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			active := newFakeMonitorSession()
+			active.submitReply = test.reply
+			client, err := NewClient(testClientConfig(), func(context.Context, Endpoint) (session, error) { return active, nil })
+			if err != nil {
+				t.Fatal(err)
+			}
+			client.pinnedFSID = &fsid
+			client.session = active
+			_, err = client.ApplyPoolOperation(context.Background(), 7, PoolOperationCreateSnapshot, 0, "daily")
+			if !errors.Is(err, test.wantErr) {
+				t.Fatalf("error = %v, want %v", err, test.wantErr)
+			}
+			client.Close()
+		})
+	}
 }
 
 func TestResolveSeedsExplicitDNSAndSRV(t *testing.T) {

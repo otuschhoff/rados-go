@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"math"
 	"reflect"
 	"testing"
 
@@ -60,6 +61,22 @@ func TestEncodeReadRequestV8(t *testing.T) {
 	}
 }
 
+func TestEncodeRequestIncludesErasureShard(t *testing.T) {
+	request := Request{
+		PG: maps.PG{Pool: 7, Seed: 3, Preferred: -1}, Shard: 2, Sharded: true,
+		PoolID: 7, Snapshot: NoSnap, Retry: -1, Operations: []Operation{{Code: OpStat}},
+	}
+	message, err := EncodeRequest(request, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: testLimits.MaxBytes})
+	_, spg := decoder.Versioned(1)
+	if pg, err := decodePG(spg); err != nil || pg != request.PG || spg.Uint8() != 2 || spg.Remaining() != 0 {
+		t.Fatalf("EC spg decode: pg=%+v err=%v", pg, err)
+	}
+}
+
 func TestEncodeRequestPreservesSnapshotZero(t *testing.T) {
 	message, err := EncodeRequest(Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: 0, Retry: -1, Operations: []Operation{{Code: OpStat}}}, testLimits)
 	if err != nil {
@@ -67,6 +84,34 @@ func TestEncodeRequestPreservesSnapshotZero(t *testing.T) {
 	}
 	if snapshot := binary.LittleEndian.Uint64(message.Front[len(message.Front)-32:]); snapshot != 0 {
 		t.Fatalf("snapshot=%d", snapshot)
+	}
+}
+
+func TestEncodeRequestPreservesWriteSnapshotContext(t *testing.T) {
+	message, err := EncodeRequest(Request{
+		PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap,
+		SnapshotSequence: 9, WriteSnapshots: []uint64{9, 7, 2}, Retry: -1,
+		Operations: []Operation{{Code: OpWriteFull, Data: []byte("x")}},
+	}, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tail := message.Front[len(message.Front)-56:]
+	if binary.LittleEndian.Uint64(tail) != NoSnap || binary.LittleEndian.Uint64(tail[8:]) != 9 || binary.LittleEndian.Uint32(tail[16:]) != 3 || binary.LittleEndian.Uint64(tail[20:]) != 9 || binary.LittleEndian.Uint64(tail[28:]) != 7 || binary.LittleEndian.Uint64(tail[36:]) != 2 || int32(binary.LittleEndian.Uint32(tail[44:])) != -1 {
+		t.Fatal("write snapshot context was not preserved")
+	}
+}
+
+func TestEncodeRequestRejectsInvalidWriteSnapshotContext(t *testing.T) {
+	for _, snapshots := range [][]uint64{{8, 9}, {9, 9}, {10}} {
+		_, err := EncodeRequest(Request{
+			PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap,
+			SnapshotSequence: 9, WriteSnapshots: snapshots,
+			Operations: []Operation{{Code: OpWriteFull, Data: []byte("x")}},
+		}, testLimits)
+		if !errors.Is(err, wire.ErrMalformed) {
+			t.Fatalf("snapshots %v: error = %v", snapshots, err)
+		}
 	}
 }
 
@@ -148,12 +193,19 @@ func TestEncodeOperationUnionFixtures(t *testing.T) {
 		union     []byte
 	}{
 		{name: "extent", operation: Operation{Code: OpCompareExtent, Offset: 0x0102030405060708, Length: 9}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9}},
+		{name: "sparse read", operation: Operation{Code: OpSparseRead, Offset: 0x0102030405060708, Length: 9}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9}},
 		{name: "xattr", operation: Operation{Code: OpCompareXattr, XattrNameLength: 3, XattrValueLength: 5, CompareOperator: 6, CompareMode: 7}, union: []byte{3, 0, 0, 0, 5, 0, 0, 0, 6, 7}},
 		{name: "assert version", operation: Operation{Code: OpAssertVer, AssertVersion: 0x0102030405060708}, union: []byte{0, 0, 0, 0, 0, 0, 0, 0, 8, 7, 6, 5, 4, 3, 2, 1}},
+		{name: "rollback", operation: Operation{Code: OpRollback, SnapshotID: 0x0102030405060708}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1}},
 		{name: "class call", operation: Operation{Code: OpCall, ClassNameLength: 4, MethodNameLength: 6, ClassInputLength: 0x01020304}, union: []byte{4, 6, 0, 4, 3, 2, 1}},
 		{name: "watch", operation: Operation{Code: OpWatch, WatchCookie: 0x0102030405060708, WatchVersion: 9, WatchOperation: WatchOperationReconnect, WatchGeneration: 10, WatchTimeout: 11}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9, 0, 0, 0, 0, 0, 0, 0, 5, 10, 0, 0, 0, 11, 0, 0, 0}},
 		{name: "notify", operation: Operation{Code: OpNotify, WatchCookie: 0x0102030405060708}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1}},
 		{name: "pg list", operation: Operation{Code: OpPGNList, ListCount: 9, ListStartEpoch: 10}, union: []byte{9, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0}},
+		{name: "set allocation hint", operation: Operation{Code: OpSetAllocationHint, ExpectedObjectSize: 0x0102030405060708, ExpectedWriteSize: 9, AllocationFlags: 10}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0}},
+		{name: "write same", operation: Operation{Code: OpWriteSame, Offset: 0x0102030405060708, Length: 16, PatternLength: 4}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 16, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0}},
+		{name: "checksum", operation: Operation{Code: OpChecksum, Offset: 0x0102030405060708, Length: 16, ChunkSize: 4, ChecksumType: 2}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 16, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 2}},
+		{name: "copy from", operation: Operation{Code: OpCopyFrom, SourceSnapshotID: 0x0102030405060708, SourceVersion: 9, SourceFadviseFlags: 10}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0}},
+		{name: "copy from2", operation: Operation{Code: OpCopyFrom2, SourceSnapshotID: 0x0102030405060708, SourceVersion: 9, SourceFadviseFlags: 10}, union: []byte{8, 7, 6, 5, 4, 3, 2, 1, 9, 0, 0, 0, 0, 0, 0, 0, 0, 10, 0, 0, 0}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -172,6 +224,93 @@ func TestEncodeOperationUnionFixtures(t *testing.T) {
 				t.Fatalf("union=%x want=%x", union, want)
 			}
 		})
+	}
+}
+
+func TestEncodeCopyFromSourceExactBytes(t *testing.T) {
+	encoded, err := EncodeCopyFromSource("source", 7, "locator", "namespace", 11, 13, true, 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoder := wire.NewDecoder(encoded, wire.Limits{MaxBytes: 1024})
+	if decoder.String() != "source" {
+		t.Fatal("source object was not preserved")
+	}
+	version, locator := decoder.Versioned(6)
+	if version != 6 || locator.Int64() != 7 || locator.Int32() != -1 || locator.String() != "locator" || locator.String() != "namespace" || locator.Int64() != -1 || locator.Remaining() != 0 {
+		t.Fatalf("source locator = %x", encoded)
+	}
+	if decoder.Uint32() != 11 || decoder.Uint64() != 13 || decoder.Remaining() != 0 {
+		t.Fatalf("copy-from2 suffix = %x", encoded)
+	}
+	if _, err := EncodeCopyFromSource("", 7, "", "", 0, 0, false, 1024); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("empty source error = %v", err)
+	}
+}
+
+func TestEncodeChecksumRequestValidation(t *testing.T) {
+	valid := Operation{Code: OpChecksum, Offset: 1, Length: 8, ChunkSize: 4, ChecksumType: 2, Data: []byte{1, 2, 3, 4}}
+	request := func(operation Operation) Request {
+		return Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap, Operations: []Operation{operation}}
+	}
+	message, err := EncodeRequest(request(valid), testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(message.Data, valid.Data) {
+		t.Fatalf("seed=%x want=%x", message.Data, valid.Data)
+	}
+	invalid := []Operation{
+		{Code: OpChecksum, Length: 1, ChecksumType: 3, Data: make([]byte, 4)},
+		{Code: OpChecksum, Length: 1, ChecksumType: 0, Data: make([]byte, 8)},
+		{Code: OpChecksum, Length: 1, ChecksumType: 1, Data: make([]byte, 4)},
+		{Code: OpChecksum, Length: uint64(math.MaxInt32) + 1, ChecksumType: 2, Data: make([]byte, 4)},
+		{Code: OpChecksum, Offset: math.MaxUint64, Length: 2, ChecksumType: 2, Data: make([]byte, 4)},
+		{Code: OpChecksum, ChunkSize: 1, ChecksumType: 2, Data: make([]byte, 4)},
+		{Code: OpChecksum, Length: 5, ChunkSize: 2, ChecksumType: 2, Data: make([]byte, 4)},
+	}
+	for _, operation := range invalid {
+		if _, err := EncodeRequest(request(operation), testLimits); !errors.Is(err, wire.ErrMalformed) {
+			t.Fatalf("operation=%+v error=%v", operation, err)
+		}
+	}
+}
+
+func TestEncodeSetAllocationHintRequiresFailOK(t *testing.T) {
+	operation := Operation{Code: OpSetAllocationHint, Flags: OpFlagFailOK, ExpectedObjectSize: 64, ExpectedWriteSize: 8}
+	if _, err := EncodeRequest(Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap, Operations: []Operation{operation}}, testLimits); err != nil {
+		t.Fatal(err)
+	}
+	operation.Flags = 0
+	if _, err := EncodeRequest(Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap, Operations: []Operation{operation}}, testLimits); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("missing FAILOK error=%v", err)
+	}
+}
+
+func TestEncodeWriteSameRequest(t *testing.T) {
+	operation := Operation{Code: OpWriteSame, Offset: 9, Length: 12, PatternLength: 3, Data: []byte("abc")}
+	message, err := EncodeRequest(Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap, Operations: []Operation{operation}}, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(message.Data, operation.Data) {
+		t.Fatalf("data=%x want=%x", message.Data, operation.Data)
+	}
+}
+
+func TestEncodeWriteSameRejectsInvalidExtents(t *testing.T) {
+	tests := []Operation{
+		{Code: OpWriteSame, Length: 4},
+		{Code: OpWriteSame, Length: 4, PatternLength: 3, Data: []byte("abc")},
+		{Code: OpWriteSame, PatternLength: 3, Data: []byte("abc")},
+		{Code: OpWriteSame, Length: 4, PatternLength: 4, Data: []byte("abc")},
+		{Code: OpWriteSame, Offset: ^uint64(0) - 1, Length: 4, PatternLength: 1, Data: []byte("x")},
+	}
+	for _, operation := range tests {
+		request := Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Operations: []Operation{operation}}
+		if _, err := EncodeRequest(request, testLimits); !errors.Is(err, wire.ErrMalformed) {
+			t.Fatalf("operation %+v: error=%v", operation, err)
+		}
 	}
 }
 

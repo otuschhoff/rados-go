@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "passed": { "const": "passed" },
+    "true": { "const": true },
+    "replicated_pool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "size", "min_size", "pg_num"],
+      "properties": {
+        "name": { "enum": ["p10-named", "p10-self"] },
+        "size": { "const": 2 },
+        "min_size": { "const": 1 },
+        "pg_num": { "const": 16 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "server", "native_runtime", "cluster", "scenarios", "probe", "native"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "status": { "const": "passed" },
+    "command": { "const": "make integration-p10" },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "identity", "artifacts"],
+      "properties": {
+        "repository": { "const": "https://github.com/otuschhoff/go-librados.git" },
+        "identity": { "const": "content-addressed-artifacts" },
+        "artifacts": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/sha256" } }
+      }
+    },
+    "server": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "source_anchor_commit", "version", "image", "platform", "binaries"],
+      "properties": {
+        "repository": { "const": "https://github.com/ceph/ceph.git" },
+        "source_anchor_commit": { "const": "7f793731f1b39eb4f465e960113d2363c311b964" },
+        "version": { "const": "ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)" },
+        "image": { "enum": ["quay.io/ceph/ceph@sha256:09ee90f6f3e0c7b9954f71d214ee05e9bbaaaea3716b1dd619603283b829f8b8", "quay.io/ceph/ceph@sha256:6e6bc7b28fa1b334108a3646af5533dfb50db508efdf5b358eb7dd0dd37a48aa"] },
+        "platform": { "enum": ["linux/amd64", "linux/arm64"] },
+        "binaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mon_sha256", "osd_sha256"],
+          "properties": { "mon_sha256": { "$ref": "#/$defs/sha256" }, "osd_sha256": { "$ref": "#/$defs/sha256" } }
+        }
+      }
+    },
+    "native_runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["soname", "path", "package", "sha256"],
+      "properties": {
+        "soname": { "const": "librados.so.2" },
+        "path": { "type": "string", "pattern": "^/.+" },
+        "package": { "enum": ["librados2-20.2.4-0.el9.x86_64", "librados2-20.2.4-0.el9.aarch64"] },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "cluster": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fsid", "network", "osds", "objectstore", "osd_device_bytes", "replicated_rule", "named_pool", "self_managed_pool", "ec_pool", "client"],
+      "properties": {
+        "fsid": { "const": "21000000-2222-4333-8444-101010101010" },
+        "network": { "const": "172.30.110.0/24" },
+        "osds": { "const": 3 },
+        "objectstore": { "const": "bluestore" },
+        "osd_device_bytes": { "const": 8589934592 },
+        "replicated_rule": { "const": "p10-replicated-rule" },
+        "named_pool": { "$ref": "#/$defs/replicated_pool" },
+        "self_managed_pool": { "$ref": "#/$defs/replicated_pool" },
+        "ec_pool": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "size", "min_size", "pg_num", "profile", "rule", "plugin", "k", "m", "failure_domain", "allow_ec_overwrites", "stripe_unit", "stripe_width"],
+          "properties": {
+            "name": { "const": "p10-ec" },
+            "size": { "const": 3 },
+            "min_size": { "const": 2 },
+            "pg_num": { "const": 16 },
+            "profile": { "const": "p10-ec-profile" },
+            "rule": { "const": "p10-ec-rule" },
+            "plugin": { "const": "jerasure" },
+            "k": { "const": 2 },
+            "m": { "const": 1 },
+            "failure_domain": { "const": "osd" },
+            "allow_ec_overwrites": { "const": false },
+            "stripe_unit": { "const": 4096 },
+            "stripe_width": { "const": 8192 }
+          }
+        },
+        "client": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["entity", "mon_caps", "osd_caps"],
+          "properties": {
+            "entity": { "const": "client.p10" },
+            "mon_caps": { "const": "allow rw" },
+            "osd_caps": { "const": "allow rwx pool=p10-named, allow rwx pool=p10-self, allow rwx pool=p10-ec" }
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["named_snapshots", "self_managed_snapshots", "specialized_io", "erasure_coded_io", "native_interoperability"],
+      "properties": {
+        "named_snapshots": { "$ref": "#/$defs/passed" },
+        "self_managed_snapshots": { "$ref": "#/$defs/passed" },
+        "specialized_io": { "$ref": "#/$defs/passed" },
+        "erasure_coded_io": { "$ref": "#/$defs/passed" },
+        "native_interoperability": { "$ref": "#/$defs/passed" }
+      }
+    },
+    "probe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["named_create_list_lookup", "named_read_snapshot", "named_rollback", "named_remove", "self_managed_create", "self_managed_write_context", "self_managed_read", "self_managed_rollback", "self_managed_remove", "write_same", "checksum", "checksum_hex", "allocation_hint", "sparse_read", "copy_from", "copy_from2", "replicated_capabilities", "ec_capabilities", "ec_write_read", "ec_overwrite_rejected", "ec_write_same_rejected", "ec_checksum", "ec_allocation_hint", "ec_sparse_read", "ec_copy_from", "ec_omap_rejected", "ec_alignment_evidence", "required_alignment"],
+      "properties": {
+        "named_create_list_lookup": { "$ref": "#/$defs/true" },
+        "named_read_snapshot": { "$ref": "#/$defs/true" },
+        "named_rollback": { "$ref": "#/$defs/true" },
+        "named_remove": { "$ref": "#/$defs/true" },
+        "self_managed_create": { "$ref": "#/$defs/true" },
+        "self_managed_write_context": { "$ref": "#/$defs/true" },
+        "self_managed_read": { "$ref": "#/$defs/true" },
+        "self_managed_rollback": { "$ref": "#/$defs/true" },
+        "self_managed_remove": { "$ref": "#/$defs/true" },
+        "write_same": { "$ref": "#/$defs/true" },
+        "checksum": { "$ref": "#/$defs/true" },
+        "checksum_hex": { "const": "02000000f5be862af5be862a" },
+        "allocation_hint": { "$ref": "#/$defs/true" },
+        "sparse_read": { "$ref": "#/$defs/true" },
+        "copy_from": { "$ref": "#/$defs/true" },
+        "copy_from2": { "$ref": "#/$defs/true" },
+        "replicated_capabilities": { "$ref": "#/$defs/true" },
+        "ec_capabilities": { "$ref": "#/$defs/true" },
+        "ec_write_read": { "$ref": "#/$defs/true" },
+        "ec_overwrite_rejected": { "$ref": "#/$defs/true" },
+        "ec_write_same_rejected": { "$ref": "#/$defs/true" },
+        "ec_checksum": { "$ref": "#/$defs/true" },
+        "ec_allocation_hint": { "$ref": "#/$defs/true" },
+        "ec_sparse_read": { "$ref": "#/$defs/true" },
+        "ec_copy_from": { "$ref": "#/$defs/true" },
+        "ec_omap_rejected": { "$ref": "#/$defs/true" },
+        "ec_alignment_evidence": { "$ref": "#/$defs/true" },
+        "required_alignment": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "native": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["seed", "verify"],
+      "properties": {
+        "seed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["named_create_list_lookup_name_stamp", "named_read_rollback_remove", "self_managed_create_write_read_rollback_remove"],
+          "properties": {
+            "named_create_list_lookup_name_stamp": { "$ref": "#/$defs/true" },
+            "named_read_rollback_remove": { "$ref": "#/$defs/true" },
+            "self_managed_create_write_read_rollback_remove": { "$ref": "#/$defs/true" }
+          }
+        },
+        "verify": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["go_named_snapshot", "go_named_head", "go_copy", "go_copy_from2", "go_ec_copy", "go_checksum_hex"],
+          "properties": {
+            "go_named_snapshot": { "$ref": "#/$defs/true" },
+            "go_named_head": { "$ref": "#/$defs/true" },
+            "go_copy": { "$ref": "#/$defs/true" },
+            "go_copy_from2": { "$ref": "#/$defs/true" },
+            "go_ec_copy": { "$ref": "#/$defs/true" },
+            "go_checksum_hex": { "const": "02000000f5be862af5be862a" }
+          }
+        }
+      }
+    }
+  }
+}

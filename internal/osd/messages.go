@@ -4,6 +4,7 @@ package osd
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 	"github.com/otuschhoff/go-librados/internal/maps"
@@ -16,6 +17,7 @@ var ErrMalformedReply = errors.New("malformed OSD reply")
 const (
 	OpRead                = uint16(0x1201)
 	OpStat                = uint16(0x1202)
+	OpSparseRead          = uint16(0x1205)
 	OpNotify              = uint16(0x1206)
 	OpNotifyAck           = uint16(0x1207)
 	OpListWatchers        = uint16(0x1209)
@@ -25,6 +27,7 @@ const (
 	OpOmapGetHeader       = uint16(0x1213)
 	OpOmapGetValuesByKeys = uint16(0x1214)
 	OpOmapCompare         = uint16(0x1219)
+	OpChecksum            = uint16(0x121f)
 	OpCompareExtent       = uint16(0x1220)
 	OpGetXattr            = uint16(0x1301)
 	OpGetXattrs           = uint16(0x1302)
@@ -40,16 +43,23 @@ const (
 	OpAppend              = uint16(0x2206)
 	OpWatch               = uint16(0x220f)
 	OpCreate              = uint16(0x220d)
+	OpRollback            = uint16(0x220e)
 	OpOmapSetValues       = uint16(0x2215)
 	OpOmapSetHeader       = uint16(0x2216)
 	OpOmapClear           = uint16(0x2217)
 	OpOmapRemoveKeys      = uint16(0x2218)
+	OpCopyFrom            = uint16(0x221a)
+	OpSetAllocationHint   = uint16(0x2223)
+	OpWriteSame           = uint16(0x2226)
+	OpCopyFrom2           = uint16(0x222d)
 	OpOmapRemoveRange     = uint16(0x222c)
 	OpSetXattr            = uint16(0x2301)
 	OpRemoveXattr         = uint16(0x2304)
 
 	OpFlagExclusive = uint32(0x0001)
 	OpFlagFailOK    = uint32(0x0002)
+
+	CopyFromFlagTruncateSequence = uint8(1 << 5)
 
 	FlagAck           = uint32(0x0001)
 	FlagWrite         = uint32(0x0020)
@@ -67,38 +77,53 @@ const (
 )
 
 type Operation struct {
-	Code             uint16
-	Flags            uint32
-	Offset           uint64
-	Length           uint64
-	XattrNameLength  uint32
-	XattrValueLength uint32
-	CompareOperator  uint8
-	CompareMode      uint8
-	ClassNameLength  uint8
-	MethodNameLength uint8
-	ClassInputLength uint32
-	WatchCookie      uint64
-	WatchVersion     uint64
-	WatchOperation   uint8
-	WatchGeneration  uint32
-	WatchTimeout     uint32
-	AssertVersion    uint64
-	ListCount        uint64
-	ListStartEpoch   uint32
-	PayloadLength    uint32
-	Data             []byte
+	Code               uint16
+	Flags              uint32
+	Offset             uint64
+	Length             uint64
+	PatternLength      uint64
+	ChecksumType       uint8
+	ChunkSize          uint32
+	ExpectedObjectSize uint64
+	ExpectedWriteSize  uint64
+	AllocationFlags    uint32
+	XattrNameLength    uint32
+	XattrValueLength   uint32
+	CompareOperator    uint8
+	CompareMode        uint8
+	ClassNameLength    uint8
+	MethodNameLength   uint8
+	ClassInputLength   uint32
+	WatchCookie        uint64
+	WatchVersion       uint64
+	WatchOperation     uint8
+	WatchGeneration    uint32
+	WatchTimeout       uint32
+	AssertVersion      uint64
+	SnapshotID         uint64
+	SourceSnapshotID   uint64
+	SourceVersion      uint64
+	CopyFlags          uint8
+	SourceFadviseFlags uint32
+	ListCount          uint64
+	ListStartEpoch     uint32
+	PayloadLength      uint32
+	Data               []byte
 }
 
 type Request struct {
 	MapEpoch          uint32
 	PG                maps.PG
+	Shard             int8
+	Sharded           bool
 	ObjectHash        uint32
 	PoolID            int64
 	Object            string
 	Locator           string
 	Namespace         string
 	Snapshot          uint64
+	SnapshotSequence  uint64
+	WriteSnapshots    []uint64
 	TransactionID     uint64
 	ClientGlobalID    uint64
 	ClientIncarnation int32
@@ -139,8 +164,11 @@ type Limits struct {
 }
 
 func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
-	if limits.MaxBytes == 0 || limits.MaxOperations == 0 || len(request.Operations) == 0 || uint64(len(request.Operations)) > uint64(limits.MaxOperations) || len(request.Operations) > int(^uint16(0)) || request.PoolID < 0 {
+	if limits.MaxBytes == 0 || limits.MaxOperations == 0 || len(request.Operations) == 0 || uint64(len(request.Operations)) > uint64(limits.MaxOperations) || len(request.Operations) > int(^uint16(0)) || len(request.WriteSnapshots) > int(^uint32(0)) || request.PoolID < 0 {
 		return msgr.Message{}, wire.ErrLimitExceeded
+	}
+	if !validSnapshotContext(request.SnapshotSequence, request.WriteSnapshots) {
+		return msgr.Message{}, wire.ErrMalformed
 	}
 	mutation := false
 	dataLength := uint64(0)
@@ -168,7 +196,11 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 		}
 	}
 	encoder := wire.NewEncoder(limits.MaxBytes)
-	encodeSPG(encoder, request.PG)
+	shard := int8(-1)
+	if request.Sharded {
+		shard = request.Shard
+	}
+	encodeSPGWithShard(encoder, request.PG, shard)
 	encoder.Uint32(request.ObjectHash)
 	encoder.Uint32(request.MapEpoch)
 	flags := FlagRead
@@ -187,8 +219,11 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 		encodeOperation(encoder, operation)
 	}
 	encoder.Uint64(request.Snapshot)
-	encoder.Uint64(0)
-	encoder.Uint32(0)
+	encoder.Uint64(request.SnapshotSequence)
+	encoder.Uint32(uint32(len(request.WriteSnapshots)))
+	for _, snapshot := range request.WriteSnapshots {
+		encoder.Uint64(snapshot)
+	}
 	encoder.Int32(request.Retry)
 	encoder.Uint64(request.Features)
 	front, err := encoder.BytesResult()
@@ -205,14 +240,23 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	return msgr.Message{Header: msgr.MessageHeader{TransactionID: request.TransactionID, Type: protocol.MessageOSDOp, Version: 8, CompatVersion: 3}, Front: front, Data: data, Lengths: msgr.MessageLengths{Front: uint32(len(front)), Data: uint32(len(data))}}, nil
 }
 
+func validSnapshotContext(sequence uint64, snapshots []uint64) bool {
+	for index, snapshot := range snapshots {
+		if snapshot > sequence || index > 0 && snapshot >= snapshots[index-1] {
+			return false
+		}
+	}
+	return true
+}
+
 func supportedOperation(code uint16) bool {
 	switch code {
-	case OpRead, OpStat, OpNotify, OpNotifyAck, OpListWatchers, OpAssertVer, OpOmapGetKeys, OpOmapGetValues,
-		OpOmapGetValuesByKeys, OpOmapGetHeader, OpOmapCompare, OpCompareExtent,
+	case OpRead, OpStat, OpSparseRead, OpNotify, OpNotifyAck, OpListWatchers, OpAssertVer, OpOmapGetKeys, OpOmapGetValues,
+		OpOmapGetValuesByKeys, OpOmapGetHeader, OpOmapCompare, OpChecksum, OpCompareExtent,
 		OpGetXattr, OpGetXattrs, OpCompareXattr, OpCall, OpPGList, OpPGNList,
-		OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpWatch, OpCreate,
-		OpOmapSetValues, OpOmapSetHeader, OpOmapClear, OpOmapRemoveKeys,
-		OpOmapRemoveRange, OpSetXattr, OpRemoveXattr:
+		OpWrite, OpWriteFull, OpTruncate, OpZero, OpDelete, OpAppend, OpWatch, OpCreate, OpRollback,
+		OpOmapSetValues, OpOmapSetHeader, OpOmapClear, OpOmapRemoveKeys, OpCopyFrom,
+		OpSetAllocationHint, OpWriteSame, OpCopyFrom2, OpOmapRemoveRange, OpSetXattr, OpRemoveXattr:
 		return true
 	default:
 		return false
@@ -221,6 +265,30 @@ func supportedOperation(code uint16) bool {
 
 func validateOperation(operation Operation) error {
 	switch operation.Code {
+	case OpChecksum:
+		seedSize, validType := ChecksumSize(operation.ChecksumType)
+		if !validType {
+			return wire.ErrMalformed
+		}
+		if uint64(len(operation.Data)) != seedSize || operation.Length > math.MaxInt32 || operation.Length > math.MaxUint64-operation.Offset || (operation.ChunkSize != 0 && (operation.Length == 0 || operation.Length%uint64(operation.ChunkSize) != 0)) {
+			return wire.ErrMalformed
+		}
+	case OpSetAllocationHint:
+		if operation.Flags != OpFlagFailOK || len(operation.Data) != 0 {
+			return wire.ErrMalformed
+		}
+	case OpWriteSame:
+		if operation.PatternLength == 0 || operation.PatternLength != uint64(len(operation.Data)) || operation.Length == 0 || operation.Length%operation.PatternLength != 0 || operation.Offset > ^uint64(0)-operation.Length {
+			return wire.ErrMalformed
+		}
+	case OpCopyFrom:
+		if operation.CopyFlags != 0 || len(operation.Data) == 0 {
+			return wire.ErrMalformed
+		}
+	case OpCopyFrom2:
+		if operation.CopyFlags != 0 || len(operation.Data) == 0 {
+			return wire.ErrMalformed
+		}
 	case OpPGNList:
 		if operation.ListCount == 0 || len(operation.Data) == 0 {
 			return wire.ErrMalformed
@@ -329,13 +397,6 @@ func encodePG(encoder *wire.Encoder, pg maps.PG) {
 	encoder.Int32(-1)
 }
 
-func encodeSPG(encoder *wire.Encoder, pg maps.PG) {
-	encoder.Versioned(1, 1, func(payload *wire.Encoder) {
-		encodePG(payload, pg)
-		payload.Uint8(0xff)
-	})
-}
-
 func decodePG(decoder *wire.Decoder) (maps.PG, error) {
 	if decoder.Uint8() != 1 {
 		return maps.PG{}, wire.ErrUnsupportedVersion
@@ -378,6 +439,31 @@ func encodeOperation(encoder *wire.Encoder, operation Operation) {
 		encoder.Uint64(operation.ListCount)
 		encoder.Uint32(operation.ListStartEpoch)
 		encoder.Raw(make([]byte, 16))
+	case OpSetAllocationHint:
+		encoder.Uint64(operation.ExpectedObjectSize)
+		encoder.Uint64(operation.ExpectedWriteSize)
+		encoder.Uint32(operation.AllocationFlags)
+		encoder.Raw(make([]byte, 8))
+	case OpWriteSame:
+		encoder.Uint64(operation.Offset)
+		encoder.Uint64(operation.Length)
+		encoder.Uint64(operation.PatternLength)
+		encoder.Uint32(0)
+	case OpChecksum:
+		encoder.Uint64(operation.Offset)
+		encoder.Uint64(operation.Length)
+		encoder.Uint32(operation.ChunkSize)
+		encoder.Uint8(operation.ChecksumType)
+		encoder.Raw(make([]byte, 7))
+	case OpCopyFrom, OpCopyFrom2:
+		encoder.Uint64(operation.SourceSnapshotID)
+		encoder.Uint64(operation.SourceVersion)
+		encoder.Uint8(operation.CopyFlags)
+		encoder.Uint32(operation.SourceFadviseFlags)
+		encoder.Raw(make([]byte, 7))
+	case OpRollback:
+		encoder.Uint64(operation.SnapshotID)
+		encoder.Raw(make([]byte, 20))
 	default:
 		encoder.Uint64(operation.Offset)
 		encoder.Uint64(operation.Length)
@@ -385,6 +471,26 @@ func encodeOperation(encoder *wire.Encoder, operation Operation) {
 		encoder.Uint32(0)
 	}
 	encoder.Uint32(operation.PayloadLength)
+}
+
+func EncodeCopyFromSource(object string, poolID int64, locator, namespace string, truncateSequence uint32, truncateSize uint64, includeTruncate bool, maxBytes uint32) ([]byte, error) {
+	if maxBytes == 0 || object == "" || poolID < 0 {
+		return nil, wire.ErrMalformed
+	}
+	encoder := wire.NewEncoder(maxBytes)
+	encoder.String(object)
+	encoder.Versioned(6, 3, func(payload *wire.Encoder) {
+		payload.Int64(poolID)
+		payload.Int32(-1)
+		payload.String(locator)
+		payload.String(namespace)
+		payload.Int64(-1)
+	})
+	if includeTruncate {
+		encoder.Uint32(truncateSequence)
+		encoder.Uint64(truncateSize)
+	}
+	return encoder.BytesResult()
 }
 
 func decodeOperation(decoder *wire.Decoder) (uint16, uint32) {

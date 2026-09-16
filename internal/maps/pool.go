@@ -3,6 +3,7 @@ package maps
 import (
 	"fmt"
 	"math"
+	"sort"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 )
@@ -22,6 +23,20 @@ type PoolOption struct {
 	Double  float64
 }
 
+type PoolSnapshot struct {
+	ID        uint64
+	Name      string
+	Timestamp UTime
+}
+
+const (
+	poolTypeReplicated                  = 1
+	poolTypeErasure                     = 3
+	poolFlagECOverwrites         uint64 = 1 << 2
+	poolFlagSelfManagedSnapshots uint64 = 1 << 13
+	poolFlagPoolSnapshots        uint64 = 1 << 14
+)
+
 type Pool struct {
 	id                  int64
 	name                string
@@ -32,7 +47,10 @@ type Pool struct {
 	objectHash          uint8
 	pgCount             uint32
 	placementPGCount    uint32
+	stripeWidth         uint32
 	flags               uint64
+	snapshotSequence    uint64
+	snapshots           map[uint64]PoolSnapshot
 	erasureCodeProfile  string
 	applicationMetadata map[string]map[string]string
 	options             map[int32]PoolOption
@@ -57,9 +75,11 @@ func decodePool(decoder *wire.Decoder, limits Limits) (Pool, error) {
 	payload.Uint32()
 	payload.Uint32()
 	payload.Uint32()
-	payload.Uint64()
+	pool.snapshotSequence = payload.Uint64()
 	payload.Uint32()
-	if err := consumePoolSnapshots(payload, limits); err != nil {
+	var err error
+	pool.snapshots, err = decodePoolSnapshots(payload, limits)
+	if err != nil {
 		return Pool{}, err
 	}
 	if err := consumeIntervals(payload, limits.MaxCollectionEntries); err != nil {
@@ -101,7 +121,7 @@ func decodePool(decoder *wire.Decoder, limits Limits) (Pool, error) {
 		payload.Uint32()
 	}
 	if version >= 12 {
-		payload.Uint32()
+		pool.stripeWidth = payload.Uint32()
 	}
 	if version >= 13 {
 		payload.Uint64()
@@ -239,28 +259,39 @@ func decodePoolOptions(decoder *wire.Decoder, limits Limits) (map[int32]PoolOpti
 	return result, nil
 }
 
-func consumePoolSnapshots(decoder *wire.Decoder, limits Limits) error {
+func decodePoolSnapshots(decoder *wire.Decoder, limits Limits) (map[uint64]PoolSnapshot, error) {
 	count, err := boundedCount(decoder, limits.MaxCollectionEntries, 14)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	result := make(map[uint64]PoolSnapshot, count)
+	names := make(map[string]struct{}, count)
 	for range count {
-		decoder.Uint64()
+		key := decoder.Uint64()
 		version, payload := decoder.Versioned(2)
 		if err := decoder.Finish(); err != nil {
-			return err
+			return nil, err
 		}
 		if version < 2 {
-			return fmt.Errorf("%w: pool snapshot version %d", wire.ErrUnsupportedVersion, version)
+			return nil, fmt.Errorf("%w: pool snapshot version %d", wire.ErrUnsupportedVersion, version)
 		}
-		payload.Uint64()
-		decodeUTime(payload)
-		_ = payload.String()
+		snapshot := PoolSnapshot{ID: payload.Uint64(), Timestamp: decodeUTime(payload), Name: payload.String()}
 		if err := payload.Finish(); err != nil {
-			return err
+			return nil, err
 		}
+		if key != snapshot.ID {
+			return nil, fmt.Errorf("%w: pool snapshot key %d != id %d", ErrMalformedMap, key, snapshot.ID)
+		}
+		if _, exists := result[key]; exists {
+			return nil, fmt.Errorf("%w: duplicate pool snapshot id %d", ErrMalformedMap, key)
+		}
+		if _, exists := names[snapshot.Name]; exists {
+			return nil, fmt.Errorf("%w: duplicate pool snapshot name %q", ErrMalformedMap, snapshot.Name)
+		}
+		result[key] = snapshot
+		names[snapshot.Name] = struct{}{}
 	}
-	return decoder.Finish()
+	return result, decoder.Finish()
 }
 
 func consumeIntervals(decoder *wire.Decoder, maximum uint32) error {
@@ -351,17 +382,36 @@ func consumeUnsignedVarint(decoder *wire.Decoder) error {
 	return wire.ErrMalformed
 }
 
-func (pool Pool) ID() int64                  { return pool.id }
-func (pool Pool) Name() string               { return pool.name }
-func (pool Pool) Type() uint8                { return pool.poolType }
-func (pool Pool) Size() uint8                { return pool.size }
-func (pool Pool) MinimumSize() uint8         { return pool.minimumSize }
-func (pool Pool) CrushRule() uint8           { return pool.crushRule }
-func (pool Pool) ObjectHash() uint8          { return pool.objectHash }
-func (pool Pool) PGCount() uint32            { return pool.pgCount }
-func (pool Pool) PlacementPGCount() uint32   { return pool.placementPGCount }
-func (pool Pool) Flags() uint64              { return pool.flags }
+func (pool Pool) ID() int64                { return pool.id }
+func (pool Pool) Name() string             { return pool.name }
+func (pool Pool) Type() uint8              { return pool.poolType }
+func (pool Pool) Size() uint8              { return pool.size }
+func (pool Pool) MinimumSize() uint8       { return pool.minimumSize }
+func (pool Pool) CrushRule() uint8         { return pool.crushRule }
+func (pool Pool) ObjectHash() uint8        { return pool.objectHash }
+func (pool Pool) PGCount() uint32          { return pool.pgCount }
+func (pool Pool) PlacementPGCount() uint32 { return pool.placementPGCount }
+func (pool Pool) StripeWidth() uint32      { return pool.stripeWidth }
+func (pool Pool) Flags() uint64            { return pool.flags }
+func (pool Pool) SnapshotSequence() uint64 { return pool.snapshotSequence }
+func (pool Pool) UsesPoolSnapshots() bool  { return pool.flags&poolFlagPoolSnapshots != 0 }
+func (pool Pool) UsesSelfManagedSnapshots() bool {
+	return pool.flags&poolFlagSelfManagedSnapshots != 0
+}
 func (pool Pool) ErasureCodeProfile() string { return pool.erasureCodeProfile }
+func (pool Pool) IsErasureCoded() bool       { return pool.poolType == poolTypeErasure }
+func (pool Pool) AllowsECOverwrites() bool   { return pool.flags&poolFlagECOverwrites != 0 }
+func (pool Pool) RequiresAlignment() bool {
+	return pool.IsErasureCoded() && !pool.AllowsECOverwrites()
+}
+func (pool Pool) Snapshots() []PoolSnapshot {
+	result := make([]PoolSnapshot, 0, len(pool.snapshots))
+	for _, snapshot := range pool.snapshots {
+		result = append(result, snapshot)
+	}
+	sort.Slice(result, func(left, right int) bool { return result[left].ID < result[right].ID })
+	return result
+}
 func (pool Pool) ApplicationMetadata() map[string]map[string]string {
 	return cloneNestedStringsMap(pool.applicationMetadata)
 }

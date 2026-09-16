@@ -154,6 +154,48 @@ func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	}
 }
 
+func TestWriteSameUsesDurableMutationPath(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	var request msgr.Message
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			return testReplyRetryFlags(t, 10, 19, 0, osd.OpWriteSame, -1, int64(osd.FlagOnDisk), nil), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpWriteSame, Offset: 4, Length: 12, PatternLength: 3, Data: []byte("abc")})
+	if err != nil || result.Version != 19 {
+		t.Fatalf("result=%+v error=%v", result, err)
+	}
+	codes, flags, _ := decodeRequestOperationsForTest(t, request)
+	if len(codes) != 1 || codes[0] != osd.OpWriteSame || flags&osd.FlagWrite == 0 || flags&osd.FlagOnDisk == 0 || string(request.Data) != "abc" {
+		t.Fatalf("codes=%v flags=%#x data=%q", codes, flags, request.Data)
+	}
+}
+
+func TestSetAllocationHintUsesDurableMutationPath(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	var request msgr.Message
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			return testReplyRetryFlags(t, 10, 19, 0, osd.OpSetAllocationHint, -1, int64(osd.FlagOnDisk), nil), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	operation := osd.Operation{Code: osd.OpSetAllocationHint, Flags: osd.OpFlagFailOK, ExpectedObjectSize: 64, ExpectedWriteSize: 8}
+	if _, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, operation); err != nil {
+		t.Fatal(err)
+	}
+	codes, flags, _ := decodeRequestOperationsForTest(t, request)
+	if len(codes) != 1 || codes[0] != osd.OpSetAllocationHint || flags&osd.FlagWrite == 0 || flags&osd.FlagOnDisk == 0 || len(request.Data) != 0 {
+		t.Fatalf("codes=%v flags=%#x data=%x", codes, flags, request.Data)
+	}
+}
+
 func TestMutationUnknownOutcomeIsNotRetried(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	attempts := 0

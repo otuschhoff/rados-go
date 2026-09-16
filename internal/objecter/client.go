@@ -41,6 +41,8 @@ type Route struct {
 	PG        maps.PG
 	RawHash   uint32
 	Primary   int32
+	Shard     int8
+	Sharded   bool
 	Addresses protocol.EntityAddrVec
 }
 
@@ -53,11 +55,13 @@ type rawHashRouter interface {
 }
 
 type Target struct {
-	PoolID    int64
-	Object    string
-	Locator   string
-	Namespace string
-	Snapshot  uint64
+	PoolID           int64
+	Object           string
+	Locator          string
+	Namespace        string
+	Snapshot         uint64
+	SnapshotSequence uint64
+	WriteSnapshots   []uint64
 }
 
 type Result struct {
@@ -66,6 +70,11 @@ type Result struct {
 	ModificationTime time.Time
 	Version          uint64
 	Operations       []OperationResult
+}
+
+type SparseReadResult struct {
+	Extents []osd.SparseExtent
+	Version uint64
 }
 
 type OperationResult struct {
@@ -192,6 +201,32 @@ func (client *Client) Read(ctx context.Context, target Target, offset, length ui
 	return client.execute(ctx, target, osd.Operation{Code: osd.OpRead, Offset: offset, Length: length})
 }
 
+func (client *Client) SparseRead(ctx context.Context, target Target, offset, length uint64) (SparseReadResult, error) {
+	if length > math.MaxInt32 || length > math.MaxUint64-offset {
+		return SparseReadResult{}, wire.ErrLimitExceeded
+	}
+	result, err := client.execute(ctx, target, osd.Operation{Code: osd.OpSparseRead, Offset: offset, Length: length})
+	if err != nil {
+		return SparseReadResult{}, err
+	}
+	extents, err := osd.DecodeSparseRead(result.Data, offset, length, client.config.MessageLimits.MaxBytes, client.config.MessageLimits.MaxBytes/16)
+	if err != nil {
+		return SparseReadResult{}, err
+	}
+	return SparseReadResult{Extents: extents, Version: result.Version}, nil
+}
+
+func (client *Client) Checksum(ctx context.Context, target Target, kind uint8, seed []byte, offset, length, chunk uint64) ([]byte, error) {
+	if chunk > math.MaxUint32 {
+		return nil, wire.ErrLimitExceeded
+	}
+	result, err := client.execute(ctx, target, osd.Operation{Code: osd.OpChecksum, Offset: offset, Length: length, ChunkSize: uint32(chunk), ChecksumType: kind, Data: seed})
+	if err != nil {
+		return nil, err
+	}
+	return osd.DecodeChecksum(result.Data, kind, client.config.MessageLimits.MaxBytes)
+}
+
 func (client *Client) Stat(ctx context.Context, target Target) (Result, error) {
 	result, err := client.execute(ctx, target, osd.Operation{Code: osd.OpStat})
 	if err != nil {
@@ -230,9 +265,9 @@ func (client *Client) ReadOperations(ctx context.Context, target Target, operati
 
 func isReadOperation(code uint16) bool {
 	switch code {
-	case osd.OpRead, osd.OpStat, osd.OpAssertVer, osd.OpOmapGetKeys, osd.OpOmapGetValues,
+	case osd.OpRead, osd.OpStat, osd.OpSparseRead, osd.OpAssertVer, osd.OpOmapGetKeys, osd.OpOmapGetValues,
 		osd.OpOmapGetValuesByKeys, osd.OpOmapGetHeader, osd.OpOmapCompare,
-		osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr, osd.OpListWatchers:
+		osd.OpChecksum, osd.OpCompareExtent, osd.OpGetXattr, osd.OpGetXattrs, osd.OpCompareXattr, osd.OpListWatchers:
 		return true
 	default:
 		return false
@@ -303,9 +338,10 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			}
 		}
 		request, err := osd.EncodeRequest(osd.Request{
-			MapEpoch: route.Epoch, PG: route.PG, ObjectHash: route.RawHash,
+			MapEpoch: route.Epoch, PG: route.PG, ObjectHash: route.RawHash, Shard: route.Shard, Sharded: route.Sharded,
 			PoolID: currentTarget.PoolID, Object: currentTarget.Object, Locator: currentTarget.Locator,
-			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, TransactionID: transactionID, ClientGlobalID: clientGlobalID, ClientIncarnation: client.config.ClientIncarnation, Retry: int32(attempt), Flags: requestFlags,
+			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, SnapshotSequence: currentTarget.SnapshotSequence,
+			WriteSnapshots: currentTarget.WriteSnapshots, TransactionID: transactionID, ClientGlobalID: clientGlobalID, ClientIncarnation: client.config.ClientIncarnation, Retry: int32(attempt), Flags: requestFlags,
 			Features: uint64(protocol.FeatureOSDClient), Operations: operations,
 		}, client.config.MessageLimits)
 		if err != nil {
@@ -608,7 +644,7 @@ func (router mapRouter) Route(target Target) (Route, error) {
 	if !ok {
 		return Route{}, ErrNoPrimary
 	}
-	return Route{Epoch: osdMap.Epoch(), PG: placement.PG, RawHash: placement.RawHash, Primary: placement.ActingPrimary, Addresses: addresses}, nil
+	return Route{Epoch: osdMap.Epoch(), PG: placement.PG, RawHash: placement.RawHash, Primary: placement.ActingPrimary, Shard: placement.PrimaryShard, Sharded: placement.Sharded, Addresses: addresses}, nil
 }
 
 func (router mapRouter) RouteRawHash(poolID int64, hash uint32) (Route, error) {
@@ -630,7 +666,7 @@ func (router mapRouter) RouteRawHash(poolID int64, hash uint32) (Route, error) {
 	if !ok {
 		return Route{}, ErrNoPrimary
 	}
-	return Route{Epoch: osdMap.Epoch(), PG: placement.PG, RawHash: placement.RawHash, Primary: placement.ActingPrimary, Addresses: addresses}, nil
+	return Route{Epoch: osdMap.Epoch(), PG: placement.PG, RawHash: placement.RawHash, Primary: placement.ActingPrimary, Shard: placement.PrimaryShard, Sharded: placement.Sharded, Addresses: addresses}, nil
 }
 
 func (client *Client) refresh(ctx context.Context, epoch uint32) {
