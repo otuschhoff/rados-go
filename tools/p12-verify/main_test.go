@@ -381,7 +381,7 @@ func seedRetainedRelease(t *testing.T, version string) string {
 	root := t.TempDir()
 	for name, content := range map[string]string{
 		"LICENSE": "license", "THIRD_PARTY_NOTICES": "notices", "README.md": "readme", "SECURITY.md": "security",
-				"go.mod": "module github.com/otuschhoff/rados-go\n", "go.sum": "sum", "client.go": "package rados\n",
+		"go.mod": "module github.com/otuschhoff/rados-go\n", "go.sum": "sum", "client.go": "package rados\n",
 		"internal/source.go": "package internal\n", "examples/basic/main.go": "package main\n",
 	} {
 		fullPath := filepath.Join(root, filepath.FromSlash(name))

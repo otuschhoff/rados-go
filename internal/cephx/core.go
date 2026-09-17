@@ -14,9 +14,9 @@ import (
 	"strings"
 	"time"
 
+	krbcrypto "github.com/otuschhoff/gokrb5/v8/crypto"
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
 	"github.com/otuschhoff/rados-go/internal/protocol"
-	krbcrypto "github.com/otuschhoff/gokrb5/v8/crypto"
 )
 
 const (

@@ -38,7 +38,7 @@ const (
 	maximumProbeHeapGrowth      = uint64(128 << 20)
 	maximumProbeGoroutineGrowth = uint64(256)
 	maximumProbeSamples         = 2000
-	placeholderReleaseVersion  = "v0.0.0-p12"
+	placeholderReleaseVersion   = "v0.0.0-p12"
 )
 
 type report struct {
