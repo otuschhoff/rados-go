@@ -13,11 +13,11 @@ image_index=$(jq -r '.images.qualification.reference' docs/p00/evidence.json)
 image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$architecture]' docs/p00/evidence.json)
 image="${image_index%@*}@$image_digest"
 temporary=$(mktemp -d)
-network="go-librados-p07-$$"
+network="rados-go-p07-$$"
 fsid=11111111-2222-4333-8444-777777777777
 cleanup() {
 	docker rm -f "p07-probe-$$" "p07-mon-$$" "p07-osd-0-$$" "p07-osd-1-$$" "p07-osd-2-$$" >/dev/null 2>&1 || true
-	docker volume rm "go-librados-p07-osd-0-$$" "go-librados-p07-osd-1-$$" "go-librados-p07-osd-2-$$" >/dev/null 2>&1 || true
+	docker volume rm "rados-go-p07-osd-0-$$" "rados-go-p07-osd-1-$$" "rados-go-p07-osd-2-$$" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
 	rm -rf "$temporary"
 }
@@ -73,7 +73,7 @@ done
 
 for id in 0 1 2; do
 	uuid="00000000-0000-4000-8000-00000000001$id"
-	volume="go-librados-p07-osd-$id-$$"
+	volume="rados-go-p07-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
 	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
@@ -226,5 +226,5 @@ jq -n \
 	--argjson go_crc "$(cat "$temporary/benchmark-go-crc.json")" \
 	--argjson native_secure "$(cat "$temporary/benchmark-native-secure.json")" \
 	--argjson native_crc "$(cat "$temporary/benchmark-native-crc.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p07",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-777777777777",osds:3,pool:"p07-data",replicas:2,osd_device_bytes:8589934592},scenarios:{go_crud:"passed",native_crud:"passed",native_seed_go_mutate_native_verify:"passed",go_write_native_read:"passed",exclusive_create:"passed",missing_semantics:"passed",flush:"passed",primary_change_append_once:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify},benchmark:{execution_environment:{kernel:$kernel,cpu_model:$cpu_model,logical_cpus:$logical_cpus,cpu_max:$cpu_max,memory_max:$memory_max,docker_server_version:$docker_server_version},methodology:{sizes_bytes:[4096,65536,1048576,4194304],concurrency:[1,16,64],workloads:["read","write","mixed"],operations_per_worker:2,transports:["secure","crc"],allocation_measurement:{go:"runtime.MemStats deltas",native:"unavailable from the dynamically loaded librados ABI"},results_are_baseline_not_parity_claim:true},runs:[$go_secure,$go_crc,$native_secure,$native_crc]}}' >docs/p07/integration-report.json
+	'{schema_version:1,status:"passed",command:"make integration-p07",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-777777777777",osds:3,pool:"p07-data",replicas:2,osd_device_bytes:8589934592},scenarios:{go_crud:"passed",native_crud:"passed",native_seed_go_mutate_native_verify:"passed",go_write_native_read:"passed",exclusive_create:"passed",missing_semantics:"passed",flush:"passed",primary_change_append_once:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify},benchmark:{execution_environment:{kernel:$kernel,cpu_model:$cpu_model,logical_cpus:$logical_cpus,cpu_max:$cpu_max,memory_max:$memory_max,docker_server_version:$docker_server_version},methodology:{sizes_bytes:[4096,65536,1048576,4194304],concurrency:[1,16,64],workloads:["read","write","mixed"],operations_per_worker:2,transports:["secure","crc"],allocation_measurement:{go:"runtime.MemStats deltas",native:"unavailable from the dynamically loaded librados ABI"},results_are_baseline_not_parity_claim:true},runs:[$go_secure,$go_crc,$native_secure,$native_crc]}}' >docs/p07/integration-report.json
 printf '%s\n' 'P07 real mutation interoperability passed'

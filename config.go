@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/cephx"
-	"github.com/otuschhoff/go-librados/internal/mon"
+	"github.com/otuschhoff/rados-go/internal/cephx"
+	"github.com/otuschhoff/rados-go/internal/mon"
 )
 
 const (

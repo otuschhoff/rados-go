@@ -8,10 +8,10 @@ import (
 	"strings"
 	"sync"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/objecter"
-	"github.com/otuschhoff/go-librados/internal/osd"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/objecter"
+	"github.com/otuschhoff/rados-go/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 const maxErrno = int32(4095)

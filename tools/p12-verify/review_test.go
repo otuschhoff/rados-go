@@ -136,7 +136,7 @@ func validHumanReview() humanReviewReport {
 		Status:        "approved",
 		RequiredRoles: append([]string(nil), requiredReviewRoles...),
 		ReviewedCandidate: &reviewedCandidate{
-			Repository:     "https://github.com/otuschhoff/go-librados.git",
+			Repository:     "https://github.com/otuschhoff/rados-go.git",
 			SourceIdentity: "content-addressed-artifacts",
 			Qualification:  qualification,
 		},

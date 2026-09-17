@@ -5,9 +5,9 @@ import (
 	"errors"
 	"math"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/msgr"
-	"github.com/otuschhoff/go-librados/internal/osd"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/osd"
 )
 
 func (client *Client) Mutate(ctx context.Context, target Target, operation osd.Operation) (Result, error) {

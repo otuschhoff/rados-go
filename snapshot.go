@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/maps"
-	"github.com/otuschhoff/go-librados/internal/mon"
-	"github.com/otuschhoff/go-librados/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/maps"
+	"github.com/otuschhoff/rados-go/internal/mon"
+	"github.com/otuschhoff/rados-go/internal/osd"
 )
 
 type Snapshot struct {

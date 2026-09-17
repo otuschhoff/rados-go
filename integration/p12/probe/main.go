@@ -19,7 +19,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	rados "github.com/otuschhoff/go-librados"
+	rados "github.com/otuschhoff/rados-go"
 )
 
 type resourceSample struct {

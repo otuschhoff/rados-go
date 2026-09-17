@@ -26,7 +26,7 @@ func TestGenerateIsReproducibleAndModuleIsBounded(t *testing.T) {
 	if len(entries) != 4 {
 		t.Fatalf("release has %d directory entries, want exactly four", len(entries))
 	}
-	for _, name := range []string{"go-librados-v1.2.3-rc.1.tar.gz", "go-librados-v1.2.3-rc.1.zip", "go-librados-v1.2.3-rc.1.spdx.json", "SHA256SUMS"} {
+	for _, name := range []string{"rados-go-v1.2.3-rc.1.tar.gz", "rados-go-v1.2.3-rc.1.zip", "rados-go-v1.2.3-rc.1.spdx.json", "SHA256SUMS"} {
 		firstData, err := os.ReadFile(filepath.Join(first, name))
 		if err != nil {
 			t.Fatal(err)
@@ -40,7 +40,7 @@ func TestGenerateIsReproducibleAndModuleIsBounded(t *testing.T) {
 		}
 	}
 	var sbom spdxDocument
-	sbomData, err := os.ReadFile(filepath.Join(first, "go-librados-v1.2.3-rc.1.spdx.json"))
+	sbomData, err := os.ReadFile(filepath.Join(first, "rados-go-v1.2.3-rc.1.spdx.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -51,7 +51,7 @@ func TestGenerateIsReproducibleAndModuleIsBounded(t *testing.T) {
 		t.Fatalf("SBOM has %d packages, want %d", len(sbom.Packages), 1+len(productionDependencies))
 	}
 
-	reader, err := zip.OpenReader(filepath.Join(first, "go-librados-v1.2.3-rc.1.zip"))
+	reader, err := zip.OpenReader(filepath.Join(first, "rados-go-v1.2.3-rc.1.zip"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +89,7 @@ func seedReleaseTree(t *testing.T) string {
 	root := t.TempDir()
 	files := map[string]string{
 		"LICENSE": "license", "THIRD_PARTY_NOTICES": "notices", "README.md": "readme", "SECURITY.md": "security",
-		"go.mod": "module github.com/otuschhoff/go-librados\n", "go.sum": "sum", "client.go": "package librados\n",
+		"go.mod": "module github.com/otuschhoff/rados-go\n", "go.sum": "sum", "client.go": "package rados\n",
 		"internal/source.go": "package internal\n", "examples/basic/main.go": "package main\n",
 		"integration/live.go": "package integration\n", "integration/native.c": "native", "tools/tool.go": "package main\n",
 	}

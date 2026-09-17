@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 var ErrUnsupportedPayload = errors.New("unsupported messenger payload")

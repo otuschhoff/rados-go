@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/otuschhoff/go-librados/internal/crush"
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/crush"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 func TestMapObjectP00OracleVector(t *testing.T) {

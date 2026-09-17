@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 type SparseExtent struct {

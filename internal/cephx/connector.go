@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/msgr"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 var (

@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   const std::string conf = argv[3];
   const std::string pool = argv[4];
   const std::string object = argv[5];
-  const std::string payload("go-librados-p00\0binary", 22);
+  const std::string payload("rados-go-p00\0binary", 22);
 
   librados::Rados cluster;
   int result = cluster.init2(client_id.c_str(), "ceph", 0);

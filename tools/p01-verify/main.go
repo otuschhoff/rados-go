@@ -226,7 +226,7 @@ func validateModule(data []byte, minimumGo string) error {
 			goVersion = fields[1]
 		}
 	}
-	if modulePath != "github.com/otuschhoff/go-librados" {
+	if modulePath != "github.com/otuschhoff/rados-go" {
 		return fmt.Errorf("module is %q", modulePath)
 	}
 	if goVersion != minimumGo {

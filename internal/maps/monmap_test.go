@@ -5,8 +5,8 @@ import (
 	"net/netip"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 var testMapLimits = Limits{

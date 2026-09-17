@@ -19,7 +19,7 @@ import (
 	"syscall"
 	"time"
 
-	rados "github.com/otuschhoff/go-librados"
+	rados "github.com/otuschhoff/rados-go"
 )
 
 var (

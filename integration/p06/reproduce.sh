@@ -27,11 +27,11 @@ artifacts=$(hash_implementation)
 server_version=$(docker run --rm --platform "$platform" "$image" ceph --version)
 server_binary_sha256=$(docker run --rm --platform "$platform" "$image" sh -c 'sha256sum "$(command -v ceph-osd)"' | awk '{print $1}')
 temporary=$(mktemp -d)
-network="go-librados-p06-$$"
+network="rados-go-p06-$$"
 fsid=11111111-2222-4333-8444-666666666666
 cleanup() {
 	docker rm -f "p06-probe-$$" "p06-mon-$$" "p06-osd-0-$$" "p06-osd-1-$$" "p06-osd-2-$$" >/dev/null 2>&1 || true
-	docker volume rm "go-librados-p06-osd-0-$$" "go-librados-p06-osd-1-$$" "go-librados-p06-osd-2-$$" >/dev/null 2>&1 || true
+	docker volume rm "rados-go-p06-osd-0-$$" "rados-go-p06-osd-1-$$" "rados-go-p06-osd-2-$$" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
 	rm -rf "$temporary"
 }
@@ -80,7 +80,7 @@ done
 
 for id in 0 1 2; do
 	uuid="00000000-0000-4000-8000-00000000000$id"
-	volume="go-librados-p06-osd-$id-$$"
+	volume="rados-go-p06-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
 	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
@@ -157,7 +157,7 @@ jq -n \
 	--arg server_binary_sha256 "$server_binary_sha256" \
 	--argjson artifacts "$artifacts" \
 	--argjson probe "$(cat "$temporary/probe.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p06",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$server_version,image:$image,platform:$platform,binary_sha256:$server_binary_sha256},cluster:{fsid:"11111111-2222-4333-8444-666666666666",osds:3,pool:"p06-data",replicas:2},scenarios:{native_contents:"passed",ranged_read:"passed",empty_read:"passed",namespace_read:"passed",locator_read:"passed",stat_metadata:"passed",missing_object:"passed",operation_version:"passed",primary_change:"passed"},probe:$probe}' >"$temporary/report.json"
+	'{schema_version:1,status:"passed",command:"make integration-p06",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$server_version,image:$image,platform:$platform,binary_sha256:$server_binary_sha256},cluster:{fsid:"11111111-2222-4333-8444-666666666666",osds:3,pool:"p06-data",replicas:2},scenarios:{native_contents:"passed",ranged_read:"passed",empty_read:"passed",namespace_read:"passed",locator_read:"passed",stat_metadata:"passed",missing_object:"passed",operation_version:"passed",primary_change:"passed"},probe:$probe}' >"$temporary/report.json"
 mkdir -p docs/p06
 cp "$temporary/report.json" docs/p06/integration-report.json
 printf 'P06 integration report: %s\n' "$root/docs/p06/integration-report.json"

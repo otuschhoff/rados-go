@@ -105,7 +105,7 @@ func main() {
 	if value.SchemaVersion != 1 || value.Status != "passed" || value.Command != "make integration-p04" || startErr != nil || finishErr != nil || finish.Before(start) || value.Server.Repository != repository || value.Server.SourceAnchorCommit != commit || value.Server.Image != expectedImage {
 		fatalf("invalid integration report identity")
 	}
-	if value.Source.Repository != "https://github.com/otuschhoff/go-librados.git" || value.Source.Identity != "content-addressed-artifacts" || !maps.Equal(value.Source.Artifacts, implementationHashes()) {
+	if value.Source.Repository != "https://github.com/otuschhoff/rados-go.git" || value.Source.Identity != "content-addressed-artifacts" || !maps.Equal(value.Source.Artifacts, implementationHashes()) {
 		fatalf("integration report source artifacts do not match the current tree")
 	}
 	for _, scenario := range []string{"m0", "pool_report", "map_change", "monitor_loss", "foreign_fsid", "convergence", "read_only_command"} {

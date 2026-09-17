@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/msgr"
-	"github.com/otuschhoff/go-librados/internal/osd"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 type routeFunc func(Target) (Route, error)

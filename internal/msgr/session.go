@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 var (

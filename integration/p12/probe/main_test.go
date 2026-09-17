@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	rados "github.com/otuschhoff/go-librados"
+	rados "github.com/otuschhoff/rados-go"
 )
 
 func TestRenewalCollectorRequiresOrderedMonitorAndOSDCompletion(t *testing.T) {

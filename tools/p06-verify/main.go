@@ -79,7 +79,7 @@ func main() {
 	if value.SchemaVersion != 1 || value.Status != "passed" || value.Command != "make integration-p06" || startErr != nil || finishErr != nil || finish.Before(start) || value.Server.Repository != cephRepository || value.Server.SourceAnchorCommit != cephCommit || value.Server.Version != cephVersion || value.Server.Image != expectedImage || value.Server.BinarySHA256 != expectedBinary {
 		fatalf("invalid P06 report identity")
 	}
-	if value.Source.Repository != "https://github.com/otuschhoff/go-librados.git" || value.Source.Identity != "content-addressed-artifacts" || !maps.Equal(value.Source.Artifacts, implementationHashes()) {
+	if value.Source.Repository != "https://github.com/otuschhoff/rados-go.git" || value.Source.Identity != "content-addressed-artifacts" || !maps.Equal(value.Source.Artifacts, implementationHashes()) {
 		fatalf("P06 report source artifacts do not match the current tree")
 	}
 	if value.Cluster.FSID != "11111111-2222-4333-8444-666666666666" || value.Cluster.OSDs != 3 || value.Cluster.Pool != "p06-data" || value.Cluster.Replicas != 2 {

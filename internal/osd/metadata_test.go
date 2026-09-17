@@ -6,7 +6,7 @@ import (
 	"errors"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 func TestMetadataPayloadFixtures(t *testing.T) {

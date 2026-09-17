@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/p12fuzzevidence"
-	"github.com/otuschhoff/go-librados/internal/p12qualcontract"
+	"github.com/otuschhoff/rados-go/internal/p12fuzzevidence"
+	"github.com/otuschhoff/rados-go/internal/p12qualcontract"
 )
 
 type qualificationReport struct {

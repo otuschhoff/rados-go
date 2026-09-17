@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"sort"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/maps"
-	"github.com/otuschhoff/go-librados/internal/msgr"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/maps"
+	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 const SubscribeOnce uint8 = 1

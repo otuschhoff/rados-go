@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 type p03EncodingCorpus struct {

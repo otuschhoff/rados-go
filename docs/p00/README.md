@@ -9,7 +9,7 @@ scope, reproducibility contract and independent oracle needed by later phases.
 
 | Decision | Selected value |
 | --- | --- |
-| Go module path | `github.com/otuschhoff/go-librados` (module initialization is P01) |
+| Go module path | `github.com/otuschhoff/rados-go` (module initialization is P01) |
 | Public package | `rados` |
 | Source baseline | Ceph `v20.2.0`, commit `69f84cc2651aa259a15bc192ddaabd3baba07489` |
 | Qualification server | Ceph `v20.2.4`, commit `7f793731f1b39eb4f465e960113d2363c311b964` |
@@ -42,10 +42,10 @@ dispositions, fixture schema, script syntax and source pin consistency. To
 regenerate the inventory, create a sparse checkout at the baseline commit:
 
 ```sh
-git clone --filter=blob:none --no-checkout https://github.com/ceph/ceph.git /tmp/go-librados-ceph
-git -C /tmp/go-librados-ceph sparse-checkout init --no-cone
-git -C /tmp/go-librados-ceph sparse-checkout set src/include/rados/librados.h src/include/rados/librados.hpp COPYING
-git -C /tmp/go-librados-ceph checkout 69f84cc2651aa259a15bc192ddaabd3baba07489
+git clone --filter=blob:none --no-checkout https://github.com/ceph/ceph.git /tmp/rados-go-ceph
+git -C /tmp/rados-go-ceph sparse-checkout init --no-cone
+git -C /tmp/rados-go-ceph sparse-checkout set src/include/rados/librados.h src/include/rados/librados.hpp COPYING
+git -C /tmp/rados-go-ceph checkout 69f84cc2651aa259a15bc192ddaabd3baba07489
 make inventory
 make verify-p00
 ```

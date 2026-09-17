@@ -12,10 +12,10 @@ CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-release -root . -out dist 
 
 The command writes exactly these files:
 
-- `go-librados-vX.Y.Z.tar.gz`: deterministic source archive.
-- `go-librados-vX.Y.Z.zip`: deterministic Go module archive rooted at
-  `github.com/otuschhoff/go-librados@vX.Y.Z/`.
-- `go-librados-vX.Y.Z.spdx.json`: deterministic SPDX 2.3 JSON SBOM.
+- `rados-go-vX.Y.Z.tar.gz`: deterministic source archive.
+- `rados-go-vX.Y.Z.zip`: deterministic Go module archive rooted at
+  `github.com/otuschhoff/rados-go@vX.Y.Z/`.
+- `rados-go-vX.Y.Z.spdx.json`: deterministic SPDX 2.3 JSON SBOM.
 - `SHA256SUMS`: SHA-256 digests for the other three artifacts.
 
 `make release-p12 P12_RELEASE_VERSION=vX.Y.Z` generates the set twice in

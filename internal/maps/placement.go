@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/otuschhoff/go-librados/internal/crush"
+	"github.com/otuschhoff/rados-go/internal/crush"
 )
 
 var ErrUnsupportedPlacement = errors.New("unsupported placement")

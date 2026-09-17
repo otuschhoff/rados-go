@@ -2,14 +2,14 @@
 set -eu
 
 GUARD_VALUE=I_UNDERSTAND_THIS_DESTROYS_DATA
-STATE_DIR=/var/lib/go-librados-p00
+STATE_DIR=/var/lib/rados-go-p00
 REPORT_DIR=${P00_REPORT_DIR:-integration/reports}
 POOL=p00-replicated
 OBJECT=p00-smoke-object
 STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 FSID=""
 LOOPS=""
-ORACLE_IMAGE=go-librados-p00-oracle
+ORACLE_IMAGE=rados-go-p00-oracle
 ORACLE_IMAGE_BUILT=false
 
 if [ "${P00_DISPOSABLE_CLUSTER:-}" != "$GUARD_VALUE" ]; then

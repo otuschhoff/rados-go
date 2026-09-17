@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/maps"
-	"github.com/otuschhoff/go-librados/internal/osd"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/maps"
+	"github.com/otuschhoff/rados-go/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 func (client *Client) ListInconsistentObjects(ctx context.Context, pg maps.PG) ([]osd.InconsistentObject, error) {

@@ -6,8 +6,8 @@ import (
 	"net/netip"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 var testMgrMapLimits = Limits{MaxBytes: 16 << 10, MaxAddresses: 8, MaxCollectionEntries: 32}

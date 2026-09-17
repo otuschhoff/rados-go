@@ -48,7 +48,7 @@ image_index=$(jq -er '.images.qualification.reference' docs/p00/evidence.json)
 image_digest=$(jq -er --arg architecture "$goarch" '.images.qualification[$architecture]' docs/p00/evidence.json)
 image="${image_index%@*}@$image_digest"
 temporary=$(mktemp -d)
-network="go-librados-p12-$$"
+network="rados-go-p12-$$"
 fsid=31111111-2222-4333-8444-121212121212
 subnet=172.30.112.0/24
 report="$root/integration/p12/.report.json.$$"
@@ -73,7 +73,7 @@ cleanup() {
 	for daemon in "p12-probe-secure-$$" "p12-probe-crc-$$" "p12-mon-$$" "p12-mgr-$$" "p12-osd-0-$$" "p12-osd-1-$$" "p12-osd-2-$$"; do
 		docker rm -f "$daemon" >/dev/null 2>&1 || true
 	done
-	for id in 0 1 2; do docker volume rm "go-librados-p12-osd-$id-$$" >/dev/null 2>&1 || true; done
+	for id in 0 1 2; do docker volume rm "rados-go-p12-osd-$id-$$" >/dev/null 2>&1 || true; done
 	docker network rm "$network" >/dev/null 2>&1 || true
 	rm -rf "$temporary"
 	rm -rf "$release_stage"
@@ -147,7 +147,7 @@ done
 
 for id in 0 1 2; do
 	uuid="12000000-0000-4000-8000-00000000001$id"
-	volume="go-librados-p12-osd-$id-$$"
+	volume="rados-go-p12-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
 	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
@@ -355,7 +355,7 @@ jq -n \
 	--argjson release "$(cat "$temporary/release.json")" \
 	--argjson qualification "$(cat "$temporary/qualification.json")" \
 	--argjson fuzz "$(cat "$temporary/fuzz.json")" \
-	'{schema_version:2,status:$status,command:$command,started_at:$started_at,finished_at:$finished_at,qualification:$qualification,fuzz:$fuzz,reviews:null,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$version,image:$image,platform:$platform,binaries:{mon_sha256:$mon_sha256,osd_sha256:$osd_sha256}},cluster:{fsid:"31111111-2222-4333-8444-121212121212",network:"172.30.112.0/24",monitors:["v2:172.30.112.10:3300"],osds:3,pool:{name:"p12-data",size:2,min_size:1,pg_num:16},external_defaults:false,service_ticket_ttl_seconds:$ticket_ttl,transports:["secure","crc"]},probe:{secure:$secure,crc:$crc},churn:($churn + {final_osd_stat:$final_osds,final_health:$final_health}),benchmark:{performed:($runs | length == 4),runs:$runs},release:$release}' >"$report"
+	'{schema_version:2,status:$status,command:$command,started_at:$started_at,finished_at:$finished_at,qualification:$qualification,fuzz:$fuzz,reviews:null,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$version,image:$image,platform:$platform,binaries:{mon_sha256:$mon_sha256,osd_sha256:$osd_sha256}},cluster:{fsid:"31111111-2222-4333-8444-121212121212",network:"172.30.112.0/24",monitors:["v2:172.30.112.10:3300"],osds:3,pool:{name:"p12-data",size:2,min_size:1,pg_num:16},external_defaults:false,service_ticket_ttl_seconds:$ticket_ttl,transports:["secure","crc"]},probe:{secure:$secure,crc:$crc},churn:($churn + {final_osd_stat:$final_osds,final_health:$final_health}),benchmark:{performed:($runs | length == 4),runs:$runs},release:$release}' >"$report"
 
 jq -e 'if .status == "candidate" then .command == "./integration/p12/reproduce.sh" and .qualification.status == "passed" and .fuzz == {path:"docs/p12/fuzz-report.json",status:"passed",profile:"certifying",sha256:.fuzz.sha256} and .reviews == null and .benchmark.performed and (.benchmark.runs | length) == 4 and .release.performed and .release.path == "docs/p12/release-artifacts" and .release.reproducible and (.release.artifacts | length) == 4 else .status == "non-certifying" and .qualification == null and .fuzz == null and .reviews == null and .command != "./integration/p12/reproduce.sh" and (.benchmark.runs | length) == 0 and (.release == {performed:false,version:null,path:null,reproducible:false,artifacts:{}}) end' "$report" >/dev/null
 mv "$report" "$final_report"

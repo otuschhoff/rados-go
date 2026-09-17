@@ -1,4 +1,4 @@
-github.com/otuschhoff/go-librados 
+github.com/otuschhoff/rados-go
 github.com/creack/pty v1.1.24
 github.com/davecgh/go-spew v1.1.0
 github.com/github/smimesign v0.2.0

@@ -7,8 +7,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/objecter"
-	"github.com/otuschhoff/go-librados/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/objecter"
+	"github.com/otuschhoff/rados-go/internal/osd"
 )
 
 type Pool struct {

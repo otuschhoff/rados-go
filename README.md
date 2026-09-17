@@ -1,6 +1,6 @@
-# go-librados
+# rados-go
 
-`go-librados` is a pure-Go Ceph RADOS client. The shipped package has no cgo,
+`rados-go` is a pure-Go Ceph RADOS client. The shipped package has no cgo,
 native librados, dynamic-library, subprocess, gateway, or proxy dependency.
 Phases P00 through P11 implement the planned v1 API families; P12 release
 qualification is still in progress. This repository has no published release

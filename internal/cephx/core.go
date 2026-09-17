@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 	krbcrypto "github.com/otuschhoff/gokrb5/v8/crypto"
 )
 

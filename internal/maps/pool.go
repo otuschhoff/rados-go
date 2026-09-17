@@ -5,7 +5,7 @@ import (
 	"math"
 	"sort"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 type PoolOptionType int32

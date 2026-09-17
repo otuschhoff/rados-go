@@ -1,10 +1,10 @@
 # Migrating from cgo librados Wrappers
 
-`go-librados` is a semantic RADOS client, not a source-compatible replacement
+`rados-go` is a semantic RADOS client, not a source-compatible replacement
 for a particular wrapper. Migrate behavior and ownership deliberately instead
 of translating calls one for one.
 
-| cgo/librados pattern | `go-librados` pattern | Important difference |
+| cgo/librados pattern | `rados-go` pattern | Important difference |
 | --- | --- | --- |
 | cluster handle plus `rados_connect` | `rados.New(Config)`, then `Connect(ctx)` | Construction performs no network I/O; contexts and finite defaults bound work. |
 | `conf_read_file`, `conf_parse_env`, default paths | explicit `rados.Config` | No exported config/keyring loader or implicit environment/default path. |

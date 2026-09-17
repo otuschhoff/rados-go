@@ -41,7 +41,7 @@
       "required": ["repository", "identity", "artifacts"],
       "properties": {
         "repository": {
-          "const": "https://github.com/otuschhoff/go-librados.git"
+          "const": "https://github.com/otuschhoff/rados-go.git"
         },
         "identity": {
           "const": "content-addressed-artifacts"

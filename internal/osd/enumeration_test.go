@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 func TestPGNLSOperationCodec(t *testing.T) {

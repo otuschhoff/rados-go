@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 type fakeRead struct {

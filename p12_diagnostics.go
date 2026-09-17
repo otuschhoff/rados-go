@@ -5,7 +5,7 @@ package rados
 import (
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/msgr"
 )
 
 type P12SessionDiagnostic struct {

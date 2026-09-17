@@ -14,7 +14,7 @@ image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$archit
 image="${image_index%@*}@$image_digest"
 temporary=${P10_ARTIFACT_DIR:-$(mktemp -d)}
 mkdir -p "$temporary"
-network="go-librados-p10-$$"
+network="rados-go-p10-$$"
 fsid=21000000-2222-4333-8444-101010101010
 report="$root/docs/p10/.integration-report.json.$$"
 cleanup() {
@@ -25,7 +25,7 @@ cleanup() {
 		done
 	fi
 	docker rm -f "p10-mon-$$" "p10-osd-0-$$" "p10-osd-1-$$" "p10-osd-2-$$" >/dev/null 2>&1 || true
-	docker volume rm "go-librados-p10-osd-0-$$" "go-librados-p10-osd-1-$$" "go-librados-p10-osd-2-$$" >/dev/null 2>&1 || true
+	docker volume rm "rados-go-p10-osd-0-$$" "rados-go-p10-osd-1-$$" "rados-go-p10-osd-2-$$" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
 	rm -f "$report"
 	if test -z "${P10_ARTIFACT_DIR:-}"; then rm -rf "$temporary"; fi
@@ -75,7 +75,7 @@ for attempt in $(seq 1 30); do
 done
 for id in 0 1 2; do
 	uuid="10000000-0000-4000-8000-00000000001$id"
-	volume="go-librados-p10-osd-$id-$$"
+	volume="rados-go-p10-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
 	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
@@ -197,6 +197,6 @@ jq -n \
 	--arg librados_path "$(cat "$temporary/librados.path")" --arg librados_sha256 "$(cat "$temporary/librados.sha256")" --arg librados_package "$(cat "$temporary/librados.package")" \
 	--argjson observed_cluster "$(cat "$temporary/observed-cluster.json")" --argjson artifacts "$(cat "$artifacts")" \
 	--argjson probe "$(cat "$temporary/probe.json")" --argjson native_seed "$(cat "$temporary/native-seed.json")" --argjson native_verify "$(cat "$temporary/native-verify.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p10",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:($observed_cluster + {network:"172.30.110.0/24",osd_device_bytes:8589934592,ec_pool:($observed_cluster.ec_pool + {stripe_width:$probe.required_alignment})}),scenarios:{named_snapshots:"passed",self_managed_snapshots:"passed",specialized_io:"passed",erasure_coded_io:"passed",native_interoperability:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify}}' >"$report"
+	'{schema_version:1,status:"passed",command:"make integration-p10",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:($observed_cluster + {network:"172.30.110.0/24",osd_device_bytes:8589934592,ec_pool:($observed_cluster.ec_pool + {stripe_width:$probe.required_alignment})}),scenarios:{named_snapshots:"passed",self_managed_snapshots:"passed",specialized_io:"passed",erasure_coded_io:"passed",native_interoperability:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify}}' >"$report"
 mv "$report" docs/p10/integration-report.json
 printf '%s\n' 'P10 live snapshot and specialized-I/O qualification passed'

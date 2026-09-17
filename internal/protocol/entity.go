@@ -1,6 +1,6 @@
 package protocol
 
-import wire "github.com/otuschhoff/go-librados/internal/encoding"
+import wire "github.com/otuschhoff/rados-go/internal/encoding"
 
 type EntityType uint8
 

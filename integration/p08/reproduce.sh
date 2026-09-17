@@ -13,7 +13,7 @@ image_index=$(jq -r '.images.qualification.reference' docs/p00/evidence.json)
 image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$architecture]' docs/p00/evidence.json)
 image="${image_index%@*}@$image_digest"
 temporary=$(mktemp -d)
-network="go-librados-p08-$$"
+network="rados-go-p08-$$"
 fsid=11111111-2222-4333-8444-888888888888
 cleanup() {
 	status=$?
@@ -24,7 +24,7 @@ cleanup() {
 		done
 	fi
 	docker rm -f "p08-probe-$$" "p08-mon-$$" "p08-osd-0-$$" "p08-osd-1-$$" "p08-osd-2-$$" >/dev/null 2>&1 || true
-	docker volume rm "go-librados-p08-osd-0-$$" "go-librados-p08-osd-1-$$" "go-librados-p08-osd-2-$$" >/dev/null 2>&1 || true
+	docker volume rm "rados-go-p08-osd-0-$$" "rados-go-p08-osd-1-$$" "rados-go-p08-osd-2-$$" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
 	rm -rf "$temporary"
 	exit "$status"
@@ -77,7 +77,7 @@ done
 
 for id in 0 1 2; do
 	uuid="00000000-0000-4000-8000-00000000002$id"
-	volume="go-librados-p08-osd-$id-$$"
+	volume="rados-go-p08-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
 	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
@@ -165,5 +165,5 @@ jq -n \
 	--argjson probe "$(cat "$temporary/probe.json")" \
 	--argjson native_seed "$(cat "$temporary/native-seed.json")" \
 	--argjson native_verify "$(cat "$temporary/native-verify.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p08",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-888888888888",osds:3,pool:"p08-data",replicas:2,osd_device_bytes:8589934592},scenarios:{metadata_interoperability:"passed",compound_atomicity:"passed",cross_client_contention:"passed",enumeration_conformance:"passed",namespace_isolation:"passed",cursor_pagination_and_partitioning:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify}}' >docs/p08/integration-report.json
+	'{schema_version:1,status:"passed",command:"make integration-p08",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-888888888888",osds:3,pool:"p08-data",replicas:2,osd_device_bytes:8589934592},scenarios:{metadata_interoperability:"passed",compound_atomicity:"passed",cross_client_contention:"passed",enumeration_conformance:"passed",namespace_isolation:"passed",cursor_pagination_and_partitioning:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify}}' >docs/p08/integration-report.json
 printf '%s\n' 'P08 metadata, compound, and enumeration qualification passed'

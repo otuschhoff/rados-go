@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/p12fuzzevidence"
-	"github.com/otuschhoff/go-librados/internal/p12qualcontract"
+	"github.com/otuschhoff/rados-go/internal/p12fuzzevidence"
+	"github.com/otuschhoff/rados-go/internal/p12qualcontract"
 )
 
 const (
@@ -110,7 +110,7 @@ func main() {
 
 func qualify(root, output, releaseVersion string) (bool, error) {
 	started := time.Now().UTC()
-	temporary, err := os.MkdirTemp("", "go-librados-p12-qualification-")
+	temporary, err := os.MkdirTemp("", "rados-go-p12-qualification-")
 	if err != nil {
 		return false, err
 	}

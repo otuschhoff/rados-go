@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const modulePath = "github.com/otuschhoff/go-librados"
+const modulePath = "github.com/otuschhoff/rados-go"
 
 var semanticVersion = regexp.MustCompile(`^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$`)
 
@@ -126,7 +126,7 @@ func generate(root, out, version string) error {
 	if err := os.MkdirAll(out, 0o755); err != nil {
 		return fmt.Errorf("create output directory: %w", err)
 	}
-	base := "go-librados-" + version
+	base := "rados-go-" + version
 	sourcePath := filepath.Join(out, base+".tar.gz")
 	modulePath := filepath.Join(out, base+".zip")
 	sbomPath := filepath.Join(out, base+".spdx.json")
@@ -294,9 +294,9 @@ func validateModuleArchive(archivePath, version string) error {
 func writeSBOM(output, version string, files []sourceFile) error {
 	document := spdxDocument{
 		SPDXVersion: "SPDX-2.3", DataLicense: "CC0-1.0", SPDXID: "SPDXRef-DOCUMENT",
-		Name:              "go-librados-" + version,
-		DocumentNamespace: "https://github.com/otuschhoff/go-librados/releases/" + version + "/spdx",
-		CreationInfo:      spdxCreationInfo{Created: "1970-01-01T00:00:00Z", Creators: []string{"Tool: go-librados-p12-release"}},
+		Name:              "rados-go-" + version,
+		DocumentNamespace: "https://github.com/otuschhoff/rados-go/releases/" + version + "/spdx",
+		CreationInfo:      spdxCreationInfo{Created: "1970-01-01T00:00:00Z", Creators: []string{"Tool: rados-go-p12-release"}},
 	}
 	verificationHashes := make([]string, 0, len(files))
 	for index, item := range files {
@@ -310,11 +310,11 @@ func writeSBOM(output, version string, files []sourceFile) error {
 	slices.Sort(verificationHashes)
 	verificationDigest := sha256.Sum256([]byte(strings.Join(verificationHashes, "")))
 	document.Packages = []spdxPackage{{
-		Name: "go-librados", SPDXID: "SPDXRef-Package", VersionInfo: version,
-		DownloadLocation: "https://github.com/otuschhoff/go-librados/releases/tag/" + version,
+		Name: "rados-go", SPDXID: "SPDXRef-Package", VersionInfo: version,
+		DownloadLocation: "https://github.com/otuschhoff/rados-go/releases/tag/" + version,
 		FilesAnalyzed:    true, PackageVerificationCode: &verification{Value: hex.EncodeToString(verificationDigest[:])},
 		LicenseConcluded: "LGPL-2.1-only", LicenseDeclared: "LGPL-2.1-only", CopyrightText: "NOASSERTION",
-		ExternalRefs: []externalRef{{Category: "PACKAGE-MANAGER", Type: "purl", Locator: "pkg:golang/github.com/otuschhoff/go-librados@" + version}},
+		ExternalRefs: []externalRef{{Category: "PACKAGE-MANAGER", Type: "purl", Locator: "pkg:golang/github.com/otuschhoff/rados-go@" + version}},
 	}}
 	document.Relationships = append([]spdxRelationship{{Element: "SPDXRef-DOCUMENT", Type: "DESCRIBES", Related: "SPDXRef-Package"}}, document.Relationships...)
 	for index, item := range productionDependencies {

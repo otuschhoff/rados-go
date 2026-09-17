@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 var ErrUnsupported = errors.New("unsupported CRUSH feature")

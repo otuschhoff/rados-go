@@ -6,8 +6,8 @@ import (
 	"errors"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/msgr"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/msgr"
 )
 
 func TestWatchRejectsUnboundedQueue(t *testing.T) {

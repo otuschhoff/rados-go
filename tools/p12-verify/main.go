@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/p12fuzzevidence"
+	"github.com/otuschhoff/rados-go/internal/p12fuzzevidence"
 )
 
 const (
@@ -447,7 +447,7 @@ func validateIdentity(value report) error {
 	if expectedImage == "" || value.Server.Repository != cephRepository || value.Server.SourceAnchorCommit != cephCommit || value.Server.Version != cephVersion || value.Server.Image != expectedImage || value.Server.Binaries.MonitorSHA256 != expectedMon || value.Server.Binaries.OSDSHA256 != expectedOSD {
 		return errors.New("server image or binary identity does not match the pinned platform")
 	}
-	if value.Source.Repository != "https://github.com/otuschhoff/go-librados.git" || value.Source.Identity != "content-addressed-artifacts" {
+	if value.Source.Repository != "https://github.com/otuschhoff/rados-go.git" || value.Source.Identity != "content-addressed-artifacts" {
 		return errors.New("invalid source identity")
 	}
 	cluster := value.Cluster

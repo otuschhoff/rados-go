@@ -21,8 +21,8 @@ docker build \
   --build-arg "CEPH_DEVEL_ARM64_SHA256=$(jq -r '.oracle.ceph_devel_arm64_sha256' docs/p00/evidence.json)" \
   --build-arg "CEPHPP_DEVEL_AMD64_SHA256=$(jq -r '.oracle.cephpp_devel_amd64_sha256' docs/p00/evidence.json)" \
   --build-arg "CEPHPP_DEVEL_ARM64_SHA256=$(jq -r '.oracle.cephpp_devel_arm64_sha256' docs/p00/evidence.json)" \
-  -t go-librados-p02-oracle integration/p02
-docker run --rm -v "$temporary:/vectors" go-librados-p02-oracle /vectors
+  -t rados-go-p02-oracle integration/p02
+docker run --rm -v "$temporary:/vectors" rados-go-p02-oracle /vectors
 
 for fixture in banner-rev1.bin crc-one-segment.bin crc-four-segment.bin secure-one-segment.bin secure-multi-record.bin; do
   cmp "testdata/p02/$fixture" "$temporary/$fixture"

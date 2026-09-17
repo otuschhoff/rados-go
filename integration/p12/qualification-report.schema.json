@@ -32,7 +32,7 @@
       "properties": {
         "goos": {"enum": ["darwin", "linux"]},
         "goarch": {"enum": ["amd64", "arm64"]},
-        "module_path": {"const": "github.com/otuschhoff/go-librados"},
+        "module_path": {"const": "github.com/otuschhoff/rados-go"},
         "module_version": {"type": "string", "minLength": 1},
         "cgo_enabled": {"const": false}
       }

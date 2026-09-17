@@ -4,7 +4,7 @@ Status: implementation contract; phases P00 through P11 are implemented and qual
 
 ## 1. Purpose
 
-Build `go-librados`, an idiomatic Go library that lets Go applications and other libraries access Ceph RADOS directly: connect, discover pools, read and write objects, manipulate metadata, execute atomic object operations, and use the wider librados feature set incrementally.
+Build `rados-go`, an idiomatic Go library that lets Go applications and other libraries access Ceph RADOS directly: connect, discover pools, read and write objects, manipulate metadata, execute atomic object operations, and use the wider librados feature set incrementally.
 
 This is a behavioral and wire-protocol port of the client functionality behind Ceph librados, not a line-by-line translation of its C/C++ implementation. It must communicate with unmodified Ceph monitors, OSDs, and, where required, managers.
 

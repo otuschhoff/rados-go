@@ -5,9 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/objecter"
-	"github.com/otuschhoff/go-librados/internal/osd"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/objecter"
+	"github.com/otuschhoff/rados-go/internal/osd"
 )
 
 func TestWriteOpCopiesInputAndFreezes(t *testing.T) {

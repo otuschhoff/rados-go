@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/p12fuzzcontract"
+	"github.com/otuschhoff/rados-go/internal/p12fuzzcontract"
 )
 
 const (

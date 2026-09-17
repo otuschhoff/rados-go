@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 var testDecodeLimits = DecodeLimits{MaxBytes: 4096, MaxBuckets: 16, MaxRules: 16, MaxItems: 64, MaxNames: 64}

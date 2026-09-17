@@ -13,8 +13,8 @@ image_index=$(jq -r '.images.qualification.reference' docs/p00/evidence.json)
 image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$architecture]' docs/p00/evidence.json)
 image="${image_index%@*}@$image_digest"
 temporary=$(mktemp -d)
-network="go-librados-p04-$$"
-client_container="go-librados-p04-client-$$"
+network="rados-go-p04-$$"
+client_container="rados-go-p04-client-$$"
 fsid="11111111-2222-4333-8444-555555555555"
 foreign_fsid="aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
 report=${P04_REPORT:-"$root/docs/p04/integration-report.json"}
@@ -101,5 +101,5 @@ docker logs "$client_container" >"$temporary/probe.json"
 jq -e '.incremental_observed and .full_incremental_equivalent and .monitor_loss_recovered and .post_failover_command and .foreign_fsid_rejected and (.pools | index("p04-initial") != null) and (.pools | index("p04-mutated") != null) and (.pools | index("p04-failover") != null)' "$temporary/probe.json" >/dev/null
 mkdir -p "$(dirname "$report")"
 test "$(hash_implementation)" = "$artifacts"
-jq -n --arg started_at "$started_at" --arg finished_at "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" --arg image "$image" --arg platform "$platform" --argjson artifacts "$artifacts" --slurpfile probe "$temporary/probe.json" '{schema_version:1,status:"passed",command:"make integration-p04",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",image:$image,platform:$platform},scenarios:{m0:"passed",pool_report:"passed",map_change:"passed",monitor_loss:"passed",foreign_fsid:"passed",convergence:"passed",read_only_command:"passed"},probe:$probe[0]}' >"$report"
+jq -n --arg started_at "$started_at" --arg finished_at "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" --arg image "$image" --arg platform "$platform" --argjson artifacts "$artifacts" --slurpfile probe "$temporary/probe.json" '{schema_version:1,status:"passed",command:"make integration-p04",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",image:$image,platform:$platform},scenarios:{m0:"passed",pool_report:"passed",map_change:"passed",monitor_loss:"passed",foreign_fsid:"passed",convergence:"passed",read_only_command:"passed"},probe:$probe[0]}' >"$report"
 printf 'P04 integration report: %s\n' "$report"

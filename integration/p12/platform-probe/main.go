@@ -8,10 +8,10 @@ import (
 	"runtime/debug"
 	"strconv"
 
-	rados "github.com/otuschhoff/go-librados"
+	rados "github.com/otuschhoff/rados-go"
 )
 
-const modulePath = "github.com/otuschhoff/go-librados"
+const modulePath = "github.com/otuschhoff/rados-go"
 
 var cgoEnabled = "unset"
 

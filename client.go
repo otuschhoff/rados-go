@@ -13,15 +13,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/cephx"
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/maps"
-	"github.com/otuschhoff/go-librados/internal/mgr"
-	"github.com/otuschhoff/go-librados/internal/mon"
-	"github.com/otuschhoff/go-librados/internal/msgr"
-	"github.com/otuschhoff/go-librados/internal/objecter"
-	"github.com/otuschhoff/go-librados/internal/osd"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	"github.com/otuschhoff/rados-go/internal/cephx"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/maps"
+	"github.com/otuschhoff/rados-go/internal/mgr"
+	"github.com/otuschhoff/rados-go/internal/mon"
+	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/objecter"
+	"github.com/otuschhoff/rados-go/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 const (
@@ -154,7 +154,7 @@ func (client *Client) Connect(ctx context.Context) error {
 	}
 	factory := mon.NewAuthenticatedSessionFactoryWithObserver(connectorConfig, sessionConfig, func(connector *cephx.Connector) { client.authority.Store(connector) })
 	monitorClient, err := mon.NewClient(mon.ClientConfig{
-		Endpoints: endpoints, ExpectedFSID: client.expected, Hostname: "go-librados",
+		Endpoints: endpoints, ExpectedFSID: client.expected, Hostname: "rados-go",
 		MapLimits:     maps.Limits{MaxBytes: 64 << 20, MaxMonitors: 64, MaxAddresses: 64, MaxLocations: 64, MaxPools: 4096, MaxOSDs: 65536, MaxPGMappings: 1 << 20, MaxCollectionEntries: 1 << 20},
 		MessageLimits: mon.MessageLimits{MaxBytes: 64 << 20, MaxMaps: 1024}, CommandItems: 64, SubscribePeriod: 5 * time.Second, RetryDelay: 100 * time.Millisecond,
 	}, factory)

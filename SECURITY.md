@@ -11,7 +11,7 @@ This policy does not make the unreleased default branch production-ready.
 
 Use GitHub private vulnerability reporting for this repository:
 
-<https://github.com/otuschhoff/go-librados/security/advisories/new>
+<https://github.com/otuschhoff/rados-go/security/advisories/new>
 
 Include the affected commit or version, impact, prerequisites, reproduction or
 proof of concept, and any suggested mitigation. Do not include reusable CephX

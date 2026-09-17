@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/maps"
-	"github.com/otuschhoff/go-librados/internal/msgr"
-	"github.com/otuschhoff/go-librados/internal/osd"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	"github.com/otuschhoff/rados-go/internal/maps"
+	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/osd"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 type osdSession struct {

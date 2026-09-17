@@ -30,7 +30,7 @@
       "additionalProperties": false,
       "required": ["repository", "identity", "artifacts"],
       "properties": {
-        "repository": { "const": "https://github.com/otuschhoff/go-librados.git" },
+        "repository": { "const": "https://github.com/otuschhoff/rados-go.git" },
         "identity": { "const": "content-addressed-artifacts" },
         "artifacts": { "type": "object", "minProperties": 1, "additionalProperties": { "$ref": "#/$defs/sha256" } }
       }

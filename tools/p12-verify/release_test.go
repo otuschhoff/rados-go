@@ -82,7 +82,7 @@ func TestSPDXValidationRejectsUnknownStaleAndExtraAnalysis(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := os.ReadFile(root + "/" + releaseArtifactsPath + "/go-librados-v1.2.3.spdx.json")
+	data, err := os.ReadFile(root + "/" + releaseArtifactsPath + "/rados-go-v1.2.3.spdx.json")
 	if err != nil {
 		t.Fatal(err)
 	}

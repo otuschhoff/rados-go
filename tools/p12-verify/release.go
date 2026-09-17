@@ -22,7 +22,7 @@ import (
 
 const (
 	releaseArtifactsPath = "docs/p12/release-artifacts"
-	releaseModulePath    = "github.com/otuschhoff/go-librados"
+	releaseModulePath    = "github.com/otuschhoff/rados-go"
 )
 
 type releaseSource struct {
@@ -105,7 +105,7 @@ var releaseDependencies = []releaseDependency{
 }
 
 func validateReleaseArtifacts(root, version string, reported map[string]string) error {
-	base := "go-librados-" + version
+	base := "rados-go-" + version
 	names := []string{base + ".spdx.json", base + ".tar.gz", base + ".zip", "SHA256SUMS"}
 	directory := filepath.Join(root, filepath.FromSlash(releaseArtifactsPath))
 	entries, err := os.ReadDir(directory)
@@ -315,7 +315,7 @@ func validateReleaseSPDX(data []byte, version string, sources []releaseSource) e
 	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
 		return errors.New("retained SPDX JSON has trailing content")
 	}
-	if document.SPDXVersion != "SPDX-2.3" || document.DataLicense != "CC0-1.0" || document.SPDXID != "SPDXRef-DOCUMENT" || document.Name != "go-librados-"+version || document.DocumentNamespace != "https://github.com/otuschhoff/go-librados/releases/"+version+"/spdx" || document.CreationInfo.Created != "1970-01-01T00:00:00Z" || !slices.Equal(document.CreationInfo.Creators, []string{"Tool: go-librados-p12-release"}) {
+	if document.SPDXVersion != "SPDX-2.3" || document.DataLicense != "CC0-1.0" || document.SPDXID != "SPDXRef-DOCUMENT" || document.Name != "rados-go-"+version || document.DocumentNamespace != "https://github.com/otuschhoff/rados-go/releases/"+version+"/spdx" || document.CreationInfo.Created != "1970-01-01T00:00:00Z" || !slices.Equal(document.CreationInfo.Creators, []string{"Tool: rados-go-p12-release"}) {
 		return errors.New("retained SPDX document has invalid SPDX 2.3 identity")
 	}
 	if len(document.Files) != len(sources) || len(document.Packages) != 1+len(releaseDependencies) {
@@ -334,8 +334,8 @@ func validateReleaseSPDX(data []byte, version string, sources []releaseSource) e
 	slices.Sort(verificationHashes)
 	verificationDigest := sha256.Sum256([]byte(strings.Join(verificationHashes, "")))
 	rootPackage := document.Packages[0]
-	rootRef := []releaseExternalRef{{Category: "PACKAGE-MANAGER", Type: "purl", Locator: "pkg:golang/github.com/otuschhoff/go-librados@" + version}}
-	if rootPackage.Name != "go-librados" || rootPackage.SPDXID != "SPDXRef-Package" || rootPackage.VersionInfo != version || rootPackage.DownloadLocation != "https://github.com/otuschhoff/go-librados/releases/tag/"+version || !rootPackage.FilesAnalyzed || rootPackage.LicenseConcluded != "LGPL-2.1-only" || rootPackage.LicenseDeclared != "LGPL-2.1-only" || rootPackage.CopyrightText != "NOASSERTION" || rootPackage.PackageVerificationCode == nil || rootPackage.PackageVerificationCode.Value != hex.EncodeToString(verificationDigest[:]) || !slices.Equal(rootPackage.ExternalRefs, rootRef) || len(rootPackage.Checksums) != 0 {
+	rootRef := []releaseExternalRef{{Category: "PACKAGE-MANAGER", Type: "purl", Locator: "pkg:golang/github.com/otuschhoff/rados-go@" + version}}
+	if rootPackage.Name != "rados-go" || rootPackage.SPDXID != "SPDXRef-Package" || rootPackage.VersionInfo != version || rootPackage.DownloadLocation != "https://github.com/otuschhoff/rados-go/releases/tag/"+version || !rootPackage.FilesAnalyzed || rootPackage.LicenseConcluded != "LGPL-2.1-only" || rootPackage.LicenseDeclared != "LGPL-2.1-only" || rootPackage.CopyrightText != "NOASSERTION" || rootPackage.PackageVerificationCode == nil || rootPackage.PackageVerificationCode.Value != hex.EncodeToString(verificationDigest[:]) || !slices.Equal(rootPackage.ExternalRefs, rootRef) || len(rootPackage.Checksums) != 0 {
 		return errors.New("retained SPDX root package has invalid identity, version, or license")
 	}
 	for index, dependency := range releaseDependencies {

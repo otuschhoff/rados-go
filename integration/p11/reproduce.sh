@@ -14,7 +14,7 @@ image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$archit
 image="${image_index%@*}@$image_digest"
 temporary=${P11_ARTIFACT_DIR:-$(mktemp -d)}
 mkdir -p "$temporary"
-network="go-librados-p11-$$"
+network="rados-go-p11-$$"
 fsid=21111111-2222-4333-8444-111111111111
 report="$root/docs/p11/.integration-report.json.$$"
 cleanup() {
@@ -25,7 +25,7 @@ cleanup() {
 		done
 	fi
 	docker rm -f "p11-mon-$$" "p11-mgr-a-$$" "p11-mgr-b-$$" "p11-osd-0-$$" "p11-recovery-$$" >/dev/null 2>&1 || true
-	docker volume rm "go-librados-p11-osd-0-$$" >/dev/null 2>&1 || true
+	docker volume rm "rados-go-p11-osd-0-$$" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
 	rm -f "$report"
 	if test -z "${P11_ARTIFACT_DIR:-}"; then rm -rf "$temporary"; fi
@@ -76,7 +76,7 @@ for attempt in $(seq 1 30); do
 	sleep 1
 done
 
-volume="go-librados-p11-osd-0-$$"
+volume="rados-go-p11-osd-0-$$"
 uuid=11000000-0000-4000-8000-000000000010
 docker volume create "$volume" >/dev/null
 ceph_cli osd create "$uuid" 0 >/dev/null
@@ -211,6 +211,6 @@ jq -n \
 	--argjson osd_stat "$(cat "$temporary/osd-stat.json")" --argjson osd_metadata "$(cat "$temporary/osd-metadata.json")" --argjson pool "$(cat "$temporary/data-pool.json")" \
 	--argjson admin_client "$(cat "$temporary/admin-auth.json")" --argjson io_client "$(cat "$temporary/io-auth.json")" --argjson artifacts "$(cat "$artifacts")" \
 	--argjson admin "$(cat "$temporary/admin.json")" --argjson native "$(cat "$temporary/native.json")" --argjson recovery "$(cat "$temporary/recovery.json")" --argjson least "$(cat "$temporary/least.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p11",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,mgr_sha256:$ceph_mgr_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:$fsid.fsid,network:"172.30.111.0/24",osds:$osd_stat.num_osds,objectstore:(if ($osd_metadata|length)==$osd_stat.num_osds and all($osd_metadata[];.osd_objectstore=="bluestore") then "bluestore" else "mixed" end),osd_device_bytes:4294967296,pool:{name:$pool.pool,size:$pool.size,min_size:$pool.min_size,pg_num:$pool.pg_num},manager_daemons:2,admin_client:$admin_client,io_client:$io_client},scenarios:{administration:"passed",native_conformance:"passed",manager_failover:"passed",manager_loss_io:"passed",least_privilege:"passed",destructive_resource_validation:"passed"},probe:{admin:$admin,recovery:$recovery,least_privilege:$least},native:$native}' >"$report"
+	'{schema_version:1,status:"passed",command:"make integration-p11",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,mgr_sha256:$ceph_mgr_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:$fsid.fsid,network:"172.30.111.0/24",osds:$osd_stat.num_osds,objectstore:(if ($osd_metadata|length)==$osd_stat.num_osds and all($osd_metadata[];.osd_objectstore=="bluestore") then "bluestore" else "mixed" end),osd_device_bytes:4294967296,pool:{name:$pool.pool,size:$pool.size,min_size:$pool.min_size,pg_num:$pool.pg_num},manager_daemons:2,admin_client:$admin_client,io_client:$io_client},scenarios:{administration:"passed",native_conformance:"passed",manager_failover:"passed",manager_loss_io:"passed",least_privilege:"passed",destructive_resource_validation:"passed"},probe:{admin:$admin,recovery:$recovery,least_privilege:$least},native:$native}' >"$report"
 mv "$report" docs/p11/integration-report.json
 printf '%s\n' 'P11 live administrative and manager qualification passed'

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/p12qualcontract"
+	"github.com/otuschhoff/rados-go/internal/p12qualcontract"
 )
 
 func TestDecodeReportRejectsMalformedUnknownAndTrailingJSON(t *testing.T) {
@@ -359,7 +359,7 @@ func TestReleaseEvidenceRejectsChangedRetainedBytesAndExtraFiles(t *testing.T) {
 	root := seedRetainedRelease(t, version)
 	artifactPath := releaseArtifactsPath
 	value := report{Status: "candidate", Release: releaseEvidence{Performed: true, Version: &version, Path: &artifactPath, Reproducible: true, Artifacts: hashRetainedRelease(t, root)}}
-	archive := filepath.Join(root, filepath.FromSlash(releaseArtifactsPath), "go-librados-v1.2.3.tar.gz")
+	archive := filepath.Join(root, filepath.FromSlash(releaseArtifactsPath), "rados-go-v1.2.3.tar.gz")
 	if err := os.WriteFile(archive, []byte("changed"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -381,7 +381,7 @@ func seedRetainedRelease(t *testing.T, version string) string {
 	root := t.TempDir()
 	for name, content := range map[string]string{
 		"LICENSE": "license", "THIRD_PARTY_NOTICES": "notices", "README.md": "readme", "SECURITY.md": "security",
-		"go.mod": "module github.com/otuschhoff/go-librados\n", "go.sum": "sum", "client.go": "package librados\n",
+				"go.mod": "module github.com/otuschhoff/rados-go\n", "go.sum": "sum", "client.go": "package rados\n",
 		"internal/source.go": "package internal\n", "examples/basic/main.go": "package main\n",
 	} {
 		fullPath := filepath.Join(root, filepath.FromSlash(name))

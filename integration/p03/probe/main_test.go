@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/cephx"
+	"github.com/otuschhoff/rados-go/internal/cephx"
 )
 
 func TestSameTicketIdentity(t *testing.T) {

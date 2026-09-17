@@ -29,8 +29,8 @@ image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$archit
 image="${image_index%@*}@$image_digest"
 temporary=$(mktemp -d)
 source_snapshot="$temporary/source"
-network="go-librados-p03-$$"
-monitor="go-librados-p03-mon-$$"
+network="rados-go-p03-$$"
+monitor="rados-go-p03-mon-$$"
 subnet="172.30.93.0/24"
 monitor_ip="172.30.93.10"
 client_ip="172.30.93.20"
@@ -160,7 +160,7 @@ monitor_binary_sha256=$(docker exec "$monitor" sh -c 'sha256sum "$(command -v ce
 
 test "$(hash_implementation "$root")" = "$artifacts"
 jq -n \
-	--arg repository "https://github.com/otuschhoff/go-librados.git" \
+	--arg repository "https://github.com/otuschhoff/rados-go.git" \
 	--arg repository_commit "$repository_commit" \
 	--argjson repository_dirty "$repository_dirty" \
 	--arg ceph_repository "https://github.com/ceph/ceph.git" \

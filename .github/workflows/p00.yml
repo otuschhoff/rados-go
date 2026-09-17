@@ -65,11 +65,11 @@ jobs:
       - name: Check pinned source and generated inventory
         if: matrix.go == needs.pins.outputs.minimum-go
         run: |
-          git clone --filter=blob:none --no-checkout https://github.com/ceph/ceph.git /tmp/go-librados-ceph
-          git -C /tmp/go-librados-ceph sparse-checkout init --no-cone
-          git -C /tmp/go-librados-ceph sparse-checkout set src/include/rados/librados.h src/include/rados/librados.hpp COPYING
-          git -C /tmp/go-librados-ceph checkout "${{ needs.pins.outputs.ceph-commit }}"
-          GO111MODULE=off go run ./tools/p00-verify -ceph-source /tmp/go-librados-ceph
+          git clone --filter=blob:none --no-checkout https://github.com/ceph/ceph.git /tmp/rados-go-ceph
+          git -C /tmp/rados-go-ceph sparse-checkout init --no-cone
+          git -C /tmp/rados-go-ceph sparse-checkout set src/include/rados/librados.h src/include/rados/librados.hpp COPYING
+          git -C /tmp/rados-go-ceph checkout "${{ needs.pins.outputs.ceph-commit }}"
+          GO111MODULE=off go run ./tools/p00-verify -ceph-source /tmp/rados-go-ceph
           make inventory
           git diff --exit-code -- docs/p00/api-inventory.csv
       - run: make verify-p03
@@ -195,7 +195,7 @@ jobs:
       - name: Reject production cgo imports
         run: test -z "$(CGO_ENABLED=0 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
       - name: Verify dependency and license boundary
-        run: test -z "$(go list -deps -f '{{with .Module}}{{if ne .Path "github.com/otuschhoff/go-librados"}}{{.Path}}{{end}}{{end}}' ./internal/encoding ./internal/protocol | sort -u)"
+        run: test -z "$(go list -deps -f '{{with .Module}}{{if ne .Path "github.com/otuschhoff/rados-go"}}{{.Path}}{{end}}{{end}}' ./internal/encoding ./internal/protocol | sort -u)"
       - name: Race test
         run: go test -race ./...
       - name: Static analysis
@@ -328,7 +328,7 @@ jobs:
           CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p12-release -root . -out "$release_dir" -version v0.0.0-ci
           (
             cd "$release_dir"
-            for artifact in SHA256SUMS go-librados-v0.0.0-ci.spdx.json go-librados-v0.0.0-ci.tar.gz go-librados-v0.0.0-ci.zip; do
+            for artifact in SHA256SUMS rados-go-v0.0.0-ci.spdx.json rados-go-v0.0.0-ci.tar.gz rados-go-v0.0.0-ci.zip; do
               shasum -a 256 "$artifact"
             done
           ) > "$manifest"

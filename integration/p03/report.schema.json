@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/otuschhoff/go-librados/integration/p03/report.schema.json",
-  "title": "go-librados P03 real-monitor evidence",
+  "$id": "https://github.com/otuschhoff/rados-go/integration/p03/report.schema.json",
+  "title": "rados-go P03 real-monitor evidence",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "server", "scenarios", "probe"],

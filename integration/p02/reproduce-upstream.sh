@@ -53,10 +53,10 @@ docker buildx build --load --platform "$platform" \
   --build-context "ceph-source=$temporary/ceph-source" \
   --build-arg "CEPH_IMAGE=$image" \
   -f integration/p02/Dockerfile.upstream \
-  -t go-librados-p02-upstream integration/p02
+  -t rados-go-p02-upstream integration/p02
 mkdir "$temporary/vectors"
 docker run --rm --platform "$platform" -v "$temporary/vectors:/vectors" \
-  go-librados-p02-upstream /vectors
+  rados-go-p02-upstream /vectors
 
 for fixture in \
   upstream-ack-control.bin \

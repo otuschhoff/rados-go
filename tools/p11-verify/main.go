@@ -191,7 +191,7 @@ func validateIdentity(value report) {
 }
 
 func validateSource(value report) {
-	if value.Source.Repository != "https://github.com/otuschhoff/go-librados.git" || value.Source.Identity != "content-addressed-artifacts" || !mapsEqual(value.Source.Artifacts, implementationHashes()) {
+	if value.Source.Repository != "https://github.com/otuschhoff/rados-go.git" || value.Source.Identity != "content-addressed-artifacts" || !mapsEqual(value.Source.Artifacts, implementationHashes()) {
 		fatalf("P11 report source artifacts do not match the current tree")
 	}
 }

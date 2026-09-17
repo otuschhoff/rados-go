@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/otuschhoff/go-librados/internal/p12fuzzcontract"
-	"github.com/otuschhoff/go-librados/internal/p12fuzzevidence"
+	"github.com/otuschhoff/rados-go/internal/p12fuzzcontract"
+	"github.com/otuschhoff/rados-go/internal/p12fuzzevidence"
 )
 
 func main() {

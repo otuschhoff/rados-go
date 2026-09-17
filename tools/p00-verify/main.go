@@ -183,7 +183,7 @@ func loadEvidence(path string) evidence {
 }
 
 func checkPins(value evidence) {
-	if value.SchemaVersion != 1 || value.Project.ModulePath != "github.com/otuschhoff/go-librados" || value.Project.PublicPackage != "rados" {
+	if value.SchemaVersion != 1 || value.Project.ModulePath != "github.com/otuschhoff/rados-go" || value.Project.PublicPackage != "rados" {
 		fatalf("unexpected evidence schema or project identity")
 	}
 	if value.Ceph.Repository != "https://github.com/ceph/ceph.git" || !commitRE.MatchString(value.Ceph.SourceBaseline.TagObject) || !commitRE.MatchString(value.Ceph.QualificationRelease.TagObject) || !commitRE.MatchString(value.Ceph.SourceBaseline.Commit) || !commitRE.MatchString(value.Ceph.QualificationRelease.Commit) {

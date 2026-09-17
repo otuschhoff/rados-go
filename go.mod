@@ -1,4 +1,4 @@
-module github.com/otuschhoff/go-librados
+module github.com/otuschhoff/rados-go
 
 go 1.26.8
 

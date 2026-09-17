@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 func TestBootstrapConfigPrecedence(t *testing.T) {

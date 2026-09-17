@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/otuschhoff/go-librados/testdata/manifest.schema.json",
-  "title": "go-librados protocol fixture provenance",
+  "$id": "https://github.com/otuschhoff/rados-go/testdata/manifest.schema.json",
+  "title": "rados-go protocol fixture provenance",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "fixture", "sha256", "kind", "source", "generator", "secrets", "license"],

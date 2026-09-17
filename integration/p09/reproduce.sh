@@ -15,7 +15,7 @@ image="${image_index%@*}@$image_digest"
 temporary=${P09_ARTIFACT_DIR:-$(mktemp -d)}
 mkdir -p "$temporary"
 CGO_ENABLED=0 go test ./internal/objecter -run '^(TestClassOperationOutcomeUnknownIsObservable|TestWatchDispatchOverflowIsObservable)$' -count=1
-network="go-librados-p09-$$"
+network="rados-go-p09-$$"
 fsid=11111111-2222-4333-8444-999999999999
 cleanup() {
 	exit_code=$?
@@ -25,7 +25,7 @@ cleanup() {
 		done
 	fi
 	docker rm -f "p09-mon-$$" "p09-osd-0-$$" "p09-osd-1-$$" "p09-osd-2-$$" >/dev/null 2>&1 || true
-	docker volume rm "go-librados-p09-osd-0-$$" "go-librados-p09-osd-1-$$" "go-librados-p09-osd-2-$$" >/dev/null 2>&1 || true
+	docker volume rm "rados-go-p09-osd-0-$$" "rados-go-p09-osd-1-$$" "rados-go-p09-osd-2-$$" >/dev/null 2>&1 || true
 	docker network rm "$network" >/dev/null 2>&1 || true
 	if test -z "${P09_ARTIFACT_DIR:-}"; then rm -rf "$temporary"; fi
 	exit "$exit_code"
@@ -74,7 +74,7 @@ for attempt in $(seq 1 30); do
 done
 for id in 0 1 2; do
 	uuid="00000000-0000-4000-8000-00000000003$id"
-	volume="go-librados-p09-osd-$id-$$"
+	volume="rados-go-p09-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
 	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
@@ -227,5 +227,5 @@ jq -n \
 	--argjson native_watch "$(cat "$temporary/native-watch.json")" \
 	--argjson native_notify "$(cat "$temporary/native-notify.json")" \
 	--argjson native_verify "$(cat "$temporary/native-verify.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p09",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/go-librados.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-999999999999",osds:3,pool:"p09-data",replicas:2,osd_device_bytes:8589934592},scenarios:{class_execution:"passed",ambiguous_class_execution:"passed",lock_interoperability:"passed",lock_lease_lifecycle:"passed",watch_notify_interoperability:"passed",partial_timeout_results:"passed",remap_reregistration:"passed",osd_restart:"passed",lost_watch_observability:"passed",bounded_shutdown:"passed"},probe:$probe,native:{seed:$native_seed,watch:$native_watch,notify:$native_notify,verify:$native_verify}}' >docs/p09/integration-report.json
+	'{schema_version:1,status:"passed",command:"make integration-p09",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-999999999999",osds:3,pool:"p09-data",replicas:2,osd_device_bytes:8589934592},scenarios:{class_execution:"passed",ambiguous_class_execution:"passed",lock_interoperability:"passed",lock_lease_lifecycle:"passed",watch_notify_interoperability:"passed",partial_timeout_results:"passed",remap_reregistration:"passed",osd_restart:"passed",lost_watch_observability:"passed",bounded_shutdown:"passed"},probe:$probe,native:{seed:$native_seed,watch:$native_watch,notify:$native_notify,verify:$native_verify}}' >docs/p09/integration-report.json
 printf '%s\n' 'P09 live interoperability qualification passed'

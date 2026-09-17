@@ -195,8 +195,8 @@ func generatedSignedReview(t *testing.T) (humanReviewReport, reviewerTrustPolicy
 	candidate.Qualification = &qualificationBinding{Path: "docs/p12/qualification-report.json", Status: "passed", SHA256: strings.Repeat("a", 64)}
 	candidate.Fuzz = &fuzzBinding{Path: "docs/p12/fuzz-report.json", Status: "passed", Profile: "certifying", SHA256: strings.Repeat("b", 64)}
 	candidate.Release = releaseEvidence{Version: &version, Artifacts: map[string]string{
-		"SHA256SUMS": strings.Repeat("1", 64), "go-librados-v1.2.3.spdx.json": strings.Repeat("2", 64),
-		"go-librados-v1.2.3.tar.gz": strings.Repeat("3", 64), "go-librados-v1.2.3.zip": strings.Repeat("4", 64),
+		"SHA256SUMS": strings.Repeat("1", 64), "rados-go-v1.2.3.spdx.json": strings.Repeat("2", 64),
+		"rados-go-v1.2.3.tar.gz": strings.Repeat("3", 64), "rados-go-v1.2.3.zip": strings.Repeat("4", 64),
 	}}
 	reportData, err := json.Marshal(candidate)
 	if err != nil {

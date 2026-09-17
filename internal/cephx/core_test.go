@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
-	"github.com/otuschhoff/go-librados/internal/protocol"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
 func mustSecretKey(t testing.TB, value string) CryptoKey {

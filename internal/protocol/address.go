@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 const (

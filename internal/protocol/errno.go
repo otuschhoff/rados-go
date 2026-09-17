@@ -3,7 +3,7 @@ package protocol
 import (
 	"fmt"
 
-	wire "github.com/otuschhoff/go-librados/internal/encoding"
+	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
 
 // WireErrno is a signed Linux errno value carried by Ceph. Negative values are
