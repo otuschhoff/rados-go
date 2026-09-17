@@ -242,9 +242,6 @@ func publicSections(body string, initiallyPublic bool) string {
 
 func classify(item entry) (goEquivalent, disposition, phase, difference, test string) {
 	lower := strings.ToLower(item.symbol)
-	disposition = "planned"
-	difference = "Go context/error/ownership adaptation; exact contract frozen in owning phase"
-	test = "native differential test in owning phase"
 	if strings.Contains(item.signature, "deprecated") || containsAny(lower, "watchctx::notify", "get_auid", "set_auid", "tmap_") {
 		return "none", "intentional-omission: deprecated or legacy API without distinct v1 behavior", "P13", "No deprecated compatibility alias in the initial Go API", "inventory review; no runtime conformance claim"
 	}
@@ -260,11 +257,11 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case strings.Contains(lower, "::") && (strings.HasSuffix(lower, "::ioctx") || strings.HasSuffix(lower, "::rados") || strings.HasSuffix(lower, "::objectcursor") || strings.HasSuffix(lower, "::objectoperation") || strings.HasSuffix(lower, "::placementgroup")):
 		return "Go constructors and immutable value/builders", "go-native", "P01", "Constructors and move/copy rules become Go constructors and ownership rules", "API lifecycle tests"
 	case isAny(lower, "rados_create", "rados_create2", "rados_create_with_context", "rados_version", "rados::version") || containsAny(lower, "::init", "connect", "shutdown", "conf_", "config", "cct", "instance_id", "ioctx::close", "ioctx_destroy", "ioctx_get_cluster"):
-		return "rados.Client / rados.Config", disposition, "P01/P04", difference, test
+		return classifyConfigLifecycle(item)
 	case containsAny(lower, "pool_create", "pool_delete", "application_", "cluster_stat", "pool_stat", "mon_command", "mgr_command", "osd_command", "pg_command", "blocklist", "blacklist"):
 		return classifyP11(item, "rados.Client administrative methods")
 	case containsAny(lower, "pool_list", "pool_lookup", "pool_reverse", "ioctx_create", "get_pool_name", "get_id", "cluster_fsid", "wait_for_latest_osdmap", "min_compatible", "ping_monitor"):
-		return "rados.Client pool/map discovery methods", disposition, "P04", difference, test
+		return classifyDiscovery(item)
 	case containsAny(lower, "watch", "notify"):
 		return classifyP09(item, "rados.Watch and notify methods", "watch/notify")
 	case containsAny(lower, "lock", "break_lock", "list_lockers"):
@@ -282,13 +279,13 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "read_op", "write_op", "objectreadoperation", "objectwriteoperation", "operate", "assert", "cmp", "objectoperation", "set_op_flags", "full_try", "full_force", "::size"):
 		return classifyP08(item, "rados.ReadOp / rados.WriteOp")
 	case containsAny(lower, "read", "stat"):
-		return "rados.ObjectRef read/stat methods", disposition, "P06", difference, test
+		return classifyReadStat(item)
 	case containsAny(lower, "write", "append", "truncate", "trunc", "remove", "zero", "ioctx::create"):
-		return "rados.ObjectRef mutation methods", disposition, "P07", difference, test
+		return classifyMutation(item)
 	case containsAny(lower, "aio", "completion", "flush", "get_last_version"):
-		return "context-aware calls and rados.Client.Flush", disposition, "P07", "Unified context-aware Go calls; no public C completion allocation", test
+		return classifyCompletion(item)
 	case containsAny(lower, "set_namespace", "get_namespace", "locator_set_key", "get_object_pg_hash_position", "get_object_hash_position", "placementgroup::parse"):
-		return "immutable rados.Pool/ObjectRef views and placement diagnostics", disposition, "P05", difference, test
+		return classifyViewPlacement(item)
 	case containsAny(lower, "inconsistent"):
 		return classifyP11(item, "rados.Client administrative consistency methods")
 	case lower == "rados_getaddrs" || containsAny(lower, "get_addrs"):
@@ -296,12 +293,60 @@ func classify(item entry) (goEquivalent, disposition, phase, difference, test st
 	case containsAny(lower, "from_rados_t", "from_rados_ioctx_t"):
 		return "none", "intentional-omission: native handle interoperation violates pure-Go boundary", "P00", "No C handle exists in the distributed client", "dependency and cgo audit"
 	case containsAny(lower, "full_try", "full_force"):
-		return "rados operation flags", disposition, "P08", difference, test
+		return "rados operation flags", "intentional-omission: non-frozen P08 variant", "P08", "Not exposed by the certified P08 Go contract", "P08 API inventory review; no runtime conformance claim"
 	case containsAny(lower, "to_str", "::set"):
 		return "Go String/value semantics", "go-native", "P08", "Represented by Go value methods", "cursor round-trip tests"
 	default:
 		return "none", "review-required", "P00", "Must be classified before P00 exit", "classification validator"
 	}
+}
+
+func classifyConfigLifecycle(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	if isAny(lower, "rados_version", "rados::version") {
+		return "none", "intentional-omission: version API absent from frozen v1 contract", "P01", "The pure-Go module does not report a linked librados version", "P01 API inventory review; no runtime conformance claim"
+	}
+	if containsAny(lower, "cct", "ioctx_get_cluster") {
+		return "none", "intentional-omission: native handle access violates pure-Go boundary", "P01", "No native configuration or cluster handle exists", "P01 dependency and cgo audit"
+	}
+	if isAny(lower, "rados_create", "rados_create2", "rados_create_with_context", "rados::init", "rados::init2", "rados::init_with_context") {
+		return "rados.New", "go-native", "P01/P04", "Go construction combines native allocation, initialization, and ownership", "P01 lifecycle and P04 configuration tests"
+	}
+	return "rados.Client / rados.Config lifecycle and configuration methods", "implemented", "P01/P04", "Typed, value-oriented configuration and context-aware lifecycle replace mutable native configuration", "P01 lifecycle and P04 configuration tests"
+}
+
+func classifyDiscovery(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	if containsAny(lower, "min_compatible", "ping_monitor", "wait_for_latest_osdmap") {
+		return "none", "intentional-omission: discovery diagnostic absent from frozen v1 contract", "P04", "No distinct v1 behavior requires this native diagnostic or explicit map wait", "P04 API inventory review; no runtime conformance claim"
+	}
+	return "rados.Client pool/map discovery methods", "implemented", "P04", "Context-aware discovery returns Go-owned values and immutable pool views", "P04 unit and live discovery tests"
+}
+
+func classifyViewPlacement(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	lower := strings.ToLower(item.symbol)
+	if containsAny(lower, "get_object_pg_hash_position", "get_object_hash_position", "placementgroup::parse") {
+		return "none", "intentional-omission: placement diagnostic absent from frozen v1 contract", "P05", "Public hash-position diagnostics and placement-group parsing are not v1-required behavior", "P05 API inventory review; no runtime conformance claim"
+	}
+	return "rados.Pool.WithNamespace / rados.Pool.WithLocator", "implemented", "P05", "Immutable pool views replace mutable ioctx namespace and locator state", "P05 unit and live placement tests"
+}
+
+func classifyReadStat(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	if containsAny(strings.ToLower(item.symbol), "aio_") {
+		return "rados.ObjectRef.Read / rados.ObjectRef.Stat", "go-native", "P06", "Context-aware methods and Go-owned results replace native completion and output buffers", "P06 context, ownership, and live read/stat tests"
+	}
+	return "rados.ObjectRef.Read / rados.ObjectRef.Stat", "implemented", "P06", "Context-aware reads return Go-owned data and ObjectInfo", "P06 unit and live read/stat tests"
+}
+
+func classifyMutation(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	if containsAny(strings.ToLower(item.symbol), "aio_") {
+		return "rados.ObjectRef mutation methods", "go-native", "P07", "Context-aware methods and OpResult replace native completion and callback forms", "P07 context, result, and live mutation tests"
+	}
+	return "rados.ObjectRef mutation methods", "implemented", "P07", "Context-aware mutations return versioned OpResult values", "P07 unit and live mutation tests"
+}
+
+func classifyCompletion(item entry) (goEquivalent, disposition, phase, difference, test string) {
+	return "context.Context, operation results, and rados.Client.Flush", "go-native", "P07", "Go context, direct results, and flush semantics replace native completions, callbacks, and last-version state", "P07 context, completion, result, and flush tests"
 }
 
 func classifyP11(item entry, equivalent string) (goEquivalent, disposition, phase, difference, test string) {

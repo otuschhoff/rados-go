@@ -254,6 +254,15 @@ func TestNewRejectsInvalidConfiguration(t *testing.T) {
 	}
 }
 
+func TestManagerRetryBudgetCoversOperationTimeout(t *testing.T) {
+	if got := managerMaxAttempts(20*time.Second, 100*time.Millisecond); got != 200 {
+		t.Fatalf("default manager retry attempts = %d, want 200", got)
+	}
+	if got := managerMaxAttempts(250*time.Millisecond, 100*time.Millisecond); got != 4 {
+		t.Fatalf("short manager retry attempts = %d, want floor 4", got)
+	}
+}
+
 func TestPoolViewsAreImmutableAndPreserveSnapshotZero(t *testing.T) {
 	base := Pool{id: 7, name: "data", namespace: "original", locator: "base", snapshot: ^uint64(0), writeSnapshotValid: true}
 	derived := base.WithNamespace("next").WithLocator("key").WithReadSnapshot(0)

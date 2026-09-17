@@ -122,6 +122,9 @@ func (client *Client) submitCommand(ctx context.Context, command []string, input
 			if errors.Is(err, msgr.ErrQueueSaturated) {
 				return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 			}
+			if errors.Is(err, msgr.ErrOutcomeUnknown) {
+				return CommandResult{}, err
+			}
 			if ctx.Err() != nil {
 				return CommandResult{}, preserveOutcomeUnknown(lastErr, ctx.Err())
 			}

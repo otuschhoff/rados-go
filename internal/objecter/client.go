@@ -825,7 +825,7 @@ func (client *Client) Close() {
 }
 
 func productionSessionFactory(config Config) SessionFactory {
-	return func(_ int32, addresses protocol.EntityAddrVec) (session, error) {
+	return func(osdID int32, addresses protocol.EntityAddrVec) (session, error) {
 		selected, ok := selectEntityAddress(addresses)
 		if !ok {
 			return nil, ErrNoPrimary
@@ -849,6 +849,8 @@ func productionSessionFactory(config Config) SessionFactory {
 		sessionConfig.ClientIdent.SupportedFeatures = uint64(protocol.FeatureOSDClient)
 		sessionConfig.ClientIdent.RequiredFeatures = uint64(protocol.FeatureOSDReplyMux | protocol.FeaturePGID64 | protocol.FeatureNewOSDOpReplyEncoding | protocol.FeatureMessageAddress2)
 		sessionConfig.ReconnectPolicy = msgr.ReplayPending
+		sessionConfig.DiagnosticService = "osd"
+		sessionConfig.DiagnosticServiceID = osdID
 		raw, err := msgr.NewSession(nil, connector, sessionConfig)
 		if err != nil {
 			return nil, err

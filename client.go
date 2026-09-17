@@ -46,6 +46,9 @@ type Config struct {
 	DialTimeout      time.Duration
 	HandshakeTimeout time.Duration
 	OperationTimeout time.Duration
+	cluster          string
+	keyring          string
+	options          map[string]string
 }
 
 type Client struct {
@@ -53,28 +56,29 @@ type Client struct {
 	credential cephx.Credential
 	expected   *maps.FSID
 
-	connectGate chan struct{}
-	mu          sync.Mutex
-	closed      bool
-	closing     bool
-	closeDone   chan struct{}
-	connected   bool
-	monitor     *mon.Client
-	manager     *mgr.Client
-	objects     *objecter.Client
-	addresses   protocol.EntityAddrVec
-	authority   atomic.Pointer[cephx.Connector]
-	workers     sync.WaitGroup
-	lifetime    context.Context
-	cancel      context.CancelFunc
+	connectGate               chan struct{}
+	mu                        sync.Mutex
+	closed                    bool
+	closing                   bool
+	closeDone                 chan struct{}
+	connected                 bool
+	monitor                   *mon.Client
+	manager                   *mgr.Client
+	objects                   *objecter.Client
+	addresses                 protocol.EntityAddrVec
+	authority                 atomic.Pointer[cephx.Connector]
+	diagnosticObserver        msgr.SessionDiagnosticObserver
+	diagnosticSessionIDSource func() uint64
+	workers                   sync.WaitGroup
+	lifetime                  context.Context
+	cancel                    context.CancelFunc
 }
 
 func New(config Config) (*Client, error) {
 	if len(config.Monitors) == 0 || config.Entity == "" || len(config.Key) == 0 || config.DialTimeout < 0 || config.HandshakeTimeout < 0 || config.OperationTimeout < 0 || config.SecurityMode > SecurityModeCRC {
 		return nil, &OpError{Op: "new", Err: ErrInvalidArgument}
 	}
-	config.Monitors = append([]string(nil), config.Monitors...)
-	config.Key = append([]byte(nil), config.Key...)
+	config = config.clone()
 	if config.DialTimeout == 0 {
 		config.DialTimeout = defaultDialTimeout
 	}
@@ -141,7 +145,8 @@ func (client *Client) Connect(ctx context.Context) error {
 	sessionConfig := msgr.SessionConfig{
 		Limits: messageLimits, MaxQueuedMessages: 128, MaxRetainedBytes: 320 << 20, MaxInFlightTransactions: 64,
 		MaxReconnectAttempts: 2, MaxHandshakeTransitions: 32, EventBuffer: 16,
-		ClientIdent: msgr.ClientIdent{Addresses: protocol.EntityAddrVec{clientAddress}, SupportedFeatures: uint64(protocol.FeatureMonitorClient), RequiredFeatures: uint64(protocol.FeatureMessageAddress2)},
+		ClientIdent:        msgr.ClientIdent{Addresses: protocol.EntityAddrVec{clientAddress}, SupportedFeatures: uint64(protocol.FeatureMonitorClient), RequiredFeatures: uint64(protocol.FeatureMessageAddress2)},
+		DiagnosticObserver: client.diagnosticObserver, DiagnosticSessionIDSource: client.diagnosticSessionIDSource,
 	}
 	connectorConfig := cephx.ConnectorConfig{
 		Credential: client.credential, DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout,
@@ -185,7 +190,7 @@ func (client *Client) Connect(ctx context.Context) error {
 	managerClient, err := mgr.New(mgr.Config{
 		Maps: monitorClient, FSID: monitorClient.OSDMap().FSID(), AuthoritySource: func() *cephx.Connector { return client.authority.Load() }, ClientAddresses: protocol.EntityAddrVec{clientAddress},
 		ServiceConnector: cephx.ServiceConnectorConfig{DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout, MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC},
-		Session:          sessionConfig, MessageLimits: 32 << 20, RetryDelay: 100 * time.Millisecond, MaxAttempts: 4,
+		Session:          sessionConfig, MessageLimits: 32 << 20, RetryDelay: 100 * time.Millisecond, MaxAttempts: managerMaxAttempts(client.config.OperationTimeout, 100*time.Millisecond),
 	})
 	if err != nil {
 		objectClient.Close()
@@ -206,6 +211,10 @@ func (client *Client) Connect(ctx context.Context) error {
 	client.connected = true
 	client.mu.Unlock()
 	return nil
+}
+
+func managerMaxAttempts(operationTimeout, retryDelay time.Duration) int {
+	return max(4, int(operationTimeout/retryDelay))
 }
 
 func randomClientNonce() (uint32, error) {

@@ -2,6 +2,7 @@ package cephx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -49,14 +50,11 @@ func (connector *ServiceConnector) Connect(ctx context.Context) (msgr.Transport,
 		ctx = context.Background()
 	}
 	cfg := connector.config
-	authority := cfg.Authority
-	if cfg.AuthoritySource != nil {
-		authority = cfg.AuthoritySource()
-	}
-	if authority == nil {
-		return nil, fmt.Errorf("%w: OSD authorizer: %w", ErrAuthHandshake, ErrMissingTicket)
-	}
 	serviceType := cfg.ServiceType
+	authority, err := connector.waitForCurrentAuthority(ctx, uint32(serviceType))
+	if err != nil {
+		return nil, fmt.Errorf("%w: service %d authorizer: %w", ErrAuthHandshake, serviceType, err)
+	}
 	globalID, ticket, authorizer, err := authority.serviceAuthorization(uint32(serviceType))
 	if err != nil {
 		return nil, fmt.Errorf("%w: service %d authorizer: %w", ErrAuthHandshake, serviceType, err)
@@ -177,7 +175,56 @@ func (connector *ServiceConnector) Connect(ctx context.Context) (msgr.Transport,
 	}
 	success = true
 	metadata := AuthMetadata{GlobalID: globalID, Method: AuthMethodCephX, Mode: authDone.ConnectionMode, Tickets: sanitizeTickets(map[uint32]ServiceTicket{uint32(serviceType): ticket})}
-	return newAuthTransport(baseTransport, metadata, ticket.RenewAfter, authority.now()), nil
+	return newAuthTransport(baseTransport, metadata, serviceRenewalTime(ticket), authority.now()), nil
+}
+
+func (connector *ServiceConnector) waitForCurrentAuthority(ctx context.Context, serviceID uint32) (*Connector, error) {
+	resolve := func() *Connector {
+		if connector.config.AuthoritySource != nil {
+			return connector.config.AuthoritySource()
+		}
+		return connector.config.Authority
+	}
+	authority := resolve()
+	if authority == nil {
+		return nil, ErrMissingTicket
+	}
+	due, err := authority.serviceTicketDue(serviceID, authority.now())
+	if err != nil {
+		return nil, err
+	}
+	if !due {
+		return authority, nil
+	}
+
+	timeout := time.NewTimer(connector.config.HandshakeTimeout)
+	defer timeout.Stop()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-timeout.C:
+			return nil, errors.New("timed out waiting for renewed service ticket")
+		case <-ticker.C:
+			authority = resolve()
+			if authority == nil {
+				continue
+			}
+			due, err = authority.serviceTicketDue(serviceID, authority.now())
+			if err == nil && !due {
+				return authority, nil
+			}
+		}
+	}
+}
+
+func serviceRenewalTime(ticket ServiceTicket) time.Time {
+	if ticket.RenewAfter.IsZero() || ticket.ExpiresAt.IsZero() || !ticket.RenewAfter.Before(ticket.ExpiresAt) {
+		return ticket.RenewAfter
+	}
+	return ticket.RenewAfter.Add(ticket.ExpiresAt.Sub(ticket.RenewAfter) / 2)
 }
 
 func (config ServiceConnectorConfig) withDefaults() ServiceConnectorConfig {

@@ -4,11 +4,17 @@ import (
 	"bufio"
 	"encoding/hex"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
 	"github.com/otuschhoff/go-librados/internal/maps"
+)
+
+const (
+	MaxConfigBytes   = 1 << 20
+	MaxConfigOptions = 256
 )
 
 type BootstrapConfig struct {
@@ -66,17 +72,34 @@ func parseConfigFile(path string) (map[string]map[string]string, error) {
 		return nil, err
 	}
 	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, MaxConfigBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfig(data)
+}
+
+// ParseConfig parses the bounded Ceph configuration subset used for monitor
+// bootstrap. It returns normalized keys grouped by exact section name.
+func ParseConfig(data []byte) (map[string]map[string]string, error) {
+	if len(data) > MaxConfigBytes {
+		return nil, fmt.Errorf("%w: config size limit", wire.ErrMalformed)
+	}
 	sections := map[string]map[string]string{"global": {}}
 	section := "global"
-	scanner := bufio.NewScanner(file)
+	optionCount := 0
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	buffer := make([]byte, 4096)
-	scanner.Buffer(buffer, 1<<20)
+	scanner.Buffer(buffer, MaxConfigBytes)
 	for lineNumber := 1; scanner.Scan(); lineNumber++ {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+		line := stripConfigComment(strings.TrimSpace(scanner.Text()))
+		if line == "" {
 			continue
 		}
-		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
+		if strings.HasPrefix(line, "[") {
+			if !strings.HasSuffix(line, "]") || strings.Count(line, "[") != 1 || strings.Count(line, "]") != 1 {
+				return nil, fmt.Errorf("%w: malformed section at line %d", wire.ErrMalformed, lineNumber)
+			}
 			section = strings.TrimSpace(line[1 : len(line)-1])
 			if section == "" {
 				return nil, fmt.Errorf("%w: empty section at line %d", wire.ErrMalformed, lineNumber)
@@ -90,17 +113,40 @@ func parseConfigFile(path string) (map[string]map[string]string, error) {
 		if !ok {
 			return nil, fmt.Errorf("%w: config line %d", wire.ErrMalformed, lineNumber)
 		}
-		key = strings.ReplaceAll(strings.ToLower(strings.TrimSpace(key)), " ", "_")
+		key = strings.Join(strings.Fields(strings.ToLower(key)), "_")
 		value = strings.TrimSpace(value)
 		if key == "" {
 			return nil, fmt.Errorf("%w: empty key at line %d", wire.ErrMalformed, lineNumber)
 		}
+		optionCount++
+		if optionCount > MaxConfigOptions {
+			return nil, fmt.Errorf("%w: config option limit", wire.ErrMalformed)
+		}
 		sections[section][key] = value
 	}
 	if err := scanner.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: config scanner: %v", wire.ErrMalformed, err)
 	}
 	return sections, nil
+}
+
+func stripConfigComment(line string) string {
+	var quote byte
+	for index := 0; index < len(line); index++ {
+		switch line[index] {
+		case '\'', '"':
+			if quote == 0 {
+				quote = line[index]
+			} else if quote == line[index] {
+				quote = 0
+			}
+		case '#', ';':
+			if quote == 0 {
+				return strings.TrimSpace(line[:index])
+			}
+		}
+	}
+	return line
 }
 
 func applyConfigSection(config *BootstrapConfig, values map[string]string) error {

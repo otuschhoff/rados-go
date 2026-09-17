@@ -68,6 +68,22 @@ type blockingWriteTransport struct {
 	writeOnce    sync.Once
 }
 
+type renewableFakeTransport struct {
+	*fakeTransport
+	renewal chan struct{}
+}
+
+func (transport *renewableFakeTransport) RenewalDue() <-chan struct{} { return transport.renewal }
+
+type credentialRenewableFakeTransport struct {
+	*renewableFakeTransport
+	credentialID [32]byte
+}
+
+func (transport *credentialRenewableFakeTransport) CredentialIdentity() [32]byte {
+	return transport.credentialID
+}
+
 func newBlockingWriteTransport() *blockingWriteTransport {
 	return &blockingWriteTransport{fakeTransport: newFakeTransport(), writeStarted: make(chan struct{})}
 }
@@ -139,6 +155,200 @@ func TestSessionAckDoesNotCompleteAndIncomingSequenceRules(t *testing.T) {
 	keepalive := waitEvent(t, session, EventKeepaliveAck)
 	if keepalive.Time != timestamp {
 		t.Fatalf("keepalive event = %+v", keepalive)
+	}
+}
+
+func TestSessionDrainsInflightRequestBeforeCredentialRenewal(t *testing.T) {
+	first := &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}
+	second := newFakeTransport()
+	config := testSessionConfig(t)
+	config.ClientCookie = 11
+	config.ServerCookie = 22
+	session := newTestSession(t, first, oneTransportConnector(second), config)
+	defer session.Stop()
+
+	firstResult := submitAsync(session, context.Background(), testMessage("first"))
+	firstRequest := decodeWrittenMessage(t, first.fakeTransport)
+	close(first.renewal)
+	waitEvent(t, session, EventCredentialRenewal)
+	secondResult := submitAsync(session, context.Background(), testMessage("second"))
+
+	select {
+	case <-first.closed:
+		t.Fatal("renewal closed the transport with a request in flight")
+	case frame := <-first.writes:
+		t.Fatalf("renewal dispatched queued application frame tag=%d", frame.Tag)
+	case <-time.After(20 * time.Millisecond):
+	}
+
+	response := testMessage("first response")
+	response.Header.Sequence = 1
+	response.Header.AckSequence = firstRequest.Header.Sequence
+	response.Header.TransactionID = firstRequest.Header.TransactionID
+	first.inject(messageFrame(t, response))
+	if outcome := waitOutcome(t, firstResult); outcome.err != nil || string(outcome.message.Front) != "first response" {
+		t.Fatalf("in-flight request outcome = %+v", outcome)
+	}
+	if _, ok := decodeWrittenControl(t, first.fakeTransport).(Ack); !ok {
+		t.Fatal("response acknowledgment was not sent before renewal")
+	}
+	select {
+	case <-first.closed:
+	case <-time.After(time.Second):
+		t.Fatal("drained transport did not reconnect for renewal")
+	}
+
+	if _, ok := decodeWrittenControl(t, second).(SessionReconnect); !ok {
+		t.Fatal("renewal did not use session reconnect")
+	}
+	second.inject(controlFrame(t, SessionReconnectOK{MessageSequence: firstRequest.Header.Sequence}))
+	waitEvent(t, session, EventReconnectOK)
+	secondRequest := decodeWrittenMessage(t, second)
+	secondResponse := testMessage("second response")
+	secondResponse.Header.Sequence = 2
+	secondResponse.Header.AckSequence = secondRequest.Header.Sequence
+	secondResponse.Header.TransactionID = secondRequest.Header.TransactionID
+	second.inject(messageFrame(t, secondResponse))
+	if outcome := waitOutcome(t, secondResult); outcome.err != nil || string(outcome.message.Front) != "second response" {
+		t.Fatalf("queued request outcome = %+v", outcome)
+	}
+}
+
+func TestSessionCredentialRenewalDiagnosticRequiresReconnectOK(t *testing.T) {
+	first := &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}
+	second := newFakeTransport()
+	connectAttempts := 0
+	connector := ConnectorFunc(func(context.Context) (Transport, error) {
+		connectAttempts++
+		if connectAttempts == 1 {
+			return nil, errors.New("injected reconnect failure")
+		}
+		return second, nil
+	})
+	times := []time.Time{time.Unix(100, 0), time.Unix(200, 0)}
+	diagnostics := make(chan SessionDiagnostic, 2)
+	config := testSessionConfig(t)
+	config.ClientCookie = 11
+	config.ServerCookie = 22
+	config.DiagnosticService = "osd"
+	config.DiagnosticServiceID = 7
+	config.DiagnosticSessionID = 9
+	config.DiagnosticObserver = func(event SessionDiagnostic) { diagnostics <- event }
+	config.DiagnosticNow = func() time.Time {
+		value := times[0]
+		times = times[1:]
+		return value
+	}
+	session := newTestSession(t, first, connector, config)
+	defer session.Stop()
+
+	close(first.renewal)
+	waitEvent(t, session, EventCredentialRenewal)
+	select {
+	case <-first.closed:
+	case <-time.After(time.Second):
+		t.Fatal("renewal did not start reconnect")
+	}
+	waitEvent(t, session, EventTransportFault)
+	due := <-diagnostics
+	if due.Kind != DiagnosticCredentialRenewalDue {
+		t.Fatalf("diagnostic after failed reconnect = %+v", due)
+	}
+	select {
+	case event := <-diagnostics:
+		t.Fatalf("completion emitted for failed reconnect: %+v", event)
+	default:
+	}
+
+	if _, ok := decodeWrittenControl(t, second).(SessionReconnect); !ok {
+		t.Fatal("successful transport did not receive session reconnect")
+	}
+	second.inject(controlFrame(t, SessionReconnectOK{}))
+	waitEvent(t, session, EventReconnectOK)
+	completed := <-diagnostics
+	if due.Kind != DiagnosticCredentialRenewalDue || completed.Kind != DiagnosticCredentialRenewalCompleted || due.Service != "osd" || due.ServiceID != 7 || due.SessionID != 9 || completed.Service != due.Service || completed.ServiceID != due.ServiceID || completed.SessionID != due.SessionID {
+		t.Fatalf("diagnostic identity or ordering: due=%+v completed=%+v", due, completed)
+	}
+	if due.Generation >= completed.Generation || !due.Timestamp.Before(completed.Timestamp) {
+		t.Fatalf("diagnostic generations or timestamps: due=%+v completed=%+v", due, completed)
+	}
+}
+
+func TestSessionCredentialRenewalDiagnosticCompletesAfterResetIdent(t *testing.T) {
+	first := &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}
+	second := newFakeTransport()
+	diagnostics := make(chan SessionDiagnostic, 2)
+	config := testSessionConfig(t)
+	config.ClientCookie = 11
+	config.ServerCookie = 22
+	config.DiagnosticService = "monitor"
+	config.DiagnosticSessionID = 9
+	config.DiagnosticObserver = func(event SessionDiagnostic) { diagnostics <- event }
+	session := newTestSession(t, first, oneTransportConnector(second), config)
+	defer session.Stop()
+
+	close(first.renewal)
+	waitEvent(t, session, EventCredentialRenewal)
+	if _, ok := decodeWrittenControl(t, second).(SessionReconnect); !ok {
+		t.Fatal("replacement transport did not receive session reconnect")
+	}
+	second.inject(controlFrame(t, SessionReset{Full: true}))
+	if _, ok := decodeWrittenControl(t, second).(ClientIdent); !ok {
+		t.Fatal("reset did not trigger a fresh client ident")
+	}
+	second.inject(controlFrame(t, ServerIdent{Addresses: protocol.EntityAddrVec{config.ClientIdent.TargetAddress}, Cookie: 23}))
+	for event := waitEvent(t, session, EventStateChanged); event.State != StateReady; event = waitEvent(t, session, EventStateChanged) {
+	}
+
+	due := <-diagnostics
+	completed := <-diagnostics
+	if due.Kind != DiagnosticCredentialRenewalDue || completed.Kind != DiagnosticCredentialRenewalCompleted || due.Service != "monitor" || completed.Service != due.Service || due.Generation >= completed.Generation {
+		t.Fatalf("reset renewal diagnostics: due=%+v completed=%+v", due, completed)
+	}
+}
+
+func TestSessionCredentialRenewalDiagnosticRequiresFreshCredential(t *testing.T) {
+	first := &credentialRenewableFakeTransport{renewableFakeTransport: &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}, credentialID: [32]byte{1}}
+	second := &credentialRenewableFakeTransport{renewableFakeTransport: &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}, credentialID: [32]byte{1}}
+	third := &credentialRenewableFakeTransport{renewableFakeTransport: &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}, credentialID: [32]byte{2}}
+	transports := []Transport{second, third}
+	connector := ConnectorFunc(func(context.Context) (Transport, error) {
+		transport := transports[0]
+		transports = transports[1:]
+		return transport, nil
+	})
+	diagnostics := make(chan SessionDiagnostic, 3)
+	config := testSessionConfig(t)
+	config.ClientCookie = 11
+	config.ServerCookie = 22
+	config.DiagnosticService = "osd"
+	config.DiagnosticServiceID = 7
+	config.DiagnosticSessionID = 9
+	config.DiagnosticObserver = func(event SessionDiagnostic) { diagnostics <- event }
+	session := newTestSession(t, first, connector, config)
+	defer session.Stop()
+
+	close(first.renewal)
+	waitEvent(t, session, EventCredentialRenewal)
+	decodeWrittenControl(t, second.fakeTransport)
+	second.inject(controlFrame(t, SessionReconnectOK{}))
+	waitEvent(t, session, EventReconnectOK)
+	if event := <-diagnostics; event.Kind != DiagnosticCredentialRenewalDue {
+		t.Fatalf("first diagnostic = %+v", event)
+	}
+	select {
+	case event := <-diagnostics:
+		t.Fatalf("unchanged credential completed renewal: %+v", event)
+	default:
+	}
+
+	close(second.renewal)
+	decodeWrittenControl(t, third.fakeTransport)
+	third.inject(controlFrame(t, SessionReconnectOK{}))
+	waitEvent(t, session, EventReconnectOK)
+	completed := <-diagnostics
+	if completed.Kind != DiagnosticCredentialRenewalCompleted {
+		t.Fatalf("fresh credential diagnostic: %+v", completed)
 	}
 }
 

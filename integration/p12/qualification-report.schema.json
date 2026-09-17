@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "hashes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {"$ref": "#/$defs/sha256"}
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "toolchain", "platform", "started_at", "finished_at", "exit_status", "pass", "output_sha256", "output"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "command": {"type": "string", "minLength": 1},
+        "toolchain": {"type": "string", "minLength": 1},
+        "platform": {"type": "string", "minLength": 1},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "finished_at": {"$ref": "#/$defs/timestamp"},
+        "exit_status": {"type": "integer"},
+        "pass": {"type": "boolean"},
+        "output_sha256": {"$ref": "#/$defs/sha256"},
+        "output": {"type": "string"}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["goos", "goarch", "module_path", "module_version", "cgo_enabled"],
+      "properties": {
+        "goos": {"enum": ["darwin", "linux"]},
+        "goarch": {"enum": ["amd64", "arm64"]},
+        "module_path": {"const": "github.com/otuschhoff/go-librados"},
+        "module_version": {"type": "string", "minLength": 1},
+        "cgo_enabled": {"const": false}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "command", "toolchain", "platform", "started_at", "finished_at", "exit_status", "pass", "output_sha256", "output", "observation"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "command": {"type": "string", "minLength": 1},
+        "toolchain": {"type": "string", "minLength": 1},
+        "platform": {"enum": ["darwin/arm64", "darwin/amd64", "linux/arm64", "linux/amd64"]},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "finished_at": {"$ref": "#/$defs/timestamp"},
+        "exit_status": {"type": "integer"},
+        "pass": {"type": "boolean"},
+        "output_sha256": {"$ref": "#/$defs/sha256"},
+        "output": {"type": "string"},
+        "observation": {"anyOf": [{"$ref": "#/$defs/observation"}, {"type": "null"}]}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "started_at", "finished_at", "source", "checks", "runtime_matrix", "prior_reports", "release"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["passed", "failed"]},
+    "command": {"const": "./integration/p12/qualify.sh"},
+    "started_at": {"$ref": "#/$defs/timestamp"},
+    "finished_at": {"$ref": "#/$defs/timestamp"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "artifacts"],
+      "properties": {
+        "identity": {"const": "content-addressed-artifacts"},
+        "artifacts": {"type": "object", "minProperties": 100, "additionalProperties": {"$ref": "#/$defs/sha256"}}
+      }
+    },
+    "checks": {"type": "array", "minItems": 29, "maxItems": 29, "items": {"$ref": "#/$defs/check"}},
+    "runtime_matrix": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/runtime"}},
+    "prior_reports": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["phase", "verifier_command", "check_id", "artifacts"],
+        "properties": {
+          "phase": {"enum": ["p03", "p04", "p05", "p06", "p07", "p08", "p09", "p10", "p11"]},
+          "verifier_command": {"type": "string", "pattern": "^CGO_ENABLED=0 GOTOOLCHAIN=go1\\.27\\.1 go run \\./tools/p(0[3-9]|1[01])-verify$"},
+          "check_id": {"type": "string", "pattern": "^verify-p(0[3-9]|1[01])$"},
+          "artifacts": {"$ref": "#/$defs/hashes"}
+        }
+      }
+    },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "reproducible", "runs", "artifacts"],
+      "properties": {
+        "version": {"const": "v0.0.0-p12"},
+        "reproducible": {"type": "boolean"},
+        "runs": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "object", "minProperties": 4, "maxProperties": 4, "additionalProperties": {"$ref": "#/$defs/sha256"}}},
+        "artifacts": {"type": "object", "minProperties": 4, "maxProperties": 4, "additionalProperties": {"$ref": "#/$defs/sha256"}}
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "passed"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "checks": {"type": "array", "items": {"allOf": [{"$ref": "#/$defs/check"}, {"type": "object", "properties": {"exit_status": {"const": 0}, "pass": {"const": true}}}]}},
+          "runtime_matrix": {"type": "array", "items": {"allOf": [{"$ref": "#/$defs/runtime"}, {"type": "object", "properties": {"exit_status": {"const": 0}, "pass": {"const": true}, "observation": {"$ref": "#/$defs/observation"}}}]}},
+          "release": {"type": "object", "properties": {"reproducible": {"const": true}}}
+        }
+      }
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net"
 	"net/netip"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -199,6 +200,14 @@ func TestServiceConnectorRejectsMissingAndExpiredOSDTickets(t *testing.T) {
 	}
 }
 
+func TestServiceRenewalTimeLeavesAuthorityRefreshWindow(t *testing.T) {
+	renewAfter := time.Unix(100, 0)
+	ticket := ServiceTicket{RenewAfter: renewAfter, ExpiresAt: renewAfter.Add(20 * time.Second)}
+	if got, want := serviceRenewalTime(ticket), renewAfter.Add(10*time.Second); !got.Equal(want) {
+		t.Fatalf("service renewal time = %s, want %s", got, want)
+	}
+}
+
 func TestServiceConnectorResolvesAuthorityForEveryConnect(t *testing.T) {
 	calls := 0
 	connector, err := NewServiceConnector(ServiceConnectorConfig{
@@ -215,6 +224,52 @@ func TestServiceConnectorResolvesAuthorityForEveryConnect(t *testing.T) {
 	}
 	if calls != 2 {
 		t.Fatalf("authority source calls=%d", calls)
+	}
+}
+
+func TestServiceConnectorWaitsForRenewedAuthorityTicket(t *testing.T) {
+	now := time.Now().UTC()
+	credential, _ := testConnectorIdentity(t)
+	newAuthority := func(ticket ServiceTicket) *Connector {
+		authority, err := NewConnector(ConnectorConfig{
+			Address: "198.51.100.1:3300", Credential: credential, MessageLimits: connectorTestMsgLimits,
+			Limits: defaultTestLimits(), Now: func() time.Time { return now },
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		authority.state = connectorState{globalID: 77, mode: ConModeSecure, tickets: map[uint32]ServiceTicket{uint32(protocol.EntityOSD): ticket}}
+		return authority
+	}
+	due := ServiceTicket{
+		ServiceID: uint32(protocol.EntityOSD), SessionKey: mustSecretKey(t, "old-session-key!"),
+		Ticket: TicketBlob{SecretID: 9, Blob: []byte("old-ticket")}, ExpiresAt: now.Add(time.Minute), RenewAfter: now,
+	}
+	fresh := due
+	fresh.SessionKey = mustSecretKey(t, "new-session-key!")
+	fresh.Ticket = TicketBlob{SecretID: 10, Blob: []byte("new-ticket")}
+	fresh.ExpiresAt = now.Add(2 * time.Minute)
+	fresh.RenewAfter = now.Add(time.Minute)
+	var current atomic.Pointer[Connector]
+	current.Store(newAuthority(due))
+	connector, err := NewServiceConnector(ServiceConnectorConfig{
+		AuthoritySource: current.Load, Address: "198.51.100.2:6800",
+		MessageLimits: connectorTestMsgLimits, HandshakeTimeout: time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	freshAuthority := newAuthority(fresh)
+	go func() {
+		time.Sleep(10 * time.Millisecond)
+		current.Store(freshAuthority)
+	}()
+	authority, err := connector.waitForCurrentAuthority(context.Background(), uint32(protocol.EntityOSD))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if authority != current.Load() {
+		t.Fatal("service connector returned the stale authority")
 	}
 }
 

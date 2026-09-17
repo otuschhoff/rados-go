@@ -9,6 +9,7 @@ import (
 	"math"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/otuschhoff/go-librados/internal/protocol"
 )
@@ -16,6 +17,7 @@ import (
 var (
 	ErrSessionClosed       = errors.New("messenger session closed")
 	ErrSessionDisconnected = errors.New("messenger session disconnected")
+	ErrSessionRenewal      = errors.New("messenger session credential renewal")
 	ErrQueueSaturated      = errors.New("messenger outbound queue saturated")
 	ErrTooManyInFlight     = errors.New("messenger in-flight limit reached")
 	ErrTransitionLimit     = errors.New("messenger handshake transition limit reached")
@@ -34,6 +36,16 @@ type Transport interface {
 type AuthenticatedTransport interface {
 	Transport
 	AuthenticatedGlobalID() uint64
+}
+
+type CredentialIdentityTransport interface {
+	Transport
+	CredentialIdentity() [32]byte
+}
+
+type RenewalTransport interface {
+	Transport
+	RenewalDue() <-chan struct{}
 }
 
 // Connector returns a freshly authenticated transport. Session state and
@@ -103,6 +115,7 @@ const (
 	EventWait
 	EventReconnectOK
 	EventOverflow
+	EventCredentialRenewal
 )
 
 type SessionEvent struct {
@@ -139,22 +152,46 @@ type SessionSnapshot struct {
 	DroppedEvents         uint64
 }
 
+type SessionDiagnosticKind uint8
+
+const (
+	DiagnosticCredentialRenewalDue SessionDiagnosticKind = iota + 1
+	DiagnosticCredentialRenewalCompleted
+)
+
+type SessionDiagnostic struct {
+	Kind       SessionDiagnosticKind
+	Service    string
+	ServiceID  int32
+	SessionID  uint64
+	Generation uint64
+	Timestamp  time.Time
+}
+
+type SessionDiagnosticObserver func(SessionDiagnostic)
+
 type SessionConfig struct {
-	Limits                  Limits
-	MaxQueuedMessages       int
-	MaxRetainedBytes        uint64
-	MaxInFlightTransactions int
-	MaxReconnectAttempts    int
-	MaxHandshakeTransitions int
-	EventBuffer             int
-	ReconnectPolicy         ReconnectPolicy
-	ClientIdent             ClientIdent
-	ClientCookie            uint64
-	ServerCookie            uint64
-	GlobalSequence          uint64
-	GlobalSequenceSource    GlobalSequenceSource
-	ConnectSequence         uint64
-	CookieSource            CookieSource
+	Limits                    Limits
+	MaxQueuedMessages         int
+	MaxRetainedBytes          uint64
+	MaxInFlightTransactions   int
+	MaxReconnectAttempts      int
+	MaxHandshakeTransitions   int
+	EventBuffer               int
+	ReconnectPolicy           ReconnectPolicy
+	ClientIdent               ClientIdent
+	ClientCookie              uint64
+	ServerCookie              uint64
+	GlobalSequence            uint64
+	GlobalSequenceSource      GlobalSequenceSource
+	ConnectSequence           uint64
+	CookieSource              CookieSource
+	DiagnosticObserver        SessionDiagnosticObserver
+	DiagnosticService         string
+	DiagnosticServiceID       int32
+	DiagnosticSessionID       uint64
+	DiagnosticSessionIDSource func() uint64
+	DiagnosticNow             func() time.Time
 }
 
 type GlobalSequenceSource interface {
@@ -236,6 +273,8 @@ type pumpFault struct {
 	err        error
 }
 
+type renewalDue struct{ generation uint64 }
+
 type connectRequest struct {
 	generation uint64
 	ctx        context.Context
@@ -301,6 +340,11 @@ type sessionOwner struct {
 	connectPending    bool
 	partialReset      bool
 	terminalErr       error
+	renewalPending    bool
+	renewalInProgress bool
+	credentialKnown   bool
+	credentialChanged bool
+	credentialID      [32]byte
 	droppedEvents     uint64
 	reportedDrops     uint64
 
@@ -309,6 +353,7 @@ type sessionOwner struct {
 	frames            chan pumpFrame
 	writes            chan pumpWriteResult
 	faults            chan pumpFault
+	renewals          chan renewalDue
 	pumpWG            sync.WaitGroup
 	connectorContext  context.Context
 	connectorCancel   context.CancelFunc
@@ -323,6 +368,15 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 	}
 	if config.Limits.MaxSegmentBytes == 0 || config.Limits.MaxFrameBytes == 0 {
 		return nil, fmt.Errorf("%w: frame limits must be positive", ErrMalformed)
+	}
+	if config.DiagnosticObserver != nil && config.DiagnosticSessionIDSource != nil {
+		config.DiagnosticSessionID = config.DiagnosticSessionIDSource()
+	}
+	if config.DiagnosticObserver != nil && (config.DiagnosticService == "" || config.DiagnosticSessionID == 0) {
+		return nil, fmt.Errorf("%w: diagnostic service and session ID are required", ErrMalformed)
+	}
+	if config.DiagnosticNow == nil {
+		config.DiagnosticNow = time.Now
 	}
 	if config.GlobalSequence != 0 && config.ClientIdent.GlobalSequence != 0 && config.GlobalSequence != config.ClientIdent.GlobalSequence {
 		return nil, fmt.Errorf("%w: conflicting global sequences", ErrMalformed)
@@ -373,10 +427,15 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		frames:            make(chan pumpFrame),
 		writes:            make(chan pumpWriteResult),
 		faults:            make(chan pumpFault, 2),
+		renewals:          make(chan renewalDue),
 	}
 	connectorCtx, connectorCancel := context.WithCancel(context.Background())
 	owner.connectorContext = connectorCtx
 	owner.connectorCancel = connectorCancel
+	if credentialTransport, ok := transport.(CredentialIdentityTransport); ok {
+		owner.credentialID = credentialTransport.CredentialIdentity()
+		owner.credentialKnown = true
+	}
 	owner.pumpWG.Add(1)
 	go owner.connectorPump(connectorCtx, connector)
 	go owner.run()
@@ -522,6 +581,15 @@ func (owner *sessionOwner) run() {
 			if fault.generation == owner.generation {
 				owner.handleFault(fault.err)
 			}
+		case renewal := <-owner.renewals:
+			if renewal.generation == owner.generation {
+				owner.renewalPending = true
+				if !owner.renewalInProgress {
+					owner.renewalInProgress = true
+					owner.emit(SessionEvent{Kind: EventCredentialRenewal})
+					owner.emitDiagnostic(DiagnosticCredentialRenewalDue)
+				}
+			}
 		case connected := <-owner.connectorResults:
 			owner.handleConnected(connected)
 		}
@@ -596,6 +664,13 @@ func (owner *sessionOwner) dispatch() {
 		return
 	}
 	if owner.state != StateReady {
+		return
+	}
+	if owner.renewalPending {
+		if owner.inFlightCount() == 0 {
+			owner.renewalPending = false
+			owner.handleFault(ErrSessionRenewal)
+		}
 		return
 	}
 	for _, pending := range owner.pending {
@@ -762,6 +837,7 @@ func (owner *sessionOwner) handleControl(payload any) {
 		owner.reconnectAttempts = 0
 		owner.setState(StateReady)
 		owner.emit(SessionEvent{Kind: EventReconnectOK, Sequence: value.MessageSequence})
+		owner.completeRenewal()
 	case ServerIdent:
 		if owner.state != StateConnecting {
 			owner.handleFault(fmt.Errorf("%w: server ident in state %d", ErrMalformed, owner.state))
@@ -793,11 +869,21 @@ func (owner *sessionOwner) handleControl(payload any) {
 		owner.reconnectAttempts = 0
 		owner.failSentUnknown(ErrSessionDisconnected)
 		owner.setState(StateReady)
+		owner.completeRenewal()
 	case IdentMissingFeatures:
 		owner.failTerminal(fmt.Errorf("%w: server requires missing features %#x", ErrUnsupportedPayload, value.Features))
 	default:
 		owner.handleFault(fmt.Errorf("%w: unexpected session control %T", ErrUnsupportedPayload, payload))
 	}
+}
+
+func (owner *sessionOwner) completeRenewal() {
+	if !owner.renewalInProgress || !owner.credentialChanged {
+		return
+	}
+	owner.renewalInProgress = false
+	owner.credentialChanged = false
+	owner.emitDiagnostic(DiagnosticCredentialRenewalCompleted)
 }
 
 func (owner *sessionOwner) readyControl(name string) bool {
@@ -1047,6 +1133,13 @@ func (owner *sessionOwner) handleConnected(result connectResult) {
 		owner.config.ClientIdent.GlobalID = int64(globalID)
 		owner.authenticatedGlobalID = globalID
 	}
+	owner.credentialChanged = true
+	if credentialTransport, ok := result.transport.(CredentialIdentityTransport); ok {
+		credentialID := credentialTransport.CredentialIdentity()
+		owner.credentialChanged = !owner.credentialKnown || credentialID != owner.credentialID
+		owner.credentialID = credentialID
+		owner.credentialKnown = true
+	}
 	if identityChanged {
 		owner.resetForNewIdentity()
 	}
@@ -1103,7 +1196,37 @@ func (owner *sessionOwner) startTransport(transport Transport, state SessionStat
 	owner.pumpWG.Add(2)
 	go owner.readPump(generation, transport)
 	go owner.writePump(generation, transport, owner.writeTasks)
+	if renewable, ok := transport.(RenewalTransport); ok && renewable.RenewalDue() != nil {
+		owner.pumpWG.Add(1)
+		go owner.renewalPump(generation, renewable.RenewalDue())
+	}
 	owner.setState(state)
+}
+
+func (owner *sessionOwner) renewalPump(generation uint64, due <-chan struct{}) {
+	defer owner.pumpWG.Done()
+	select {
+	case <-due:
+		select {
+		case owner.renewals <- renewalDue{generation: generation}:
+		case <-owner.session.done:
+		}
+	case <-owner.session.done:
+	}
+}
+
+func (owner *sessionOwner) emitDiagnostic(kind SessionDiagnosticKind) {
+	if owner.config.DiagnosticObserver == nil {
+		return
+	}
+	owner.config.DiagnosticObserver(SessionDiagnostic{
+		Kind:       kind,
+		Service:    owner.config.DiagnosticService,
+		ServiceID:  owner.config.DiagnosticServiceID,
+		SessionID:  owner.config.DiagnosticSessionID,
+		Generation: owner.generation,
+		Timestamp:  owner.config.DiagnosticNow().UTC(),
+	})
 }
 
 func (owner *sessionOwner) readPump(generation uint64, transport Transport) {

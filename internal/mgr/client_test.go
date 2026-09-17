@@ -173,6 +173,70 @@ func TestCommandFollowsActiveFailoverWhilePending(t *testing.T) {
 	}
 }
 
+func TestCommandDoesNotRetryUnknownOutcomeAfterFailover(t *testing.T) {
+	firstMap := testMgrMap(t, mgrMapFixture{name: "active-a", gid: 7, endpoint: "192.0.2.50:7000", activeFeatures: uint64(protocol.FeatureServerOctopusMask)})
+	secondMap := testMgrMap(t, mgrMapFixture{epoch: 43, name: "active-b", gid: 8, endpoint: "192.0.2.51:7001", activeFeatures: uint64(protocol.FeatureServerOctopusMask)})
+	source := &fakeMgrMapSource{mgrMap: firstMap}
+	entered := make(chan struct{}, 1)
+	created := 0
+	client := newTestManagerClient(t, source, func(_ context.Context, target ActiveTarget) (session, error) {
+		created++
+		if target.Name != "active-a" {
+			t.Fatal("unknown outcome retried on replacement manager")
+		}
+		return &fakeMgrSession{submit: func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+			entered <- struct{}{}
+			<-ctx.Done()
+			return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, ctx.Err())
+		}}, nil
+	})
+	defer client.Close()
+
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Command(context.Background(), []string{"mutating-command"}, nil)
+		result <- err
+	}()
+	<-entered
+	source.set(secondMap)
+	if err := <-result; !errors.Is(err, msgr.ErrOutcomeUnknown) {
+		t.Fatalf("err=%v", err)
+	}
+	if created != 1 {
+		t.Fatalf("created=%d", created)
+	}
+}
+
+func TestCommandPreservesUnknownOutcomeAfterCancellation(t *testing.T) {
+	source := &fakeMgrMapSource{mgrMap: testMgrMap(t, mgrMapFixture{name: "active-a", gid: 7, endpoint: "192.0.2.50:7000", activeFeatures: uint64(protocol.FeatureServerOctopusMask)})}
+	attempts := 0
+	entered := make(chan struct{})
+	client := newTestManagerClient(t, source, func(_ context.Context, _ ActiveTarget) (session, error) {
+		return &fakeMgrSession{submit: func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+			attempts++
+			close(entered)
+			<-ctx.Done()
+			return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, ctx.Err())
+		}}, nil
+	})
+	defer client.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Command(ctx, []string{"mutating-command"}, nil)
+		result <- err
+	}()
+	<-entered
+	cancel()
+	if err := <-result; !errors.Is(err, msgr.ErrOutcomeUnknown) {
+		t.Fatalf("err=%v", err)
+	}
+	if attempts != 1 {
+		t.Fatalf("attempts=%d", attempts)
+	}
+}
+
 func TestCommandPreservesErrnoStatusAndOutput(t *testing.T) {
 	source := &fakeMgrMapSource{mgrMap: testMgrMap(t, mgrMapFixture{name: "active-a", gid: 7, endpoint: "192.0.2.50:7000", activeFeatures: uint64(protocol.FeatureServerOctopusMask)})}
 	client := newTestManagerClient(t, source, func(_ context.Context, _ ActiveTarget) (session, error) {

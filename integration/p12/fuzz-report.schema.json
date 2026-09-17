@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "name", "budget", "command", "toolchain", "platform", "started_at", "finished_at", "exit_status", "pass", "output", "output_sha256"],
+      "properties": {
+        "package": {"type": "string", "pattern": "^(\\.|\\./internal/[a-z]+)$"},
+        "name": {"type": "string", "pattern": "^Fuzz[A-Za-z0-9]+$"},
+        "budget": {"enum": ["60s", "10m"]},
+        "command": {"type": "string", "minLength": 1},
+        "toolchain": {"const": "go1.27.1"},
+        "platform": {"enum": ["darwin/amd64", "darwin/arm64"]},
+        "started_at": {"$ref": "#/$defs/timestamp"},
+        "finished_at": {"$ref": "#/$defs/timestamp"},
+        "exit_status": {"type": "integer"},
+        "pass": {"type": "boolean"},
+        "output": {"type": "string"},
+        "output_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "status", "profile", "command", "toolchain", "platform", "started_at", "finished_at", "source", "targets"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"enum": ["passed", "failed"]},
+    "profile": {"enum": ["smoke", "certifying"]},
+    "command": {"enum": [
+      "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz -profile smoke",
+    "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz -profile certifying",
+    "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz -profile smoke -record-pending",
+    "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz -profile certifying -record-pending"
+    ]},
+    "toolchain": {"const": "go1.27.1"},
+    "platform": {"enum": ["darwin/amd64", "darwin/arm64"]},
+    "started_at": {"$ref": "#/$defs/timestamp"},
+    "finished_at": {"$ref": "#/$defs/timestamp"},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["identity", "artifacts"],
+      "properties": {
+        "identity": {"const": "content-addressed-artifacts"},
+        "artifacts": {"type": "object", "minProperties": 100, "additionalProperties": {"$ref": "#/$defs/sha256"}}
+      }
+    },
+    "targets": {"type": "array", "minItems": 31, "maxItems": 31, "items": {"$ref": "#/$defs/target"}}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"command": {"type": "string", "pattern": " -record-pending$"}},
+        "required": ["command"]
+      },
+      "then": {"properties": {"status": {"const": "failed"}}}
+    },
+    {
+      "if": {
+        "properties": {"profile": {"const": "smoke"}},
+        "required": ["profile"]
+      },
+      "then": {
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"budget": {"const": "60s"}}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"budget": {"const": "10m"}}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {"status": {"const": "passed"}},
+        "required": ["status"]
+      },
+      "then": {
+        "properties": {
+          "targets": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"exit_status": {"const": 0}, "pass": {"const": true}}
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "targets": {
+            "type": "array",
+            "contains": {
+              "type": "object",
+              "properties": {"pass": {"const": false}},
+              "required": ["pass"]
+            },
+            "minContains": 1
+          }
+        }
+      }
+    }
+  ]
+}

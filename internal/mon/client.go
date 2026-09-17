@@ -118,6 +118,8 @@ func NewAuthenticatedSessionFactoryWithObserver(connector cephx.ConnectorConfig,
 		config := sessionConfig
 		config.ClientIdent.Addresses = cloneEntityAddresses(sessionConfig.ClientIdent.Addresses)
 		config.ClientIdent.TargetAddress = endpoint.EntityAddress
+		config.DiagnosticService = "monitor"
+		config.DiagnosticServiceID = 0
 		opened, err := msgr.NewSession(nil, authenticated, config)
 		if err != nil {
 			return nil, err

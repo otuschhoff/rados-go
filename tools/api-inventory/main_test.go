@@ -1,6 +1,12 @@
 package main
 
-import "testing"
+import (
+	"encoding/csv"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func TestExtractCOnlyExportedDeclarations(t *testing.T) {
 	source := `
@@ -86,6 +92,101 @@ func TestClassifyAsyncByUnderlyingOperation(t *testing.T) {
 				t.Fatalf("phase = %s, want %s", phase, test.phase)
 			}
 		})
+	}
+}
+
+func TestPhaseSpecificClassifications(t *testing.T) {
+	entries := append(extractC(`
+CEPH_RADOS_API void rados_conf_set(void);
+CEPH_RADOS_API void rados_create2(void);
+CEPH_RADOS_API void rados_cct(void);
+CEPH_RADOS_API void rados_version(void);
+CEPH_RADOS_API void rados_pool_lookup(void);
+CEPH_RADOS_API void rados_ping_monitor(void);
+CEPH_RADOS_API void rados_read(void);
+CEPH_RADOS_API void rados_aio_stat2(void);
+CEPH_RADOS_API void rados_aio_append(void);
+CEPH_RADOS_API void rados_get_last_version(void);
+`), extractCPP(`
+class CEPH_RADOS_API IoCtx {
+public:
+  void set_namespace();
+  void write_full();
+};
+class CEPH_RADOS_API PlacementGroup {
+public:
+  bool parse();
+};
+class CEPH_RADOS_API AioCompletion {
+public:
+  int get_return_value();
+};
+`)...)
+	bySymbol := make(map[string]entry, len(entries))
+	for _, item := range entries {
+		bySymbol[item.symbol] = item
+	}
+	tests := []struct {
+		symbol      string
+		equivalent  string
+		disposition string
+		phase       string
+	}{
+		{"rados_conf_set", "rados.Client / rados.Config lifecycle and configuration methods", "implemented", "P01/P04"},
+		{"rados_create2", "rados.New", "go-native", "P01/P04"},
+		{"rados_cct", "none", "intentional-omission: native handle access violates pure-Go boundary", "P01"},
+		{"rados_version", "none", "intentional-omission: version API absent from frozen v1 contract", "P01"},
+		{"rados_pool_lookup", "rados.Client pool/map discovery methods", "implemented", "P04"},
+		{"rados_ping_monitor", "none", "intentional-omission: discovery diagnostic absent from frozen v1 contract", "P04"},
+		{"IoCtx::set_namespace", "rados.Pool.WithNamespace / rados.Pool.WithLocator", "implemented", "P05"},
+		{"PlacementGroup::parse", "none", "intentional-omission: placement diagnostic absent from frozen v1 contract", "P05"},
+		{"rados_read", "rados.ObjectRef.Read / rados.ObjectRef.Stat", "implemented", "P06"},
+		{"rados_aio_stat2", "rados.ObjectRef.Read / rados.ObjectRef.Stat", "go-native", "P06"},
+		{"IoCtx::write_full", "rados.ObjectRef mutation methods", "implemented", "P07"},
+		{"rados_aio_append", "rados.ObjectRef mutation methods", "go-native", "P07"},
+		{"AioCompletion::get_return_value", "context.Context, operation results, and rados.Client.Flush", "go-native", "P07"},
+		{"rados_get_last_version", "context.Context, operation results, and rados.Client.Flush", "go-native", "P07"},
+	}
+	for _, test := range tests {
+		t.Run(test.symbol, func(t *testing.T) {
+			item, found := bySymbol[test.symbol]
+			if !found {
+				t.Fatalf("representative symbol was not extracted")
+			}
+			equivalent, disposition, phase, _, _ := classify(item)
+			if equivalent != test.equivalent || disposition != test.disposition || phase != test.phase {
+				t.Fatalf("classification = (%q, %q, %q), want (%q, %q, %q)", equivalent, disposition, phase, test.equivalent, test.disposition, test.phase)
+			}
+		})
+	}
+}
+
+func TestGeneratedInventoryInvariant(t *testing.T) {
+	file, err := os.Open(filepath.Join("..", "..", "docs", "p00", "api-inventory.csv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	records, err := csv.NewReader(file).ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(records) < 2 {
+		t.Fatal("generated inventory has no API rows")
+	}
+	for rowIndex, record := range records[1:] {
+		if len(record) != len(records[0]) {
+			t.Fatalf("row %d has %d fields, want %d", rowIndex+2, len(record), len(records[0]))
+		}
+		for column := 4; column < len(record); column++ {
+			if strings.TrimSpace(record[column]) == "" {
+				t.Errorf("row %d column %q is empty", rowIndex+2, records[0][column])
+			}
+		}
+		disposition := record[5]
+		if disposition != "implemented" && disposition != "go-native" && !strings.HasPrefix(disposition, "intentional-omission") && !strings.HasPrefix(disposition, "deferred") {
+			t.Errorf("row %d has invalid disposition %q", rowIndex+2, disposition)
+		}
 	}
 }
 

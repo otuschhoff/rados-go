@@ -1,10 +1,11 @@
-name: P00 through P03 verification
+name: P00 through P12 non-live verification
 
 on:
   push:
   pull_request:
   schedule:
     - cron: "17 3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,6 +16,7 @@ jobs:
     outputs:
       go-matrix: ${{ steps.read.outputs.go-matrix }}
       minimum-go: ${{ steps.read.outputs.minimum-go }}
+      latest-go: ${{ steps.read.outputs.latest-go }}
       ceph-commit: ${{ steps.read.outputs.ceph-commit }}
       ceph-image: ${{ steps.read.outputs.ceph-image }}
       compiler: ${{ steps.read.outputs.compiler }}
@@ -32,6 +34,7 @@ jobs:
         run: |
           echo "go-matrix=$(jq -c '[.go.minimum.version,.go.latest.version] | map(ltrimstr("go"))' docs/p00/evidence.json)" >> "$GITHUB_OUTPUT"
           echo "minimum-go=$(jq -r '.go.minimum.version | ltrimstr("go")' docs/p00/evidence.json)" >> "$GITHUB_OUTPUT"
+          echo "latest-go=$(jq -r '.go.latest.version | ltrimstr("go")' docs/p00/evidence.json)" >> "$GITHUB_OUTPUT"
           echo "ceph-commit=$(jq -r '.ceph.source_baseline.commit' docs/p00/evidence.json)" >> "$GITHUB_OUTPUT"
           echo "ceph-image=$(jq -r '.images.qualification.reference' docs/p00/evidence.json)" >> "$GITHUB_OUTPUT"
           echo "compiler=$(jq -r '.oracle.compiler' docs/p00/evidence.json)" >> "$GITHUB_OUTPUT"
@@ -244,7 +247,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-      - run: |
+      - run: |-
           docker build --platform "linux/${{ matrix.architecture }}" \
             --build-arg "CEPH_IMAGE=${{ needs.pins.outputs.ceph-image }}" \
             --build-arg "COMPILER_PACKAGE=${{ needs.pins.outputs.compiler }}" \
@@ -257,3 +260,167 @@ jobs:
             --build-arg "CEPHPP_DEVEL_ARM64_SHA256=${{ needs.pins.outputs.cephpp-devel-arm64-sha256 }}" \
             --build-arg "LIBRADOS_PACKAGE=${{ needs.pins.outputs.librados }}" \
             integration/p00/oracle
+
+  unit-and-build:
+    needs: pins
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+        go: ${{ fromJSON(needs.pins.outputs.go-matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: false
+      - run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go test ./...
+      - run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go build ./...
+      - run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go vet ./...
+      - run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go mod verify
+
+  cross-build:
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.latest-go }}
+          check-latest: false
+      - run: make cross-p12
+
+  quality:
+    needs: pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ needs.pins.outputs.latest-go }}
+          check-latest: false
+      - run: make quality-p12
+
+  release-reproducibility:
+    needs: pins
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-14]
+        go: ${{ fromJSON(needs.pins.outputs.go-matrix) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: false
+      - name: Generate release and deterministic hash manifest
+        run: |
+          release_dir="$RUNNER_TEMP/p12-release"
+          manifest="$RUNNER_TEMP/p12-release-${{ matrix.os }}-go-${{ matrix.go }}.sha256"
+          rm -rf "$release_dir"
+          CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p12-release -root . -out "$release_dir" -version v0.0.0-ci
+          (
+            cd "$release_dir"
+            for artifact in SHA256SUMS go-librados-v0.0.0-ci.spdx.json go-librados-v0.0.0-ci.tar.gz go-librados-v0.0.0-ci.zip; do
+              shasum -a 256 "$artifact"
+            done
+          ) > "$manifest"
+          test "$(wc -l < "$manifest" | tr -d ' ')" -eq 4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p12-release-manifest-${{ matrix.os }}-go-${{ matrix.go }}
+          path: ${{ runner.temp }}/p12-release-${{ matrix.os }}-go-${{ matrix.go }}.sha256
+          if-no-files-found: error
+
+  release-reproducibility-aggregate:
+    needs: release-reproducibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: p12-release-manifest-*
+          path: release-manifests
+          merge-multiple: true
+      - name: Compare all release manifests
+        run: |
+          set -- release-manifests/*.sha256
+          test "$#" -eq 4
+          reference=$1
+          shift
+          for manifest in "$@"; do
+            cmp "$reference" "$manifest"
+          done
+
+  report:
+    needs: pins
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ${{ fromJSON(needs.pins.outputs.go-matrix) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: ${{ matrix.go }}
+          check-latest: false
+      - name: Compile P12 schemas
+        run: make verify-p12-schemas
+      - name: Validate checked-in P12 JSON
+        run: |
+          npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/report.schema.json -d integration/p12/report.json
+          npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/fuzz-report.schema.json -d docs/p12/fuzz-report.json
+          npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/qualification-report.schema.json -d docs/p12/qualification-report.json
+          npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/human-review.schema.json -d docs/p12/human-review.json
+          npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/reviewer-trust.schema.json -d docs/p12/reviewer-trust.json
+      - name: Check P12 shell syntax
+        run: sh -n integration/p12/qualify.sh integration/p12/reproduce.sh
+      - name: Test P12 evidence tools
+        run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go test ./internal/p12fuzzcontract ./internal/p12fuzzevidence ./tools/p12-fuzz ./tools/p12-qualify ./tools/p12-release ./tools/p12-verify
+      - name: Report checked-in P12 fuzz status
+        run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p12-verify -check-fuzz docs/p12/fuzz-report.json
+      - name: Verify checked-in quick report
+        run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p12-verify -allow-non-certifying
+      - name: Verify checked-in qualification against current tree
+        if: ${{ !cancelled() }}
+        run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p12-verify -check-qualification docs/p12/qualification-report.json
+
+  fuzz:
+    needs: pins
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 1.27.1
+          check-latest: false
+      - run: make fuzz-p12
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ always() }}
+        with:
+          name: p12-fuzz-smoke
+          path: docs/p12/fuzz-report.json
+          if-no-files-found: error
+
+  certification-boundary:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          printf '%s\n' \
+            'This workflow runs cumulative non-live P12 gates only.' \
+            'CI fuzzing is a 60s-per-target smoke profile and cannot certify a candidate.' \
+            'Generate exact-candidate 10m-per-target fuzz evidence first: make fuzz-p12-nightly' \
+            'Verify that binding with: make verify-p12-fuzz' \
+            'Full certification is a manual 24-hour run on a controlled Docker host:' \
+            'P12_RELEASE_VERSION=vX.Y.Z ./integration/p12/reproduce.sh' \
+            'Then obtain four detached signed approvals and run: make verify-p12'

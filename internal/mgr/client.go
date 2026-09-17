@@ -139,6 +139,10 @@ func (client *Client) Command(ctx context.Context, command []string, input []byt
 			continue
 		}
 		if err != nil {
+			if errors.Is(err, msgr.ErrOutcomeUnknown) {
+				client.invalidate(active)
+				return CommandReply{}, err
+			}
 			if errors.Is(err, ErrClosed) || ctx.Err() != nil {
 				return CommandReply{}, preserveContextErr(ctx, err)
 			}
@@ -210,8 +214,18 @@ func (client *Client) submitPendingAware(ctx context.Context, active sessionEntr
 		case reply := <-result:
 			return reply.message, false, reply.err
 		case <-ctx.Done():
+			cancel()
+			reply := <-result
+			if errors.Is(reply.err, msgr.ErrOutcomeUnknown) {
+				return msgr.Message{}, false, reply.err
+			}
 			return msgr.Message{}, false, ctx.Err()
 		case <-client.done:
+			cancel()
+			reply := <-result
+			if errors.Is(reply.err, msgr.ErrOutcomeUnknown) {
+				return msgr.Message{}, false, reply.err
+			}
 			return msgr.Message{}, false, ErrClosed
 		case <-ticker.C:
 			current, err := client.currentTarget()
@@ -220,6 +234,10 @@ func (client *Client) submitPendingAware(ctx context.Context, active sessionEntr
 			}
 			cancel()
 			client.invalidate(active)
+			reply := <-result
+			if errors.Is(reply.err, msgr.ErrOutcomeUnknown) {
+				return msgr.Message{}, false, reply.err
+			}
 			return msgr.Message{}, true, nil
 		}
 	}
@@ -364,6 +382,8 @@ func productionSessionFactory(config Config) SessionFactory {
 		sessionConfig.ClientIdent.SupportedFeatures = uint64(protocol.FeatureMonitorClient | protocol.FeatureMessageAddress2 | protocol.FeatureServerOctopusMask)
 		sessionConfig.ClientIdent.RequiredFeatures = uint64(protocol.FeatureMessageAddress2 | protocol.FeatureServerOctopusMask)
 		sessionConfig.ReconnectPolicy = msgr.ReplayPending
+		sessionConfig.DiagnosticService = "manager"
+		sessionConfig.DiagnosticServiceID = -1
 		return msgr.NewSession(nil, connector, sessionConfig)
 	}
 }

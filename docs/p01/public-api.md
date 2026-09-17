@@ -185,6 +185,16 @@ func (o ObjectRef) CopyFrom2(ctx context.Context, source ObjectRef, sourceVersio
 func (o ObjectRef) SetAllocationHint(ctx context.Context, expectedObjectSize, expectedWriteSize uint64) (OpResult, error)
 ```
 
+Configuration transformations are value-oriented. `DefaultConfig` supplies
+`client.admin`, secure mode, and finite 10 second dial, 15 second handshake,
+and 30 second operation timeouts without consulting files, arguments, or the
+environment. `ParseConfig` and `LoadConfig` accept only the bounded
+configuration subset documented in `docs/p04/configuration.md`; `ParseEnv` is
+an explicit overlay, and `WithOption`/`ParseArgs` are the final explicit
+overlay. Returned monitor slices, key bytes, and option state do not alias the
+input configuration. Unknown programmatic options remain observable through
+`Option` but have no effect on `New`.
+
 Administrative command arguments are one bounded JSON object passed as one
 Ceph command-vector element. Returned output and status are caller-owned and
 remain available when the server returns a negative errno. Manager commands

@@ -3,6 +3,7 @@ package cephx
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math"
@@ -248,7 +249,7 @@ func TestConnectorRejectsNegativeTimeouts(t *testing.T) {
 	}
 }
 
-func TestAuthTransportClosesAtEarliestRenewal(t *testing.T) {
+func TestAuthTransportSignalsEarliestRenewalWithoutClosing(t *testing.T) {
 	base := &renewalTestTransport{closed: make(chan struct{})}
 	now := time.Now()
 	transport := newAuthTransport(base, AuthMetadata{Tickets: map[uint32]TicketMetadata{
@@ -258,9 +259,50 @@ func TestAuthTransportClosesAtEarliestRenewal(t *testing.T) {
 	defer transport.Close()
 
 	select {
-	case <-base.closed:
+	case <-transport.RenewalDue():
 	case <-time.After(time.Second):
-		t.Fatal("authenticated transport did not close for renewal")
+		t.Fatal("authenticated transport did not signal renewal")
+	}
+	select {
+	case <-base.closed:
+		t.Fatal("authenticated transport closed before the session drained")
+	default:
+	}
+}
+
+func TestAuthTransportCredentialIdentityTracksTickets(t *testing.T) {
+	metadata := AuthMetadata{GlobalID: 7, Tickets: map[uint32]TicketMetadata{
+		2: {SecretID: 20, Fingerprint: [sha256.Size]byte{2}},
+		1: {SecretID: 10, Fingerprint: [sha256.Size]byte{1}},
+	}}
+	first := newAuthTransport(&renewalTestTransport{closed: make(chan struct{})}, metadata, time.Time{}, time.Now())
+	reordered := AuthMetadata{GlobalID: 7, Tickets: map[uint32]TicketMetadata{1: metadata.Tickets[1], 2: metadata.Tickets[2]}}
+	second := newAuthTransport(&renewalTestTransport{closed: make(chan struct{})}, reordered, time.Time{}, time.Now())
+	changed := reordered
+	changed.Tickets = copyMetadata(reordered).Tickets
+	changedTicket := changed.Tickets[2]
+	changedTicket.Fingerprint[0]++
+	changed.Tickets[2] = changedTicket
+	third := newAuthTransport(&renewalTestTransport{closed: make(chan struct{})}, changed, time.Time{}, time.Now())
+	defer first.Close()
+	defer second.Close()
+	defer third.Close()
+
+	if first.CredentialIdentity() != second.CredentialIdentity() {
+		t.Fatal("credential identity depends on ticket map iteration order")
+	}
+	if first.CredentialIdentity() == third.CredentialIdentity() {
+		t.Fatal("credential identity did not change with ticket fingerprint")
+	}
+	refreshed := copyMetadata(reordered)
+	refreshedTicket := refreshed.Tickets[2]
+	refreshedTicket.ExpiresAt = time.Now().Add(time.Hour)
+	refreshedTicket.RenewAfter = refreshedTicket.ExpiresAt.Add(-time.Minute)
+	refreshed.Tickets[2] = refreshedTicket
+	fourth := newAuthTransport(&renewalTestTransport{closed: make(chan struct{})}, refreshed, time.Time{}, time.Now())
+	defer fourth.Close()
+	if first.CredentialIdentity() == fourth.CredentialIdentity() {
+		t.Fatal("credential identity did not change with renewed validity")
 	}
 }
 

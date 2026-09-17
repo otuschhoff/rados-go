@@ -212,6 +212,26 @@ func TestOSDCommandRetriesInvalidateSessionOnSubmitError(t *testing.T) {
 	}
 }
 
+func TestOSDCommandDoesNotRetryUnknownOutcome(t *testing.T) {
+	address := testAddress(t, "192.0.2.41:6800")
+	router := &fakeCommandRouter{osd: map[int32]Route{4: {Epoch: 7, Primary: 4, Addresses: protocol.EntityAddrVec{address}}}}
+	attempts := 0
+	client := newTestClient(t, &fakeMapSource{}, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) {
+			attempts++
+			return msgr.Message{}, msgr.ErrOutcomeUnknown
+		}}, nil
+	})
+	defer client.Close()
+
+	if _, err := client.OSDCommand(context.Background(), 4, []string{"mutating-command"}, nil); !errors.Is(err, msgr.ErrOutcomeUnknown) {
+		t.Fatalf("err=%v", err)
+	}
+	if attempts != 1 {
+		t.Fatalf("attempts=%d", attempts)
+	}
+}
+
 func TestPGCommandRoutesToActingPrimary(t *testing.T) {
 	address := testAddress(t, "192.0.2.50:6800")
 	pg := maps.PG{Pool: 7, Seed: 0x1a, Preferred: -1}

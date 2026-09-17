@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
 	"math"
 	"net"
 	"net/netip"
+	"slices"
 	"sync"
 	"time"
 
@@ -123,6 +125,19 @@ func (connector *Connector) NeedsRenewal(serviceID uint32, now time.Time) bool {
 	defer connector.mu.Unlock()
 	ticket, ok := connector.state.tickets[serviceID]
 	return !ok || ticket.ExpiresAt.IsZero() || !now.Before(ticket.RenewAfter)
+}
+
+func (connector *Connector) serviceTicketDue(serviceID uint32, now time.Time) (bool, error) {
+	connector.mu.Lock()
+	defer connector.mu.Unlock()
+	ticket, ok := connector.state.tickets[serviceID]
+	if !ok {
+		return false, ErrMissingTicket
+	}
+	if ticket.ExpiresAt.IsZero() || !now.Before(ticket.ExpiresAt) {
+		return false, ErrExpiredTicket
+	}
+	return ticket.RenewAfter.IsZero() || !now.Before(ticket.RenewAfter), nil
 }
 
 // BuildServiceAuthorizer constructs an authorizer from a currently valid retained ticket.
@@ -389,19 +404,20 @@ func cloneTicketBlob(ticket TicketBlob) TicketBlob {
 
 type authTransport struct {
 	msgr.Transport
-	metadata  AuthMetadata
-	closeOnce sync.Once
-	timer     *time.Timer
+	metadata   AuthMetadata
+	closeOnce  sync.Once
+	renewalDue chan struct{}
+	timer      *time.Timer
 }
 
 func newAuthTransport(transport msgr.Transport, metadata AuthMetadata, renewAfter, now time.Time) *authTransport {
-	authenticated := &authTransport{Transport: transport, metadata: copyMetadata(metadata)}
+	authenticated := &authTransport{Transport: transport, metadata: copyMetadata(metadata), renewalDue: make(chan struct{})}
 	if !renewAfter.IsZero() {
 		delay := renewAfter.Sub(now)
 		if delay < 0 {
 			delay = 0
 		}
-		authenticated.timer = time.AfterFunc(delay, func() { _ = authenticated.closeUnderlying() })
+		authenticated.timer = time.AfterFunc(delay, func() { close(authenticated.renewalDue) })
 	}
 	return authenticated
 }
@@ -422,6 +438,27 @@ func (transport *authTransport) closeUnderlying() error {
 func (transport *authTransport) AuthenticatedGlobalID() uint64 {
 	return transport.metadata.GlobalID
 }
+
+func (transport *authTransport) CredentialIdentity() [sha256.Size]byte {
+	hash := sha256.New()
+	_ = binary.Write(hash, binary.LittleEndian, transport.metadata.GlobalID)
+	serviceIDs := make([]uint32, 0, len(transport.metadata.Tickets))
+	for serviceID := range transport.metadata.Tickets {
+		serviceIDs = append(serviceIDs, serviceID)
+	}
+	slices.Sort(serviceIDs)
+	for _, serviceID := range serviceIDs {
+		ticket := transport.metadata.Tickets[serviceID]
+		_ = binary.Write(hash, binary.LittleEndian, serviceID)
+		_ = binary.Write(hash, binary.LittleEndian, ticket.SecretID)
+		_, _ = hash.Write(ticket.Fingerprint[:])
+		_ = binary.Write(hash, binary.LittleEndian, ticket.ExpiresAt.UnixNano())
+		_ = binary.Write(hash, binary.LittleEndian, ticket.RenewAfter.UnixNano())
+	}
+	return [sha256.Size]byte(hash.Sum(nil))
+}
+
+func (transport *authTransport) RenewalDue() <-chan struct{} { return transport.renewalDue }
 
 func (transport *authTransport) AuthMetadata() AuthMetadata { return copyMetadata(transport.metadata) }
 

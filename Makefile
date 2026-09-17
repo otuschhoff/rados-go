@@ -1,7 +1,8 @@
 SHELL := /bin/sh
 CEPH_SOURCE ?= /tmp/go-librados-ceph
-
+P12_RELEASE_VERSION ?= v0.0.0-p12
 .PHONY: inventory verify-p00 verify-p01 verify-p01-all quality-p01 reproduce-p01 unit-p01 differential-p01 integration-p01 cross-p01 fuzz-p01 fuzz-p01-nightly verify-p02 verify-p02-all quality-p02 reproduce-p02 reproduce-p02-upstream unit-p02 differential-p02 integration-p02 cross-p02 fuzz-p02 fuzz-p02-nightly verify-p03 verify-p03-all verify-manifests quality-p03 reproduce-p03-fixtures unit-p03 differential-p03 integration-p03 cross-p03 fuzz-p03 fuzz-p03-nightly verify-p04 verify-p04-all quality-p04 reproduce-p04-fixtures unit-p04 differential-p04 integration-p04 cross-p04 fuzz-p04 fuzz-p04-nightly verify-p05 verify-p05-all quality-p05 reproduce-p05 unit-p05 differential-p05 integration-p05 cross-p05 fuzz-p05 fuzz-p05-nightly verify-p06 verify-p06-all quality-p06 unit-p06 integration-p06 cross-p06 fuzz-p06 fuzz-p06-nightly verify-p07 verify-p07-all quality-p07 unit-p07 integration-p07 cross-p07 fuzz-p07 fuzz-p07-nightly verify-p08 verify-p08-all quality-p08 unit-p08 integration-p08 cross-p08 fuzz-p08 fuzz-p08-nightly verify-p09 verify-p09-all quality-p09 unit-p09 integration-p09 cross-p09 fuzz-p09 fuzz-p09-nightly verify-p10 verify-p10-all quality-p10 unit-p10 integration-p10 cross-p10 fuzz-p10 fuzz-p10-nightly verify-p11 verify-p11-all quality-p11 unit-p11 integration-p11 cross-p11 fuzz-p11 fuzz-p11-nightly p00-preflight p00-smoke
+.PHONY: verify-p12 verify-p12-review verify-p12-fuzz verify-p12-all verify-p12-schemas verify-p12-evidence verify-p12-harness quality-p12 unit-p12 cross-p12 fuzz-p12 fuzz-p12-nightly p12-quick qualify-p12 release-p12
 
 inventory:
 	GO111MODULE=off go run ./tools/api-inventory \
@@ -589,6 +590,88 @@ fuzz-p11:
 fuzz-p11-nightly:
 	CGO_ENABLED=0 go test ./internal/osd -run '^$$' -fuzz '^FuzzDecodeReply$$' -fuzztime=5m
 	CGO_ENABLED=0 go test ./internal/msgr -run '^$$' -fuzz '^FuzzSessionScript$$' -fuzztime=5m
+
+verify-p12: verify-p11 verify-manifests
+	test -z "$$(gofmt -l $$(find integration/p12 tools/p12-release tools/p12-verify -name '*.go'))"
+	$(MAKE) unit-p12
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go build ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go vet ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go mod verify
+	$(MAKE) verify-p12-schemas
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/human-review.schema.json -d docs/p12/human-review.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/reviewer-trust.schema.json -d docs/p12/reviewer-trust.json
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify
+	$(MAKE) cross-p12
+
+verify-p12-review:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -check-human-review docs/p12/human-review.json
+
+verify-p12-fuzz:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -check-fuzz docs/p12/fuzz-report.json -require-certifying-fuzz
+
+verify-p12-schemas:
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv compile --spec=draft2020 -c ajv-formats -s integration/p12/report.schema.json >/dev/null
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv compile --spec=draft2020 -c ajv-formats -s integration/p12/fuzz-report.schema.json >/dev/null
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv compile --spec=draft2020 -c ajv-formats -s integration/p12/qualification-report.schema.json >/dev/null
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv compile --spec=draft2020 -c ajv-formats -s integration/p12/human-review.schema.json >/dev/null
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv compile --spec=draft2020 -c ajv-formats -s integration/p12/reviewer-trust.schema.json >/dev/null
+
+verify-p12-evidence: verify-p12-schemas
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/report.schema.json -d integration/p12/report.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/fuzz-report.schema.json -d docs/p12/fuzz-report.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/qualification-report.schema.json -d docs/p12/qualification-report.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/human-review.schema.json -d docs/p12/human-review.json
+	npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/reviewer-trust.schema.json -d docs/p12/reviewer-trust.json
+	sh -n integration/p12/qualify.sh integration/p12/reproduce.sh
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go test ./tools/p12-qualify ./tools/p12-release ./tools/p12-verify
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -allow-non-certifying
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -check-fuzz docs/p12/fuzz-report.json
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -check-qualification docs/p12/qualification-report.json
+
+verify-p12-all: quality-p12 release-p12 verify-p12 fuzz-p12
+
+verify-p12-harness:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -allow-non-certifying
+
+p12-quick:
+	./integration/p12/reproduce.sh --quick
+	$(MAKE) verify-p12-harness
+
+qualify-p12:
+	@set +e; ./integration/p12/qualify.sh; qualification_status=$$?; \
+		npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv validate --spec=draft2020 -c ajv-formats -s integration/p12/qualification-report.schema.json -d docs/p12/qualification-report.json; schema_status=$$?; \
+		test "$$qualification_status" -eq 0 && test "$$schema_status" -eq 0
+
+unit-p12:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go test ./...
+
+cross-p12:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 GOOS=linux GOARCH=amd64 go build ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 GOOS=linux GOARCH=arm64 go build ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 GOOS=darwin GOARCH=amd64 go build ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 GOOS=darwin GOARCH=arm64 go build ./...
+
+quality-p12:
+	test -z "$$(CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)"
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go mod verify
+	test "$$(CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go list -deps -f '{{with .Module}}{{if not .Main}}{{.Path}} {{.Version}}{{end}}{{end}}' . | sort -u)" = "$$(printf '%s\n' 'github.com/jcmturner/aescts/v2 v2.0.0' 'github.com/jcmturner/gofork v1.7.6' 'github.com/otuschhoff/gokrb5/v8 v8.5.3' 'golang.org/x/crypto v0.56.0')"
+	grep -F 'GNU LESSER GENERAL PUBLIC LICENSE' LICENSE >/dev/null
+	for module in github.com/jcmturner/aescts/v2 github.com/jcmturner/gofork github.com/otuschhoff/gokrb5/v8 golang.org/x/crypto; do grep -F "$$module" THIRD_PARTY_NOTICES >/dev/null; done
+	CGO_ENABLED=1 GOTOOLCHAIN=go1.27.1 go test -race ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run "honnef.co/go/tools/cmd/staticcheck@$$(jq -r '.quality_tools.staticcheck' docs/p01/evidence.json)" ./...
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run "golang.org/x/vuln/cmd/govulncheck@$$(jq -r '.quality_tools.govulncheck' docs/p01/evidence.json)" ./...
+
+fuzz-p12:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz -profile smoke
+
+fuzz-p12-nightly:
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz -profile certifying
+
+release-p12:
+	@set -eu; first=$$(mktemp -d); second=$$(mktemp -d); trap 'rm -rf "$$first" "$$second"' EXIT HUP INT TERM; \
+		CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-release -root . -out "$$first" -version "$(P12_RELEASE_VERSION)"; \
+		CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-release -root . -out "$$second" -version "$(P12_RELEASE_VERSION)"; \
+		diff -rq "$$first" "$$second"
 
 p00-preflight:
 	./integration/p00/preflight.sh --require-linux-host

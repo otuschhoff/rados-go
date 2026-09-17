@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	wire "github.com/otuschhoff/go-librados/internal/encoding"
@@ -43,6 +44,26 @@ func TestBootstrapConfigRejectsInvalidFSID(t *testing.T) {
 	}
 	if _, err := LoadBootstrapConfig(path, BootstrapConfig{}, false); !errors.Is(err, wire.ErrMalformed) {
 		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestParseConfigBoundsAndComments(t *testing.T) {
+	sections, err := ParseConfig([]byte("[global] # selected\nmon   host = v2:192.0.2.1:3300/0 ; preferred\n[client.test]\nkeyring = '/keys/a;b'\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if sections["global"]["mon_host"] != "v2:192.0.2.1:3300/0" || sections["client.test"]["keyring"] != "'/keys/a;b'" {
+		t.Fatalf("sections = %#v", sections)
+	}
+	if _, err := ParseConfig([]byte(strings.Repeat("x", MaxConfigBytes+1))); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("oversized error = %v", err)
+	}
+	var options strings.Builder
+	for index := 0; index <= MaxConfigOptions; index++ {
+		options.WriteString("key = value\n")
+	}
+	if _, err := ParseConfig([]byte(options.String())); !errors.Is(err, wire.ErrMalformed) {
+		t.Fatalf("option limit error = %v", err)
 	}
 }
 
