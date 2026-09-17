@@ -51,33 +51,33 @@
       "docs/p02/tasks.md": "a438972f75f8e9c7e6ab83fb386d1fccb3370f9c5d5a7f6afce81b631aa5ad3e",
       "docs/p03/README.md": "05fae4acbd8c607aca9b0f424db62a3f9850c7bf9abf0dfa08eca22f81430a83",
       "docs/p03/evidence.json": "f46f33a0dfff1afa1bf9bd5132fc873ad4ba91129192c3653eec82736f73cae8",
-      "docs/p03/integration-report.json": "9f54490cf8d85336e94a5e253969ad3c477835a0059217f9fcb1444b7f4877d4",
+      "docs/p03/integration-report.json": "70251c92d1e30bb5df7a82ed1255ea600bd16df9690c959cd151a2a8533f4082",
       "docs/p03/modules.txt": "58474bab6a17048075e8cdfc07b2006906620eba332acc4fcf72eb60c04183ae",
       "docs/p03/provenance.md": "b2dc1c6c5f2345bdb5e185ecf4a32557f0494b9bb30dbb55c72cc961a4ffb493",
       "docs/p03/security.md": "218b9eabeab18f130c0e4a4f746b5eadcdafee2d9da705f241537b63f24276cf",
       "docs/p03/tasks.md": "56d276199d42982ccf90dfcd25367c935810bca998f77b67ccb36e2ba48d3147",
       "docs/p04/configuration.md": "bd9ff264efc871469ac4c0b3c4bd31edd2b3142e136c48117f764b7cc6d6f81e",
-      "docs/p04/integration-report.json": "7f19406607e8317fc2c9bf5001ac96e6a766e9561521e4f753401d47a0476f35",
+      "docs/p04/integration-report.json": "eae48c5f8fbb9ca265dd8a34ee56ef59a21910ffa93526073074a4f023e0701d",
       "docs/p04/provenance.md": "51389d19c4d5a60c5cdf69d2c1c3c94cd68ab0181acc044b4a27678af67482bf",
       "docs/p04/tasks.md": "699db74543e65bbfe0c983f7318e013698b1cc5477bd9efe5f088ac4e33dc737",
       "docs/p05/provenance.md": "16e6e866c7c99f3cb1af712d583029a46889ed909c5ab0e4c6bf9ca3de0b40f8",
       "docs/p05/tasks.md": "5017ef5440f12bea59306f54012e6f92cc4f838d576d5115991f2b4630bbbc5b",
-      "docs/p06/integration-report.json": "c12de2d94af365b3c67c0c4d4942d15c378990fa2e838e061e0c3ffa42adade9",
+      "docs/p06/integration-report.json": "008bf4ca75d553245ed683e684ae1f737d9256f2eccf6b9e68fe6e86b16ae758",
       "docs/p06/provenance.md": "f2552c6f4d0be72d289bed41acebb5111bd9d0ba1c92ee65c5f775500cc18307",
       "docs/p06/tasks.md": "a121e52e6b6b7692a4e019fb86a47a4dfd1b8ca4cde000c1761c027476f8c23e",
-      "docs/p07/integration-report.json": "f51dee918e8b8d38adb71cf7fca551d65f1e7d7f866c8fa34f979273964f676d",
+      "docs/p07/integration-report.json": "878e1f813e16fb28ea2e45642479e9beb010ce4593e93ae29f09d4d6a5ac29b7",
       "docs/p07/provenance.md": "446d842547cb93438ff50d3bcd90c30a200478b779f122f802979472cee7c164",
       "docs/p07/tasks.md": "0ed1f9917cefe0799387fe983fae75b1032d26bdaad77b8ccf2bec84f5b8676d",
-      "docs/p08/integration-report.json": "ba7a95a54029fb614f6bacd9b8d445c38db3e572303a18f0738d42e7b9525aa1",
+      "docs/p08/integration-report.json": "769afbc9decae93a3b339ce1e7885abb09533584ff7072823e6f2bbe1b6e6d3c",
       "docs/p08/provenance.md": "9183ff0e77c3c5b00702f060b40f88a589eda14e4a623db89057a0061c9ea35b",
       "docs/p08/tasks.md": "b7ffb6a83d62cfbc973812d8a5dd1d91b95ec1295895edd10c7d4c1f9a070c46",
-      "docs/p09/integration-report.json": "45b6b4a067821fc8dc1c3ec73cb833510b58d0525f19db96e319812f80e67c6c",
+      "docs/p09/integration-report.json": "11d05b336b2ca8b9b031eaea03425c29530565a784702b50a1977c6cec07338c",
       "docs/p09/provenance.md": "d928e23024df6ef36a7bbad594fad7133a83e4d828da707d99aeea5bc2083ab9",
       "docs/p09/tasks.md": "d0c2e0ec62cb0c6f2deff0dd5f6fc415e61eb407bba7f2736f404f3bd20b9489",
-      "docs/p10/integration-report.json": "f6bcf89acb04d2cb2a207929dfa9010e051712fb005183fb9cd6f343c3b60b92",
+      "docs/p10/integration-report.json": "c3d06d7525ed6d00634e8f450bf2a75406991fed62902925637b7967f00363e2",
       "docs/p10/provenance.md": "104d2fae853014f049371c6d5851eba382e4a59d2423256b0549a7e4f43e69f5",
       "docs/p10/tasks.md": "f15b6c170e53ea8c4346e729eacd52b472aa939ba102114b00a68f63d02ecb0d",
-      "docs/p11/integration-report.json": "7a6bb27b53ba0a17dbb9c5fb23a2536621b7b8eb049092dd549315f4cd740383",
+      "docs/p11/integration-report.json": "104ade5984e5e8e36a917237c3ba6e0960bb0efae64412bd70be8d42d26db7bb",
       "docs/p11/provenance.md": "3bde3fcd952d714e5450ef7642082ecd3c739780fb0449b5cf750911b8981c0d",
       "docs/p11/tasks.md": "dfa0aade3a54b4e8bdf6aab78ba6473bebdda0009a2973e0e510db2eb3db4ea0",
       "docs/p12/README.md": "19f23261a8cb07589539c1ff5b7b9edb3ce9a6d5e8a44f87b48cd2bc9244f109",
@@ -95,15 +95,15 @@
       "enumeration_test.go": "1c601263d1ddb9d0834ab453d496ca6efafddafc918ba5c714f42d7f3c9db1dd",
       "errors.go": "907595385103cfb141d794ef3f8688d436ac13804858e48d0faec82b2855694b",
       "errors_test.go": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7",
-      "examples/atomic/main.go": "e0f86d313e8f24583a18a07d94f553681dd85ec4093321be6cdd3bbcc6217afa",
-      "examples/basic/main.go": "ec269e11d1e372d2f9b98fee9ad6efb91176e9b26f255c8a5e13b802ab622c1d",
+      "examples/atomic/main.go": "3ac43d85dc843c0a2eb5ee463fef256040ffb6cfa26f3d4fe9b9e7272bba0638",
+      "examples/basic/main.go": "76497f3686d945b9b5e309d105e5c23c293866a86b1dad9de0d0f888f0aa997e",
       "go.mod": "82c5d6809f3e77a2b68f41462004584d9399946795a90c97654439bff5ab5cdb",
       "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c",
       "integration/README.md": "e6d640ca6572d4516acaac89b0d4af5eb08d09e51b866dedd91646c0e9e44d6f",
       "integration/manifest.schema.json": "e0204c3367ed57e5f152e4f2b97a5d0f3c2fcc2f6d6814d1b17efb16271f5038",
       "integration/p00/oracle/Dockerfile": "8771c2758a7d994db357b96d0a845bb1e919d3acaf846908e425565c31dc186d",
       "integration/p00/oracle/centos-stream.repo": "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b",
-      "integration/p00/oracle/main.cc": "8463b8638c2ccfa66d9f33b93f4ed2adc734590eea28f8cc80067757dbb56c0b",
+      "integration/p00/oracle/main.cc": "bbcf6207628545d859546eb92d50e13027ab2d78154b0c54053b4befecc029ca",
       "integration/p00/preflight.sh": "bd03469fad4c311d7324087a076f102597954434584529d007c047406f486616",
       "integration/p00/run.sh": "095ada4b3ad2391d2a410437b20f5e5574a0c0bb123f2814994c3a5a1935c150",
       "integration/p01/entity-addr-ipv6-seed.bin": "a5b18e8166e8aa1d0c3285a6c1a3470851ae2bd229b28da857328c3bd2217986",
@@ -263,9 +263,9 @@
       "internal/osd/sparse_test.go": "01ba7f17d2af91e7eba85786f3890788828479221d89dc2447af62ac00adf3d5",
       "internal/osd/watch.go": "db74670ec4810a0b189c459b608d5161e5f0423aa0bb091f72af664a9f2c8ff6",
       "internal/osd/watch_test.go": "2b88365eb4360f07cda270196ce09654d4e0f280e0a99af15cb3018804ee1943",
-      "internal/p12fuzzcontract/contract.go": "b6101dd2fc2f2828ceb55b184e3702ab0465cbcf63e4ac4619e6f30373f82c00",
-      "internal/p12fuzzcontract/contract_test.go": "a75e62ed676976ff663a4ff7e85af7cad73e20bdff1b1b54bf25d4c9516871e4",
-      "internal/p12fuzzevidence/evidence.go": "ae72aa8423eea9c408f00a35e96ad1b7f9741746ce351c861574f9b522a2f3d7",
+      "internal/p12fuzzcontract/contract.go": "acf9dd3d47a26c1698b6686145458996a63fe36774dffb72303e291b30ad6810",
+      "internal/p12fuzzcontract/contract_test.go": "46b5d1cca0e595c357211348b63e106b51d5750bceb54eb5da295856a028ff79",
+      "internal/p12fuzzevidence/evidence.go": "e3d940d9195802083670e67899ca1487cf092fa763a526e8ea0faf9c2729bada",
       "internal/p12fuzzevidence/evidence_test.go": "e6da60dd19a2b0a12a6dc269d98ca52a6872783410be3ce3466965f2bc79dab6",
       "internal/p12qualcontract/contract.go": "69ddb92ff94de1110bedf68989e6d1f84212797cfc9ea9aa742aa720bb2fe15b",
       "internal/p12qualcontract/contract_test.go": "f09417df8613fb71394db00814e2565e2037d4fe6701daa63e579ae6bf0295bb",
@@ -354,7 +354,7 @@
       "tools/p00-verify/main_test.go": "4c752473563a893516ec1978a625e8a8997aa058ae529aaa5528975905b9103a",
       "tools/p01-verify/main.go": "55e1958684c712d47a3b686aed5e653ae6801fcd9f685bd04d38eeeb266065ed",
       "tools/p01-verify/main_test.go": "487f009b0f904a889e962b91addca0d2dd67c398bb2786fa277766a144d9c510",
-      "tools/p02-verify/main.go": "983520fdbe41d8e98065f5ad42d77d884376af2c173c144973e4630597726b78",
+      "tools/p02-verify/main.go": "af297b2a9602031d444865b2011271fbbfe33c83b4b8e6184ba50b4ad8e98515",
       "tools/p02-verify/main_test.go": "826d6d3fe69ab4c44d5928ad586f4344c71bdb706cd64479b2ea8d5a2ea47365",
       "tools/p03-verify/main.go": "9de45226395b1fbcda2ac9d9b9b8f1b65bdd92c05c531b3e87e77d69cf4a09bc",
       "tools/p03-verify/main_test.go": "1678ff0f79d2a79b5c01394748652cab0e14f25743fdc93db1c3c17cb5b63892",
@@ -379,8 +379,8 @@
       "tools/p12-release/main_test.go": "6dadc8b91de5433c197ddda78614475eab20991842beb6f23d67164ecb8068c7",
       "tools/p12-verify/budget.go": "4ee39f5e2d9350f839f12ace9801da5340847e126bb65bb7e9618119f51b3ffc",
       "tools/p12-verify/budget_test.go": "f7bf15307d2e8ddeeb536379a808171113ea505296b4fb873f1b76a8e68dc9fd",
-      "tools/p12-verify/main.go": "bc31a241f8cd15ac1475a0125613086c627ec4230eb6695807ff31b7e6429f5e",
-      "tools/p12-verify/main_test.go": "ea67d9adea7e5df33c30a449302bdee9e782f6789a88cdf2de6c1ab82f1a5163",
+      "tools/p12-verify/main.go": "1e34dd6353968767ac93f5294880940dbc855687d8b6d875ecee61ae2a5facf9",
+      "tools/p12-verify/main_test.go": "aa79e3407fc8c2cbd2e451df5f6c9b35d8cc276e3648fbcab06ed9f4e8358d85",
       "tools/p12-verify/qualification.go": "deb09602379aa58263e26ee319e0ba957c3e38db7e7472341e69a08c65551249",
       "tools/p12-verify/release.go": "7207e6c3e7f7a74dbcdf264750d987bba9274a7085701ecaa7989aa5b0e521d8",
       "tools/p12-verify/release_test.go": "366f6f23edd5ca25740249e3446e63766ad774dabef521ae5a8907cfadc205ac",
@@ -823,7 +823,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p03-verify",
       "check_id": "verify-p03",
       "artifacts": {
-        "docs/p03/integration-report.json": "9f54490cf8d85336e94a5e253969ad3c477835a0059217f9fcb1444b7f4877d4"
+        "docs/p03/integration-report.json": "70251c92d1e30bb5df7a82ed1255ea600bd16df9690c959cd151a2a8533f4082"
       }
     },
     {
@@ -831,7 +831,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p04-verify",
       "check_id": "verify-p04",
       "artifacts": {
-        "docs/p04/integration-report.json": "7f19406607e8317fc2c9bf5001ac96e6a766e9561521e4f753401d47a0476f35"
+        "docs/p04/integration-report.json": "eae48c5f8fbb9ca265dd8a34ee56ef59a21910ffa93526073074a4f023e0701d"
       }
     },
     {
@@ -862,7 +862,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p06-verify",
       "check_id": "verify-p06",
       "artifacts": {
-        "docs/p06/integration-report.json": "c12de2d94af365b3c67c0c4d4942d15c378990fa2e838e061e0c3ffa42adade9"
+        "docs/p06/integration-report.json": "008bf4ca75d553245ed683e684ae1f737d9256f2eccf6b9e68fe6e86b16ae758"
       }
     },
     {
@@ -870,7 +870,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p07-verify",
       "check_id": "verify-p07",
       "artifacts": {
-        "docs/p07/integration-report.json": "f51dee918e8b8d38adb71cf7fca551d65f1e7d7f866c8fa34f979273964f676d"
+        "docs/p07/integration-report.json": "878e1f813e16fb28ea2e45642479e9beb010ce4593e93ae29f09d4d6a5ac29b7"
       }
     },
     {
@@ -878,7 +878,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p08-verify",
       "check_id": "verify-p08",
       "artifacts": {
-        "docs/p08/integration-report.json": "ba7a95a54029fb614f6bacd9b8d445c38db3e572303a18f0738d42e7b9525aa1"
+        "docs/p08/integration-report.json": "769afbc9decae93a3b339ce1e7885abb09533584ff7072823e6f2bbe1b6e6d3c"
       }
     },
     {
@@ -886,7 +886,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p09-verify",
       "check_id": "verify-p09",
       "artifacts": {
-        "docs/p09/integration-report.json": "45b6b4a067821fc8dc1c3ec73cb833510b58d0525f19db96e319812f80e67c6c"
+        "docs/p09/integration-report.json": "11d05b336b2ca8b9b031eaea03425c29530565a784702b50a1977c6cec07338c"
       }
     },
     {
@@ -894,7 +894,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p10-verify",
       "check_id": "verify-p10",
       "artifacts": {
-        "docs/p10/integration-report.json": "f6bcf89acb04d2cb2a207929dfa9010e051712fb005183fb9cd6f343c3b60b92"
+        "docs/p10/integration-report.json": "c3d06d7525ed6d00634e8f450bf2a75406991fed62902925637b7967f00363e2"
       }
     },
     {
@@ -902,7 +902,7 @@
       "verifier_command": "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p11-verify",
       "check_id": "verify-p11",
       "artifacts": {
-        "docs/p11/integration-report.json": "7a6bb27b53ba0a17dbb9c5fb23a2536621b7b8eb049092dd549315f4cd740383"
+        "docs/p11/integration-report.json": "104ade5984e5e8e36a917237c3ba6e0960bb0efae64412bd70be8d42d26db7bb"
       }
     }
   ],

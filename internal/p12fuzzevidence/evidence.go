@@ -223,7 +223,12 @@ func parseTimes(startedAt, finishedAt string) (time.Time, time.Time, error) {
 }
 
 func validPlatform(platform string) bool {
-	return slices.Contains([]string{"darwin/amd64", "darwin/arm64"}, platform)
+	return slices.Contains([]string{
+		"darwin/amd64",
+		"darwin/arm64",
+		"linux/amd64",
+		"linux/arm64",
+	}, platform)
 }
 
 func equalHashes(left, right map[string]string) bool {
