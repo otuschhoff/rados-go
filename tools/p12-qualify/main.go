@@ -90,7 +90,7 @@ type checkSpec = p12qualcontract.Spec
 func main() {
 	root := flag.String("root", ".", "repository root")
 	out := flag.String("out", "docs/p12/qualification-report.json", "qualification report path")
-	releaseVersion := flag.String("release-version", "v0.0.0-p12", "release version used for reproducibility evidence")
+	releaseVersion := flag.String("release-version", "v0.1.0", "release version used for reproducibility evidence")
 	checkInventory := flag.String("check-inventory", "", "validate an API inventory and exit")
 	flag.Parse()
 	if *checkInventory != "" {

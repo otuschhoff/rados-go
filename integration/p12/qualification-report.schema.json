@@ -97,7 +97,7 @@
       "additionalProperties": false,
       "required": ["version", "reproducible", "runs", "artifacts"],
       "properties": {
-        "version": {"const": "v0.0.0-p12"},
+        "version": {"const": "v0.1.0"},
         "reproducible": {"type": "boolean"},
         "runs": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "object", "minProperties": 4, "maxProperties": 4, "additionalProperties": {"$ref": "#/$defs/sha256"}}},
         "artifacts": {"type": "object", "minProperties": 4, "maxProperties": 4, "additionalProperties": {"$ref": "#/$defs/sha256"}}

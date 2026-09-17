@@ -283,7 +283,7 @@ func validQualificationReport(t *testing.T, root string) qualificationReport {
 		t.Fatal(err)
 	}
 	value.Source.Artifacts = artifacts
-	for _, spec := range p12qualcontract.Checks(p12qualcontract.DefaultPins(), "v0.0.0-p12") {
+	for _, spec := range p12qualcontract.Checks(p12qualcontract.DefaultPins(), "v0.1.0") {
 		check := validQualificationCheck(spec)
 		if spec.ID == "go-version-latest" {
 			check.Output = "go version " + p12qualcontract.LatestGo + " darwin/arm64\n"
@@ -320,7 +320,7 @@ func validQualificationReport(t *testing.T, root string) qualificationReport {
 		value.PriorReports = append(value.PriorReports, qualificationPrior{Phase: name, VerifierCommand: "CGO_ENABLED=0 GOTOOLCHAIN=" + p12qualcontract.LatestGo + " go run ./tools/" + name + "-verify", CheckID: "verify-" + name, Artifacts: priorArtifacts})
 	}
 	release := map[string]string{"a": strings.Repeat("1", 64), "b": strings.Repeat("2", 64), "c": strings.Repeat("3", 64), "d": strings.Repeat("4", 64)}
-	value.Release = qualificationRelease{Version: "v0.0.0-p12", Reproducible: true, Runs: []map[string]string{cloneMap(release), cloneMap(release)}, Artifacts: release}
+	value.Release = qualificationRelease{Version: "v0.1.0", Reproducible: true, Runs: []map[string]string{cloneMap(release), cloneMap(release)}, Artifacts: release}
 	return value
 }
 

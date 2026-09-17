@@ -8,7 +8,7 @@
     "repository": "https://github.com/otuschhoff/rados-go.git",
     "identity": "content-addressed-artifacts",
     "artifacts": {
-      "Makefile": "93217fe4735ee17f6137adef48bb5eb68f80ea843cf61ca18103f07e294c43f7",
+      "Makefile": "d574a847c82d29b55ba9e0714ff58c5f19948d3b9af578475c777484a3c2ce29",
       "go.mod": "82c5d6809f3e77a2b68f41462004584d9399946795a90c97654439bff5ab5cdb",
       "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c",
       "integration/p04/probe/main.go": "cd224092de706fdee1ded68dc66e2f5c650fb18308c452877f3ad4265d46894b",

@@ -19,8 +19,9 @@ The command writes exactly these files:
 - `SHA256SUMS`: SHA-256 digests for the other three artifacts.
 
 `make release-p12 P12_RELEASE_VERSION=vX.Y.Z` generates the set twice in
-independent temporary directories and compares every byte. The default
-`v0.0.0-p12` is only an automation placeholder and is not a release version.
+independent temporary directories and compares every byte. The project release
+version is `v0.1.0`; supply another semantic version explicitly for a later
+release.
 
 ## Archive Boundary
 

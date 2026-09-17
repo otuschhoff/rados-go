@@ -118,7 +118,7 @@ func validateQualificationReport(value qualificationReport, root string) error {
 	if err := validateExactHashes("qualification source", value.Source.Artifacts, expectedSource); err != nil {
 		return err
 	}
-	checkSpecs := p12qualcontract.Checks(p12qualcontract.DefaultPins(), "v0.0.0-p12")
+	checkSpecs := p12qualcontract.Checks(p12qualcontract.DefaultPins(), "v0.1.0")
 	if len(value.Checks) != len(checkSpecs) {
 		return fmt.Errorf("qualification has %d checks, want exactly %d", len(value.Checks), len(checkSpecs))
 	}
@@ -243,7 +243,7 @@ func validateQualificationPrior(values []qualificationPrior, root string, checks
 }
 
 func validateQualificationRelease(value qualificationRelease) error {
-	if value.Version != "v0.0.0-p12" || !value.Reproducible || len(value.Runs) != 2 || len(value.Artifacts) != 4 {
+	if value.Version != "v0.1.0" || !value.Reproducible || len(value.Runs) != 2 || len(value.Artifacts) != 4 {
 		return errors.New("qualification lacks two reproducible release runs")
 	}
 	for _, run := range value.Runs {

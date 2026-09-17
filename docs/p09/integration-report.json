@@ -106,7 +106,7 @@
       "internal/protocol/features.go": "1031cd9b04982627ed180d948c4f0961f0afeff01d3dfc6aa1ed1b6c951b415e",
       "internal/protocol/entity.go": "bae43654cc37194c84ce1be63ef071aa1dac6050c68c012b969ef797b6f48b01",
       "internal/protocol/message_types.go": "57f3a95b49e8e4002a91ec99206f703cedd38aa86d12911c52ad1a8ea2169fe6",
-      "Makefile": "93217fe4735ee17f6137adef48bb5eb68f80ea843cf61ca18103f07e294c43f7",
+      "Makefile": "d574a847c82d29b55ba9e0714ff58c5f19948d3b9af578475c777484a3c2ce29",
       "README.md": "93d3d339767eaac5a37297c89466e064dd77212295a054f8e3fca3bffbf356d8",
       "SPEC.md": "933fb55517ee2aaaa9d7eefb775c561f01638b033fa1f541a2f69b67972cdd67",
       "client.go": "6c02df1a568560d08dad7092c55d811b1f8b0d588e1caf5c45a48c021b3ee5e1",
