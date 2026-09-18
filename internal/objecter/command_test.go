@@ -252,6 +252,26 @@ func TestPGCommandRoutesToActingPrimary(t *testing.T) {
 	}
 }
 
+func TestPGCommandWaitsForPrimaryToRecover(t *testing.T) {
+	address := testAddress(t, "192.0.2.51:6800")
+	pg := maps.PG{Pool: 7, Seed: 0x1a, Preferred: -1}
+	router := &fakeCommandRouter{}
+	source := &fakeMapSource{refresh: func() {
+		router.setPG(pg, Route{Epoch: 11, PG: pg, Primary: 9, Addresses: protocol.EntityAddrVec{address}})
+	}}
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			return commandReplyMessage(t, message.Header.TransactionID, 0, "ok", []byte("recovered")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.PGCommand(context.Background(), pg, []string{"query"}, nil)
+	if err != nil || string(result.Output) != "recovered" {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+}
+
 func TestPGCommandFollowsMapChange(t *testing.T) {
 	first := testAddress(t, "192.0.2.60:6800")
 	second := testAddress(t, "192.0.2.61:6800")

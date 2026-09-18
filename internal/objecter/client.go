@@ -316,13 +316,14 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 		requestFlags |= osd.FlagReturnVector
 	}
 	var lastErr error
-	for attempt := 0; attempt < client.config.MaxAttempts; attempt++ {
-		route, err := routeTarget(currentTarget)
-		if err != nil {
+	_, boundedByContext := ctx.Deadline()
+	for attempt := 0; boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
-		if route.Primary < 0 || len(route.Addresses) == 0 {
-			return Result{}, preserveOutcomeUnknown(lastErr, ErrNoPrimary)
+		route, err := client.waitForRoute(ctx, currentTarget, routeTarget)
+		if err != nil {
+			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		if attempt > 0 {
 			requestFlags |= osd.FlagRetry
@@ -499,7 +500,12 @@ func (client *Client) PGNLS(ctx context.Context, poolID int64, namespace string,
 	if count == 0 || (!cursor.IsMin() && (cursor.Pool != poolID || cursor.Snapshot != osd.NoSnap || cursor.IsMax())) {
 		return osd.ListPage{}, wire.ErrMalformed
 	}
-	route, err := client.routeRawHash(poolID, cursor.Hash)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	route, err := client.waitForResolvedRoute(ctx, func() (Route, error) {
+		return client.routeRawHash(poolID, cursor.Hash)
+	})
 	if err != nil {
 		return osd.ListPage{}, err
 	}
@@ -620,6 +626,39 @@ func (client *Client) routeRawHash(poolID int64, hash uint32) (Route, error) {
 		return Route{}, ErrNoPrimary
 	}
 	return mapRouter{source: client.config.Maps}.RouteRawHash(poolID, hash)
+}
+
+func (client *Client) waitForRoute(ctx context.Context, target Target, routeTarget func(Target) (Route, error)) (Route, error) {
+	return client.waitForResolvedRoute(ctx, func() (Route, error) { return routeTarget(target) })
+}
+
+func (client *Client) waitForResolvedRoute(ctx context.Context, resolve func() (Route, error)) (Route, error) {
+	_, boundedByContext := ctx.Deadline()
+	for refreshes := 0; ; refreshes++ {
+		route, err := resolve()
+		if err != nil && !errors.Is(err, ErrNoPrimary) {
+			return Route{}, err
+		}
+		if err == nil && route.Primary >= 0 && len(route.Addresses) != 0 {
+			return route, nil
+		}
+		if !boundedByContext && refreshes >= client.config.MaxAttempts {
+			return Route{}, ErrNoPrimary
+		}
+		epoch := route.Epoch
+		if current := client.config.Maps.OSDMap(); current != nil && current.Epoch() > epoch {
+			epoch = current.Epoch()
+		}
+		refreshCtx, cancel := context.WithTimeout(ctx, client.config.RefreshWait)
+		refreshErr := client.config.Maps.RefreshOSDMap(refreshCtx, epoch)
+		cancel()
+		if ctx.Err() != nil {
+			return Route{}, ctx.Err()
+		}
+		if refreshErr != nil && !errors.Is(refreshErr, context.DeadlineExceeded) {
+			return Route{}, refreshErr
+		}
+	}
 }
 
 func preserveOutcomeUnknown(previous, current error) error {

@@ -84,6 +84,77 @@ func TestReadRecoversToNewPrimary(t *testing.T) {
 	}
 }
 
+func TestReadWaitsForPrimaryToRecover(t *testing.T) {
+	recovered := testRoute(t, 11, 0, "192.0.2.10:6800")
+	router := &fakeRouter{route: Route{Epoch: 10, Primary: -1}}
+	refreshes := 0
+	source := &fakeMapSource{refresh: func() {
+		refreshes++
+		router.set(recovered)
+	}}
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) {
+			return testReply(t, 11, 42, 0, []byte("data")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.Read(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Data) != "data" || result.Version != 42 || refreshes != 1 {
+		t.Fatalf("result=%+v refreshes=%d", result, refreshes)
+	}
+}
+
+func TestReadWithoutPrimaryStopsAtContextDeadline(t *testing.T) {
+	router := &fakeRouter{route: Route{Epoch: 10, Primary: -1}}
+	client := newTestClient(t, &fakeMapSource{}, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		t.Fatal("must not create a session without a primary")
+		return nil, nil
+	})
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	if _, err := client.Read(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error=%v", err)
+	}
+}
+
+func TestReadRecoveryUsesContextBudgetBeyondMaxAttempts(t *testing.T) {
+	failed := testRoute(t, 10, 0, "192.0.2.10:6800")
+	recovered := testRoute(t, 11, 1, "192.0.2.11:6800")
+	router := &fakeRouter{route: failed}
+	refreshes := 0
+	source := &fakeMapSource{refresh: func() {
+		refreshes++
+		if refreshes == 4 {
+			router.set(recovered)
+		}
+	}}
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) {
+			if id == failed.Primary {
+				return msgr.Message{}, errors.New("primary unavailable")
+			}
+			return testReply(t, 11, 43, 0, []byte("data")), nil
+		}}, nil
+	})
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	result, err := client.Read(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Data) != "data" || result.Version != 43 || refreshes != 4 {
+		t.Fatalf("result=%+v refreshes=%d", result, refreshes)
+	}
+}
+
 func TestSparseReadUsesRoutedReadPath(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	payload := wire.NewEncoder(128)

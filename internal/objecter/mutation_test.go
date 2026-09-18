@@ -246,6 +246,25 @@ func TestMutationUnknownOutcomeRemapsWithSameIdentity(t *testing.T) {
 	}
 }
 
+func TestMutationWaitsForPrimaryToRecover(t *testing.T) {
+	recovered := testRoute(t, 11, 0, "192.0.2.10:6800")
+	router := &fakeRouter{route: Route{Epoch: 10, Primary: -1}}
+	source := &fakeMapSource{refresh: func() { router.set(recovered) }}
+	var transactionID uint64
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			transactionID = message.Header.TransactionID
+			return testReplyOperation(t, 11, 21, 0, osd.OpAppend, nil), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 1, Data: []byte("x")})
+	if err != nil || result.Version != 21 || transactionID == 0 {
+		t.Fatalf("result=%+v error=%v transaction=%d", result, err, transactionID)
+	}
+}
+
 func TestMutationReconnectExhaustionRemapsWithSameIdentity(t *testing.T) {
 	route0 := testRoute(t, 10, 0, "192.0.2.10:6800")
 	route1 := testRoute(t, 11, 1, "192.0.2.11:6800")

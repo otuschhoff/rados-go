@@ -121,6 +121,58 @@ func TestPlaceObjectAppliesUpAndActingOverrides(t *testing.T) {
 	}
 }
 
+func TestReplicatedPlacementTracksOSDDownAndRecovery(t *testing.T) {
+	const object = "p00-smoke-object"
+	for _, test := range []struct {
+		name        string
+		poolID      int64
+		size        uint8
+		minimumSize uint8
+	}{
+		{name: "size three min two", poolID: 2, size: 3, minimumSize: 2},
+		{name: "size one min one", poolID: 3, size: 1, minimumSize: 1},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			osdMap := &OSDMap{
+				pools: map[int64]Pool{test.poolID: {
+					id: test.poolID, poolType: poolTypeReplicated, size: test.size, minimumSize: test.minimumSize,
+					crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool,
+				}},
+				maxOSD: 4, osdState: []uint32{3, 3, 3, 3}, osdWeight: []uint32{0x10000, 0x10000, 0x10000, 0x10000},
+				crushData: encodePlacementCrushMap(t),
+			}
+			initial, err := osdMap.PlaceObject(test.poolID, object, "", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			for downCount, osd := range initial.Acting {
+				osdMap.osdState[osd] &^= 1 << 1
+				placement, err := osdMap.PlaceObject(test.poolID, object, "", "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				wantLength := len(initial.Acting) - downCount - 1
+				if len(placement.Acting) != wantLength || len(placement.Up) != wantLength || containsOSD(placement.Acting, osd) {
+					t.Fatalf("down=%d placement=%+v", downCount+1, placement)
+				}
+				if wantLength == 0 && placement.ActingPrimary != -1 {
+					t.Fatalf("all down placement=%+v", placement)
+				}
+			}
+			for _, osd := range initial.Acting {
+				osdMap.osdState[osd] |= 1 << 1
+			}
+			recovered, err := osdMap.PlaceObject(test.poolID, object, "", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(recovered.Up, initial.Up) || !reflect.DeepEqual(recovered.Acting, initial.Acting) || recovered.ActingPrimary != initial.ActingPrimary {
+				t.Fatalf("initial=%+v recovered=%+v", initial, recovered)
+			}
+		})
+	}
+}
+
 func TestPlaceObjectDoesNotBoundCrushNamesByOSDCount(t *testing.T) {
 	osdMap := &OSDMap{
 		pools:  map[int64]Pool{2: {id: 2, poolType: poolTypeReplicated, size: 1, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},

@@ -40,7 +40,7 @@ type osdCommandRouter interface {
 // argv and input blob per src/messages/MCommand.h at 7f793731. The reply is
 // decoded and returned along with the server's Result, Status, and Output.
 // Retries follow the same map-refresh semantics as read paths: on -EAGAIN the
-// current OSD map is refreshed and the request resent up to Config.MaxAttempts.
+// current OSD map is refreshed and the request is resent until its deadline.
 func (client *Client) OSDCommand(ctx context.Context, osdID int32, command []string, input []byte) (CommandResult, error) {
 	if osdID < 0 {
 		return CommandResult{}, fmt.Errorf("%w: negative OSD id", wire.ErrMalformed)
@@ -96,13 +96,14 @@ func (client *Client) submitCommand(ctx context.Context, command []string, input
 		fsid = osdMap.FSID()
 	}
 	var lastErr error
-	for attempt := 0; attempt < client.config.MaxAttempts; attempt++ {
-		route, err := resolve()
-		if err != nil {
+	_, boundedByContext := ctx.Deadline()
+	for attempt := 0; boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
+		if err := ctx.Err(); err != nil {
 			return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 		}
-		if route.Primary < 0 || len(route.Addresses) == 0 {
-			return CommandResult{}, preserveOutcomeUnknown(lastErr, ErrNoPrimary)
+		route, err := client.waitForResolvedRoute(ctx, resolve)
+		if err != nil {
+			return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		active, err := client.getSession(route.Primary, route.Addresses)
 		if err != nil {

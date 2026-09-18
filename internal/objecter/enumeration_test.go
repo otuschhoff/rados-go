@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
+	"github.com/otuschhoff/rados-go/internal/maps"
 	"github.com/otuschhoff/rados-go/internal/msgr"
 	"github.com/otuschhoff/rados-go/internal/osd"
 	"github.com/otuschhoff/rados-go/internal/protocol"
@@ -80,6 +81,30 @@ func TestPGNLSUsesRawHashRouteAndRetriesEAGAIN(t *testing.T) {
 	}
 	assertPGNLSRequest(t, requests[0], route0, cursor, "ns", 3, route0.Epoch, 0)
 	assertPGNLSRequest(t, requests[1], route1, cursor, "ns", 3, route0.Epoch, 1)
+}
+
+func TestPGNLSWaitsForPrimaryToRecover(t *testing.T) {
+	const cursorHash = uint32(8)
+	unavailable := Route{Epoch: 10, PG: maps.PG{Pool: 7}, RawHash: cursorHash, Primary: -1}
+	recovered := testRoute(t, 11, 1, "192.0.2.11:6800")
+	recovered.RawHash = cursorHash
+	router := &fakeRawHashRouter{route: unavailable}
+	source := &fakeMapSource{refresh: func() { router.set(recovered) }}
+	var request msgr.Message
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			page := encodePGNLSPageForTest(t, osd.HObject{Object: "next", Snapshot: osd.NoSnap, Hash: 9, Pool: 7}, nil)
+			return testPGNLSReply(t, recovered, 0, 0, page), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	cursor := osd.HObject{Snapshot: osd.NoSnap, Hash: cursorHash, Pool: 7}
+	if _, err := client.PGNLS(context.Background(), 7, "ns", cursor, 3); err != nil {
+		t.Fatal(err)
+	}
+	assertPGNLSRequest(t, request, recovered, cursor, "ns", 3, recovered.Epoch, 0)
 }
 
 func TestValidateEnumerationPage(t *testing.T) {
