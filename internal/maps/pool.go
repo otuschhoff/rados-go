@@ -35,6 +35,7 @@ const (
 	poolFlagECOverwrites         uint64 = 1 << 2
 	poolFlagSelfManagedSnapshots uint64 = 1 << 13
 	poolFlagPoolSnapshots        uint64 = 1 << 14
+	poolFlagECOptimizations      uint64 = 1 << 19
 )
 
 type Pool struct {
@@ -52,6 +53,7 @@ type Pool struct {
 	snapshotSequence    uint64
 	snapshots           map[uint64]PoolSnapshot
 	erasureCodeProfile  string
+	nonprimaryShards    [2]uint64
 	applicationMetadata map[string]map[string]string
 	options             map[int32]PoolOption
 }
@@ -204,11 +206,12 @@ func decodePool(decoder *wire.Decoder, limits Limits) (Pool, error) {
 		}
 	}
 	if version >= 32 {
-		if err := consumeUnsignedVarint(payload); err != nil {
-			return Pool{}, err
-		}
-		if err := consumeUnsignedVarint(payload); err != nil {
-			return Pool{}, err
+		for index := range pool.nonprimaryShards {
+			value, err := decodeUnsignedVarint(payload)
+			if err != nil {
+				return Pool{}, err
+			}
+			pool.nonprimaryShards[index] = value
 		}
 	}
 	if err := payload.Finish(); err != nil {
@@ -366,20 +369,22 @@ func skipVersioned(decoder *wire.Decoder, localVersion uint8) error {
 	return payload.Finish()
 }
 
-func consumeUnsignedVarint(decoder *wire.Decoder) error {
+func decodeUnsignedVarint(decoder *wire.Decoder) (uint64, error) {
+	var result uint64
 	for index := 0; index < 10; index++ {
 		value := decoder.Uint8()
 		if err := decoder.Finish(); err != nil {
-			return err
+			return 0, err
 		}
 		if value&0x80 == 0 {
 			if index == 9 && value > 1 {
-				return wire.ErrMalformed
+				return 0, wire.ErrMalformed
 			}
-			return nil
+			return result | uint64(value)<<uint(7*index), nil
 		}
+		result |= uint64(value&0x7f) << uint(7*index)
 	}
-	return wire.ErrMalformed
+	return 0, wire.ErrMalformed
 }
 
 func (pool Pool) ID() int64                { return pool.id }

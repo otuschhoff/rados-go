@@ -147,6 +147,62 @@ func TestPlaceObjectSupportsErasurePoolShardSet(t *testing.T) {
 	}
 }
 
+func TestPlaceObjectPreservesErasureShardSlots(t *testing.T) {
+	osdMap := &OSDMap{
+		pools:  map[int64]Pool{2: {id: 2, poolType: poolTypeErasure, size: 3, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},
+		maxOSD: 4, osdState: []uint32{3, 1, 3, 3}, osdWeight: []uint32{0x10000, 0x10000, 0x10000, 0x10000},
+		crushData: encodePlacementCrushMap(t),
+	}
+	identity, err := osdMap.MapObject(2, "object", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	osdMap.pgTemp = map[PG][]int32{identity.PG: {0, 1, 2}}
+	osdMap.primaryTemp = map[PG]int32{identity.PG: 2}
+	placement, err := osdMap.PlaceObject(2, "object", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(placement.Acting, []int32{0, crushItemNone, 2}) || placement.ActingPrimary != 2 || placement.PrimaryShard != 2 {
+		t.Fatalf("placement = %+v", placement)
+	}
+}
+
+func TestErasurePrimaryAffinityDoesNotReorderShards(t *testing.T) {
+	osdMap := &OSDMap{primaryAffinity: []uint32{0, defaultPrimaryAffinity, defaultPrimaryAffinity}}
+	pool := Pool{poolType: poolTypeErasure}
+	osds := []int32{0, 1, 2}
+	primary := int32(0)
+	osdMap.applyPrimaryAffinity(pool, 7, osds, &primary)
+	if !reflect.DeepEqual(osds, []int32{0, 1, 2}) || primary != 1 {
+		t.Fatalf("osds=%v primary=%d", osds, primary)
+	}
+}
+
+func TestPlaceObjectTranslatesOptimizedErasurePGTemp(t *testing.T) {
+	osdMap := &OSDMap{
+		pools: map[int64]Pool{2: {
+			id: 2, poolType: poolTypeErasure, size: 3, crushRule: 0, objectHash: objectHashRJenkins,
+			pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool | poolFlagECOptimizations,
+			nonprimaryShards: [2]uint64{1 << 1},
+		}},
+		maxOSD: 4, osdState: []uint32{1, 3, 3, 3}, osdWeight: []uint32{0x10000, 0x10000, 0x10000, 0x10000},
+		crushData: encodePlacementCrushMap(t),
+	}
+	identity, err := osdMap.MapObject(2, "object", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	osdMap.pgTemp = map[PG][]int32{identity.PG: {0, 2, 1}}
+	placement, err := osdMap.PlaceObject(2, "object", "", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(placement.Acting, []int32{crushItemNone, 1, 2}) || placement.ActingPrimary != 2 || placement.PrimaryShard != 2 {
+		t.Fatalf("placement = %+v", placement)
+	}
+}
+
 func TestPlaceObjectRejectsInvalidReplicaAndTemporaryPrimary(t *testing.T) {
 	base := &OSDMap{
 		pools:     map[int64]Pool{2: {id: 2, poolType: poolTypeReplicated, size: 0, crushRule: 0, objectHash: objectHashRJenkins, pgCount: 32, placementPGCount: 32, flags: poolFlagHashPSPool}},

@@ -29,7 +29,7 @@ func TestDecodeOSDMapV8(t *testing.T) {
 		t.Fatalf("osdmap epoch=%d pools=%d fsid=%x", osdMap.Epoch(), osdMap.PoolCount(), osdMap.FSID())
 	}
 	pool, ok := osdMap.PoolByName("data")
-	if !ok || pool.ID() != 7 || pool.Type() != 1 || pool.Size() != 3 || pool.MinimumSize() != 2 || pool.PGCount() != 32 || pool.PlacementPGCount() != 16 || pool.StripeWidth() != 4096 || pool.ErasureCodeProfile() != "ec-profile" || pool.SnapshotSequence() != 9 || !pool.UsesPoolSnapshots() || pool.UsesSelfManagedSnapshots() {
+	if !ok || pool.ID() != 7 || pool.Type() != 1 || pool.Size() != 3 || pool.MinimumSize() != 2 || pool.PGCount() != 32 || pool.PlacementPGCount() != 16 || pool.StripeWidth() != 4096 || pool.ErasureCodeProfile() != "ec-profile" || pool.SnapshotSequence() != 9 || !pool.UsesPoolSnapshots() || pool.UsesSelfManagedSnapshots() || pool.nonprimaryShards != [2]uint64{6, 0} {
 		t.Fatalf("pool = %+v found=%t", pool, ok)
 	}
 	snapshots := pool.Snapshots()
@@ -216,7 +216,7 @@ func encodeTestPool(encoder *wire.Encoder) {
 		pool.Uint8(0)
 		pool.Versioned(1, 1, func(*wire.Encoder) {})
 		pool.Bool(false)
-		pool.Uint8(0)
+		pool.Uint8(6)
 		pool.Uint8(0)
 	})
 }

@@ -99,10 +99,10 @@ func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (Obje
 		return ObjectPlacement{}, err
 	}
 	mapped := osdMap.applyUpmap(placement.PG, raw)
-	up := osdMap.onlyUp(mapped)
+	up := osdMap.upOSDs(pool, mapped)
 	upPrimary := firstOSD(up)
-	osdMap.applyPrimaryAffinity(placement.PlacementSeed, up, &upPrimary)
-	acting, actingPrimary, err := osdMap.tempMapping(placement.PG)
+	osdMap.applyPrimaryAffinity(pool, placement.PlacementSeed, up, &upPrimary)
+	acting, actingPrimary, err := osdMap.tempMapping(pool, placement.PG)
 	if err != nil {
 		return ObjectPlacement{}, err
 	}
@@ -120,12 +120,22 @@ func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (Obje
 	placement.Acting = acting
 	placement.ActingPrimary = actingPrimary
 	if pool.poolType == poolTypeErasure {
-		for index, osd := range acting {
+		primaryOrder := acting
+		_, hasPGTemp := osdMap.pgTemp[placement.PG]
+		hasOptimizedPGTemp := hasPGTemp && pool.flags&poolFlagECOptimizations != 0
+		if hasOptimizedPGTemp {
+			primaryOrder = pool.pgTempPrimaryFirst(acting)
+		}
+		for index, osd := range primaryOrder {
 			if osd == actingPrimary {
-				if index > 127 {
-					return ObjectPlacement{}, fmt.Errorf("%w: primary shard %d exceeds wire range", ErrUnsupportedPlacement, index)
+				shard := index
+				if hasOptimizedPGTemp {
+					shard = pool.pgTempUndoPrimaryFirstIndex(index)
 				}
-				placement.PrimaryShard = int8(index)
+				if shard > 127 {
+					return ObjectPlacement{}, fmt.Errorf("%w: primary shard %d exceeds wire range", ErrUnsupportedPlacement, shard)
+				}
+				placement.PrimaryShard = int8(shard)
 				placement.Sharded = true
 				break
 			}
@@ -201,7 +211,20 @@ func (osdMap *OSDMap) onlyUp(source []int32) []int32 {
 	return result
 }
 
-func (osdMap *OSDMap) tempMapping(pg PG) ([]int32, int32, error) {
+func (osdMap *OSDMap) upOSDs(pool Pool, source []int32) []int32 {
+	if pool.poolType == poolTypeReplicated {
+		return osdMap.onlyUp(source)
+	}
+	result := append([]int32(nil), source...)
+	for index, osd := range result {
+		if !osdMap.isUp(osd) {
+			result[index] = crushItemNone
+		}
+	}
+	return result
+}
+
+func (osdMap *OSDMap) tempMapping(pool Pool, pg PG) ([]int32, int32, error) {
 	primary := int32(-1)
 	if override, ok := osdMap.primaryTemp[pg]; ok {
 		primary = override
@@ -213,14 +236,78 @@ func (osdMap *OSDMap) tempMapping(pg PG) ([]int32, int32, error) {
 	if err := osdMap.validatePlacementSet("pg_temp", source); err != nil {
 		return nil, -1, err
 	}
-	result := osdMap.onlyUp(source)
+	result := osdMap.upOSDs(pool, source)
 	if primary == -1 {
 		primary = firstOSD(result)
+	}
+	if pool.poolType == poolTypeErasure && pool.flags&poolFlagECOptimizations != 0 {
+		if len(result) != int(pool.size) || !pool.validNonprimaryShards() {
+			return nil, -1, fmt.Errorf("%w: invalid optimized EC pg_temp", ErrUnsupportedPlacement)
+		}
+		result = pool.pgTempUndoPrimaryFirst(result)
 	}
 	return result, primary, nil
 }
 
-func (osdMap *OSDMap) applyPrimaryAffinity(seed uint32, osds []int32, primary *int32) {
+func (pool Pool) isNonprimaryShard(shard int) bool {
+	return shard >= 0 && shard < 128 && pool.nonprimaryShards[shard/64]&(uint64(1)<<uint(shard%64)) != 0
+}
+
+func (pool Pool) validNonprimaryShards() bool {
+	for shard := int(pool.size); shard < 128; shard++ {
+		if pool.isNonprimaryShard(shard) {
+			return false
+		}
+	}
+	return true
+}
+
+func (pool Pool) pgTempPrimaryFirst(source []int32) []int32 {
+	result := make([]int32, 0, len(source))
+	for shard, osd := range source {
+		if !pool.isNonprimaryShard(shard) {
+			result = append(result, osd)
+		}
+	}
+	for shard, osd := range source {
+		if pool.isNonprimaryShard(shard) {
+			result = append(result, osd)
+		}
+	}
+	return result
+}
+
+func (pool Pool) pgTempUndoPrimaryFirst(source []int32) []int32 {
+	result := make([]int32, len(source))
+	primaryIndex := 0
+	nonprimaryIndex := len(source)
+	for shard := range source {
+		if pool.isNonprimaryShard(shard) {
+			nonprimaryIndex--
+		}
+	}
+	for shard := range result {
+		if pool.isNonprimaryShard(shard) {
+			result[shard] = source[nonprimaryIndex]
+			nonprimaryIndex++
+		} else {
+			result[shard] = source[primaryIndex]
+			primaryIndex++
+		}
+	}
+	return result
+}
+
+func (pool Pool) pgTempUndoPrimaryFirstIndex(position int) int {
+	canonical := make([]int32, pool.size)
+	for index := range canonical {
+		canonical[index] = int32(index)
+	}
+	primaryFirst := pool.pgTempPrimaryFirst(canonical)
+	return int(primaryFirst[position])
+}
+
+func (osdMap *OSDMap) applyPrimaryAffinity(pool Pool, seed uint32, osds []int32, primary *int32) {
 	if len(osdMap.primaryAffinity) == 0 {
 		return
 	}
@@ -243,7 +330,7 @@ func (osdMap *OSDMap) applyPrimaryAffinity(seed uint32, osds []int32, primary *i
 		return
 	}
 	*primary = osds[position]
-	if position > 0 {
+	if pool.poolType == poolTypeReplicated && position > 0 {
 		copy(osds[1:position+1], osds[:position])
 		osds[0] = *primary
 	}
