@@ -22,6 +22,42 @@ func TestSecureDeterministicVector(t *testing.T) {
 	}
 }
 
+func TestSecureReadOwnsSegmentBuffers(t *testing.T) {
+	secret := testSecureSecret()
+	sender := mustSecureCodec(t, secret, true)
+	receiver := mustSecureCodec(t, secret, false)
+	frame := Frame{Tag: TagMessage, Segments: []Segment{
+		{Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{1}, 64)},
+		{Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{2}, 32)},
+		{Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{3}, 32)},
+	}}
+	wire, err := sender.Encode(frame, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	first, err := receiver.Read(bytes.NewReader(wire), testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for index, segment := range first.Segments {
+		if cap(segment.Data) != len(segment.Data) {
+			t.Fatalf("segment %d exposes neighboring storage", index)
+		}
+	}
+	_ = append(first.Segments[1].Data, 99)
+	assertFrameEqual(t, first, frame)
+	wire, err = sender.Encode(frame, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := receiver.Read(bytes.NewReader(wire), testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second.Segments[1].Data[0] = 42
+	assertFrameEqual(t, first, frame)
+}
+
 func TestSecureRoundTripCrossedDirections(t *testing.T) {
 	secret := testSecureSecret()
 	client := mustSecureCodec(t, secret, false)

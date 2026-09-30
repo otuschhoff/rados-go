@@ -399,6 +399,14 @@ func TestDecodeReadReplyV8(t *testing.T) {
 	if reply.Object != "object" || reply.PG.Seed != 3 || reply.MapEpoch != 12 || reply.Version != 14 || reply.Result != 0 || !reflect.DeepEqual(reply.Operations, []OperationResult{{Operation: OpRead, Code: 0, Data: []byte("abc")}}) {
 		t.Fatalf("reply=%+v", reply)
 	}
+	owned, err := DecodeOwnedReply(message, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	message.Data[0] = 'X'
+	if string(reply.Operations[0].Data) != "abc" || string(owned.Operations[0].Data) != "Xbc" || cap(owned.Operations[0].Data) != 3 {
+		t.Fatalf("copied=%q owned=%q", reply.Operations[0].Data, owned.Operations[0].Data)
+	}
 	message.Data = []byte("ab")
 	message.Lengths.Data = 2
 	if _, err := DecodeReply(message, testLimits); !errors.Is(err, ErrMalformedReply) {

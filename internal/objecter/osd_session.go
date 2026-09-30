@@ -68,6 +68,11 @@ func (session *osdSession) Submit(ctx context.Context, message msgr.Message) (ms
 	return session.raw.Submit(ctx, message)
 }
 
+func (session *osdSession) OwnsReplyMessages() bool {
+	owned, ok := session.raw.(interface{ OwnsReplyMessages() bool })
+	return ok && owned.OwnsReplyMessages()
+}
+
 func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object osd.HObject, message msgr.Message) (msgr.Message, error) {
 	if ctx == nil {
 		ctx = context.Background()

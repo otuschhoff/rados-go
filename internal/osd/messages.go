@@ -331,6 +331,14 @@ func validateOperation(operation Operation) error {
 func isMutation(code uint16) bool { return code&0x2000 != 0 }
 
 func DecodeReply(message msgr.Message, limits Limits) (Reply, error) {
+	return decodeReply(message, limits, true)
+}
+
+func DecodeOwnedReply(message msgr.Message, limits Limits) (Reply, error) {
+	return decodeReply(message, limits, false)
+}
+
+func decodeReply(message msgr.Message, limits Limits, copyPayloads bool) (Reply, error) {
 	if limits.MaxBytes == 0 || limits.MaxOperations == 0 || message.Header.Type != protocol.MessageOSDOpReply || message.Header.Version < 4 || message.Header.CompatVersion > 8 || uint64(len(message.Front))+uint64(len(message.Middle))+uint64(len(message.Data)) > uint64(limits.MaxBytes) {
 		return Reply{}, ErrMalformedReply
 	}
@@ -391,7 +399,12 @@ func DecodeReply(message msgr.Message, limits Limits) (Reply, error) {
 		if uint64(length) > uint64(len(message.Data))-offset {
 			return Reply{}, fmt.Errorf("%w: operation %d needs %d data bytes after offset %d", ErrMalformedReply, index, length, offset)
 		}
-		reply.Operations[index].Data = append([]byte(nil), message.Data[offset:offset+uint64(length)]...)
+		data := message.Data[offset : offset+uint64(length) : offset+uint64(length)]
+		if copyPayloads {
+			reply.Operations[index].Data = append([]byte(nil), data...)
+		} else if len(data) != 0 {
+			reply.Operations[index].Data = data
+		}
 		offset += uint64(length)
 	}
 	if offset != uint64(len(message.Data)) {

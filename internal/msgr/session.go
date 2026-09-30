@@ -236,13 +236,14 @@ func nextGlobalSequence(source GlobalSequenceSource, after uint64) (uint64, erro
 }
 
 type Session struct {
-	commands chan any
-	events   chan SessionEvent
-	resets   chan struct{}
-	incoming chan Message
-	terminal chan error
-	done     chan struct{}
-	stopOnce sync.Once
+	timingActive atomic.Int64
+	commands     chan any
+	events       chan SessionEvent
+	resets       chan struct{}
+	incoming     chan Message
+	terminal     chan error
+	done         chan struct{}
+	stopOnce     sync.Once
 }
 
 type submitCommand struct {
@@ -269,6 +270,7 @@ type stopCommand struct{ done chan struct{} }
 type pumpFrame struct {
 	generation uint64
 	frame      Frame
+	receivedAt time.Time
 }
 
 type pumpWriteResult struct {
@@ -298,10 +300,11 @@ type connectResult struct {
 }
 
 type writeTask struct {
-	id      uint64
-	frame   Frame
-	request *submitCommand
-	seq     uint64
+	id            uint64
+	frame         Frame
+	request       *submitCommand
+	seq           uint64
+	transactionID uint64
 }
 
 type pendingRequest struct {
@@ -314,8 +317,9 @@ type pendingRequest struct {
 }
 
 type sessionOwner struct {
-	session *Session
-	config  SessionConfig
+	session         *Session
+	config          SessionConfig
+	frameReceivedAt time.Time
 
 	state         SessionState
 	transport     Transport
@@ -470,6 +474,8 @@ func (session *Session) Submit(ctx context.Context, message Message) (Message, e
 	return session.submit(ctx, message, false, nil)
 }
 
+func (session *Session) OwnsReplyMessages() bool { return true }
+
 // SubmitAdmitted invokes admitted after the request is registered by the
 // session owner and before waiting for its reply.
 func (session *Session) SubmitAdmitted(ctx context.Context, message Message, admitted func()) (Message, error) {
@@ -487,6 +493,13 @@ func (session *Session) submit(ctx context.Context, message Message, oneWay bool
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if timing := requestTiming(ctx); timing != nil {
+		timing.bindTransaction(message.Header.TransactionID)
+		session.timingActive.Add(1)
+		defer session.timingActive.Add(-1)
+		defer recordRequestTiming(ctx, "submit_return", 0)
+	}
+	recordRequestTiming(ctx, "submit_enter", message.Header.TransactionID)
 	request := &submitCommand{ctx: ctx, message: message, oneWay: oneWay, admitted: make(chan struct{}), result: make(chan submitResult, 1)}
 	select {
 	case session.commands <- request:
@@ -588,6 +601,7 @@ func (owner *sessionOwner) run() {
 			}
 		case incoming := <-owner.frames:
 			if incoming.generation == owner.generation {
+				owner.frameReceivedAt = incoming.receivedAt
 				owner.handleFrame(incoming.frame)
 			}
 		case written := <-owner.writes:
@@ -663,6 +677,10 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 	owner.byRequest[command] = pending
 	owner.byTID[message.Header.TransactionID] = pending
 	owner.retainedBytes += messageBytes
+	if timing := requestTiming(command.ctx); timing != nil {
+		timing.bindTransaction(message.Header.TransactionID)
+	}
+	recordRequestTiming(command.ctx, "admitted", message.Header.TransactionID)
 }
 
 func (owner *sessionOwner) cancel(command cancelCommand) {
@@ -730,7 +748,7 @@ func (owner *sessionOwner) dispatch() {
 		if !containsPending(owner.replay, pending) {
 			owner.replay = append(owner.replay, pending)
 		}
-		owner.sendWrite(writeTask{frame: frame, request: pending.request, seq: pending.seq})
+		owner.sendWrite(writeTask{frame: frame, request: pending.request, seq: pending.seq, transactionID: pending.message.Header.TransactionID})
 		return
 	}
 }
@@ -748,7 +766,11 @@ func (owner *sessionOwner) handleFrame(frame Frame) {
 			owner.handleFault(fmt.Errorf("%w: message in state %d", ErrMalformed, owner.state))
 			return
 		}
-		message, err := DecodeMessage(frame, owner.config.Limits)
+		decode := DecodeMessage
+		if transport, ok := owner.transport.(interface{ OwnsReadFrames() bool }); ok && transport.OwnsReadFrames() {
+			decode = decodeOwnedMessage
+		}
+		message, err := decode(frame, owner.config.Limits)
 		if err != nil {
 			owner.handleFault(err)
 			return
@@ -780,7 +802,11 @@ func (owner *sessionOwner) handleMessage(message Message) {
 	owner.trimReplay(message.Header.AckSequence)
 	owner.queueControl(Ack{Sequence: sequence})
 	if pending := owner.byTID[message.Header.TransactionID]; pending != nil {
+		if timing := requestTiming(pending.request.ctx); timing != nil {
+			timing.Record("frame_received", message.Header.TransactionID, owner.frameReceivedAt)
+		}
 		owner.removePending(pending)
+		recordRequestTiming(pending.request.ctx, "reply_delivered", message.Header.TransactionID)
 		pending.request.result <- submitResult{message: message}
 		return
 	}
@@ -1291,8 +1317,12 @@ func (owner *sessionOwner) readPump(generation uint64, transport Transport) {
 			owner.reportFault(pumpFault{generation: generation, err: err})
 			return
 		}
+		var receivedAt time.Time
+		if owner.session.timingActive.Load() > 0 {
+			receivedAt = time.Now()
+		}
 		select {
-		case owner.frames <- pumpFrame{generation: generation, frame: frame}:
+		case owner.frames <- pumpFrame{generation: generation, frame: frame, receivedAt: receivedAt}:
 		case <-owner.session.done:
 			return
 		}
@@ -1307,7 +1337,13 @@ func (owner *sessionOwner) writePump(generation uint64, transport Transport, tas
 			if !ok {
 				return
 			}
+			if task.request != nil {
+				recordRequestTiming(task.request.ctx, "write_begin", task.transactionID)
+			}
 			err := transport.WriteFrame(task.frame)
+			if task.request != nil {
+				recordRequestTiming(task.request.ctx, "write_end", task.transactionID)
+			}
 			select {
 			case owner.writes <- pumpWriteResult{generation: generation, taskID: task.id, request: task.request, err: err}:
 			case <-owner.session.done:

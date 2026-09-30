@@ -76,6 +76,28 @@ func TestMessageRoundTrip(t *testing.T) {
 	}
 }
 
+func TestMessageDecoderOwnership(t *testing.T) {
+	frame, err := EncodeMessage(Message{Lengths: MessageLengths{Data: 3}, Data: []byte("abc")}, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	copied, err := DecodeMessage(frame, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owned, err := decodeOwnedMessage(frame, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	frame.Segments[3].Data[0] = 'X'
+	if string(copied.Data) != "abc" || string(owned.Data) != "Xbc" || cap(owned.Data) != len(owned.Data) {
+		t.Fatalf("copied=%q owned=%q capacity=%d", copied.Data, owned.Data, cap(owned.Data))
+	}
+	if owned.Front != nil || owned.Middle != nil {
+		t.Fatal("empty owned payloads must remain nil")
+	}
+}
+
 func TestMessageAcceptsOmittedTrailingEmptySegments(t *testing.T) {
 	header := EncodeMessageHeader(MessageHeader{})
 	got, err := DecodeMessage(Frame{Tag: TagMessage, Segments: []Segment{{Alignment: 8, Data: header[:]}}}, testLimits)

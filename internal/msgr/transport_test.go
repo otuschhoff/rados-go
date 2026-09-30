@@ -51,6 +51,29 @@ func TestConnTransportCRCRoundTrip(t *testing.T) {
 	}
 }
 
+func TestConnTransportFrameOwnership(t *testing.T) {
+	secure, err := NewSecureCodec(testSecureSecret(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name  string
+		codec Codec
+		owned bool
+	}{
+		{name: "crc", codec: CRCCodec{}, owned: true},
+		{name: "secure", codec: secure, owned: true},
+		{name: "custom", codec: &blockingCodec{}, owned: false},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			transport := &connTransport{codec: test.codec}
+			if transport.OwnsReadFrames() != test.owned {
+				t.Fatalf("ownership=%v want=%v", transport.OwnsReadFrames(), test.owned)
+			}
+		})
+	}
+}
+
 func TestConnTransportSecureRoundTrip(t *testing.T) {
 	left, right := net.Pipe()
 	defer left.Close()

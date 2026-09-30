@@ -241,7 +241,7 @@ func (client *Client) Read(ctx context.Context, target Target, offset, length ui
 	if length > math.MaxUint64-offset || minimumReplyBytes > uint64(client.config.MessageLimits.MaxBytes) || length > uint64(client.config.MessageLimits.MaxBytes)-minimumReplyBytes {
 		return Result{}, wire.ErrLimitExceeded
 	}
-	return client.execute(ctx, target, osd.Operation{Code: osd.OpRead, Offset: offset, Length: length})
+	return client.executeRoutedResult(ctx, target, []osd.Operation{{Code: osd.OpRead, Offset: offset, Length: length}}, 0, false, false, 0, client.config.Router.Route, false)
 }
 
 func (client *Client) SparseRead(ctx context.Context, target Target, offset, length uint64) (SparseReadResult, error) {
@@ -330,6 +330,10 @@ func (client *Client) executeOperations(ctx context.Context, target Target, oper
 }
 
 func (client *Client) executeRoutedOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error)) (Result, error) {
+	return client.executeRoutedResult(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, true)
+}
+
+func (client *Client) executeRoutedResult(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), retainOperations bool) (Result, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -440,7 +444,11 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			client.refresh(ctx, route.Epoch)
 			continue
 		}
-		reply, err := osd.DecodeReply(message, client.config.MessageLimits)
+		decode := osd.DecodeReply
+		if owned, ok := active.(interface{ OwnsReplyMessages() bool }); ok && owned.OwnsReplyMessages() && !retainOperations {
+			decode = osd.DecodeOwnedReply
+		}
+		reply, err := decode(message, client.config.MessageLimits)
 		if err != nil {
 			client.invalidate(route.Primary, active)
 			if outcomeSensitive {
@@ -523,19 +531,28 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			client.invalidate(route.Primary, active)
 			return Result{}, fmt.Errorf("%w: mutation reply is not durable", msgr.ErrOutcomeUnknown)
 		}
-		result := Result{Version: reply.Version, Operations: make([]OperationResult, len(reply.Operations)), route: route}
+		result := Result{Version: reply.Version, route: route}
+		if retainOperations {
+			result.Operations = make([]OperationResult, len(reply.Operations))
+		}
 		for index, operationResult := range reply.Operations {
 			if operations[index].Code == osd.OpRead && uint64(len(operationResult.Data)) > operations[index].Length {
 				client.invalidate(route.Primary, active)
 				return Result{}, osd.ErrMalformedReply
 			}
-			result.Operations[index] = OperationResult{Data: append([]byte(nil), operationResult.Data...), Code: operationResult.Code}
+			if retainOperations {
+				result.Operations[index] = OperationResult{Data: operationResult.Data, Code: operationResult.Code}
+			}
 		}
-		result.Data = append([]byte(nil), result.Operations[0].Data...)
+		if retainOperations {
+			result.Data = append([]byte(nil), result.Operations[0].Data...)
+		} else {
+			result.Data = reply.Operations[0].Data
+		}
 		if reply.Result < 0 {
 			return result, protocol.WireErrno(reply.Result)
 		}
-		for index, operationResult := range result.Operations {
+		for index, operationResult := range reply.Operations {
 			if operationResult.Code < 0 && operations[index].Flags&osd.OpFlagFailOK == 0 {
 				return result, protocol.WireErrno(operationResult.Code)
 			}

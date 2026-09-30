@@ -42,6 +42,15 @@ func (transport *connTransport) ReadFrame() (Frame, error) {
 	return transport.codec.Read(transport.conn, transport.limits)
 }
 
+func (transport *connTransport) OwnsReadFrames() bool {
+	switch transport.codec.(type) {
+	case CRCCodec, *SecureCodec:
+		return true
+	default:
+		return false
+	}
+}
+
 func (transport *connTransport) WriteFrame(frame Frame) error {
 	transport.writeMu.Lock()
 	defer transport.writeMu.Unlock()

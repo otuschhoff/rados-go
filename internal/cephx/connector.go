@@ -410,6 +410,11 @@ type authTransport struct {
 	timer      *time.Timer
 }
 
+func (transport *authTransport) OwnsReadFrames() bool {
+	owned, ok := transport.Transport.(interface{ OwnsReadFrames() bool })
+	return ok && owned.OwnsReadFrames()
+}
+
 func newAuthTransport(transport msgr.Transport, metadata AuthMetadata, renewAfter, now time.Time) *authTransport {
 	authenticated := &authTransport{Transport: transport, metadata: copyMetadata(metadata), renewalDue: make(chan struct{})}
 	if !renewAfter.IsZero() {

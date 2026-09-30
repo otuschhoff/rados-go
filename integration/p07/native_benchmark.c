@@ -61,6 +61,7 @@ struct row_ctx {
 	struct api *api;
 	rados_ioctx_t ioctx;
 	uint64_t size_bytes;
+	int op_per_worker;
 	enum workload_kind workload;
 	uint64_t run_id;
 	uint64_t *latencies;
@@ -86,8 +87,17 @@ static const uint64_t k_sizes[] = {4096ULL, 65536ULL, 1048576ULL, 4194304ULL};
 static const int k_concurrencies[] = {1, 16, 64};
 static const enum workload_kind k_workloads[] = {WORKLOAD_READ, WORKLOAD_WRITE, WORKLOAD_MIXED};
 
+static int read_diagnostic(void) {
+	const char *value = getenv("P07_READ_DIAGNOSTIC");
+	return value != NULL && strcmp(value, "1") == 0;
+}
+
 static int format_object_name(char *buffer, size_t buffer_size, uint64_t run_id, uint64_t size_bytes,
 	enum workload_kind workload, int worker_id) {
+	if (read_diagnostic()) {
+		int result = snprintf(buffer, buffer_size, "p07-shared-read-%d", worker_id);
+		return result >= 0 && (size_t)result < buffer_size ? 0 : -1;
+	}
 	int result = snprintf(buffer, buffer_size, "p07-native-%" PRIu64 "-%" PRIu64 "-%d-%d",
 		run_id, size_bytes, (int)workload, worker_id);
 	return result >= 0 && (size_t)result < buffer_size ? 0 : -1;
@@ -218,7 +228,7 @@ static void *worker_main(void *arg) {
 	struct worker_arg *worker = (struct worker_arg *)arg;
 	struct row_ctx *ctx = worker->ctx;
 	struct api *api = ctx->api;
-	const int op_per_worker = 2;
+	const int op_per_worker = ctx->op_per_worker;
 	const int latency_index = worker->worker_id * op_per_worker;
 	char object_name[96];
 	if (format_object_name(object_name, sizeof(object_name), ctx->run_id, ctx->size_bytes, ctx->workload,
@@ -238,6 +248,15 @@ static void *worker_main(void *arg) {
 		return NULL;
 	}
 	fill_payload(payload, ctx->size_bytes, ctx->run_id, worker->worker_id);
+	if (read_diagnostic()) {
+		for (int warmup = 0; warmup < 8; warmup++) {
+			int read_result = api->read(ctx->ioctx, object_name, (char *)read_buffer, (size_t)ctx->size_bytes, 0);
+			if (read_result != (int)ctx->size_bytes || memcmp(read_buffer, payload, (size_t)ctx->size_bytes) != 0) {
+				set_worker_error(ctx, "warmup read failed", read_result);
+				break;
+			}
+		}
+	}
 
 	wait_for_start(ctx);
 
@@ -329,7 +348,7 @@ static void *worker_main(void *arg) {
 	}
 
 	mark_done(ctx);
-	int remove_result = api->remove(ctx->ioctx, object_name);
+	int remove_result = read_diagnostic() ? 0 : api->remove(ctx->ioctx, object_name);
 	if (remove_result < 0 && remove_result != -ENOENT) {
 		set_worker_error(ctx, "cleanup remove failed", remove_result);
 	}
@@ -375,7 +394,7 @@ static int checked_mul_u64(uint64_t left, uint64_t right, uint64_t *out) {
 
 static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64_t size_bytes, int concurrency,
 	enum workload_kind workload, struct row_result *result) {
-	const int op_per_worker = 2;
+	const int op_per_worker = read_diagnostic() ? 256 : 2;
 	uint64_t operations = 0;
 	uint64_t bytes = 0;
 	if (checked_mul_u64((uint64_t)concurrency, (uint64_t)op_per_worker, &operations) != 0 ||
@@ -393,7 +412,7 @@ static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64
 		fprintf(stderr, "native benchmark: allocation failure\n");
 		return -1;
 	}
-	if (workload == WORKLOAD_READ || workload == WORKLOAD_MIXED) {
+	if ((workload == WORKLOAD_READ || workload == WORKLOAD_MIXED) && !read_diagnostic()) {
 		for (int worker_id = 0; worker_id < concurrency; worker_id++) {
 			char object_name[96];
 			unsigned char *payload = (unsigned char *)malloc((size_t)size_bytes);
@@ -424,6 +443,7 @@ static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64
 	ctx.api = api;
 	ctx.ioctx = ioctx;
 	ctx.size_bytes = size_bytes;
+	ctx.op_per_worker = op_per_worker;
 	ctx.workload = workload;
 	ctx.run_id = run_id;
 	ctx.latencies = latencies;
@@ -592,7 +612,7 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
-	const size_t total_rows = (sizeof(k_sizes) / sizeof(k_sizes[0])) *
+	const size_t total_rows = read_diagnostic() ? 1 : (sizeof(k_sizes) / sizeof(k_sizes[0])) *
 		(sizeof(k_concurrencies) / sizeof(k_concurrencies[0])) *
 		(sizeof(k_workloads) / sizeof(k_workloads[0]));
 	struct row_result *rows = (struct row_result *)calloc(total_rows, sizeof(struct row_result));
@@ -606,9 +626,15 @@ int main(int argc, char **argv) {
 
 	size_t row_index = 0;
 	uint64_t run_id = (uint64_t)time(NULL);
+	if (read_diagnostic()) {
+		run_id = 1;
+	}
 	for (size_t i = 0; i < sizeof(k_sizes) / sizeof(k_sizes[0]); i++) {
 		for (size_t j = 0; j < sizeof(k_concurrencies) / sizeof(k_concurrencies[0]); j++) {
 			for (size_t k = 0; k < sizeof(k_workloads) / sizeof(k_workloads[0]); k++) {
+				if (total_rows == 1 && (k_sizes[i] != 65536 || k_concurrencies[j] != 16 || k_workloads[k] != WORKLOAD_READ)) {
+					continue;
+				}
 				if (run_row(&api, ioctx, run_id, k_sizes[i], k_concurrencies[j], k_workloads[k], &rows[row_index]) != 0) {
 					free(rows);
 					api.ioctx_destroy(ioctx);
@@ -656,6 +682,9 @@ int main(int argc, char **argv) {
 	printf("{");
 	printf("\"implementation\":\"native\",");
 	printf("\"transport\":\"%s\",", transport);
+	if (read_diagnostic()) {
+		printf("\"diagnostic\":{\"warmup_operations\":128,\"resource_scope\":\"warmup_and_measured_reads\",\"object_set\":\"p07-shared-read-0..15\"},");
+	}
 	printf("\"environment\":{\"library\":\"librados.so.2\"},");
 	printf("\"resources\":{");
 	printf("\"cpu_user_ns\":%" PRIu64 ",", cpu_user_ns);

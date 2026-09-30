@@ -13,6 +13,7 @@ import (
 	"math/bits"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strings"
 	"sync"
@@ -20,6 +21,7 @@ import (
 	"time"
 
 	rados "github.com/otuschhoff/rados-go"
+	"github.com/otuschhoff/rados-go/internal/msgr"
 )
 
 var (
@@ -29,17 +31,20 @@ var (
 )
 
 type environment struct {
-	GOOS      string `json:"GOOS"`
-	GOARCH    string `json:"GOARCH"`
-	GoVersion string `json:"go_version"`
+	GOOS       string `json:"GOOS"`
+	GOARCH     string `json:"GOARCH"`
+	GoVersion  string `json:"go_version"`
+	GOMAXPROCS int    `json:"gomaxprocs,omitempty"`
 }
 
 type resources struct {
-	CPUUserNS      uint64 `json:"cpu_user_ns"`
-	CPUSystemNS    uint64 `json:"cpu_system_ns"`
-	Allocations    uint64 `json:"allocations"`
-	AllocatedBytes uint64 `json:"allocated_bytes"`
-	MaxRSSBytes    uint64 `json:"max_rss_bytes"`
+	CPUUserNS      uint64  `json:"cpu_user_ns"`
+	CPUSystemNS    uint64  `json:"cpu_system_ns"`
+	Allocations    uint64  `json:"allocations"`
+	AllocatedBytes uint64  `json:"allocated_bytes"`
+	MaxRSSBytes    uint64  `json:"max_rss_bytes"`
+	GCCycles       *uint32 `json:"gc_cycles,omitempty"`
+	GCPauseNS      *uint64 `json:"gc_pause_ns,omitempty"`
 }
 
 type row struct {
@@ -57,11 +62,18 @@ type row struct {
 }
 
 type report struct {
-	Implementation string      `json:"implementation"`
-	Transport      string      `json:"transport"`
-	Environment    environment `json:"environment"`
-	Resources      resources   `json:"resources"`
-	Rows           []row       `json:"rows"`
+	Implementation string                 `json:"implementation"`
+	Transport      string                 `json:"transport"`
+	Environment    environment            `json:"environment"`
+	Resources      resources              `json:"resources"`
+	Rows           []row                  `json:"rows"`
+	Diagnostic     *diagnosticMethodology `json:"diagnostic,omitempty"`
+}
+
+type diagnosticMethodology struct {
+	WarmupOperations int    `json:"warmup_operations"`
+	ResourceScope    string `json:"resource_scope"`
+	ObjectSet        string `json:"object_set"`
 }
 
 type benchError struct {
@@ -153,6 +165,34 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 	if err != nil {
 		return &benchError{message: "open pool", err: err}
 	}
+	if os.Getenv("P07_SEED_ONLY") == "1" {
+		for workerID := 0; workerID < 16; workerID++ {
+			if err := writeSeed(ctx, pool.Object(fmt.Sprintf("p07-shared-read-%d", workerID)), makePayload(65536, 1, uint64(workerID))); err != nil {
+				return err
+			}
+		}
+		return json.NewEncoder(os.Stdout).Encode(map[string]bool{"seeded": true})
+	}
+	var timings []*msgr.RequestTiming
+	if os.Getenv("P07_TIMING_FILE") != "" {
+		if os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
+			return &benchError{message: "request timing requires diagnostic mode"}
+		}
+		timings = make([]*msgr.RequestTiming, 4096)
+		ctx = context.WithValue(ctx, benchmarkTimingKey{}, timings)
+	}
+	if profileFile := os.Getenv("P07_CPU_PROFILE"); profileFile != "" {
+		file, err := os.Create(profileFile)
+		if err != nil {
+			return err
+		}
+		if err := pprof.StartCPUProfile(file); err != nil {
+			_ = file.Close()
+			return err
+		}
+		defer file.Close()
+		defer pprof.StopCPUProfile()
+	}
 
 	before, err := snapshotResources()
 	if err != nil {
@@ -161,9 +201,15 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 
 	rows := make([]row, 0, len(sizes)*len(concurrencies)*len(workloads))
 	runID := uint64(time.Now().UnixNano())
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+		runID = 1
+	}
 	for _, size := range sizes {
 		for _, concurrency := range concurrencies {
 			for _, workload := range workloads {
+				if os.Getenv("P07_READ_DIAGNOSTIC") == "1" && (size != 65536 || concurrency != 16 || workload != "read") {
+					continue
+				}
 				r, err := runRow(ctx, pool, runID, size, concurrency, workload)
 				if err != nil {
 					return &benchError{message: fmt.Sprintf("size=%d concurrency=%d workload=%s", size, concurrency, workload), err: err}
@@ -183,6 +229,44 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 	if err != nil {
 		return err
 	}
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+		gcCycles := after.memstats.NumGC - before.memstats.NumGC
+		gcPauseNS := after.memstats.PauseTotalNs - before.memstats.PauseTotalNs
+		res.GCCycles = &gcCycles
+		res.GCPauseNS = &gcPauseNS
+	}
+	if profileFile := os.Getenv("P07_MEMORY_PROFILE"); profileFile != "" {
+		file, err := os.Create(profileFile)
+		if err != nil {
+			return err
+		}
+		writeErr := pprof.Lookup("allocs").WriteTo(file, 0)
+		closeErr := file.Close()
+		if err := errors.Join(writeErr, closeErr); err != nil {
+			return err
+		}
+	}
+	if timings != nil {
+		if err := client.Close(); err != nil {
+			return err
+		}
+		events := make([][]msgr.RequestTimingEvent, len(timings))
+		for index, timing := range timings {
+			if timing == nil {
+				return &benchError{message: "missing request timing"}
+			}
+			events[index] = timing.Events()
+		}
+		file, err := os.Create(os.Getenv("P07_TIMING_FILE"))
+		if err != nil {
+			return err
+		}
+		encodeErr := json.NewEncoder(file).Encode(events)
+		closeErr := file.Close()
+		if err := errors.Join(encodeErr, closeErr); err != nil {
+			return err
+		}
+	}
 
 	output := report{
 		Implementation: "go",
@@ -194,6 +278,10 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 		},
 		Resources: res,
 		Rows:      rows,
+	}
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+		output.Environment.GOMAXPROCS = runtime.GOMAXPROCS(0)
+		output.Diagnostic = &diagnosticMethodology{WarmupOperations: 128, ResourceScope: "warmup_and_measured_reads", ObjectSet: "p07-shared-read-0..15"}
 	}
 
 	encoder := json.NewEncoder(os.Stdout)
@@ -207,6 +295,9 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 	}
 
 	opPerWorker := 2
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+		opPerWorker = 256
+	}
 	totalOps, ok := safeMul(uint64(concurrency), uint64(opPerWorker))
 	if !ok {
 		return row{}, &benchError{message: "operations overflow"}
@@ -216,9 +307,12 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 		return row{}, &benchError{message: "bytes overflow"}
 	}
 	objectName := func(workerID int) string {
+		if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+			return fmt.Sprintf("p07-shared-read-%d", workerID)
+		}
 		return fmt.Sprintf("p07-go-%d-%d-%s-w%d", runID, size, workload, workerID)
 	}
-	if workload == "read" || workload == "mixed" {
+	if (workload == "read" || workload == "mixed") && os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
 		for workerID := 0; workerID < concurrency; workerID++ {
 			obj := pool.Object(objectName(workerID))
 			if err := writeSeed(parent, obj, makePayload(size, runID, uint64(workerID))); err != nil {
@@ -252,6 +346,15 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 
 			obj := pool.Object(objectName(workerID))
 			payload := makePayload(size, runID, uint64(workerID))
+			if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+				for warmup := 0; warmup < 8; warmup++ {
+					data, _, err := obj.Read(ctx, 0, size)
+					if err != nil || !bytes.Equal(data, payload) {
+						once.Do(func() { errCh <- &benchError{message: "warmup read", err: err}; cancel() })
+						break
+					}
+				}
+			}
 
 			readyWG.Done()
 			select {
@@ -280,7 +383,17 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 						return
 					}
 					begin := time.Now()
-					data, _, err := obj.Read(ctx, 0, size)
+					readCtx := ctx
+					var timing *msgr.RequestTiming
+					if timings, ok := ctx.Value(benchmarkTimingKey{}).([]*msgr.RequestTiming); ok {
+						readCtx, timing = msgr.WithRequestTiming(ctx)
+						timings[index+i] = timing
+					}
+					data, _, err := obj.Read(readCtx, 0, size)
+					if timing != nil {
+						timing.Record("read_return", 0, time.Now())
+					}
+					record(i, begin)
 					if err != nil {
 						once.Do(func() {
 							errCh <- &benchError{message: "read object", err: err}
@@ -308,7 +421,6 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 						cleanupObject(obj)
 						return
 					}
-					record(i, begin)
 				}
 			case "write":
 				for i := 0; i < opPerWorker; i++ {
@@ -337,6 +449,7 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 				}
 				beginRead := time.Now()
 				data, _, err := obj.Read(ctx, 0, size)
+				record(0, beginRead)
 				if err != nil {
 					once.Do(func() {
 						errCh <- &benchError{message: "mixed read", err: err}
@@ -364,8 +477,6 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 					cleanupObject(obj)
 					return
 				}
-				record(0, beginRead)
-
 				if ctx.Err() != nil {
 					measuredWG.Done()
 					cleanupObject(obj)
@@ -473,6 +584,9 @@ func makePayload(size, runID, workerID uint64) []byte {
 		return payload
 	}
 	state := runID ^ (workerID << 17) ^ 0x9E3779B97F4A7C15
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" || os.Getenv("P07_SEED_ONLY") == "1" {
+		state = runID ^ (workerID << 19) ^ 0x9E3779B97F4A7C15
+	}
 	for i := range payload {
 		state ^= state << 7
 		state ^= state >> 9
@@ -488,6 +602,9 @@ func writeSeed(ctx context.Context, object rados.ObjectRef, payload []byte) erro
 }
 
 func cleanupObject(object rados.ObjectRef) {
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+		return
+	}
 	cleanupCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 	_, err := object.Remove(cleanupCtx)
@@ -495,6 +612,8 @@ func cleanupObject(object rados.ObjectRef) {
 		return
 	}
 }
+
+type benchmarkTimingKey struct{}
 
 func snapshotResources() (resourceSnapshot, error) {
 	var snap resourceSnapshot

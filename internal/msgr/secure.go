@@ -117,7 +117,7 @@ func (direction *secureDirection) openLocked(ciphertext []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	plaintext, err := direction.aead.Open(nil, nonce[:], ciphertext, nil)
+	plaintext, err := direction.aead.Open(ciphertext[:0], nonce[:], ciphertext, nil)
 	if err != nil {
 		return nil, fmt.Errorf("%w: secure authentication tag", ErrIntegrity)
 	}
@@ -275,7 +275,7 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 	if !allZero(firstPaddedData[descriptors[0].length:]) {
 		return Frame{}, fmt.Errorf("%w: segment 0 padding", ErrMalformed)
 	}
-	segments[0] = Segment{Alignment: descriptors[0].alignment, Data: append([]byte(nil), firstPaddedData[:descriptors[0].length]...)}
+	segments[0] = Segment{Alignment: descriptors[0].alignment, Data: firstPaddedData[:descriptors[0].length:descriptors[0].length]}
 	if len(descriptors) == 1 {
 		return Frame{Tag: tag, Segments: segments}, nil
 	}
@@ -299,7 +299,7 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 		if !allZero(remaining[offset+logical : offset+padded]) {
 			return Frame{}, fmt.Errorf("%w: segment %d padding", ErrMalformed, index)
 		}
-		segments[index] = Segment{Alignment: descriptors[index].alignment, Data: append([]byte(nil), remaining[offset:offset+logical]...)}
+		segments[index] = Segment{Alignment: descriptors[index].alignment, Data: remaining[offset : offset+logical : offset+logical]}
 		offset += padded
 	}
 	epilogue := remaining[offset:]

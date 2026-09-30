@@ -3,6 +3,7 @@ set -eu
 
 root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
 cd "$root"
+report=${P07_REPORT:-docs/p07/integration-report.json}
 started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 case "$(docker info --format '{{.Architecture}}')" in
 	x86_64|amd64) platform=linux/amd64; goarch=amd64 ;;
@@ -123,6 +124,51 @@ docker run --rm --platform "$platform" --network "$network" -v "$temporary:/clus
 	timeout 60 /cluster/native-driver seed /cluster/ceph.conf /cluster/admin.keyring p07-data >"$temporary/native-seed.json"
 jq -e '.native_crud and .mixed_seed' "$temporary/native-seed.json" >/dev/null
 
+if test -n "${P07_DIAGNOSTIC_DIR:-}"; then
+	case "$P07_DIAGNOSTIC_DIR" in
+		/*) ;;
+		*) printf '%s\n' 'P07_DIAGNOSTIC_DIR must be absolute' >&2; exit 2 ;;
+	esac
+	mkdir -p "$P07_DIAGNOSTIC_DIR"
+	docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" -e P07_SEED_ONLY=1 "$image" \
+		timeout 60 /work/benchmark -monitors 172.30.97.10:3300 -key-file /work/client.key -fsid "$fsid" -pool p07-data -transport secure >"$P07_DIAGNOSTIC_DIR/seed.json"
+	jq -e '.seeded' "$P07_DIAGNOSTIC_DIR/seed.json" >/dev/null
+	for leg in native-1 go-1 go-2 native-2; do
+		for id in 0 1 2; do
+			ceph_cli tell "osd.$id" perf dump >"$P07_DIAGNOSTIC_DIR/$leg-osd-$id-before.json"
+		done
+		date -u +%Y-%m-%dT%H:%M:%SZ >"$P07_DIAGNOSTIC_DIR/$leg-started-at"
+		case "$leg" in
+			native-*)
+				docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" -e P07_READ_DIAGNOSTIC=1 "$image" \
+					timeout 3600 /cluster/native-benchmark /cluster/ceph.conf /cluster/client.keyring p07-data secure >"$P07_DIAGNOSTIC_DIR/$leg.json" ;;
+			go-*)
+				docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" -e P07_READ_DIAGNOSTIC=1 "$image" \
+					timeout 3600 /work/benchmark -monitors 172.30.97.10:3300 -key-file /work/client.key -fsid "$fsid" -pool p07-data -transport secure >"$P07_DIAGNOSTIC_DIR/$leg.json" ;;
+		esac
+		date -u +%Y-%m-%dT%H:%M:%SZ >"$P07_DIAGNOSTIC_DIR/$leg-finished-at"
+		jq -e '.transport == "secure" and (.rows | length) == 1 and .rows[0].operations == 4096 and .rows[0].workload == "read"' "$P07_DIAGNOSTIC_DIR/$leg.json" >/dev/null
+		for id in 0 1 2; do
+			ceph_cli tell "osd.$id" perf dump >"$P07_DIAGNOSTIC_DIR/$leg-osd-$id-after.json"
+		done
+	done
+	for mode in timing cpu memory nogc procs2; do
+		case "$mode" in
+			timing) diagnostic_env=P07_TIMING_FILE=/work/request-timing.json ;;
+			cpu) diagnostic_env=P07_CPU_PROFILE=/work/cpu.pprof ;;
+			memory) diagnostic_env=P07_MEMORY_PROFILE=/work/allocs.pprof ;;
+			nogc) diagnostic_env=GOGC=off ;;
+			procs2) diagnostic_env=GOMAXPROCS=2 ;;
+		esac
+		docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" -e P07_READ_DIAGNOSTIC=1 -e "$diagnostic_env" "$image" \
+			timeout 3600 /work/benchmark -monitors 172.30.97.10:3300 -key-file /work/client.key -fsid "$fsid" -pool p07-data -transport secure >"$P07_DIAGNOSTIC_DIR/go-$mode.json"
+		jq -e '.rows[0].operations == 4096' "$P07_DIAGNOSTIC_DIR/go-$mode.json" >/dev/null
+	done
+	cp "$temporary/request-timing.json" "$temporary/cpu.pprof" "$temporary/allocs.pprof" "$temporary/benchmark" "$P07_DIAGNOSTIC_DIR/"
+	printf '%s\n' "P07 isolated read diagnostics written to $P07_DIAGNOSTIC_DIR"
+	exit 0
+fi
+
 for transport in secure crc; do
 	docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" \
 		timeout 3600 /cluster/native-benchmark /cluster/ceph.conf /cluster/client.keyring p07-data "$transport" >"$temporary/benchmark-native-$transport.json" || benchmark_failed
@@ -226,5 +272,5 @@ jq -n \
 	--argjson go_crc "$(cat "$temporary/benchmark-go-crc.json")" \
 	--argjson native_secure "$(cat "$temporary/benchmark-native-secure.json")" \
 	--argjson native_crc "$(cat "$temporary/benchmark-native-crc.json")" \
-	'{schema_version:1,status:"passed",command:"make integration-p07",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-777777777777",osds:3,pool:"p07-data",replicas:2,osd_device_bytes:8589934592},scenarios:{go_crud:"passed",native_crud:"passed",native_seed_go_mutate_native_verify:"passed",go_write_native_read:"passed",exclusive_create:"passed",missing_semantics:"passed",flush:"passed",primary_change_append_once:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify},benchmark:{execution_environment:{kernel:$kernel,cpu_model:$cpu_model,logical_cpus:$logical_cpus,cpu_max:$cpu_max,memory_max:$memory_max,docker_server_version:$docker_server_version},methodology:{sizes_bytes:[4096,65536,1048576,4194304],concurrency:[1,16,64],workloads:["read","write","mixed"],operations_per_worker:2,transports:["secure","crc"],allocation_measurement:{go:"runtime.MemStats deltas",native:"unavailable from the dynamically loaded librados ABI"},results_are_baseline_not_parity_claim:true},runs:[$go_secure,$go_crc,$native_secure,$native_crc]}}' >docs/p07/integration-report.json
+	'{schema_version:1,status:"passed",command:"make integration-p07",started_at:$started_at,finished_at:$finished_at,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$ceph_version,image:$image,platform:$platform,binaries:{mon_sha256:$ceph_mon_sha256,osd_sha256:$ceph_osd_sha256}},native_runtime:{soname:"librados.so.2",path:$librados_path,package:$librados_package,sha256:$librados_sha256},cluster:{fsid:"11111111-2222-4333-8444-777777777777",osds:3,pool:"p07-data",replicas:2,osd_device_bytes:8589934592},scenarios:{go_crud:"passed",native_crud:"passed",native_seed_go_mutate_native_verify:"passed",go_write_native_read:"passed",exclusive_create:"passed",missing_semantics:"passed",flush:"passed",primary_change_append_once:"passed"},probe:$probe,native:{seed:$native_seed,verify:$native_verify},benchmark:{execution_environment:{kernel:$kernel,cpu_model:$cpu_model,logical_cpus:$logical_cpus,cpu_max:$cpu_max,memory_max:$memory_max,docker_server_version:$docker_server_version},methodology:{sizes_bytes:[4096,65536,1048576,4194304],concurrency:[1,16,64],workloads:["read","write","mixed"],operations_per_worker:2,transports:["secure","crc"],allocation_measurement:{go:"runtime.MemStats deltas",native:"unavailable from the dynamically loaded librados ABI"},results_are_baseline_not_parity_claim:true},runs:[$go_secure,$go_crc,$native_secure,$native_crc]}}' >"$report"
 printf '%s\n' 'P07 real mutation interoperability passed'

@@ -132,6 +132,14 @@ func EncodeMessage(message Message, limits Limits) (Frame, error) {
 }
 
 func DecodeMessage(frame Frame, limits Limits) (Message, error) {
+	return decodeMessage(frame, limits, true)
+}
+
+func decodeOwnedMessage(frame Frame, limits Limits) (Message, error) {
+	return decodeMessage(frame, limits, false)
+}
+
+func decodeMessage(frame Frame, limits Limits, copyPayloads bool) (Message, error) {
 	if frame.Tag != TagMessage {
 		return Message{}, fmt.Errorf("%w: message tag %d", wire.ErrMalformed, frame.Tag)
 	}
@@ -155,7 +163,12 @@ func DecodeMessage(frame Frame, limits Limits) (Message, error) {
 
 	var payloads [3][]byte
 	for index := 1; index < len(frame.Segments); index++ {
-		payloads[index-1] = append([]byte(nil), frame.Segments[index].Data...)
+		data := frame.Segments[index].Data
+		if copyPayloads {
+			payloads[index-1] = append([]byte(nil), data...)
+		} else if len(data) != 0 {
+			payloads[index-1] = data[:len(data):len(data)]
+		}
 	}
 	return Message{
 		Header: header,
