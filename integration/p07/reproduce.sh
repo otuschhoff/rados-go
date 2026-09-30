@@ -124,6 +124,30 @@ docker run --rm --platform "$platform" --network "$network" -v "$temporary:/clus
 	timeout 60 /cluster/native-driver seed /cluster/ceph.conf /cluster/admin.keyring p07-data >"$temporary/native-seed.json"
 jq -e '.native_crud and .mixed_seed' "$temporary/native-seed.json" >/dev/null
 
+if test -n "${P07_RESOURCE_DIAGNOSTIC_DIR:-}"; then
+	case "$P07_RESOURCE_DIAGNOSTIC_DIR" in
+		/*) ;;
+		*) printf '%s\n' 'P07_RESOURCE_DIAGNOSTIC_DIR must be absolute' >&2; exit 2 ;;
+	esac
+	mkdir -p "$P07_RESOURCE_DIAGNOSTIC_DIR"
+	docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" \
+		timeout 3600 /cluster/native-benchmark /cluster/ceph.conf /cluster/client.keyring p07-data secure >"$P07_RESOURCE_DIAGNOSTIC_DIR/native.json"
+	for mode in baseline profile; do
+		if test "$mode" = profile; then
+			profile_env=P07_CPU_PROFILE=/work/cpu.pprof
+		else
+			profile_env=P07_CPU_PROFILE=
+		fi
+		docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" \
+			-e "$profile_env" -e "P07_MEMORY_PROFILE=/work/$mode-allocs.pprof" -e "P07_RESOURCE_FILE=/work/$mode-resources.json" "$image" \
+			timeout 3600 /work/benchmark -monitors 172.30.97.10:3300 -key-file /work/client.key -fsid "$fsid" -pool p07-data -transport secure >"$P07_RESOURCE_DIAGNOSTIC_DIR/go-$mode.json"
+		cp "$temporary/$mode-allocs.pprof" "$temporary/$mode-resources.json" "$temporary/$mode-resources.json.heap.pprof" "$P07_RESOURCE_DIAGNOSTIC_DIR/"
+	done
+	cp "$temporary/cpu.pprof" "$temporary/benchmark" "$P07_RESOURCE_DIAGNOSTIC_DIR/"
+	printf 'P07 full-workload resource diagnostics written to %s\n' "$P07_RESOURCE_DIAGNOSTIC_DIR"
+	exit 0
+fi
+
 if test -n "${P07_DIAGNOSTIC_DIR:-}"; then
 	case "$P07_DIAGNOSTIC_DIR" in
 		/*) ;;

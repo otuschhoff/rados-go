@@ -96,6 +96,18 @@ type resourceSnapshot struct {
 	memstats runtime.MemStats
 }
 
+type rowResources struct {
+	SizeBytes    uint64    `json:"size_bytes"`
+	Concurrency  int       `json:"concurrency"`
+	Workload     string    `json:"workload"`
+	HeapAlloc    uint64    `json:"heap_alloc"`
+	HeapInuse    uint64    `json:"heap_inuse"`
+	HeapIdle     uint64    `json:"heap_idle"`
+	HeapReleased uint64    `json:"heap_released"`
+	GCCycles     uint32    `json:"gc_cycles"`
+	Resources    resources `json:"resources"`
+}
+
 func main() {
 	var monitorsArg string
 	var keyFile string
@@ -181,6 +193,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 		timings = make([]*msgr.RequestTiming, 4096)
 		ctx = context.WithValue(ctx, benchmarkTimingKey{}, timings)
 	}
+	var stopCPUProfile func() error
 	if profileFile := os.Getenv("P07_CPU_PROFILE"); profileFile != "" {
 		file, err := os.Create(profileFile)
 		if err != nil {
@@ -190,8 +203,15 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 			_ = file.Close()
 			return err
 		}
-		defer file.Close()
-		defer pprof.StopCPUProfile()
+		stopCPUProfile = func() error {
+			pprof.StopCPUProfile()
+			return file.Close()
+		}
+		defer func() {
+			if stopCPUProfile != nil {
+				_ = stopCPUProfile()
+			}
+		}()
 	}
 
 	before, err := snapshotResources()
@@ -200,6 +220,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 	}
 
 	rows := make([]row, 0, len(sizes)*len(concurrencies)*len(workloads))
+	var resourceRows []rowResources
 	runID := uint64(time.Now().UnixNano())
 	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
 		runID = 1
@@ -215,6 +236,20 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 					return &benchError{message: fmt.Sprintf("size=%d concurrency=%d workload=%s", size, concurrency, workload), err: err}
 				}
 				rows = append(rows, r)
+				if os.Getenv("P07_RESOURCE_FILE") != "" {
+					snapshot, err := snapshotResources()
+					if err != nil {
+						return err
+					}
+					cumulative, err := deltaResources(before, snapshot)
+					if err != nil {
+						return err
+					}
+					resourceRows = append(resourceRows, rowResources{SizeBytes: size, Concurrency: concurrency, Workload: workload,
+						HeapAlloc: snapshot.memstats.HeapAlloc, HeapInuse: snapshot.memstats.HeapInuse,
+						HeapIdle: snapshot.memstats.HeapIdle, HeapReleased: snapshot.memstats.HeapReleased,
+						GCCycles: snapshot.memstats.NumGC - before.memstats.NumGC, Resources: cumulative})
+				}
 				runID++
 			}
 		}
@@ -223,6 +258,13 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 	after, err := snapshotResources()
 	if err != nil {
 		return err
+	}
+	if stopCPUProfile != nil {
+		stopErr := stopCPUProfile()
+		stopCPUProfile = nil
+		if stopErr != nil {
+			return stopErr
+		}
 	}
 
 	res, err := deltaResources(before, after)
@@ -243,6 +285,35 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 		writeErr := pprof.Lookup("allocs").WriteTo(file, 0)
 		closeErr := file.Close()
 		if err := errors.Join(writeErr, closeErr); err != nil {
+			return err
+		}
+	}
+	if resourceFile := os.Getenv("P07_RESOURCE_FILE"); resourceFile != "" {
+		runtime.GC()
+		snapshot, err := snapshotResources()
+		if err != nil {
+			return err
+		}
+		cumulative, err := deltaResources(before, snapshot)
+		if err != nil {
+			return err
+		}
+		resourceRows = append(resourceRows, rowResources{Workload: "post_gc", HeapAlloc: snapshot.memstats.HeapAlloc,
+			HeapInuse: snapshot.memstats.HeapInuse, HeapIdle: snapshot.memstats.HeapIdle,
+			HeapReleased: snapshot.memstats.HeapReleased, GCCycles: snapshot.memstats.NumGC - before.memstats.NumGC, Resources: cumulative})
+		heapFile, err := os.Create(resourceFile + ".heap.pprof")
+		if err != nil {
+			return err
+		}
+		if err := errors.Join(pprof.WriteHeapProfile(heapFile), heapFile.Close()); err != nil {
+			return err
+		}
+		file, err := os.Create(resourceFile)
+		if err != nil {
+			return err
+		}
+		encodeErr := json.NewEncoder(file).Encode(resourceRows)
+		if err := errors.Join(encodeErr, file.Close()); err != nil {
 			return err
 		}
 	}

@@ -1071,6 +1071,7 @@ func (owner *sessionOwner) trimReplay(sequence uint64) {
 			kept = append(kept, pending)
 		}
 	}
+	clear(owner.replay[len(kept):])
 	owner.replay = kept
 }
 
@@ -1440,13 +1441,17 @@ func (owner *sessionOwner) failAll(err error) {
 func (owner *sessionOwner) removePending(target *pendingRequest) {
 	for index, pending := range owner.pending {
 		if pending == target {
-			owner.pending = append(owner.pending[:index], owner.pending[index+1:]...)
+			copy(owner.pending[index:], owner.pending[index+1:])
+			owner.pending[len(owner.pending)-1] = nil
+			owner.pending = owner.pending[:len(owner.pending)-1]
 			break
 		}
 	}
 	for index, pending := range owner.replay {
 		if pending == target {
-			owner.replay = append(owner.replay[:index], owner.replay[index+1:]...)
+			copy(owner.replay[index:], owner.replay[index+1:])
+			owner.replay[len(owner.replay)-1] = nil
+			owner.replay = owner.replay[:len(owner.replay)-1]
 			break
 		}
 	}

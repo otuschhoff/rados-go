@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"math"
 	"testing"
 )
@@ -19,6 +20,73 @@ func TestSecureDeterministicVector(t *testing.T) {
 	const expected = "4de81a477793cc7cbb381480b30cc69431dabdf879b50b483d403cfd7520cf9d25a34695d34ff7965036a3b4f02908ecd7f8cc4f2688a28ab01f761aeee6fdba01654a9d4a848c689172d4521fcf810804495e6587c7f08a8c5bc025ec8d1369"
 	if got := hex.EncodeToString(wire); got != expected {
 		t.Fatalf("secure vector = %s", got)
+	}
+}
+
+func TestSecureEncodePreservesCallerBuffers(t *testing.T) {
+	secret := testSecureSecret()
+	sender := mustSecureCodec(t, secret, false)
+	receiver := mustSecureCodec(t, secret, true)
+	first := bytes.Repeat([]byte{0x5a}, 63)
+	tail := bytes.Repeat([]byte{0xa5}, 97)
+	frame := Frame{Tag: TagMessage, Segments: []Segment{
+		{Alignment: DefaultAlignment, Data: first},
+		{Alignment: PageAlignment, Data: tail},
+		{Alignment: DefaultAlignment},
+	}}
+	wire, err := sender.Encode(frame, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(first, bytes.Repeat([]byte{0x5a}, 63)) || !bytes.Equal(tail, bytes.Repeat([]byte{0xa5}, 97)) || len(frame.Segments) != 3 {
+		t.Fatal("encoding modified caller frame")
+	}
+	first[0] = 0
+	tail[0] = 0
+	decoded, err := receiver.Read(bytes.NewReader(wire), testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decoded.Segments[0].Data[0] != 0x5a || decoded.Segments[1].Data[0] != 0xa5 {
+		t.Fatal("wire aliases caller buffers")
+	}
+}
+
+func TestSecureEncodeRecordBoundaries(t *testing.T) {
+	for _, firstSize := range []int{0, 47, 48, 49, 63, 64, 65} {
+		for _, tailSize := range []int{0, 1, 15, 16, 17} {
+			t.Run(fmt.Sprintf("first=%d/tail=%d", firstSize, tailSize), func(t *testing.T) {
+				frame := Frame{Tag: TagMessage, Segments: []Segment{
+					{Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{0x5a}, firstSize)},
+					{Alignment: PageAlignment, Data: bytes.Repeat([]byte{0xa5}, tailSize)},
+				}}
+				if tailSize == 0 {
+					frame.Segments = frame.Segments[:1]
+				}
+				_, _, wireSize, records, err := prepareSecureFrame(frame, testLimits)
+				if err != nil {
+					t.Fatal(err)
+				}
+				limits := testLimits
+				limits.MaxFrameBytes = wireSize
+				sender := mustSecureCodec(t, testSecureSecret(), false)
+				receiver := mustSecureCodec(t, testSecureSecret(), true)
+				sender.tx.counter = math.MaxUint64 - records + 1
+				receiver.rx.counter = sender.tx.counter
+				wire, err := sender.Encode(frame, limits)
+				if err != nil || uint64(len(wire)) != wireSize {
+					t.Fatalf("wire size=%d want=%d err=%v", len(wire), wireSize, err)
+				}
+				decoded, err := receiver.Read(bytes.NewReader(wire), limits)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertFrameEqual(t, decoded, frame)
+				if _, err := sender.Encode(frame, limits); !errors.Is(err, ErrCounterExhausted) {
+					t.Fatalf("post-exhaustion error=%v", err)
+				}
+			})
+		}
 	}
 }
 

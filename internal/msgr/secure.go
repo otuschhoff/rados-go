@@ -105,11 +105,15 @@ func (direction *secureDirection) nonceLocked() ([secureNonceSize]byte, error) {
 }
 
 func (direction *secureDirection) sealLocked(plaintext []byte) ([]byte, error) {
+	return direction.sealIntoLocked(nil, plaintext)
+}
+
+func (direction *secureDirection) sealIntoLocked(destination, plaintext []byte) ([]byte, error) {
 	nonce, err := direction.nonceLocked()
 	if err != nil {
 		return nil, err
 	}
-	return direction.aead.Seal(nil, nonce[:], plaintext, nil), nil
+	return direction.aead.Seal(destination, nonce[:], plaintext, nil), nil
 }
 
 func (direction *secureDirection) openLocked(ciphertext []byte) ([]byte, error) {
@@ -138,24 +142,24 @@ func (codec *SecureCodec) Encode(frame Frame, limits Limits) ([]byte, error) {
 	}
 
 	preamble := encodePreamble(frame.Tag, descriptors)
-	first := make([]byte, PreambleSize+secureInlineSize)
+	wire := make([]byte, int(wireSize))
+	first := wire[:PreambleSize+secureInlineSize]
 	copy(first, preamble[:])
 	copy(first[PreambleSize:], segments[0].Data)
-	result, err := codec.tx.sealLocked(first)
+	result, err := codec.tx.sealIntoLocked(first[:0], first)
 	if err != nil {
 		return nil, err
 	}
-	result = append(make([]byte, 0, int(wireSize)), result...)
 
 	firstPadded := paddedSecureLength(uint64(len(segments[0].Data)))
 	if firstPadded > secureInlineSize {
-		plaintext := make([]byte, firstPadded-secureInlineSize)
+		plaintext := wire[len(result) : len(result)+int(firstPadded-secureInlineSize)]
 		copy(plaintext, segments[0].Data[secureInlineSize:])
-		sealed, err := codec.tx.sealLocked(plaintext)
+		sealed, err := codec.tx.sealIntoLocked(plaintext[:0], plaintext)
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, sealed...)
+		result = wire[:len(result)+len(sealed)]
 	}
 	if len(segments) == 1 {
 		return result, nil
@@ -165,25 +169,29 @@ func (codec *SecureCodec) Encode(frame Frame, limits Limits) ([]byte, error) {
 	for index := 1; index < len(segments); index++ {
 		remainingSize += paddedSecureLength(uint64(len(segments[index].Data)))
 	}
-	remaining := make([]byte, int(remainingSize))
+	remaining := wire[len(result) : len(result)+int(remainingSize)]
 	offset := 0
 	for index := 1; index < len(segments); index++ {
 		copy(remaining[offset:], segments[index].Data)
 		offset += int(paddedSecureLength(uint64(len(segments[index].Data))))
 	}
 	remaining[offset] = LateStatusComplete
-	sealed, err := codec.tx.sealLocked(remaining)
+	sealed, err := codec.tx.sealIntoLocked(remaining[:0], remaining)
 	if err != nil {
 		return nil, err
 	}
-	return append(result, sealed...), nil
+	return wire[:len(result)+len(sealed)], nil
 }
 
 func prepareSecureFrame(frame Frame, limits Limits) ([]segmentDescriptor, []Segment, uint64, uint64, error) {
-	segments, err := normalizeSegments(frame.Segments)
-	if err != nil {
-		return nil, nil, 0, 0, err
+	if len(frame.Segments) < 1 || len(frame.Segments) > MaxSegments {
+		return nil, nil, 0, 0, fmt.Errorf("%w: segment count %d", ErrMalformed, len(frame.Segments))
 	}
+	end := len(frame.Segments)
+	for end > 1 && len(frame.Segments[end-1].Data) == 0 {
+		end--
+	}
+	segments := frame.Segments[:end]
 	if !validTag(frame.Tag) {
 		return nil, nil, 0, 0, fmt.Errorf("%w: tag %d", ErrMalformed, frame.Tag)
 	}
