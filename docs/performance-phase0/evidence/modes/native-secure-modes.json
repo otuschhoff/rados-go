@@ -1,0 +1,36 @@
+{
+  "implementation": "native",
+  "requested": "secure",
+  "connections": [
+    {
+      "service": "monitor",
+      "connection": "0xd5f8700/0xd5f8b00/line-9",
+      "actual": "secure",
+      "source": "ceph-ready-log"
+    },
+    {
+      "service": "monitor",
+      "connection": "0xd5f8700/0xd5dcee0/line-28",
+      "actual": "secure",
+      "source": "ceph-ready-log"
+    },
+    {
+      "service": "osd",
+      "connection": "0xffff2c021ae0/0xffff2c041fc0/line-46",
+      "actual": "secure",
+      "source": "ceph-ready-log"
+    },
+    {
+      "service": "osd",
+      "connection": "0xffff48021ae0/0xffff48041fc0/line-47",
+      "actual": "secure",
+      "source": "ceph-ready-log"
+    },
+    {
+      "service": "osd",
+      "connection": "0xffff28021ae0/0xffff28041fc0/line-83",
+      "actual": "secure",
+      "source": "ceph-ready-log"
+    }
+  ]
+}

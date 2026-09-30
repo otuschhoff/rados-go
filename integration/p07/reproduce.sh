@@ -1,10 +1,172 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd)
+mode_capture_expected_crc_rejection() {
+	test "$1" -eq 1 &&
+		grep -q '^perf-mode-check: go: requested crc but negotiated secure for ' "$2" &&
+		jq -e '.requested == "crc" and ([.connections[].service] | index("monitor") != null and index("osd") != null) and all(.connections[]; (.service == "monitor" or .service == "osd") and .actual == "secure" and .source == "go-auth-metadata")' "$3" >/dev/null &&
+		jq -e '.requested == "crc" and ([.connections[].service] | index("monitor") != null and index("osd") != null) and all(.connections[]; .source == "ceph-ready-log" and ((.service == "monitor" and .actual == "secure") or (.service == "osd" and .actual == "crc")))' "$4" >/dev/null
+}
+
+mode_capture_build_environment() {
+	perl -MJSON::PP -e 'my %settings; for my $name (qw(GOFLAGS GOENV GOEXPERIMENT GOWORK GOTOOLCHAIN)) { $settings{$name} = exists $ENV{$name} ? $ENV{$name} : undef; } print JSON::PP->new->canonical->encode(\%settings), "\n";' >"$1/inherited-go.env.json"
+	if test -n "${GOEXPERIMENT:-}"; then
+		printf '%s\n' 'mode capture requires empty GOEXPERIMENT' >&2
+		return 2
+	fi
+	export GOWORK=off GOENV=off GOFLAGS=-mod=readonly GOEXPERIMENT=''
+}
+
+root=$(CDPATH= cd -- "$(dirname "$0")/../.." && pwd -P)
 cd "$root"
-report=${P07_REPORT:-docs/p07/integration-report.json}
+original_root=$root
+capture=
+temporary=
+cluster_started=false
+network="rados-go-p07-$$"
+stage=capture-preflight
+mode_failed=0
 started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+cleanup() {
+	if test -n "$temporary"; then
+		if test "$cluster_started" = true; then
+			docker rm -f "p07-probe-$$" "p07-mon-$$" "p07-osd-0-$$" "p07-osd-1-$$" "p07-osd-2-$$" >/dev/null 2>&1 || true
+			docker volume rm "rados-go-p07-osd-0-$$" "rados-go-p07-osd-1-$$" "rados-go-p07-osd-2-$$" >/dev/null 2>&1 || true
+			docker network rm "$network" >/dev/null 2>&1 || true
+		fi
+		rm -rf "$temporary"
+	fi
+}
+finalize() {
+	run_exit=$?
+	trap - EXIT HUP INT TERM
+	set +e
+	if test -n "$capture"; then
+		if test "$run_exit" -ne 0 && test "$mode_failed" -eq 0; then mode_failed=1; fi
+		source_check=not_frozen
+		if test -f "$capture/source-manifest.json"; then
+			source_check=failed
+			if perl "$capture/source-audit.pl" select "$original_root" "$capture" >"$capture/source-files-after.nul" &&
+				perl "$capture/source-audit.pl" manifest "$original_root" <"$capture/source-files-after.nul" >"$capture/source-manifest-after.json" &&
+				cmp -s "$capture/source-files.nul" "$capture/source-files-after.nul" &&
+				cmp -s "$capture/source-manifest.json" "$capture/source-manifest-after.json" &&
+				perl "$capture/source-audit.pl" manifest "$root" <"$capture/source-files.nul" >"$capture/source-manifest-snapshot-after.json" &&
+				cmp -s "$capture/source-manifest.json" "$capture/source-manifest-snapshot-after.json" &&
+				(cd "$capture" && shasum -a 256 -c source-binding.sha256); then
+				source_check=unchanged
+			else
+				mode_failed=$((mode_failed + 1))
+				test "$run_exit" -ne 0 || run_exit=1
+			fi
+		fi
+		for artifact in probe benchmark native-driver native-benchmark perf-mode-check native-seed.json \
+			ceph.version librados.path librados.package librados.sha256 seed-modes.json \
+			go-secure-modes.json go-crc-modes.json native-secure.log native-crc.log \
+			native-secure-modes.json native-crc-modes.json; do
+			if test -n "$temporary" && test -f "$temporary/$artifact"; then
+				if ! cp "$temporary/$artifact" "$capture/"; then
+					mode_failed=$((mode_failed + 1))
+					test "$run_exit" -ne 0 || run_exit=1
+				fi
+			fi
+		done
+		(cd "$capture" && for artifact in probe benchmark native-driver native-benchmark perf-mode-check workload-sources.tar.gz source-manifest.json; do
+			test ! -f "$artifact" || shasum -a 256 "$artifact" || exit 1
+		done) >"$capture/artifacts.sha256"
+		if test "$?" -ne 0; then mode_failed=$((mode_failed + 1)); test "$run_exit" -ne 0 || run_exit=1; fi
+		printf '{"started_at":"%s","finished_at":"%s","stage":"%s","exit_code":%s,"failed_count":%s,"source_check":"%s"}\n' \
+			"$started_at" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$stage" "$run_exit" "$mode_failed" "$source_check" >"$capture/final-status.json"
+		if test -f "$capture/status.json" && command -v jq >/dev/null 2>&1; then
+			jq --slurpfile final "$capture/final-status.json" '. + $final[0]' "$capture/status.json" >"$capture/status.final.json" && mv "$capture/status.final.json" "$capture/status.json" || cp "$capture/final-status.json" "$capture/status.json"
+		else
+			cp "$capture/final-status.json" "$capture/status.json"
+		fi
+		printf 'P07 LIVE mode capture: %s (stage %s, exit %s)\n' "$capture" "$stage" "$run_exit" >&3
+	fi
+	cleanup
+	exit "$run_exit"
+}
+if test -n "${P07_MODE_DIAGNOSTIC_DIR:-}"; then
+	case "$P07_MODE_DIAGNOSTIC_DIR" in
+		/*) ;;
+		*) printf '%s\n' 'P07_MODE_DIAGNOSTIC_DIR must be absolute' >&2; exit 2 ;;
+	esac
+	if test -e "$P07_MODE_DIAGNOSTIC_DIR" || test -L "$P07_MODE_DIAGNOSTIC_DIR"; then
+		printf '%s\n' 'P07_MODE_DIAGNOSTIC_DIR must not exist' >&2
+		exit 2
+	fi
+	test -z "${P07_RESOURCE_DIAGNOSTIC_DIR:-}${P07_DIAGNOSTIC_DIR:-}" || {
+		printf '%s\n' 'mode capture cannot be combined with other diagnostics' >&2; exit 2;
+	}
+	umask 077
+	mkdir -m 700 "$P07_MODE_DIAGNOSTIC_DIR"
+	exec 3>&1 4>&2
+	capture=$P07_MODE_DIAGNOSTIC_DIR
+	trap finalize EXIT
+	trap 'exit 129' HUP
+	trap 'exit 130' INT
+	trap 'exit 143' TERM
+	stage=capture-setup
+	exec >"$capture/setup.stdout" 2>"$capture/setup.stderr"
+	capture=$(CDPATH= cd -- "$capture" && pwd -P)
+	stage=toolchain-preflight
+	mode_capture_build_environment "$capture"
+	stage=source-freeze
+	cat >"$capture/source-audit.pl" <<'PERL'
+use strict;
+use warnings;
+use JSON::PP;
+my ($action, $root, $capture) = @ARGV;
+chdir $root or die "source root: $!\n";
+if ($action eq 'select') {
+	open my $tracked_pipe, '-|', 'git', 'ls-files', '-z' or die "git tracked: $!\n";
+	my $tracked_data = do { local $/; <$tracked_pipe> };
+	close $tracked_pipe or die "git tracked failed\n";
+	my %tracked = map { $_ => 1 } split /\0/, $tracked_data;
+	open my $all_pipe, '-|', 'git', 'ls-files', '-co', '--exclude-standard', '-z' or die "git selected: $!\n";
+	my $all_data = do { local $/; <$all_pipe> };
+	close $all_pipe or die "git selected failed\n";
+	my %selected;
+	for my $file (split /\0/, $all_data) {
+		next if "$root/$file" eq $capture || index("$root/$file", "$capture/") == 0;
+		next unless $tracked{$file} || $file =~ /\.go\z/ || $file eq 'go.sum' || $file eq 'integration/p07/MODE_EVIDENCE.md';
+		die "non-regular selected source (including symlink): $file\n" if -l $file || !-f $file;
+		$selected{$file} = 1;
+	}
+	print join('', map { "$_\0" } sort keys %selected);
+} elsif ($action eq 'manifest') {
+	my $data = do { local $/; <STDIN> };
+	my @manifest;
+	for my $file (sort split /\0/, $data) {
+		die "non-regular source: $file\n" if -l $file || !-f $file;
+		open my $hash_pipe, '-|', 'shasum', '-a', '256', '--', $file or die "shasum: $!\n";
+		my $hash_line = do { local $/; <$hash_pipe> };
+		close $hash_pipe or die "shasum failed\n";
+		$hash_line =~ /\A\\?([a-f0-9]{64}) / or die "invalid shasum output\n";
+		push @manifest, {path_hex => unpack('H*', $file), sha256 => $1};
+	}
+	print JSON::PP->new->canonical->encode(\@manifest), "\n";
+} else { die "unknown source audit action\n"; }
+PERL
+	git rev-parse HEAD >"$capture/git-head"
+	git status --short >"$capture/git-status"
+	perl "$capture/source-audit.pl" select "$original_root" "$capture" >"$capture/source-files.nul"
+	perl "$capture/source-audit.pl" manifest "$original_root" <"$capture/source-files.nul" >"$capture/source-manifest.before.json"
+	tar -czf "$capture/workload-sources.tar.gz" --null -T "$capture/source-files.nul"
+	temporary=$(mktemp -d)
+	mkdir "$temporary/source"
+	tar -xzf "$capture/workload-sources.tar.gz" -C "$temporary/source"
+	root=$temporary/source
+	perl "$capture/source-audit.pl" manifest "$root" <"$capture/source-files.nul" >"$capture/source-manifest.json"
+	cmp "$capture/source-manifest.before.json" "$capture/source-manifest.json"
+	(cd "$capture" && shasum -a 256 workload-sources.tar.gz source-manifest.json) >"$capture/source-binding.sha256"
+	cd "$root"
+	stage=toolchain
+	go version >"$capture/go.version"
+	go env -json GOVERSION GOOS GOARCH GOTOOLCHAIN GOWORK GOFLAGS GOENV GOEXPERIMENT CGO_ENABLED >"$capture/go.env.json"
+fi
+report=${P07_REPORT:-docs/p07/integration-report.json}
+stage=docker-discovery
 case "$(docker info --format '{{.Architecture}}')" in
 	x86_64|amd64) platform=linux/amd64; goarch=amd64 ;;
 	aarch64|arm64) platform=linux/arm64; goarch=arm64 ;;
@@ -13,27 +175,39 @@ esac
 image_index=$(jq -r '.images.qualification.reference' docs/p00/evidence.json)
 image_digest=$(jq -r --arg architecture "$goarch" '.images.qualification[$architecture]' docs/p00/evidence.json)
 image="${image_index%@*}@$image_digest"
-temporary=$(mktemp -d)
-network="rados-go-p07-$$"
+if test -n "$capture"; then
+	printf '%s\n' "$image" >"$capture/image.reference"
+	printf '%s\n' "$image_index" >"$capture/image.index"
+	printf '%s\n' "$platform" >"$capture/platform"
+	docker version --format '{{.Server.Version}} {{.Server.GitCommit}}' >"$capture/docker.version"
+fi
+test -n "$temporary" || temporary=$(mktemp -d)
 fsid=11111111-2222-4333-8444-777777777777
-cleanup() {
-	docker rm -f "p07-probe-$$" "p07-mon-$$" "p07-osd-0-$$" "p07-osd-1-$$" "p07-osd-2-$$" >/dev/null 2>&1 || true
-	docker volume rm "rados-go-p07-osd-0-$$" "rados-go-p07-osd-1-$$" "rados-go-p07-osd-2-$$" >/dev/null 2>&1 || true
-	docker network rm "$network" >/dev/null 2>&1 || true
-	rm -rf "$temporary"
+if test -z "$capture"; then trap cleanup EXIT HUP INT TERM; fi
+compile() {
+	if test -n "$capture"; then
+		perl -MJSON::PP -e 'print JSON::PP->new->canonical->encode({cwd=>shift @ARGV,argv=>\@ARGV}), "\n"' "$PWD" "$@" >>"$capture/compile-commands.jsonl"
+	fi
+	"$@"
 }
-trap cleanup EXIT HUP INT TERM
 
-CGO_ENABLED=0 GOOS=linux GOARCH="$goarch" go build -trimpath -o "$temporary/probe" ./integration/p07/probe
-CGO_ENABLED=0 GOOS=linux GOARCH="$goarch" go build -trimpath -o "$temporary/benchmark" ./integration/p07/benchmark
+stage=go-build
+compile env CGO_ENABLED=0 GOOS=linux GOARCH="$goarch" go build -trimpath -o "$temporary/probe" ./integration/p07/probe
+compile env CGO_ENABLED=0 GOOS=linux GOARCH="$goarch" go build -trimpath -o "$temporary/benchmark" ./integration/p07/benchmark
+if test -n "$capture"; then
+	compile env CGO_ENABLED=0 GOOS=linux GOARCH="$goarch" go build -trimpath -o "$temporary/perf-mode-check" ./tools/perf-mode-check
+fi
 cp integration/p07/native_driver.c integration/p07/native_benchmark.c "$temporary/"
-docker run --rm --user 0 --platform "$platform" -v "$temporary:/cluster" "$image" sh -c '
+stage=native-build
+compile docker run --rm --user 0 --platform "$platform" -v "$temporary:/cluster" "$image" sh -c '
 	set -eu
 	cc -std=c11 -Wall -Wextra -Werror -O2 /cluster/native_driver.c -ldl -o /cluster/native-driver
 	cc -std=c11 -Wall -Wextra -Werror -O2 -pthread /cluster/native_benchmark.c -ldl -o /cluster/native-benchmark
 '
 printf 'aZ\000\000efg' >"$temporary/parity.expected"
 printf base >"$temporary/base"
+stage=cluster-setup
+cluster_started=true
 docker network create --subnet 172.30.97.0/24 "$network" >/dev/null
 docker run --rm --user 0 --platform "$platform" -v "$temporary:/cluster" "$image" sh -c '
 	set -eu
@@ -56,7 +230,7 @@ EOF
 	mkdir -p /cluster/mondata
 	ceph-mon --mkfs -i a --fsid 11111111-2222-4333-8444-777777777777 --monmap /cluster/monmap --keyring /cluster/mon.keyring --mon-data /cluster/mondata
 	chown -R ceph:ceph /cluster/mondata
-'
+' >/dev/null 2>&1
 docker run -d --name "p07-mon-$$" --platform "$platform" --network "$network" --ip 172.30.97.10 -v "$temporary:/cluster" "$image" \
 	ceph-mon -f -i a --mon-data /cluster/mondata --public-addr v2:172.30.97.10:3300 --setuser ceph --setgroup ceph --mon-data-avail-crit 0 --no-mon-cluster-log-to-stderr >/dev/null
 
@@ -77,7 +251,7 @@ for id in 0 1 2; do
 	volume="rados-go-p07-osd-$id-$$"
 	docker volume create "$volume" >/dev/null
 	ceph_cli osd create "$uuid" "$id" >/dev/null
-	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring"
+	ceph_cli auth get-or-create "osd.$id" mon 'allow profile osd' mgr 'allow profile osd' osd 'allow *' -o "/cluster/osd-$id.keyring" >/dev/null 2>&1
 	ceph_cli mon getmap -o "/cluster/osd-$id.monmap" >/dev/null
 	docker run --rm --user 0 --privileged --platform "$platform" -v "$temporary:/cluster" -v "$volume:/osd" "$image" sh -c '
 		set -eu
@@ -88,7 +262,7 @@ for id in 0 1 2; do
 		cp /cluster/osd-$id.monmap /osd/data/activate.monmap
 		chown -R ceph:ceph /osd
 		ceph-osd --mkfs -i "$id" --osd-data /osd/data --osd-uuid "$uuid" --osd-objectstore bluestore --bluestore-block-path /osd/block --monmap /osd/data/activate.monmap --keyring /osd/data/keyring --setuser ceph --setgroup ceph
-	'
+	' >/dev/null 2>&1
 	ip="172.30.97.$((20 + id))"
 	docker run -d --privileged --name "p07-osd-$id-$$" --platform "$platform" --network "$network" --ip "$ip" -v "$temporary:/cluster" -v "$volume:/osd" "$image" \
 		ceph-osd -f --conf /cluster/ceph.conf -i "$id" --osd-data /osd/data --osd-objectstore bluestore --public-addr "v2:$ip:6800" --cluster-addr "v2:$ip:6802" --setuser ceph --setgroup ceph >/dev/null
@@ -103,9 +277,9 @@ ceph_cli osd crush rule create-replicated p07-rule default osd >/dev/null
 ceph_cli osd pool create p07-data 16 16 replicated p07-rule >/dev/null
 ceph_cli osd pool set p07-data size 2 >/dev/null
 ceph_cli osd pool set p07-data min_size 1 >/dev/null
-ceph_cli auth get-or-create client.p07 mon 'allow r' osd 'allow rw pool=p07-data' >/dev/null
-ceph_cli auth get-key client.p07 >"$temporary/client.key"
-ceph_cli auth get client.p07 -o /cluster/client.keyring >/dev/null
+ceph_cli auth get-or-create client.p07 mon 'allow r' osd 'allow rw pool=p07-data' >/dev/null 2>&1
+ceph_cli auth get-key client.p07 >"$temporary/client.key" 2>/dev/null
+ceph_cli auth get client.p07 -o /cluster/client.keyring >/dev/null 2>&1
 
 rados_cli() {
 	docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" \
@@ -120,9 +294,86 @@ benchmark_failed() {
 }
 rados_cli put remap-append /cluster/base
 
+stage=native-seed
 docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" \
 	timeout 60 /cluster/native-driver seed /cluster/ceph.conf /cluster/admin.keyring p07-data >"$temporary/native-seed.json"
 jq -e '.native_crud and .mixed_seed' "$temporary/native-seed.json" >/dev/null
+
+if test -n "${P07_MODE_DIAGNOSTIC_DIR:-}"; then
+	stage=native-runtime
+	docker run --rm --platform "$platform" -v "$temporary:/cluster" "$image" sh -c '
+		set -eu
+		ceph --version > /cluster/ceph.version
+		library=$(ldconfig -p | awk "/librados.so.2/{print \$NF; exit}")
+		test -n "$library"
+		readlink -f "$library" > /cluster/librados.path
+		rpm -qf "$(readlink -f "$library")" > /cluster/librados.package
+		sha256sum "$(readlink -f "$library")" > /cluster/librados.sha256
+	'
+	cp "$temporary/ceph.version" "$temporary/librados.path" "$temporary/librados.package" "$temporary/librados.sha256" "$capture/"
+	stage=go-seed
+	seed_exit=0
+	docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" \
+		-e P07_SEED_ONLY=1 -e P07_MODE_EVIDENCE_FILE=/work/seed-modes.json "$image" \
+		timeout 60 /work/benchmark -monitors 172.30.97.10:3300 -key-file /work/client.key -fsid "$fsid" -pool p07-data -transport secure \
+		>"$capture/seed.json" 2>"$capture/seed.stderr" || seed_exit=$?
+	test ! -f "$temporary/seed-modes.json" || cp "$temporary/seed-modes.json" "$capture/"
+	jq -n --argjson exit_code "$seed_exit" '{exit_code:$exit_code}' >"$capture/seed-status.json"
+	test "$seed_exit" -eq 0 && jq -e '.seeded' "$capture/seed.json" >/dev/null || {
+		printf 'P07 mode seed failed; see %s\n' "$capture" >&4; exit 1;
+	}
+	mode_failed=0
+	for mode in secure crc; do
+		stage=mode-$mode
+		go_exit=0; native_exit=0; validation_exit=0; workload_exit=0
+		mode_started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+		docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" \
+			-e P07_READ_DIAGNOSTIC=1 -e "P07_MODE_EVIDENCE_FILE=/work/go-$mode-modes.json" "$image" \
+			timeout 3600 /work/benchmark -monitors 172.30.97.10:3300 -key-file /work/client.key -fsid "$fsid" -pool p07-data -transport "$mode" \
+			>"$capture/go-$mode.json" 2>"$capture/go-$mode.stderr" || go_exit=$?
+		docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" \
+			-e P07_READ_DIAGNOSTIC=1 -e "P07_NATIVE_MODE_LOG=/cluster/native-$mode.log" "$image" \
+			timeout 3600 /cluster/native-benchmark /cluster/ceph.conf /cluster/client.keyring p07-data "$mode" \
+			>"$capture/native-$mode.json" 2>"$capture/native-$mode.stderr" || native_exit=$?
+		docker run --rm --platform "$platform" -v "$temporary:/work" "$image" \
+			/work/perf-mode-check -go "/work/go-$mode-modes.json" -native-log "/work/native-$mode.log" -requested "$mode" -native-out "/work/native-$mode-modes.json" \
+			>"$capture/validation-$mode.stdout" 2>"$capture/validation-$mode.stderr" || validation_exit=$?
+		for artifact in "go-$mode-modes.json" "native-$mode.log" "native-$mode-modes.json"; do
+			test ! -f "$temporary/$artifact" || cp "$temporary/$artifact" "$capture/"
+		done
+		for implementation in go native; do
+			jq -e --arg implementation "$implementation" --arg mode "$mode" \
+				'.implementation == $implementation and .transport == $mode and (.rows | length) == 1 and .rows[0].operations == 4096 and .rows[0].workload == "read"' \
+				"$capture/$implementation-$mode.json" >"$capture/$implementation-$mode-workload.stdout" 2>"$capture/$implementation-$mode-workload.stderr" || workload_exit=1
+		done
+		observed=failed; expected=pass
+		if test "$mode" = crc; then expected=requested_actual_mismatch; fi
+		if test "$validation_exit" -eq 0; then
+			observed=pass
+		elif test "$mode" = crc && mode_capture_expected_crc_rejection "$validation_exit" \
+			"$capture/validation-$mode.stderr" "$capture/go-$mode-modes.json" "$capture/native-$mode-modes.json"; then
+			observed=requested_actual_mismatch
+		fi
+		matched=false
+		if test "$go_exit" -eq 0 && test "$native_exit" -eq 0 && test "$workload_exit" -eq 0 && test "$observed" = "$expected"; then
+			matched=true
+		else
+			mode_failed=$((mode_failed + 1))
+		fi
+		jq -n --arg mode "$mode" --arg started_at "$mode_started" --arg finished_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+			--arg expected "$expected" --arg observed "$observed" --argjson matched "$matched" \
+			--argjson go_exit "$go_exit" --argjson native_exit "$native_exit" --argjson validation_exit "$validation_exit" --argjson workload_exit "$workload_exit" \
+			'{requested:$mode,started_at:$started_at,finished_at:$finished_at,expected:$expected,observed:$observed,expectation_met:$matched,exit_codes:{go:$go_exit,native:$native_exit,validator:$validation_exit,workload_check:$workload_exit}}' >"$capture/status-$mode.json"
+	done
+	stage=mode-summary
+	jq -n --arg started_at "$started_at" --arg finished_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+		--arg image "$image" --arg image_index "$image_index" --arg platform "$platform" --arg version "$(cat "$capture/ceph.version")" \
+		--argjson exit_code "$mode_failed" --slurpfile secure "$capture/status-secure.json" --slurpfile crc "$capture/status-crc.json" \
+		'{schema_version:1,kind:"phase0-live-mode-diagnostic",benchmark_claim:false,started_at:$started_at,finished_at:$finished_at,exit_code:$exit_code,server:{image:$image,image_index:$image_index,image_digest_source:"docs/p00/evidence.json:images.qualification",platform:$platform,version:$version,source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",native_parser_source:"https://github.com/ceph/ceph/blob/7f793731f1b39eb4f465e960113d2363c311b964/src/msg/async/ProtocolV2.cc"},modes:[$secure[0],$crc[0]]}' >"$capture/status.json"
+	printf 'P07 LIVE mode diagnostics written to %s (exit %s)\n' "$capture" "$mode_failed" >&3
+	stage=complete
+	exit "$mode_failed"
+fi
 
 if test -n "${P07_RESOURCE_DIAGNOSTIC_DIR:-}"; then
 	case "$P07_RESOURCE_DIAGNOSTIC_DIR" in

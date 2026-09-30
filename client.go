@@ -146,6 +146,7 @@ func (client *Client) Connect(ctx context.Context) error {
 		MaxHandshakeTransitions: 32, EventBuffer: 16,
 		ClientIdent:        msgr.ClientIdent{Addresses: protocol.EntityAddrVec{clientAddress}, SupportedFeatures: uint64(protocol.FeatureMonitorClient), RequiredFeatures: uint64(protocol.FeatureMessageAddress2)},
 		DiagnosticObserver: client.diagnosticObserver, DiagnosticSessionIDSource: client.diagnosticSessionIDSource,
+		ModeObserver: msgr.ModeObserverFromContext(ctx),
 	}
 	connectorConfig := cephx.ConnectorConfig{
 		Credential: client.credential, DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout,

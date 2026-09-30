@@ -1,5 +1,6 @@
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <pthread.h>
 #include <stdint.h>
@@ -8,6 +9,7 @@
 #include <string.h>
 #include <sys/resource.h>
 #include <time.h>
+#include <unistd.h>
 
 typedef void *rados_t;
 typedef void *rados_ioctx_t;
@@ -581,6 +583,25 @@ int main(int argc, char **argv) {
 		api.shutdown(cluster);
 		dlclose(api.library);
 		return 1;
+	}
+	const char *mode_log = getenv("P07_NATIVE_MODE_LOG");
+	if (mode_log != NULL && mode_log[0] != '\0') {
+		int log_fd = open(mode_log, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		if (log_fd < 0) {
+			fprintf(stderr, "native benchmark: mode log must be a fresh writable path\n");
+			api.shutdown(cluster);
+			dlclose(api.library);
+			return 1;
+		}
+		close(log_fd);
+		if (check_result(api.conf_set(cluster, "log_file", mode_log), "set mode log") != 0 ||
+		    check_result(api.conf_set(cluster, "debug_ms", "1/1"), "set mode debug") != 0 ||
+		    check_result(api.conf_set(cluster, "debug_auth", "0/0"), "disable auth debug") != 0 ||
+		    check_result(api.conf_set(cluster, "log_to_file", "true"), "enable mode log") != 0) {
+			api.shutdown(cluster);
+			dlclose(api.library);
+			return 1;
+		}
 	}
 	if (check_result(api.connect(cluster), "connect") != 0) {
 		api.shutdown(cluster);

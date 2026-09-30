@@ -190,6 +190,7 @@ type SessionConfig struct {
 	ConnectSequence           uint64
 	CookieSource              CookieSource
 	DiagnosticObserver        SessionDiagnosticObserver
+	ModeObserver              ModeObserver
 	DiagnosticService         string
 	DiagnosticServiceID       int32
 	DiagnosticSessionID       uint64
@@ -459,6 +460,9 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		renewals:          make(chan renewalDue),
 	}
 	connectorCtx, connectorCancel := context.WithCancel(context.Background())
+	if transport != nil {
+		observeTransportMode(config, transport)
+	}
 	owner.connectorContext = connectorCtx
 	owner.connectorCancel = connectorCancel
 	if credentialTransport, ok := transport.(CredentialIdentityTransport); ok {
@@ -1207,6 +1211,7 @@ func (owner *sessionOwner) handleConnected(result connectResult) {
 		owner.globalSeq = next
 	}
 	owner.connectedOnce = true
+	observeTransportMode(owner.config, result.transport)
 	identityChanged := false
 	if authenticated, ok := result.transport.(AuthenticatedTransport); ok {
 		globalID := authenticated.AuthenticatedGlobalID()

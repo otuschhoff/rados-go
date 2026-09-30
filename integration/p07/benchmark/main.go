@@ -22,6 +22,7 @@ import (
 
 	rados "github.com/otuschhoff/rados-go"
 	"github.com/otuschhoff/rados-go/internal/msgr"
+	"github.com/otuschhoff/rados-go/internal/perfbaseline"
 )
 
 var (
@@ -128,7 +129,7 @@ func main() {
 	}
 }
 
-func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
+func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr error) {
 	monitors := splitMonitors(monitorsArg)
 	if len(monitors) == 0 {
 		return &benchError{message: "invalid -monitors"}
@@ -169,6 +170,22 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
+	if evidenceFile := os.Getenv("P07_MODE_EVIDENCE_FILE"); evidenceFile != "" {
+		file, err := os.OpenFile(evidenceFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			return fmt.Errorf("create fresh mode evidence: %w", err)
+		}
+		collector := perfbaseline.NewModeCollector(transport)
+		ctx = msgr.WithModeObserver(ctx, collector.Observe)
+		defer func() {
+			_ = client.Close()
+			data, err := json.MarshalIndent(collector.Evidence(), "", "  ")
+			if err == nil {
+				_, err = file.Write(append(data, '\n'))
+			}
+			resultErr = errors.Join(resultErr, err, file.Close())
+		}()
+	}
 
 	if err := client.Connect(ctx); err != nil {
 		return &benchError{message: "connect", err: err}

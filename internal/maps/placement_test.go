@@ -462,11 +462,11 @@ func TestUpmapItemsCanReplaceNonexistentRawOSD(t *testing.T) {
 	}
 }
 
-func encodePlacementCrushMap(t *testing.T) []byte {
+func encodePlacementCrushMap(t testing.TB) []byte {
 	return encodePlacementCrushMapWithNames(t, 0)
 }
 
-func encodePlacementCrushMapWithNames(t *testing.T, nameCount uint32) []byte {
+func encodePlacementCrushMapWithNames(t testing.TB, nameCount uint32) []byte {
 	t.Helper()
 	encoder := wire.NewEncoder(4096)
 	encoder.Uint32(crush.Magic)

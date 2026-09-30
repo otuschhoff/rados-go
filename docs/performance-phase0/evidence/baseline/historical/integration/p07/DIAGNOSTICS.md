@@ -105,8 +105,6 @@ as identical wire modes without checking negotiation. This diagnostic explicitly
 requires secure mode on both clients to avoid that ambiguity.
 
 These artifacts are diagnostic, not source-bound certification evidence.
-Opt-in actual monitor/OSD negotiation capture and independent Phase0 claim
-validation are documented in [MODE_EVIDENCE.md](MODE_EVIDENCE.md).
 Source-bound qualification and integration reports must be regenerated after
 final source changes; the performance budget is not altered by this mode.
 

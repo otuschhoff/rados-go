@@ -467,6 +467,8 @@ func (transport *authTransport) RenewalDue() <-chan struct{} { return transport.
 
 func (transport *authTransport) AuthMetadata() AuthMetadata { return copyMetadata(transport.metadata) }
 
+func (transport *authTransport) NegotiatedMode() uint32 { return transport.metadata.Mode }
+
 func earliestRenewal(tickets map[uint32]TicketMetadata) time.Time {
 	var earliest time.Time
 	for _, ticket := range tickets {

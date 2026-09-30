@@ -1,0 +1,30 @@
+{
+  "implementation": "go",
+  "requested": "secure",
+  "connections": [
+    {
+      "service": "monitor",
+      "connection": "monitor.0/1",
+      "actual": "secure",
+      "source": "go-auth-metadata"
+    },
+    {
+      "service": "osd",
+      "connection": "osd.1/2",
+      "actual": "secure",
+      "source": "go-auth-metadata"
+    },
+    {
+      "service": "osd",
+      "connection": "osd.2/3",
+      "actual": "secure",
+      "source": "go-auth-metadata"
+    },
+    {
+      "service": "osd",
+      "connection": "osd.0/4",
+      "actual": "secure",
+      "source": "go-auth-metadata"
+    }
+  ]
+}
