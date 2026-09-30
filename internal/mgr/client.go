@@ -51,6 +51,8 @@ type Client struct {
 	closeDone chan struct{}
 	session   sessionEntry
 	nextTID   uint64
+	creations []*sessionCreation
+	workerWG  sync.WaitGroup
 }
 
 type ActiveTarget struct {
@@ -69,6 +71,17 @@ type session interface {
 type sessionEntry struct {
 	target  ActiveTarget
 	session session
+}
+
+type sessionCreation struct {
+	target    ActiveTarget
+	done      chan struct{}
+	cancel    context.CancelFunc
+	waiters   int
+	completed bool
+	abandoned bool
+	result    sessionEntry
+	err       error
 }
 
 type submitResult struct {
@@ -192,11 +205,16 @@ func (client *Client) Close() {
 	closeDone := client.closeDone
 	active := client.session
 	client.session = sessionEntry{}
+	for _, creation := range client.creations {
+		creation.abandoned = true
+		creation.cancel()
+	}
 	close(client.done)
 	client.mu.Unlock()
 	if active.session != nil {
 		active.session.Stop()
 	}
+	client.workerWG.Wait()
 	close(closeDone)
 }
 
@@ -261,61 +279,131 @@ func (client *Client) currentTarget() (ActiveTarget, error) {
 }
 
 func (client *Client) getSession(ctx context.Context, target ActiveTarget) (sessionEntry, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	client.mu.Lock()
 	if client.closed {
 		client.mu.Unlock()
 		return sessionEntry{}, ErrClosed
+	}
+	if err := ctx.Err(); err != nil {
+		client.mu.Unlock()
+		return sessionEntry{}, err
+	}
+	current, err := client.currentTarget()
+	var pending *sessionCreation
+	for _, creation := range client.creations {
+		if err == nil && sameTarget(creation.target, current) && !creation.abandoned {
+			pending = creation
+		} else {
+			creation.abandoned = true
+			creation.cancel()
+		}
+	}
+	if err == nil && !sameTarget(current, target) {
+		err = ErrNoActiveManager
+	}
+	if err != nil {
+		client.mu.Unlock()
+		return sessionEntry{}, err
 	}
 	if client.session.session != nil && sameTarget(client.session.target, target) {
 		active := client.session
 		client.mu.Unlock()
 		return active, nil
 	}
-	stale := client.session
-	client.session = sessionEntry{}
+	if pending == nil {
+		factoryCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
+		pending = &sessionCreation{target: target, done: make(chan struct{}), cancel: cancel}
+		client.creations = append(client.creations, pending)
+		stale := client.session
+		client.session = sessionEntry{}
+		client.workerWG.Add(1)
+		go client.createSession(factoryCtx, pending, stale)
+	}
+	pending.waiters++
 	client.mu.Unlock()
+
+	select {
+	case <-pending.done:
+	case <-ctx.Done():
+	case <-client.done:
+	}
+	client.mu.Lock()
+	pending.waiters--
+	if pending.waiters == 0 && !pending.completed {
+		pending.abandoned = true
+		pending.cancel()
+	}
+	result, err := pending.result, pending.err
+	if client.closed {
+		result, err = sessionEntry{}, ErrClosed
+	} else if ctx.Err() != nil {
+		result, err = sessionEntry{}, ctx.Err()
+	}
+	client.mu.Unlock()
+	return result, err
+}
+
+func (client *Client) createSession(ctx context.Context, pending *sessionCreation, stale sessionEntry) {
+	defer client.workerWG.Done()
+	defer pending.cancel()
 	if stale.session != nil {
 		stale.session.Stop()
 	}
-
-	created, err := client.factory(ctx, target)
-	if err != nil {
-		return sessionEntry{}, err
+	var created session
+	err := ctx.Err()
+	if err == nil {
+		created, err = client.factory(ctx, pending.target)
 	}
-	current, err := client.currentTarget()
-	if err != nil {
-		created.Stop()
-		return sessionEntry{}, err
+	if err == nil && created == nil {
+		err = fmt.Errorf("%w: manager factory returned no session", wire.ErrMalformed)
 	}
-	if !sameTarget(current, target) {
-		created.Stop()
-		return sessionEntry{}, ErrNoActiveManager
-	}
-
 	client.mu.Lock()
 	if client.closed {
-		client.mu.Unlock()
-		created.Stop()
-		return sessionEntry{}, ErrClosed
-	}
-	if client.session.session != nil {
-		if sameTarget(client.session.target, target) {
-			active := client.session
-			client.mu.Unlock()
-			created.Stop()
-			return active, nil
+		err = ErrClosed
+	} else if pending.abandoned {
+		err = ErrNoActiveManager
+	} else if err == nil {
+		current, targetErr := client.currentTarget()
+		if targetErr != nil {
+			err = targetErr
+		} else if !sameTarget(current, pending.target) {
+			err = ErrNoActiveManager
 		}
-		replaced := client.session
-		client.session = sessionEntry{target: target, session: created}
-		client.mu.Unlock()
-		if replaced.session != nil {
-			replaced.session.Stop()
-		}
-		return sessionEntry{target: target, session: created}, nil
 	}
-	client.session = sessionEntry{target: target, session: created}
+	var replaced sessionEntry
+	if err == nil {
+		if client.session.session != nil && sameTarget(client.session.target, pending.target) {
+			pending.result = client.session
+		} else {
+			replaced = client.session
+			pending.result = sessionEntry{target: pending.target, session: created}
+			client.session = pending.result
+			created = nil
+		}
+	}
 	client.mu.Unlock()
-	return sessionEntry{target: target, session: created}, nil
+	if created != nil {
+		created.Stop()
+	}
+	if replaced.session != nil {
+		replaced.session.Stop()
+	}
+	client.mu.Lock()
+	for index, creation := range client.creations {
+		if creation == pending {
+			copy(client.creations[index:], client.creations[index+1:])
+			client.creations[len(client.creations)-1] = nil
+			client.creations = client.creations[:len(client.creations)-1]
+			break
+		}
+	}
+	pending.err = err
+	pending.completed = true
+	close(pending.done)
+	client.mu.Unlock()
 }
 
 func (client *Client) invalidate(active sessionEntry) {
@@ -325,8 +413,10 @@ func (client *Client) invalidate(active sessionEntry) {
 	client.mu.Lock()
 	if client.session.session == active.session && sameTarget(client.session.target, active.target) {
 		client.session = sessionEntry{}
+		client.workerWG.Add(1)
 		client.mu.Unlock()
 		active.session.Stop()
+		client.workerWG.Done()
 		return
 	}
 	client.mu.Unlock()

@@ -383,6 +383,11 @@ func (client *Client) dispatchNotifications(osdID int32, active session, source 
 			}
 		}
 		client.mu.Lock()
+		current, installed := client.sessions[osdID]
+		if client.closed || !installed || current.session != active {
+			client.mu.Unlock()
+			continue
+		}
 		if notification.Opcode == osd.WatchEventComplete {
 			completion := client.notifies[notification.Cookie]
 			client.mu.Unlock()

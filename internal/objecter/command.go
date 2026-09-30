@@ -104,8 +104,11 @@ func (client *Client) submitCommand(ctx context.Context, command []string, input
 		if err != nil {
 			return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 		}
-		active, err := client.getSession(route.Primary, route.Addresses)
+		active, err := client.getSessionContext(ctx, route.Primary, route.Addresses)
 		if err != nil {
+			if errors.Is(err, ErrStaleMap) {
+				continue
+			}
 			return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		request, err := osd.EncodeCommandRequest(osd.CommandRequest{

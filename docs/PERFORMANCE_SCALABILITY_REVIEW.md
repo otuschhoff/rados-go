@@ -269,7 +269,7 @@ audits, repairs, repeated source-bound measurements and full validation. See the
 [Phase 2 contract, audit and results](performance-phase2/README.md). Warm routes
 reuse decoded/certified state without unrelated-topology growth; first-use cost
 and retained graph memory remain disclosed. This is not native runtime parity
-or renewed release qualification. Phase 3 remains the next scoped task.
+or renewed release qualification. Phase 3 is complete below; Phase 4 is next.
 
 - First benchmark: repeat `PlaceRawHash` on one immutable OSDMap while adding
   valid unrelated buckets outside the selected rule's subtree. Measure time
@@ -293,6 +293,14 @@ allocation and topology-growth results improve without stale routes.
 ### Phase 3: Isolate Session Creation and Replacement
 
 Dependencies: Phases 0-1. Findings: F3, F9.
+
+Implementation status: complete within the Phase 3 scope after iterative repairs,
+three independent implementation audit rounds and source-bound validation. See
+the [Phase 3 contract, audit and results](performance-phase3/README.md). Gated
+session work permits unrelated cached progress; same-target creation is
+coordinated with independent waiter cancellation and joined cleanup. Custom
+noncooperative callbacks can still block shutdown. This is not live latency,
+native parity or renewed qualification evidence; Phase 4 remains the next task.
 
 - First OSD test: gate old session A's Stop during generation replacement and
   access cached B. B must complete before A's gate is released. Repeat with a

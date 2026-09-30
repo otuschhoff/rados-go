@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "before_commit": "190ce58132d9ac841be226f69574c1b8983c5b2f",
+  "before_archive_sha256": "4c6751f16a69762d67ef5b6e81f4df04c6d34eefa71d0b171987e2c5da191c26",
+  "after_private_capture": "/tmp/rados-go-phase3-baseline-final-20260930T172004Z",
+  "after_source_manifest_sha256": "619a2df02be7c5b26e70f392537dd913f06def5093c1913b5e45ab5f709e3dea",
+  "environment": {
+    "GOFLAGS": "",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "CGO_ENABLED": "0",
+    "GOEXPERIMENT": "",
+    "GOOS": "darwin",
+    "GOARCH": "arm64",
+    "GOTOOLCHAIN": "go1.27.1",
+    "GOGC": "100",
+    "GOMEMLIMIT": "off",
+    "GODEBUG": "",
+    "GOMAXPROCS": "10"
+  },
+  "commands": [
+    {
+      "label": "before-performance",
+      "cwd": "/tmp/rados-go-phase3-comparison-iVHLXE/before",
+      "args": [
+        "go",
+        "test",
+        "./internal/maps",
+        "./internal/msgr",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkPerformance",
+        "-benchmem",
+        "-benchtime=100ms",
+        "-count=5"
+      ],
+      "environment_overrides": {},
+      "started_at": "2026-09-30T17:20:58.226Z",
+      "finished_at": "2026-09-30T17:21:23.895Z",
+      "exit": 0,
+      "stdout_sha256": "1e27e008446772037df1ddaf325ec61a1b91c0955286709114337cbb2b07fb3e"
+    },
+    {
+      "label": "focused-lifecycle",
+      "cwd": "/tmp/rados-go-phase3-baseline-final-20260930T172004Z/source",
+      "args": [
+        "go",
+        "test",
+        "./internal/objecter",
+        "./internal/mgr",
+        "-race",
+        "-run",
+        "^TestSession",
+        "-count=20",
+        "-timeout=180s",
+        "-v"
+      ],
+      "environment_overrides": {
+        "CGO_ENABLED": "1"
+      },
+      "started_at": "2026-09-30T17:21:23.896Z",
+      "finished_at": "2026-09-30T17:21:34.039Z",
+      "exit": 0,
+      "stdout_sha256": "d60239c972725c028f2c7b9ad15bf48e6cc0300a4d79fbec85a43fa77446ee87"
+    },
+    {
+      "label": "full-race",
+      "cwd": "/tmp/rados-go-phase3-baseline-final-20260930T172004Z/source",
+      "args": [
+        "go",
+        "test",
+        "-race",
+        "./..."
+      ],
+      "environment_overrides": {
+        "CGO_ENABLED": "1"
+      },
+      "started_at": "2026-09-30T17:21:34.040Z",
+      "finished_at": "2026-09-30T17:21:52.335Z",
+      "exit": 0,
+      "stdout_sha256": "e147c59f3bb23180ba0f2034e7ced1a5fff68e427348b40db91c144222cff343"
+    },
+    {
+      "label": "diagnostics",
+      "cwd": "/tmp/rados-go-phase3-baseline-final-20260930T172004Z/source",
+      "args": [
+        "go",
+        "test",
+        "-tags",
+        "p12diagnostics",
+        "./..."
+      ],
+      "environment_overrides": {},
+      "started_at": "2026-09-30T17:21:52.335Z",
+      "finished_at": "2026-09-30T17:22:09.154Z",
+      "exit": 0,
+      "stdout_sha256": "a3e36cdf95e9f804d9d52b79690d4bff59163a0157e3573cd073d2d48cc2df45"
+    },
+    {
+      "label": "vet",
+      "cwd": "/tmp/rados-go-phase3-baseline-final-20260930T172004Z/source",
+      "args": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "environment_overrides": {},
+      "started_at": "2026-09-30T17:22:09.154Z",
+      "finished_at": "2026-09-30T17:22:09.849Z",
+      "exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "linux-build",
+      "cwd": "/tmp/rados-go-phase3-baseline-final-20260930T172004Z/source",
+      "args": [
+        "go",
+        "build",
+        "-tags",
+        "p12diagnostics",
+        "-o",
+        "/tmp/rados-go-phase3-comparison-iVHLXE/linux-check",
+        "./integration/p07/benchmark"
+      ],
+      "environment_overrides": {
+        "GOOS": "linux",
+        "GOARCH": "arm64"
+      },
+      "started_at": "2026-09-30T17:22:09.849Z",
+      "finished_at": "2026-09-30T17:22:10.968Z",
+      "exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "before-performance.stdout",
+      "sha256": "1e27e008446772037df1ddaf325ec61a1b91c0955286709114337cbb2b07fb3e"
+    },
+    {
+      "path": "focused-lifecycle.stdout",
+      "sha256": "d60239c972725c028f2c7b9ad15bf48e6cc0300a4d79fbec85a43fa77446ee87"
+    },
+    {
+      "path": "full-race.stdout",
+      "sha256": "e147c59f3bb23180ba0f2034e7ced1a5fff68e427348b40db91c144222cff343"
+    },
+    {
+      "path": "diagnostics.stdout",
+      "sha256": "a3e36cdf95e9f804d9d52b79690d4bff59163a0157e3573cd073d2d48cc2df45"
+    },
+    {
+      "path": "vet.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "linux-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "scope": "37 inherited synthetic cells five samples each before/after. Lifecycle progress/coalescing/cancellation/ownership are deterministic gate tests, not p99 timings or live network/native comparisons. Before source is committed Phase 2; after frozen dirty source. Serial timing runs; race validation after timings. Private archives/binaries/stderr omitted."
+}

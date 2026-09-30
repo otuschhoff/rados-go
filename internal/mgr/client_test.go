@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/netip"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -381,9 +382,9 @@ func TestCommandRejectsEmptyArgs(t *testing.T) {
 
 func TestCommandUnlimitedRetriesUntilContextCancellation(t *testing.T) {
 	source := &fakeMgrMapSource{mgrMap: testMgrMap(t, mgrMapFixture{name: "active-a", gid: 7, endpoint: "192.0.2.50:7000", activeFeatures: uint64(protocol.FeatureServerOctopusMask)})}
-	attempts := 0
+	var attempts atomic.Int32
 	client := newTestManagerClient(t, source, func(context.Context, ActiveTarget) (session, error) {
-		attempts++
+		attempts.Add(1)
 		return nil, errors.New("dial failed")
 	})
 	client.config.MaxAttempts = 4
@@ -395,8 +396,8 @@ func TestCommandUnlimitedRetriesUntilContextCancellation(t *testing.T) {
 	if _, err := client.Command(ctx, []string{"status"}, nil); !errors.Is(err, context.DeadlineExceeded) {
 		t.Fatalf("error=%v", err)
 	}
-	if attempts <= client.config.MaxAttempts {
-		t.Fatalf("attempts=%d, finite budget=%d", attempts, client.config.MaxAttempts)
+	if count := attempts.Load(); int(count) <= client.config.MaxAttempts {
+		t.Fatalf("attempts=%d, finite budget=%d", count, client.config.MaxAttempts)
 	}
 }
 

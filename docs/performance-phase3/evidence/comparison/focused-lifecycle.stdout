@@ -1,0 +1,2244 @@
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.18s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.10s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.10s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.18s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.03s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.09s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.18s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.07s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.10s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Stop
+=== RUN   TestSessionReplacementAllowsUnrelatedCachedAccess/Factory
+--- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Stop (0.00s)
+    --- PASS: TestSessionReplacementAllowsUnrelatedCachedAccess/Factory (0.00s)
+=== RUN   TestSessionLifecycleSharedFactory
+--- PASS: TestSessionLifecycleSharedFactory (0.00s)
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter
+=== RUN   TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller
+--- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/later_waiter (0.00s)
+    --- PASS: TestSessionLifecycleCancellationDoesNotCancelCreation/first_caller (0.00s)
+=== RUN   TestSessionLifecycleFactoryFailureFanout
+=== RUN   TestSessionLifecycleFactoryFailureFanout/error
+=== RUN   TestSessionLifecycleFactoryFailureFanout/partial_result
+=== RUN   TestSessionLifecycleFactoryFailureFanout/nil_result
+--- PASS: TestSessionLifecycleFactoryFailureFanout (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/error (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/partial_result (0.00s)
+    --- PASS: TestSessionLifecycleFactoryFailureFanout/nil_result (0.00s)
+=== RUN   TestSessionLifecycleCloseJoinsFactoryAndLosingResource
+--- PASS: TestSessionLifecycleCloseJoinsFactoryAndLosingResource (0.08s)
+=== RUN   TestSessionLifecycleCloseJoinsInvalidation
+--- PASS: TestSessionLifecycleCloseJoinsInvalidation (0.04s)
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses
+=== RUN   TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses
+--- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/map_down (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/unusable_addresses (0.00s)
+    --- PASS: TestSessionLifecycleEarlyTargetErrorSupersedesPendingCreation/empty_addresses (0.00s)
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address
+=== RUN   TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down
+--- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_address (0.00s)
+    --- PASS: TestSessionLifecycleMapWatcherOnlyABARevokesPendingCreation/map_down (0.00s)
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/caller_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/generation_ABA
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_address
+=== RUN   TestSessionLifecycleTargetChangesDuringFactory/map_down
+--- PASS: TestSessionLifecycleTargetChangesDuringFactory (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/caller_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/generation_ABA (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_address (0.00s)
+    --- PASS: TestSessionLifecycleTargetChangesDuringFactory/map_down (0.00s)
+=== RUN   TestSessionLifecycleReadCancellationDuringFactory
+--- PASS: TestSessionLifecycleReadCancellationDuringFactory (0.00s)
+=== RUN   TestSessionLifecycleObserverAvailabilityBeforeInvalidation
+--- PASS: TestSessionLifecycleObserverAvailabilityBeforeInvalidation (0.00s)
+=== RUN   TestSessionLifecycleBlockedInitialObserver
+=== RUN   TestSessionLifecycleBlockedInitialObserver/invalidation
+=== RUN   TestSessionLifecycleBlockedInitialObserver/concurrent_Close
+--- PASS: TestSessionLifecycleBlockedInitialObserver (0.17s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/invalidation (0.06s)
+    --- PASS: TestSessionLifecycleBlockedInitialObserver/concurrent_Close (0.11s)
+=== RUN   TestSessionLifecycleNotificationsRequireCurrentOwner
+--- PASS: TestSessionLifecycleNotificationsRequireCurrentOwner (0.00s)
+=== RUN   TestSessionLifecycleCloseDuringReplacementStopSkipsFactory
+--- PASS: TestSessionLifecycleCloseDuringReplacementStopSkipsFactory (0.02s)
+=== RUN   TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses
+--- PASS: TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses (0.00s)
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/objecter	8.038s
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.03s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.07s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.07s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.07s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.03s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.01s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.03s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.01s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.03s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.07s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.01s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.01s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.07s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+=== RUN   TestSessionCreationCoalescesSameTargetMisses
+--- PASS: TestSessionCreationCoalescesSameTargetMisses (0.00s)
+=== RUN   TestSessionCreationWaiterCancellation
+=== RUN   TestSessionCreationWaiterCancellation/first_caller
+=== RUN   TestSessionCreationWaiterCancellation/later_waiter
+--- PASS: TestSessionCreationWaiterCancellation (0.01s)
+    --- PASS: TestSessionCreationWaiterCancellation/first_caller (0.00s)
+    --- PASS: TestSessionCreationWaiterCancellation/later_waiter (0.00s)
+=== RUN   TestSessionCreationAllWaitersCancelAndRetry
+--- PASS: TestSessionCreationAllWaitersCancelAndRetry (0.00s)
+=== RUN   TestSessionCreationFailureFanoutAndRetry
+--- PASS: TestSessionCreationFailureFanoutAndRetry (0.00s)
+=== RUN   TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop
+--- PASS: TestSessionCreationTargetChangeAndCloseJoinFactoryAndLoserStop (0.06s)
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/b
+=== RUN   TestSessionCreationRejectsMapChangeWithoutNewCaller/#00
+--- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/a192.0.2.51:7001 (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/b (0.00s)
+    --- PASS: TestSessionCreationRejectsMapChangeWithoutNewCaller/#00 (0.00s)
+=== RUN   TestSessionReplacementStopAllowsCachedProgressAndCloseJoins
+--- PASS: TestSessionReplacementStopAllowsCachedProgressAndCloseJoins (0.02s)
+=== RUN   TestSessionInvalidationStopJoinedByClose
+--- PASS: TestSessionInvalidationStopJoinedByClose (0.02s)
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/different_target
+=== RUN   TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable
+--- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/different_target (0.00s)
+    --- PASS: TestSessionCreationStaleRequestAbandonsObservedTarget/unavailable (0.00s)
+=== RUN   TestSessionCachedTargetRequiresAuthoritativeMatch
+--- PASS: TestSessionCachedTargetRequiresAuthoritativeMatch (0.00s)
+=== RUN   TestSessionCreationRapidTargetReuseRejectsOldAttempt
+--- PASS: TestSessionCreationRapidTargetReuseRejectsOldAttempt (0.00s)
+=== RUN   TestSessionCreationEpochOnlyChangeReusesSession
+--- PASS: TestSessionCreationEpochOnlyChangeReusesSession (0.00s)
+=== RUN   TestSessionCreationCloseCancelsFactoryContext
+--- PASS: TestSessionCreationCloseCancelsFactoryContext (0.00s)
+=== RUN   TestSessionCreationCanceledAttemptCannotReplaceRetry
+--- PASS: TestSessionCreationCanceledAttemptCannotReplaceRetry (0.02s)
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/mgr	4.713s

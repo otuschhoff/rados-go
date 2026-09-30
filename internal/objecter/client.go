@@ -153,6 +153,7 @@ type Client struct {
 	mu                    sync.Mutex
 	done                  chan struct{}
 	sessions              map[int32]sessionEntry
+	creations             map[int32]*sessionCreation
 	closed                bool
 	closeDone             chan struct{}
 	mutationClosed        bool
@@ -186,6 +187,15 @@ type sessionEntry struct {
 	address    string
 	generation uint64
 	session    session
+}
+
+type sessionCreation struct {
+	address    string
+	generation uint64
+	superseded bool
+	done       chan struct{}
+	result     session
+	err        error
 }
 
 func (client *Client) MaxEnumerationEntries() uint64 {
@@ -365,8 +375,11 @@ func (client *Client) executeRoutedResult(ctx context.Context, target Target, op
 		if attempt > 0 {
 			requestFlags |= osd.FlagRetry
 		}
-		active, err := client.getSession(route.Primary, route.Addresses)
+		active, err := client.getSessionContext(ctx, route.Primary, route.Addresses)
 		if err != nil {
+			if errors.Is(err, ErrStaleMap) {
+				continue
+			}
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		var clientGlobalID uint64
@@ -820,68 +833,219 @@ func (client *Client) waitForPrimaryChange(ctx context.Context, target Target, f
 }
 
 func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) (session, error) {
+	return client.getSessionContext(context.Background(), osdID, addresses)
+}
+
+func (client *Client) sessionTarget(osdID int32, addresses protocol.EntityAddrVec) (string, uint64, error) {
 	address, ok := selectAddress(addresses)
 	if !ok {
-		return nil, ErrNoPrimary
+		return "", 0, ErrNoPrimary
 	}
 	generation := uint64(0)
 	if source, ok := client.config.Maps.(osdSessionGenerationSource); ok {
 		generation = source.OSDSessionGeneration(osdID)
 	}
-	client.mu.Lock()
-	if client.closed {
-		client.mu.Unlock()
-		return nil, ErrClosed
+	if current := client.config.Maps.OSDMap(); current != nil {
+		state, stateKnown := current.OSDState(osdID)
+		if stateKnown && (!state.Exists || !state.Up) {
+			client.supersedeCreation(osdID)
+			return "", 0, ErrNoPrimary
+		}
+		currentAddresses, addressesKnown := current.OSDClientAddresses(osdID)
+		if stateKnown && !addressesKnown {
+			client.supersedeCreation(osdID)
+			return "", 0, ErrNoPrimary
+		}
+		if addressesKnown {
+			currentAddress, valid := selectAddress(currentAddresses)
+			if !valid {
+				client.supersedeCreation(osdID)
+				return "", 0, ErrNoPrimary
+			}
+			if currentAddress != address {
+				client.mu.Lock()
+				if pending := client.creations[osdID]; pending != nil && (pending.address != currentAddress || pending.generation != generation) {
+					pending.superseded = true
+				}
+				client.mu.Unlock()
+				return "", 0, ErrStaleMap
+			}
+		}
 	}
-	var interrupted []*Watch
-	if existing, ok := client.sessions[osdID]; ok {
-		if existing.address == address && existing.generation == generation {
+	return address, generation, nil
+}
+
+func (client *Client) supersedeCreation(osdID int32) {
+	client.mu.Lock()
+	if pending := client.creations[osdID]; pending != nil {
+		pending.superseded = true
+	}
+	client.mu.Unlock()
+}
+
+func (client *Client) getSessionContext(ctx context.Context, osdID int32, addresses protocol.EntityAddrVec) (session, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	for {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		address, generation, err := client.sessionTarget(osdID, addresses)
+		if err != nil {
+			return nil, err
+		}
+		client.mu.Lock()
+		if client.closed {
+			client.mu.Unlock()
+			return nil, ErrClosed
+		}
+		if pending := client.creations[osdID]; pending != nil {
+			matched := pending.address == address && pending.generation == generation
+			if !matched {
+				pending.superseded = true
+			}
+			client.mu.Unlock()
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-client.done:
+				return nil, ErrClosed
+			case <-pending.done:
+			}
+			if !matched {
+				continue
+			}
+			return client.creationResult(ctx, osdID, addresses, pending)
+		}
+		if existing, ok := client.sessions[osdID]; ok && existing.address == address && existing.generation == generation {
 			client.mu.Unlock()
 			return existing.session, nil
 		}
-		delete(client.sessions, osdID)
-		interrupted = client.watchesForPrimaryLocked(osdID)
-		existing.session.Stop()
-	}
-	created, err := client.config.SessionFactory(osdID, addresses)
-	if err != nil {
-		client.mu.Unlock()
-		for _, watch := range interrupted {
-			watch.interrupt(msgr.ErrSessionClosed)
+		pending := &sessionCreation{address: address, generation: generation, done: make(chan struct{})}
+		if client.creations == nil {
+			client.creations = make(map[int32]*sessionCreation)
 		}
+		client.creations[osdID] = pending
+		old := client.sessions[osdID].session
+		delete(client.sessions, osdID)
+		var interrupted []*Watch
+		if old != nil {
+			interrupted = client.watchesForPrimaryLocked(osdID)
+		}
+		client.workers.Add(1)
+		client.mu.Unlock()
+		go client.createSession(osdID, cloneAddresses(addresses), pending, old, interrupted)
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-client.done:
+			return nil, ErrClosed
+		case <-pending.done:
+			return client.creationResult(ctx, osdID, addresses, pending)
+		}
+	}
+}
+
+func (client *Client) creationResult(ctx context.Context, osdID int32, addresses protocol.EntityAddrVec, pending *sessionCreation) (session, error) {
+	client.mu.Lock()
+	closed := client.closed
+	client.mu.Unlock()
+	if closed {
+		return nil, ErrClosed
+	}
+	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	client.sessions[osdID] = sessionEntry{address: address, generation: generation, session: created}
-	if notifications, ok := created.(notificationSession); ok {
-		client.workers.Add(1)
-		go func() {
-			defer client.workers.Done()
-			client.dispatchNotifications(osdID, created, notifications)
-		}()
+	if pending.err != nil {
+		return nil, pending.err
+	}
+	address, generation, err := client.sessionTarget(osdID, addresses)
+	if err != nil || address != pending.address || generation != pending.generation {
+		return nil, ErrStaleMap
+	}
+	return pending.result, nil
+}
+
+func (client *Client) createSession(osdID int32, addresses protocol.EntityAddrVec, pending *sessionCreation, old session, interrupted []*Watch) {
+	defer client.workers.Done()
+	if old != nil {
+		old.Stop()
+	}
+	client.mu.Lock()
+	closed := client.closed
+	client.mu.Unlock()
+	var created session
+	var err error
+	if closed {
+		err = ErrClosed
+	} else {
+		created, err = client.config.SessionFactory(osdID, addresses)
+	}
+	address, generation, targetErr := client.sessionTarget(osdID, addresses)
+	client.mu.Lock()
+	if client.closed {
+		err = ErrClosed
+	} else if pending.superseded || targetErr != nil || address != pending.address || generation != pending.generation {
+		err = ErrStaleMap
+	}
+	if err == nil && created == nil {
+		err = msgr.ErrSessionClosed
+	}
+	if err == nil {
+		client.sessions[osdID] = sessionEntry{address: address, generation: generation, session: created}
 	}
 	client.mu.Unlock()
-	if client.config.ObserveSession != nil {
+	if err != nil && created != nil {
+		created.Stop()
+	}
+	if err == nil && client.config.ObserveSession != nil {
 		client.config.ObserveSession(OSDSessionEvent{OSDID: osdID, Available: true})
 	}
 	for _, watch := range interrupted {
 		watch.interrupt(msgr.ErrSessionClosed)
 	}
-	return created, nil
+	client.mu.Lock()
+	if client.closed && err == nil {
+		err = ErrClosed
+	}
+	if err == nil {
+		pending.result = created
+		if notifications, ok := created.(notificationSession); ok {
+			client.workers.Add(1)
+			go func() {
+				defer client.workers.Done()
+				client.dispatchNotifications(osdID, created, notifications)
+			}()
+		}
+	}
+	pending.err = err
+	delete(client.creations, osdID)
+	close(pending.done)
+	client.mu.Unlock()
 }
 
 func (client *Client) invalidate(osdID int32, failed session) {
 	client.mu.Lock()
+	if pending := client.creations[osdID]; pending != nil {
+		client.mu.Unlock()
+		<-pending.done
+		client.invalidate(osdID, failed)
+		return
+	}
 	var interrupted []*Watch
 	removed := false
 	if existing, ok := client.sessions[osdID]; ok && existing.session == failed {
 		delete(client.sessions, osdID)
 		interrupted = client.watchesForPrimaryLocked(osdID)
 		removed = true
+		client.workers.Add(1)
 	}
 	client.mu.Unlock()
 	if !removed {
 		return
 	}
+	defer client.workers.Done()
 	if client.config.ObserveSession != nil {
 		client.config.ObserveSession(OSDSessionEvent{OSDID: osdID, Err: msgr.ErrSessionDisconnected})
 	}
@@ -970,7 +1134,28 @@ func (client *Client) invalidateUnusableSessions(osdMap *maps.OSDMap) {
 	for osdID, entry := range client.sessions {
 		sessions[osdID] = entry
 	}
+	creations := make(map[int32]*sessionCreation, len(client.creations))
+	for osdID, pending := range client.creations {
+		creations[osdID] = pending
+	}
 	client.mu.Unlock()
+	for osdID, pending := range creations {
+		state, stateOK := osdMap.OSDState(osdID)
+		addresses, addressesOK := osdMap.OSDClientAddresses(osdID)
+		address, addressOK := selectAddress(addresses)
+		unusable := stateOK && (!state.Exists || !state.Up || !addressesOK || !addressOK)
+		replaced := addressesOK && addressOK && address != pending.address
+		if source, ok := client.config.Maps.(osdSessionGenerationSource); ok {
+			replaced = replaced || source.OSDSessionGeneration(osdID) != pending.generation
+		}
+		if unusable || replaced {
+			client.mu.Lock()
+			if client.creations[osdID] == pending {
+				pending.superseded = true
+			}
+			client.mu.Unlock()
+		}
+	}
 	for osdID, entry := range sessions {
 		state, stateOK := osdMap.OSDState(osdID)
 		addresses, addressesOK := osdMap.OSDClientAddresses(osdID)
