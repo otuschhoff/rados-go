@@ -29,11 +29,22 @@ var (
 	ErrWatchInterrupted = errors.New("watch interrupted; events may have been lost")
 )
 
-const readReplyFrontBytes = uint64(144)
+const (
+	readReplyFrontBytes     = uint64(144)
+	maxTrackedRouteAttempts = 4096
+)
 
 type MapSource interface {
 	OSDMap() *maps.OSDMap
 	RefreshOSDMap(context.Context, uint32) error
+}
+
+type osdMapWaiter interface {
+	WaitForOSDMap(context.Context, uint32) error
+}
+
+type osdSessionGenerationSource interface {
+	OSDSessionGeneration(int32) uint64
 }
 
 type Route struct {
@@ -70,6 +81,7 @@ type Result struct {
 	ModificationTime time.Time
 	Version          uint64
 	Operations       []OperationResult
+	route            Route
 }
 
 type SparseReadResult struct {
@@ -97,6 +109,10 @@ type notificationSession interface {
 	NotificationError() error
 }
 
+type sessionInterruptionSource interface {
+	Interruptions() <-chan error
+}
+
 type backoffWaiter interface {
 	Wait(context.Context, maps.PG, osd.HObject) error
 }
@@ -106,6 +122,12 @@ type targetSubmitter interface {
 }
 
 type SessionFactory func(int32, protocol.EntityAddrVec) (session, error)
+
+type OSDSessionEvent struct {
+	OSDID     int32
+	Available bool
+	Err       error
+}
 
 type Config struct {
 	Maps              MapSource
@@ -117,11 +139,13 @@ type Config struct {
 	ClientAddresses   protocol.EntityAddrVec
 	MessageLimits     osd.Limits
 	MaxAttempts       int
+	UnlimitedRetries  bool
 	RefreshWait       time.Duration
 	MaxMutations      int
 	MaxMutationBytes  uint64
 	ClientIncarnation int32
 	SessionFactory    SessionFactory
+	ObserveSession    func(OSDSessionEvent)
 }
 
 type Client struct {
@@ -140,7 +164,17 @@ type Client struct {
 	mutationChanged       chan struct{}
 	watches               map[uint64]*Watch
 	notifies              map[uint64]chan notifyCompletion
+	mapWatchCancel        context.CancelFunc
+	routeAttempts         map[uint64]*routedAttempt
+	nextRouteAttempt      uint64
 	workers               sync.WaitGroup
+}
+
+type routedAttempt struct {
+	route    Route
+	resolve  func() (Route, error)
+	cancel   context.CancelFunc
+	remapped bool
 }
 
 type notifyCompletion struct {
@@ -149,8 +183,9 @@ type notifyCompletion struct {
 }
 
 type sessionEntry struct {
-	address string
-	session session
+	address    string
+	generation uint64
+	session    session
 }
 
 func (client *Client) MaxEnumerationEntries() uint64 {
@@ -190,7 +225,15 @@ func New(config Config) (*Client, error) {
 		config.SessionFactory = productionSessionFactory(config)
 	}
 	config.ClientAddresses = cloneAddresses(config.ClientAddresses)
-	return &Client{config: config, done: make(chan struct{}), sessions: make(map[int32]sessionEntry), nextTransaction: 1, pendingMutations: make(map[uint64]uint64), mutationChanged: make(chan struct{}), watches: make(map[uint64]*Watch), notifies: make(map[uint64]chan notifyCompletion)}, nil
+	client := &Client{config: config, done: make(chan struct{}), sessions: make(map[int32]sessionEntry), nextTransaction: 1, pendingMutations: make(map[uint64]uint64), mutationChanged: make(chan struct{}), watches: make(map[uint64]*Watch), notifies: make(map[uint64]chan notifyCompletion)}
+	if waiter, ok := config.Maps.(osdMapWaiter); ok {
+		watchCtx, cancel := context.WithCancel(context.Background())
+		client.mapWatchCancel = cancel
+		client.routeAttempts = make(map[uint64]*routedAttempt)
+		client.workers.Add(1)
+		go client.watchOSDMaps(watchCtx, waiter)
+	}
+	return client, nil
 }
 
 func (client *Client) Read(ctx context.Context, target Target, offset, length uint64) (Result, error) {
@@ -278,16 +321,6 @@ func (client *Client) execute(ctx context.Context, target Target, operation osd.
 	return client.executeOperation(ctx, target, operation, 0, false)
 }
 
-func (client *Client) executeTrackedOutcomeSensitive(ctx context.Context, target Target, operation osd.Operation) (Result, error) {
-	sequence, transactionID, operation, err := client.admitMutation(ctx, operation)
-	if err != nil {
-		return Result{}, err
-	}
-	result, err := client.executeRoutedOperations(ctx, target, []osd.Operation{operation}, transactionID, true, false, 0, client.config.Router.Route)
-	client.completeMutation(sequence, err)
-	return result, err
-}
-
 func (client *Client) executeOperation(ctx context.Context, target Target, operation osd.Operation, transactionID uint64, mutation bool) (Result, error) {
 	return client.executeOperations(ctx, target, []osd.Operation{operation}, transactionID, mutation)
 }
@@ -317,7 +350,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 	}
 	var lastErr error
 	_, boundedByContext := ctx.Deadline()
-	for attempt := 0; boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
+	for attempt := 0; client.config.UnlimitedRetries || boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
 		if err := ctx.Err(); err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
@@ -343,37 +376,53 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			PoolID: currentTarget.PoolID, Object: currentTarget.Object, Locator: currentTarget.Locator,
 			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, SnapshotSequence: currentTarget.SnapshotSequence,
 			WriteSnapshots: currentTarget.WriteSnapshots, TransactionID: transactionID, ClientGlobalID: clientGlobalID, ClientIncarnation: client.config.ClientIncarnation, Retry: int32(attempt), Flags: requestFlags,
-			Features: uint64(protocol.FeatureOSDClient), Operations: operations,
+			Features: uint64(protocol.FeatureOSDClient), Operations: operations, ExplicitFlags: explicitCoordinationFlags(operations),
 		}, client.config.MessageLimits)
 		if err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		object := osd.HObject{Key: currentTarget.Locator, Object: currentTarget.Object, Snapshot: currentTarget.Snapshot, Hash: route.RawHash, Namespace: currentTarget.Namespace, Pool: currentTarget.PoolID}
+		attemptTarget := currentTarget
+		submitCtx, finishSubmit, err := client.beginRoutedAttempt(ctx, route, func() (Route, error) {
+			return routeTarget(attemptTarget)
+		})
+		if err != nil {
+			return Result{}, preserveOutcomeUnknown(lastErr, err)
+		}
 		var message msgr.Message
 		if submitter, ok := active.(targetSubmitter); ok {
-			message, err = submitter.SubmitTarget(ctx, route.PG, object, request)
+			message, err = submitter.SubmitTarget(submitCtx, route.PG, object, request)
 		} else {
 			if waiter, ok := active.(backoffWaiter); ok {
-				if err := waiter.Wait(ctx, route.PG, object); err != nil {
-					if ctx.Err() != nil {
-						return Result{}, preserveOutcomeUnknown(lastErr, ctx.Err())
-					}
-					lastErr = preserveOutcomeUnknown(lastErr, err)
-					client.invalidate(route.Primary, active)
-					client.refresh(ctx, route.Epoch)
-					continue
-				}
+				err = waiter.Wait(submitCtx, route.PG, object)
 			}
-			message, err = active.Submit(ctx, request)
+			if err == nil {
+				message, err = active.Submit(submitCtx, request)
+			}
+		}
+		remapped := finishSubmit()
+		if remapped && err != nil && ctx.Err() == nil {
+			if outcomeSensitive && errors.Is(err, msgr.ErrOutcomeUnknown) {
+				lastErr = preserveOutcomeUnknown(lastErr, err)
+			}
+			continue
 		}
 		if err != nil {
+			select {
+			case <-client.done:
+				if outcomeSensitive && errors.Is(err, msgr.ErrOutcomeUnknown) {
+					lastErr = preserveOutcomeUnknown(lastErr, err)
+				}
+				return Result{}, preserveOutcomeUnknown(lastErr, ErrClosed)
+			default:
+			}
 			if errors.Is(err, msgr.ErrQueueSaturated) {
 				return Result{}, preserveOutcomeUnknown(lastErr, err)
 			}
 			if outcomeSensitive && errors.Is(err, msgr.ErrOutcomeUnknown) {
 				lastErr = preserveOutcomeUnknown(lastErr, err)
 				client.invalidate(route.Primary, active)
-				if !errors.Is(err, msgr.ErrReconnectExhausted) && !errors.Is(err, ErrStaleMap) {
+				if !errors.Is(err, msgr.ErrReconnectExhausted) && !errors.Is(err, msgr.ErrSessionDisconnected) && !errors.Is(err, ErrStaleMap) {
 					changed, refreshErr := client.waitForPrimaryChange(ctx, currentTarget, route)
 					if !changed {
 						return Result{}, errors.Join(err, refreshErr)
@@ -474,7 +523,7 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 			client.invalidate(route.Primary, active)
 			return Result{}, fmt.Errorf("%w: mutation reply is not durable", msgr.ErrOutcomeUnknown)
 		}
-		result := Result{Version: reply.Version, Operations: make([]OperationResult, len(reply.Operations))}
+		result := Result{Version: reply.Version, Operations: make([]OperationResult, len(reply.Operations)), route: route}
 		for index, operationResult := range reply.Operations {
 			if operations[index].Code == osd.OpRead && uint64(len(operationResult.Data)) > operations[index].Length {
 				client.invalidate(route.Primary, active)
@@ -496,6 +545,17 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 	return Result{}, fmt.Errorf("%w: %w", ErrRecovery, lastErr)
 }
 
+func explicitCoordinationFlags(operations []osd.Operation) bool {
+	for _, operation := range operations {
+		switch operation.Code {
+		case osd.OpWatch, osd.OpNotify, osd.OpNotifyAck:
+		default:
+			return false
+		}
+	}
+	return len(operations) > 0
+}
+
 func (client *Client) PGNLS(ctx context.Context, poolID int64, namespace string, cursor osd.HObject, count uint64) (osd.ListPage, error) {
 	if count == 0 || (!cursor.IsMin() && (cursor.Pool != poolID || cursor.Snapshot != osd.NoSnap || cursor.IsMax())) {
 		return osd.ListPage{}, wire.ErrMalformed
@@ -513,12 +573,7 @@ func (client *Client) PGNLS(ctx context.Context, poolID int64, namespace string,
 	if err != nil {
 		return osd.ListPage{}, err
 	}
-	first := true
 	routeTarget := func(Target) (Route, error) {
-		if first {
-			first = false
-			return route, nil
-		}
 		return client.routeRawHash(poolID, cursor.Hash)
 	}
 	result, err := client.executeRoutedOperations(ctx, Target{PoolID: poolID, Namespace: namespace, Snapshot: osd.NoSnap}, []osd.Operation{operation}, 0, false, false, osd.FlagPGOp|osd.FlagIgnoreOverlay, routeTarget)
@@ -642,7 +697,7 @@ func (client *Client) waitForResolvedRoute(ctx context.Context, resolve func() (
 		if err == nil && route.Primary >= 0 && len(route.Addresses) != 0 {
 			return route, nil
 		}
-		if !boundedByContext && refreshes >= client.config.MaxAttempts {
+		if !client.config.UnlimitedRetries && !boundedByContext && refreshes >= client.config.MaxAttempts {
 			return Route{}, ErrNoPrimary
 		}
 		epoch := route.Epoch
@@ -717,7 +772,7 @@ func (client *Client) refresh(ctx context.Context, epoch uint32) {
 func (client *Client) waitForPrimaryChange(ctx context.Context, target Target, failed Route) (bool, error) {
 	epoch := failed.Epoch
 	var lastErr error
-	for range client.config.MaxAttempts {
+	for attempt := 0; client.config.UnlimitedRetries || attempt < client.config.MaxAttempts; attempt++ {
 		refreshCtx, cancel := context.WithTimeout(ctx, client.config.RefreshWait)
 		err := client.config.Maps.RefreshOSDMap(refreshCtx, epoch)
 		cancel()
@@ -752,6 +807,10 @@ func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) 
 	if !ok {
 		return nil, ErrNoPrimary
 	}
+	generation := uint64(0)
+	if source, ok := client.config.Maps.(osdSessionGenerationSource); ok {
+		generation = source.OSDSessionGeneration(osdID)
+	}
 	client.mu.Lock()
 	if client.closed {
 		client.mu.Unlock()
@@ -759,7 +818,7 @@ func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) 
 	}
 	var interrupted []*Watch
 	if existing, ok := client.sessions[osdID]; ok {
-		if existing.address == address {
+		if existing.address == address && existing.generation == generation {
 			client.mu.Unlock()
 			return existing.session, nil
 		}
@@ -775,7 +834,7 @@ func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) 
 		}
 		return nil, err
 	}
-	client.sessions[osdID] = sessionEntry{address: address, session: created}
+	client.sessions[osdID] = sessionEntry{address: address, generation: generation, session: created}
 	if notifications, ok := created.(notificationSession); ok {
 		client.workers.Add(1)
 		go func() {
@@ -784,6 +843,9 @@ func (client *Client) getSession(osdID int32, addresses protocol.EntityAddrVec) 
 		}()
 	}
 	client.mu.Unlock()
+	if client.config.ObserveSession != nil {
+		client.config.ObserveSession(OSDSessionEvent{OSDID: osdID, Available: true})
+	}
 	for _, watch := range interrupted {
 		watch.interrupt(msgr.ErrSessionClosed)
 	}
@@ -803,6 +865,9 @@ func (client *Client) invalidate(osdID int32, failed session) {
 	if !removed {
 		return
 	}
+	if client.config.ObserveSession != nil {
+		client.config.ObserveSession(OSDSessionEvent{OSDID: osdID, Err: msgr.ErrSessionDisconnected})
+	}
 	failed.Stop()
 	for _, watch := range interrupted {
 		watch.interrupt(msgr.ErrSessionClosed)
@@ -817,6 +882,137 @@ func (client *Client) watchesForPrimaryLocked(osdID int32) []*Watch {
 		}
 	}
 	return watches
+}
+
+func (client *Client) beginRoutedAttempt(ctx context.Context, route Route, resolve func() (Route, error)) (context.Context, func() bool, error) {
+	client.mu.Lock()
+	if client.closed {
+		client.mu.Unlock()
+		return nil, nil, ErrClosed
+	}
+	if client.routeAttempts == nil {
+		client.mu.Unlock()
+		return ctx, func() bool { return false }, nil
+	}
+	if len(client.routeAttempts) >= maxTrackedRouteAttempts {
+		client.mu.Unlock()
+		return nil, nil, msgr.ErrQueueSaturated
+	}
+	attemptCtx, cancel := context.WithCancel(ctx)
+	client.nextRouteAttempt++
+	for client.nextRouteAttempt == 0 || client.routeAttempts[client.nextRouteAttempt] != nil {
+		client.nextRouteAttempt++
+	}
+	id := client.nextRouteAttempt
+	attempt := &routedAttempt{route: route, resolve: resolve, cancel: cancel}
+	client.routeAttempts[id] = attempt
+	client.mu.Unlock()
+	if current := client.config.Maps.OSDMap(); current != nil && current.Epoch() > route.Epoch {
+		updated, err := resolve()
+		if err != nil || !sameRelevantRoute(route, updated) {
+			client.remapAttempt(id, attempt)
+		}
+	}
+	return attemptCtx, func() bool {
+		client.mu.Lock()
+		if client.routeAttempts[id] == attempt {
+			delete(client.routeAttempts, id)
+		}
+		remapped := attempt.remapped
+		client.mu.Unlock()
+		cancel()
+		return remapped
+	}, nil
+}
+
+func (client *Client) watchOSDMaps(ctx context.Context, waiter osdMapWaiter) {
+	defer client.workers.Done()
+	after := uint32(0)
+	if current := client.config.Maps.OSDMap(); current != nil {
+		after = current.Epoch()
+		client.invalidateUnusableSessions(current)
+		client.cancelRemappedAttempts()
+	}
+	for {
+		if err := waiter.WaitForOSDMap(ctx, after); err != nil {
+			return
+		}
+		current := client.config.Maps.OSDMap()
+		if current == nil || current.Epoch() <= after {
+			continue
+		}
+		after = current.Epoch()
+		client.invalidateUnusableSessions(current)
+		client.cancelRemappedAttempts()
+	}
+}
+
+func (client *Client) invalidateUnusableSessions(osdMap *maps.OSDMap) {
+	client.mu.Lock()
+	sessions := make(map[int32]sessionEntry, len(client.sessions))
+	for osdID, entry := range client.sessions {
+		sessions[osdID] = entry
+	}
+	client.mu.Unlock()
+	for osdID, entry := range sessions {
+		state, stateOK := osdMap.OSDState(osdID)
+		addresses, addressesOK := osdMap.OSDClientAddresses(osdID)
+		address, addressOK := selectAddress(addresses)
+		unusable := stateOK && (!state.Exists || !state.Up || !addressesOK || !addressOK)
+		replaced := addressesOK && addressOK && address != entry.address
+		if unusable || replaced {
+			client.invalidate(osdID, entry.session)
+		}
+	}
+}
+
+func (client *Client) cancelRemappedAttempts() {
+	client.mu.Lock()
+	type registeredAttempt struct {
+		id      uint64
+		attempt *routedAttempt
+	}
+	attempts := make([]registeredAttempt, 0, len(client.routeAttempts))
+	for id, attempt := range client.routeAttempts {
+		attempts = append(attempts, registeredAttempt{id: id, attempt: attempt})
+	}
+	watches := make([]*Watch, 0, len(client.watches))
+	for _, watch := range client.watches {
+		watches = append(watches, watch)
+	}
+	client.mu.Unlock()
+
+	for _, registered := range attempts {
+		updated, err := registered.attempt.resolve()
+		if err == nil && sameRelevantRoute(registered.attempt.route, updated) {
+			continue
+		}
+		client.remapAttempt(registered.id, registered.attempt)
+	}
+	for _, watch := range watches {
+		updated, err := client.config.Router.Route(watch.target)
+		if err != nil || !sameRelevantRoute(watch.currentRoute(), updated) {
+			watch.interrupt(ErrStaleMap)
+		}
+	}
+}
+
+func (client *Client) remapAttempt(id uint64, attempt *routedAttempt) {
+	client.mu.Lock()
+	if client.routeAttempts[id] == attempt && !attempt.remapped {
+		attempt.remapped = true
+		attempt.cancel()
+	}
+	client.mu.Unlock()
+}
+
+func sameRelevantRoute(left, right Route) bool {
+	if left.Primary != right.Primary || left.PG != right.PG || left.Shard != right.Shard || left.Sharded != right.Sharded {
+		return false
+	}
+	leftAddress, leftOK := selectAddress(left.Addresses)
+	rightAddress, rightOK := selectAddress(right.Addresses)
+	return leftOK && rightOK && leftAddress == rightAddress
 }
 
 func (client *Client) Close() {
@@ -838,12 +1034,24 @@ func (client *Client) Close() {
 	client.sessions = nil
 	watches := client.watches
 	notifies := client.notifies
+	mapWatchCancel := client.mapWatchCancel
+	routeCancels := make([]context.CancelFunc, 0, len(client.routeAttempts))
+	for _, attempt := range client.routeAttempts {
+		routeCancels = append(routeCancels, attempt.cancel)
+	}
+	client.routeAttempts = nil
 	client.watches = nil
 	client.notifies = nil
 	if client.done != nil {
 		close(client.done)
 	}
 	client.mu.Unlock()
+	if mapWatchCancel != nil {
+		mapWatchCancel()
+	}
+	for _, cancel := range routeCancels {
+		cancel()
+	}
 	for _, watch := range watches {
 		watch.stop(ErrClosed)
 	}
@@ -894,7 +1102,11 @@ func productionSessionFactory(config Config) SessionFactory {
 		if err != nil {
 			return nil, err
 		}
-		return newOSDSession(raw, config.MessageLimits, config.RefreshWait), nil
+		return newOSDSession(raw, config.MessageLimits, config.RefreshWait, func(available bool, err error) {
+			if config.ObserveSession != nil {
+				config.ObserveSession(OSDSessionEvent{OSDID: osdID, Available: available, Err: err})
+			}
+		}), nil
 	}
 }
 

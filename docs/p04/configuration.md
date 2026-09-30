@@ -4,6 +4,10 @@
 `ceph`, entity `client.admin`, secure messenger mode, a 10 second dial timeout,
 a 15 second handshake timeout, and a 30 second operation timeout. Monitor
 addresses and credentials must still be supplied before `New` can succeed.
+Passing a `Config` directly to `New` does not apply the operation default:
+`OperationTimeout: 0` means unlimited. This is a compatibility change from the
+former zero-means-30-seconds behavior; callers wanting the policy default
+should start from `DefaultConfig`.
 
 `ParseConfig` accepts at most 1 MiB of the deliberately small Ceph
 configuration grammar. It applies `[global]`, selects the resulting entity,
@@ -15,9 +19,15 @@ expansion, and default Ceph search paths are not supported.
 
 The supported option names are `cluster`, `entity`/`name`, `mon_host`, `fsid`,
 `key`, `keyring`, `ms_mode`, `dial_timeout`, `handshake_timeout`, and
-`operation_timeout`. `ms_mode` is exactly `secure` or `crc`; durations use Go
-duration syntax and must be positive. Malformed known values return an error
-compatible with `ErrInvalidArgument`. Unknown file properties are ignored.
+`operation_timeout`, plus the Ceph-compatible `rados_osd_op_timeout` alias.
+`ms_mode` is exactly `secure` or `crc`. Dial and handshake durations use Go
+duration syntax and must be positive. `operation_timeout` uses Go duration
+syntax and may be zero; `rados_osd_op_timeout` additionally accepts a bare
+integer as seconds. Negative durations are invalid. When both operation names
+occur in one section, `rados_osd_op_timeout` is applied last and wins. `Option`
+returns the effective Go duration for either name, including `0s`. Malformed
+known values return an error compatible with `ErrInvalidArgument`. Unknown file
+properties are ignored.
 
 `LoadConfig` is the bounded file form of `ParseConfig`. If the selected
 configuration has a `keyring` and no direct `key`, it expands only `$cluster`
@@ -36,14 +46,16 @@ Precedence is:
 `ParseEnv("")` uses prefix `GO_LIBRADOS`; another argument selects that exact
 prefix. The only read suffixes are `CLUSTER`, `ENTITY`, `MON_HOST`, `KEYRING`,
 `FSID`, `KEY`, `MS_MODE`, `DIAL_TIMEOUT`, `HANDSHAKE_TIMEOUT`, and
-`OPERATION_TIMEOUT`. No API reads process environment implicitly.
+`OPERATION_TIMEOUT`. There is no `RADOS_OSD_OP_TIMEOUT` environment alias. No
+API reads process environment implicitly.
 
 `ParseArgs` recognizes `--name`, `--id`, `--cluster`, `--mon-host`, `--fsid`,
 `--key`, `--keyring`, `--ms-mode`, and the three timeout options in either
-`--option=value` or `--option value` form. `--id=x` means `client.x`. Unknown
-options and non-options are returned unmodified and unconsumed; `--` returns
-itself and all following arguments. Parsing does not register process-global
-flags.
+`--option=value` or `--option value` form. It also recognizes
+`--rados-osd-op-timeout` with the alias syntax above. `--id=x` means `client.x`.
+Unknown options and non-options are returned unmodified and unconsumed; `--`
+returns itself and all following arguments. Parsing does not register
+process-global flags.
 
 `WithOption`, `ParseArgs`, and `ParseEnv` return independent configurations:
 monitor slices, key bytes, and retained option maps are deep-copied. Unknown

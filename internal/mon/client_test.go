@@ -26,6 +26,7 @@ type fakeMonitorSession struct {
 	submits     chan msgr.Message
 	submitReply msgr.Message
 	submitErr   error
+	submit      func(context.Context, msgr.Message) (msgr.Message, error)
 	once        sync.Once
 }
 
@@ -51,8 +52,11 @@ func (session *fakeMonitorSession) Send(_ context.Context, message msgr.Message)
 	return nil
 }
 
-func (session *fakeMonitorSession) Submit(_ context.Context, message msgr.Message) (msgr.Message, error) {
+func (session *fakeMonitorSession) Submit(ctx context.Context, message msgr.Message) (msgr.Message, error) {
 	session.submits <- message
+	if session.submit != nil {
+		return session.submit(ctx, message)
+	}
 	return session.submitReply, session.submitErr
 }
 func (session *fakeMonitorSession) Incoming() <-chan msgr.Message    { return session.incoming }
@@ -126,6 +130,84 @@ func TestClientSubscribesPublishesAndFailsOver(t *testing.T) {
 		t.Fatal("foreign fsid was not reported")
 	}
 	client.Close()
+}
+
+func TestClientObservesConnectionTransitionsInOrder(t *testing.T) {
+	first, second := newFakeMonitorSession(), newFakeMonitorSession()
+	sessions := []session{first, second}
+	config := testClientConfig()
+	config.RetryDelay = time.Millisecond
+	events := make(chan ConnectionEvent, 3)
+	config.ObserveConnection = func(event ConnectionEvent) { events <- event }
+	client, err := NewClient(config, func(context.Context, Endpoint) (session, error) {
+		result := sessions[0]
+		sessions = sessions[1:]
+		return result, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	go client.Connect(context.Background())
+	assertSubscription(t, <-first.sends, 0, 0)
+	first.terminal <- msgr.ErrReconnectExhausted
+	assertSubscription(t, <-second.sends, 0, 0)
+
+	want := []ConnectionEvent{
+		{Endpoint: config.Endpoints[0], Available: true},
+		{Endpoint: config.Endpoints[0], Err: msgr.ErrReconnectExhausted},
+		{Endpoint: config.Endpoints[1], Available: true},
+	}
+	for index, expected := range want {
+		select {
+		case event := <-events:
+			if event.Endpoint.Address != expected.Endpoint.Address || event.Available != expected.Available || !errors.Is(event.Err, expected.Err) {
+				t.Fatalf("event %d = %+v, want %+v", index, event, expected)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("connection event %d was not observed", index)
+		}
+	}
+}
+
+func TestClientObserversReceiveOnlyAcceptedMapEpochs(t *testing.T) {
+	config := testClientConfig()
+	var monEpochs, osdEpochs []uint32
+	config.ObserveMonMap = func(previous, current *maps.MonMap) {
+		if previous != nil {
+			monEpochs = append(monEpochs, previous.Epoch())
+		}
+		monEpochs = append(monEpochs, current.Epoch())
+	}
+	config.ObserveOSDMap = func(previous, current *maps.OSDMap) {
+		if previous != nil {
+			osdEpochs = append(osdEpochs, previous.Epoch())
+		}
+		osdEpochs = append(osdEpochs, current.Epoch())
+	}
+	client, err := NewClient(config, func(context.Context, Endpoint) (session, error) { return nil, errors.New("unused") })
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	active := newFakeMonitorSession()
+	monitors := []testMonitor{{name: "a", address: "192.0.2.1:3300"}}
+	for _, epoch := range []uint32{1, 1, 2} {
+		if _, err := client.handleMessage(active, lifecycleMonMapWithMonitors(t, testFSID(), epoch, monitors)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, epoch := range []uint32{1, 1, 2} {
+		if _, err := client.applyBatch(OSDMapBatch{FSID: testFSID(), FullMaps: map[uint32][]byte{epoch: encodeEmptyOSDMap(t, testFSID(), epoch)}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if fmt.Sprint(monEpochs) != "[1 1 2]" {
+		t.Fatalf("monitor observer epochs = %v", monEpochs)
+	}
+	if fmt.Sprint(osdEpochs) != "[1 1 2]" {
+		t.Fatalf("OSD observer epochs = %v", osdEpochs)
+	}
 }
 
 func TestClientBecomesReadyWhenMonMapArrivesAfterOSDMap(t *testing.T) {
@@ -308,6 +390,9 @@ func TestMonMapCandidatesHonorPriorityAndWeight(t *testing.T) {
 		netip.MustParseAddrPort("192.0.2.6:3300"),
 		netip.MustParseAddrPort("192.0.2.4:3300"),
 		netip.MustParseAddrPort("192.0.2.5:3300"),
+	}
+	if len(client.config.Endpoints) != len(want) {
+		t.Fatalf("candidate count = %d, want %d", len(client.config.Endpoints), len(want))
 	}
 	for index := range want {
 		if client.config.Endpoints[index].Address != want[index] {
@@ -560,6 +645,71 @@ func TestApplyBatchDetectsAdvertisedGap(t *testing.T) {
 	client.Close()
 }
 
+func TestCollectOSDStateTransitionsRetainsDownThenUp(t *testing.T) {
+	fsid := testFSID()
+	up, err := maps.DecodeOSDMap(encodeOSDMapStates(t, fsid, 1, []uint32{3}), testClientConfig().MapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	down, err := maps.DecodeOSDMap(encodeOSDMapStates(t, fsid, 2, []uint32{1}), testClientConfig().MapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := maps.DecodeOSDMap(encodeOSDMapStates(t, fsid, 3, []uint32{3}), testClientConfig().MapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	changed := make(map[int32]struct{})
+	collectOSDStateTransitions(up, down, changed)
+	collectOSDStateTransitions(down, recovered, changed)
+	if _, ok := changed[0]; !ok || len(changed) != 1 {
+		t.Fatalf("changed=%v", changed)
+	}
+}
+
+func TestWaitForOSDMapObservesPublication(t *testing.T) {
+	client, err := NewClient(testClientConfig(), func(context.Context, Endpoint) (session, error) { return nil, errors.New("unused") })
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+
+	wake := make(chan error, 1)
+	go func() { wake <- client.WaitForOSDMap(context.Background(), 1) }()
+	if _, err := client.applyBatch(OSDMapBatch{FSID: testFSID(), FullMaps: map[uint32][]byte{2: encodeEmptyOSDMap(t, testFSID(), 2)}}); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-wake:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("map waiter did not observe publication")
+	}
+	if err := client.WaitForOSDMap(context.Background(), 1); err != nil {
+		t.Fatalf("prepublished map: %v", err)
+	}
+}
+
+func TestWaitForOSDMapStopsOnContextAndClose(t *testing.T) {
+	client, err := NewClient(testClientConfig(), func(context.Context, Endpoint) (session, error) { return nil, errors.New("unused") })
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if err := client.WaitForOSDMap(ctx, 1); !errors.Is(err, context.Canceled) {
+		t.Fatalf("canceled wait error=%v", err)
+	}
+	wake := make(chan error, 1)
+	go func() { wake <- client.WaitForOSDMap(context.Background(), 1) }()
+	client.Close()
+	if err := <-wake; !errors.Is(err, ErrClosed) {
+		t.Fatalf("closed wait error=%v", err)
+	}
+}
+
 func TestReadOnlyCommandAllowlist(t *testing.T) {
 	allowed := []string{`{"prefix":"status","format":"json"}`}
 	if !isReadOnlyCommand(allowed) {
@@ -597,6 +747,94 @@ func TestReadOnlyCommandReturnsWireError(t *testing.T) {
 		t.Fatalf("reply=%+v error=%v", reply, err)
 	}
 	client.Close()
+}
+
+func TestReadOnlyCommandRetriesAfterMonitorFailover(t *testing.T) {
+	first, second := newFakeMonitorSession(), newFakeMonitorSession()
+	first.submit = func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+		return msgr.Message{}, msgr.ErrReconnectExhausted
+	}
+	front := wire.NewEncoder(1024)
+	encodePaxosHeader(front, 4)
+	front.Int32(0)
+	front.String("")
+	front.Uint32(1)
+	front.String(`{"prefix":"status"}`)
+	encoded, err := front.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	second.submitReply = frontMessage(protocol.MessageMonCommandAck, 1, 0, encoded)
+	sessions := []session{first, second}
+	config := testClientConfig()
+	config.RetryDelay = time.Millisecond
+	client, err := NewClient(config, func(context.Context, Endpoint) (session, error) {
+		result := sessions[0]
+		sessions = sessions[1:]
+		return result, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	connectResult := make(chan error, 1)
+	go func() { connectResult <- client.Connect(context.Background()) }()
+	assertSubscription(t, <-first.sends, 0, 0)
+	first.incoming <- lifecycleMonMapWithMonitors(t, testFSID(), 1, []testMonitor{{name: "a", address: "192.0.2.1:3300"}, {name: "b", address: "192.0.2.2:3300"}})
+	first.incoming <- lifecycleOSDMapBatchMessage(t, testFSID(), 1)
+	if err := <-connectResult; err != nil {
+		t.Fatal(err)
+	}
+	commandResult := make(chan error, 1)
+	go func() {
+		_, commandErr := client.ReadOnlyCommand(context.Background(), []string{`{"prefix":"status"}`}, nil)
+		commandResult <- commandErr
+	}()
+	<-first.submits
+	first.terminal <- msgr.ErrReconnectExhausted
+	assertSubscription(t, <-second.sends, 2, 2)
+	<-second.submits
+	select {
+	case err := <-commandResult:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("read-only command did not follow monitor failover")
+	}
+}
+
+func TestReadOnlyCommandDoesNotRetryUnrelatedErrorAfterFailover(t *testing.T) {
+	commandErr := errors.New("command rejected")
+	active := newFakeMonitorSession()
+	submits := 0
+	active.submit = func(context.Context, msgr.Message) (msgr.Message, error) {
+		submits++
+		return msgr.Message{}, commandErr
+	}
+	lifetime, cancel := context.WithCancel(context.Background())
+	cancel()
+	client := &Client{ctx: context.Background(), session: active, sessionContext: lifetime, sessionChanged: make(chan struct{}), done: make(chan struct{})}
+	_, err := client.submitCommand(context.Background(), msgr.Message{}, true)
+	if !errors.Is(err, commandErr) || submits != 1 {
+		t.Fatalf("error=%v submits=%d", err, submits)
+	}
+}
+
+func TestReadOnlyCommandRetriesAfterSameSessionReset(t *testing.T) {
+	active := newFakeMonitorSession()
+	submits := 0
+	active.submit = func(context.Context, msgr.Message) (msgr.Message, error) {
+		submits++
+		if submits == 1 {
+			return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, msgr.ErrSessionDisconnected)
+		}
+		return msgr.Message{}, nil
+	}
+	client := &Client{ctx: context.Background(), session: active, sessionContext: context.Background(), sessionChanged: make(chan struct{}), done: make(chan struct{})}
+	if _, err := client.submitCommand(context.Background(), msgr.Message{}, true); err != nil || submits != 2 {
+		t.Fatalf("error=%v submits=%d", err, submits)
+	}
 }
 
 func TestCommandAllowsAdministrativePrefix(t *testing.T) {
@@ -885,6 +1123,10 @@ func lifecycleOSDMapGapMessage(t *testing.T, fsid maps.FSID, epoch uint32) msgr.
 }
 
 func encodeEmptyOSDMap(t *testing.T, fsid maps.FSID, epoch uint32) []byte {
+	return encodeOSDMapStates(t, fsid, epoch, nil)
+}
+
+func encodeOSDMapStates(t *testing.T, fsid maps.FSID, epoch uint32, states []uint32) []byte {
 	t.Helper()
 	encoder := wire.NewEncoder(64 << 10)
 	encoder.Versioned(8, 7, func(wrapper *wire.Encoder) {
@@ -897,10 +1139,24 @@ func encodeEmptyOSDMap(t *testing.T, fsid maps.FSID, epoch uint32) []byte {
 			}
 			client.Int32(0)
 			client.Uint32(0)
-			client.Int32(0)
-			for range 3 {
-				client.Uint32(0)
+			client.Int32(int32(len(states)))
+			client.Uint32(uint32(len(states)))
+			for _, state := range states {
+				client.Uint32(state)
 			}
+			client.Uint32(uint32(len(states)))
+			for range states {
+				client.Uint32(0x10000)
+			}
+			client.Uint32(uint32(len(states)))
+			for range states {
+				if err := (protocol.EntityAddrVec{}).Encode(client, protocol.FeatureMessageAddress2); err != nil {
+					t.Fatal(err)
+				}
+			}
+			client.Uint32(0)
+			client.Uint32(0)
+			client.Uint32(0)
 			client.Uint32(0)
 			client.Uint32(0)
 			client.Uint32(0)

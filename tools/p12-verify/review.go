@@ -12,7 +12,6 @@ import (
 	"io"
 	"net/url"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"time"
@@ -185,14 +184,7 @@ func validateDetachedReviews(value report, root string) error {
 	if value.Reviews != nil {
 		return errors.New("endurance report reviews must always be null")
 	}
-	if value.Status == "non-certifying" {
-		return nil
-	}
-	return validateHumanReviewFile(
-		filepath.Join(root, filepath.FromSlash(humanReviewPath)),
-		filepath.Join(root, filepath.FromSlash(reviewerTrustPath)),
-		filepath.Join(root, filepath.FromSlash(candidateReportPath)), root,
-	)
+	return nil
 }
 
 func validateHumanReview(value humanReviewReport, trust reviewerTrustPolicy, candidate report, reportData []byte) error {

@@ -336,6 +336,8 @@ Dependencies: R07.
 
 Exit gate: cross-client CRUD matches, append is not duplicated by retry, no dropped future strands a watermark/permit, and ACK cannot masquerade as commit. Human distributed-systems review of cancellation/replay invariants is required before broadening writes.
 
+The frozen Go behavior and current R08 implementation preserve the transaction ID after an ambiguous or lost mutation reply across failover, but a later server redirect or `EAGAIN` clears that prior ambiguity and allocates a new transaction ID. Applying that transition to an R09 non-idempotent compound write can theoretically double-apply when the first transaction committed and the promoted primary requests retry before deduplication. R09 must not broaden compound writes across this transition until an accountable human distributed-systems reviewer explicitly accepts or rejects the replay invariant; automated tests and AI review cannot satisfy that decision.
+
 ### R09: Metadata, Atomic Builders and Enumeration
 
 Dependencies: R08.

@@ -100,6 +100,71 @@ func TestApplyOSDMapIncrementalConvergesCompleteClientState(t *testing.T) {
 	}
 }
 
+func TestApplyOSDMapIncrementalNonzeroWeightDoesNotEstablishExists(t *testing.T) {
+	base := &OSDMap{
+		fsid: FSID{1}, epoch: 4, pools: map[int64]Pool{}, nameToID: map[string]int64{}, maxOSD: 1,
+		osdState: []uint32{0}, osdWeight: []uint32{0}, clientAddresses: []protocol.EntityAddrVec{{}},
+	}
+	incremental := &OSDMapIncremental{
+		fsid: base.fsid, epoch: 5, newPoolMax: -1, newFlags: -1, newMaxOSD: -1,
+		newPools: map[int64]Pool{}, newPoolNames: map[int64]string{}, newWeight: map[int32]uint32{0: 0x10000},
+	}
+
+	next, err := ApplyOSDMapIncremental(base, incremental, testOSDMapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, ok := next.OSDState(0)
+	if !ok || state.Exists || state.Up || state.Destroyed {
+		t.Fatalf("state=%+v found=%t", state, ok)
+	}
+	if base.osdState[0] != 0 {
+		t.Fatal("incremental mutated published base map")
+	}
+}
+
+func TestApplyOSDMapIncrementalRemovesOSDWithoutPrimaryAffinity(t *testing.T) {
+	base := &OSDMap{
+		fsid: FSID{1}, epoch: 4, pools: map[int64]Pool{}, nameToID: map[string]int64{}, maxOSD: 1,
+		osdState: []uint32{osdStateExists | osdStateUp}, osdWeight: []uint32{0x10000}, clientAddresses: []protocol.EntityAddrVec{{{Type: protocol.AddressV2}}},
+	}
+	incremental := &OSDMapIncremental{
+		fsid: base.fsid, epoch: 5, newPoolMax: -1, newFlags: -1, newMaxOSD: -1,
+		newPools: map[int64]Pool{}, newPoolNames: map[int64]string{}, newState: map[int32]uint32{0: osdStateExists},
+	}
+
+	next, err := ApplyOSDMapIncremental(base, incremental, testOSDMapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, ok := next.OSDState(0)
+	if !ok || state.Exists || state.Up || len(next.primaryAffinity) != 0 {
+		t.Fatalf("state=%+v found=%t primaryAffinity=%v", state, ok, next.primaryAffinity)
+	}
+}
+
+func TestApplyOSDMapIncrementalIntroducesPrimaryAffinity(t *testing.T) {
+	base := &OSDMap{
+		fsid: FSID{1}, epoch: 4, pools: map[int64]Pool{}, nameToID: map[string]int64{}, maxOSD: 2,
+		osdState: []uint32{osdStateExists, osdStateExists}, osdWeight: []uint32{0x10000, 0x10000}, clientAddresses: make([]protocol.EntityAddrVec, 2),
+	}
+	incremental := &OSDMapIncremental{
+		fsid: base.fsid, epoch: 5, newPoolMax: -1, newFlags: -1, newMaxOSD: -1,
+		newPools: map[int64]Pool{}, newPoolNames: map[int64]string{}, newPrimaryAffinity: map[int32]uint32{1: 0x8000},
+	}
+
+	next, err := ApplyOSDMapIncremental(base, incremental, testOSDMapLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(next.primaryAffinity, []uint32{defaultPrimaryAffinity, 0x8000}) {
+		t.Fatalf("primary affinity=%v", next.primaryAffinity)
+	}
+	if len(base.primaryAffinity) != 0 {
+		t.Fatal("incremental mutated published base map")
+	}
+}
+
 func TestApplyOSDMapIncrementalFullReplacement(t *testing.T) {
 	base, _ := DecodeOSDMap(encodeTestOSDMapNamed(t, 11, "data"), testOSDMapLimits)
 	replacementBytes := encodeTestOSDMapNamed(t, 12, "archive")

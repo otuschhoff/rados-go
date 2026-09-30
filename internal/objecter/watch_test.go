@@ -17,6 +17,7 @@ import (
 type notificationFakeSession struct {
 	*fakeSession
 	notifications   chan osd.WatchNotification
+	interruptions   chan error
 	notificationErr error
 }
 
@@ -29,6 +30,10 @@ func (session *notificationFakeSession) NotificationError() error {
 		return session.notificationErr
 	}
 	return msgr.ErrSessionClosed
+}
+
+func (session *notificationFakeSession) Interruptions() <-chan error {
+	return session.interruptions
 }
 
 func TestWatchRejectsUnboundedQueue(t *testing.T) {
@@ -117,6 +122,24 @@ func TestCoordinationMalformedRepliesAreOutcomeUnknown(t *testing.T) {
 	}
 }
 
+func TestWatchAckUsesReadRouting(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			codes, flags, _ := decodeRequestOperationsForTest(t, message)
+			if len(codes) != 1 || codes[0] != osd.OpNotifyAck || flags&osd.FlagRead == 0 || flags&(osd.FlagWrite|osd.FlagOnDisk) != 0 {
+				t.Fatalf("codes=%v flags=%#x", codes, flags)
+			}
+			return testReplyOperation(t, 10, 1, 0, osd.OpNotifyAck, nil), nil
+		}}, nil
+	})
+	defer client.Close()
+	watch := &Watch{client: client, target: Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, cookie: 1}
+	if err := watch.Ack(context.Background(), 2, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestCoordinationTransportOutcomeUnknownIsPreserved(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	for _, test := range []struct {
@@ -201,6 +224,224 @@ func TestBeginShutdownAccountsForPendingNotify(t *testing.T) {
 		t.Fatalf("notify error=%v", err)
 	}
 	client.Close()
+}
+
+func TestWatchRegistrationWaitsForPrimaryBeyondAttemptBudget(t *testing.T) {
+	recovered := testRoute(t, 11, 0, "192.0.2.10:6800")
+	router := &fakeRouter{route: Route{Epoch: 10, Primary: -1}}
+	refreshes := 0
+	source := &fakeMapSource{refresh: func() {
+		refreshes++
+		if refreshes == 5 {
+			router.set(recovered)
+		}
+	}}
+	active := &notificationFakeSession{notifications: make(chan osd.WatchNotification)}
+	active.fakeSession = &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+		_ = decodeWatchOperationForTest(t, message)
+		return testReplyOperation(t, 11, 1, int32(osd.FlagOnDisk), osd.OpWatch, nil), nil
+	}}
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) { return active, nil })
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	watch, err := client.Watch(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 1, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if refreshes != 5 || watch.primaryOSD() != recovered.Primary {
+		t.Fatalf("refreshes=%d primary=%d", refreshes, watch.primaryOSD())
+	}
+	if err := watch.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWatchRegistrationTracksSuccessfulRoute(t *testing.T) {
+	initial := testRoute(t, 10, 0, "192.0.2.10:6800")
+	registered := testRoute(t, 11, 1, "192.0.2.11:6800")
+	router := &advancingRouter{routes: []Route{initial, registered}}
+	active := &notificationFakeSession{notifications: make(chan osd.WatchNotification)}
+	active.fakeSession = &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+		_ = decodeWatchOperationForTest(t, message)
+		return testReplyOperation(t, registered.Epoch, 1, int32(osd.FlagOnDisk), osd.OpWatch, nil), nil
+	}}
+	client := newTestClient(t, &fakeMapSource{}, router, func(osdID int32, _ protocol.EntityAddrVec) (session, error) {
+		if osdID != registered.Primary {
+			t.Fatalf("opened OSD %d, want %d", osdID, registered.Primary)
+		}
+		return active, nil
+	})
+	defer client.Close()
+
+	watch, err := client.Watch(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 1, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if watch.primaryOSD() != registered.Primary {
+		t.Fatalf("watch primary=%d, want successful registration primary %d", watch.primaryOSD(), registered.Primary)
+	}
+	if err := watch.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWatchRecoveryOutlivesAttemptBudgetWithStableIdentity(t *testing.T) {
+	const failedReconnects = 5
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	type request struct {
+		operation  uint8
+		cookie     uint64
+		generation uint32
+	}
+	requests := make(chan request, failedReconnects+4)
+	var reconnects atomic.Int32
+	active := &notificationFakeSession{notifications: make(chan osd.WatchNotification, 2)}
+	active.fakeSession = &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+		operation, cookie, generation := decodeWatchRequestForTest(t, message)
+		requests <- request{operation: operation, cookie: cookie, generation: generation}
+		result := int32(osd.FlagOnDisk)
+		if operation == osd.WatchOperationReconnect && reconnects.Add(1) <= failedReconnects {
+			result = -107
+		}
+		return testReplyOperation(t, 10, 1, result, osd.OpWatch, nil), nil
+	}}
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) { return active, nil })
+	defer client.Close()
+	watch, err := client.Watch(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 2, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	initial := <-requests
+	if initial.operation != osd.WatchOperationRegister || initial.generation != 0 || initial.cookie != watch.Cookie() {
+		t.Fatalf("initial request=%+v watch_cookie=%d", initial, watch.Cookie())
+	}
+	active.notifications <- osd.WatchNotification{Opcode: osd.WatchEventDisconnect, Cookie: watch.Cookie()}
+	if err := <-watch.Errors(); !errors.Is(err, ErrWatchInterrupted) {
+		t.Fatalf("interruption error=%v", err)
+	}
+	for expectedGeneration := uint32(1); expectedGeneration <= failedReconnects+1; expectedGeneration++ {
+		select {
+		case attempted := <-requests:
+			if attempted.operation != osd.WatchOperationReconnect || attempted.cookie != initial.cookie || attempted.cookie != watch.Cookie() || attempted.generation != expectedGeneration {
+				t.Fatalf("request=%+v initial_cookie=%d watch_cookie=%d want_generation=%d", attempted, initial.cookie, watch.Cookie(), expectedGeneration)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("reconnect generation %d was not attempted", expectedGeneration)
+		}
+	}
+	active.notifications <- osd.WatchNotification{Opcode: osd.WatchEventNotify, Cookie: watch.Cookie(), NotifyID: 77, Data: []byte("after recovery")}
+	select {
+	case event := <-watch.Events():
+		if event.NotifyID != 77 || string(event.Data) != "after recovery" {
+			t.Fatalf("event=%+v", event)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("notification was not delivered after recovery")
+	}
+	select {
+	case duplicate := <-watch.Events():
+		t.Fatalf("duplicate event=%+v", duplicate)
+	case <-time.After(20 * time.Millisecond):
+	}
+	if err := watch.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestWatchRecoveryStopsOnTerminalObjectError(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	reconnectStarted := make(chan struct{})
+	releaseReconnect := make(chan struct{})
+	active := &notificationFakeSession{notifications: make(chan osd.WatchNotification, 1)}
+	active.fakeSession = &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+		if decodeWatchOperationForTest(t, message) == osd.WatchOperationReconnect {
+			close(reconnectStarted)
+			<-releaseReconnect
+			return testReplyOperation(t, 10, 1, -2, osd.OpWatch, nil), nil
+		}
+		return testReplyOperation(t, 10, 1, int32(osd.FlagOnDisk), osd.OpWatch, nil), nil
+	}}
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) { return active, nil })
+	watch, err := client.Watch(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 1, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	active.notifications <- osd.WatchNotification{Opcode: osd.WatchEventDisconnect, Cookie: watch.Cookie()}
+	<-reconnectStarted
+	if err := <-watch.Errors(); !errors.Is(err, ErrWatchInterrupted) {
+		t.Fatalf("interruption error=%v", err)
+	}
+	close(releaseReconnect)
+	select {
+	case <-watch.Done():
+	case <-time.After(time.Second):
+		t.Fatal("terminal object error did not stop watch")
+	}
+	if err := <-watch.Errors(); !errors.Is(err, protocol.WireErrno(-2)) {
+		t.Fatalf("terminal error=%v", err)
+	}
+	client.Close()
+}
+
+func TestWatchRecoveryStopsPromptlyOnClose(t *testing.T) {
+	for _, closeClient := range []bool{false, true} {
+		name := "watch"
+		if closeClient {
+			name = "client"
+		}
+		t.Run(name, func(t *testing.T) {
+			route := testRoute(t, 10, 0, "192.0.2.10:6800")
+			started := make(chan struct{})
+			var startedOnce atomic.Bool
+			active := &notificationFakeSession{notifications: make(chan osd.WatchNotification, 1)}
+			active.fakeSession = &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+				operation := decodeWatchOperationForTest(t, message)
+				if operation == osd.WatchOperationReconnect {
+					if startedOnce.CompareAndSwap(false, true) {
+						close(started)
+					}
+					<-ctx.Done()
+					return msgr.Message{}, ctx.Err()
+				}
+				return testReplyOperation(t, 10, 1, int32(osd.FlagOnDisk), osd.OpWatch, nil), nil
+			}}
+			client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) { return active, nil })
+			watch, err := client.Watch(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 1, 30)
+			if err != nil {
+				t.Fatal(err)
+			}
+			active.notifications <- osd.WatchNotification{Opcode: osd.WatchEventDisconnect, Cookie: watch.Cookie()}
+			select {
+			case <-started:
+			case <-time.After(time.Second):
+				t.Fatal("recovery did not start")
+			}
+			closed := make(chan error, 1)
+			go func() {
+				if closeClient {
+					client.Close()
+					closed <- nil
+					return
+				}
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+				closed <- watch.Close(ctx)
+			}()
+			select {
+			case err := <-closed:
+				if err != nil {
+					t.Fatal(err)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("close did not cancel watch recovery")
+			}
+			if !closeClient {
+				client.Close()
+			}
+		})
+	}
 }
 
 func TestWatchReconnectsWhenPrimaryChanges(t *testing.T) {
@@ -305,6 +546,50 @@ func TestWatchReconnectsAfterDisconnectEvent(t *testing.T) {
 	}
 }
 
+func TestWatchReconnectsAfterTransportReset(t *testing.T) {
+	route := testRoute(t, 10, 0, "192.0.2.10:6800")
+	operations := make(chan uint8, 4)
+	active := &notificationFakeSession{notifications: make(chan osd.WatchNotification), interruptions: make(chan error, 1)}
+	active.fakeSession = &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+		operation := decodeWatchOperationForTest(t, message)
+		_, flags, _ := decodeRequestOperationsForTest(t, message)
+		if flags&(osd.FlagRead|osd.FlagWrite) != osd.FlagRead|osd.FlagWrite || flags&osd.FlagOnDisk != 0 {
+			t.Errorf("watch operation %d flags=%#x", operation, flags)
+		}
+		operations <- operation
+		return testReplyOperation(t, 10, 1, int32(osd.FlagOnDisk), osd.OpWatch, nil), nil
+	}}
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) { return active, nil })
+	defer client.Close()
+	watch, err := client.Watch(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 1, 30)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if operation := <-operations; operation != osd.WatchOperationRegister {
+		t.Fatalf("initial operation=%d", operation)
+	}
+	active.interruptions <- msgr.ErrSessionDisconnected
+	select {
+	case err := <-watch.Errors():
+		if !errors.Is(err, ErrWatchInterrupted) {
+			t.Fatalf("reset error=%v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("reset did not report interruption")
+	}
+	select {
+	case operation := <-operations:
+		if operation != osd.WatchOperationReconnect {
+			t.Fatalf("reset operation=%d", operation)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("watch did not reconnect after transport reset")
+	}
+	if err := watch.Close(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestWatchReportsFailedPingBeforeReregistering(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	operations := make(chan uint8, 4)
@@ -394,7 +679,7 @@ func TestWatchSessionFailureReportsPossibleLossAndReconnects(t *testing.T) {
 	for _, failure := range []error{msgr.ErrSessionClosed, msgr.ErrQueueSaturated} {
 		t.Run(failure.Error(), func(t *testing.T) {
 			active := &notificationFakeSession{fakeSession: &fakeSession{}, notifications: make(chan osd.WatchNotification), notificationErr: failure}
-			watch := &Watch{primary: 2, errors: make(chan error, 1), reconnect: make(chan struct{}, 1)}
+			watch := &Watch{route: Route{Primary: 2}, errors: make(chan error, 1), reconnect: make(chan struct{}, 1)}
 			client := &Client{sessions: map[int32]sessionEntry{2: {session: active}}, watches: map[uint64]*Watch{1: watch}}
 			closed := make(chan struct{})
 			go func() {
@@ -421,7 +706,7 @@ func TestWatchSessionFailureReportsPossibleLossAndReconnects(t *testing.T) {
 
 func TestSessionInvalidationReportsWatchInterruptionBeforeDispatcherCloses(t *testing.T) {
 	active := &notificationFakeSession{fakeSession: &fakeSession{}, notifications: make(chan osd.WatchNotification)}
-	watch := &Watch{primary: 2, errors: make(chan error, 1), reconnect: make(chan struct{}, 1)}
+	watch := &Watch{route: Route{Primary: 2}, errors: make(chan error, 1), reconnect: make(chan struct{}, 1)}
 	client := &Client{sessions: map[int32]sessionEntry{2: {session: active}}, watches: map[uint64]*Watch{1: watch}}
 	client.invalidate(2, active)
 	if err := <-watch.errors; !errors.Is(err, ErrWatchInterrupted) || !errors.Is(err, msgr.ErrSessionClosed) {
@@ -462,6 +747,11 @@ func decodeNotifyCookieForTest(t testing.TB, message msgr.Message) uint64 {
 }
 
 func decodeWatchOperationForTest(t testing.TB, message msgr.Message) uint8 {
+	operation, _, _ := decodeWatchRequestForTest(t, message)
+	return operation
+}
+
+func decodeWatchRequestForTest(t testing.TB, message msgr.Message) (uint8, uint64, uint32) {
 	t.Helper()
 	decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: 4096})
 	_, spg := decoder.Versioned(1)
@@ -485,9 +775,11 @@ func decodeWatchOperationForTest(t testing.TB, message msgr.Message) uint8 {
 		t.Fatal("request is not a single watch operation")
 	}
 	decoder.Uint32()
+	cookie := decoder.Uint64()
 	decoder.Uint64()
-	decoder.Uint64()
-	return decoder.Uint8()
+	operation := decoder.Uint8()
+	generation := decoder.Uint32()
+	return operation, cookie, generation
 }
 
 func notifyResultForTest(t testing.TB) []byte {

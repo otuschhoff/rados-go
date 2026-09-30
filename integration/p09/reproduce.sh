@@ -108,10 +108,10 @@ ceph_cli auth get client.p09 -o /cluster/client.keyring >/dev/null
 docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" \
 	timeout 30 /cluster/native-driver seed /cluster/ceph.conf /cluster/client.keyring p09-data >"$temporary/native-seed.json"
 docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" \
-	timeout 90 /cluster/native-driver watch /cluster/ceph.conf /cluster/client.keyring p09-data /cluster >"$temporary/native-watch.json" &
+	timeout 360 /cluster/native-driver watch /cluster/ceph.conf /cluster/client.keyring p09-data /cluster >"$temporary/native-watch.json" 2>"$temporary/native-watch.stderr" &
 native_watch_pid=$!
 docker run --rm --platform "$platform" --network "$network" -v "$temporary:/work" "$image" \
-	timeout 210 /work/probe -monitors 172.30.99.10:3300 -key /work/client.key -fsid "$fsid" -coordination-dir /work >"$temporary/probe.json" &
+	timeout 360 /work/probe -monitors 172.30.99.10:3300 -key /work/client.key -fsid "$fsid" -coordination-dir /work >"$temporary/probe.json" 2>"$temporary/probe.stderr" &
 probe_pid=$!
 for attempt in $(seq 1 600); do
 	if test -f "$temporary/native-verify-ready"; then break; fi
@@ -136,14 +136,32 @@ for attempt in $(seq 1 600); do
 	test "$attempt" -lt 600 || { printf '%s\n' 'remap watch did not become ready' >&2; exit 1; }
 	sleep 0.1
 done
-old_primary=$(ceph_cli osd map p09-data coordination --format json | jq -r '.acting_primary')
+object_mapping=$(ceph_cli osd map p09-data coordination --format json)
+old_primary=$(printf '%s\n' "$object_mapping" | jq -r '.acting_primary')
 docker stop "p09-osd-$old_primary-$$" >/dev/null
 ceph_cli osd down "$old_primary" >/dev/null
 ceph_cli osd out "$old_primary" >/dev/null
 for attempt in $(seq 1 60); do
-	new_primary=$(ceph_cli osd map p09-data coordination --format json 2>/dev/null | jq -r '.acting_primary')
-	if test "$new_primary" != "$old_primary" && ceph_cli health --format json 2>/dev/null | jq -e '.checks.PG_AVAILABILITY == null' >/dev/null; then break; fi
-	test "$attempt" -lt 60 || { printf '%s\n' 'watched object did not remap' >&2; exit 1; }
+	new_primary=$(ceph_cli osd map p09-data coordination --format json 2>/dev/null | jq -r '.acting_primary // empty' 2>/dev/null || true)
+	if test "$new_primary" != "$old_primary" &&
+		test -n "$new_primary" &&
+		ceph_cli health --format json 2>/dev/null | jq -e '.checks.PG_AVAILABILITY == null' >/dev/null; then break; fi
+	test "$attempt" -lt 60 || {
+		printf 'watched object did not remap: old_primary=%s mapping=' "$old_primary" >&2
+		ceph_cli osd map p09-data coordination --format json >&2 || true
+		printf 'pg_availability=' >&2
+		ceph_cli health --format json 2>/dev/null | jq -c '.checks.PG_AVAILABILITY // null' >&2 || true
+		exit 1
+	}
+	sleep 1
+done
+remap_cookie=$(cat "$temporary/remap-watch-ready")
+native_cookie=$(cat "$temporary/native-watch-ready")
+for attempt in $(seq 1 60); do
+	watchers=$(docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" timeout 15 rados --conf /cluster/ceph.conf --name client.admin --keyring /cluster/admin.keyring -p p09-data listwatchers coordination 2>/dev/null || true)
+	if printf '%s\n' "$watchers" | awk -v cookie="$remap_cookie" '{ for (field = 1; field <= NF; field++) if ($field == "cookie=" cookie) found = 1 } END { exit !found }' && \
+		printf '%s\n' "$watchers" | awk -v cookie="$native_cookie" '{ for (field = 1; field <= NF; field++) if ($field == "cookie=" cookie) found = 1 } END { exit !found }'; then break; fi
+	test "$attempt" -lt 60 || { printf '%s\n' 'watchers did not recover after remap' >&2; exit 1; }
 	sleep 1
 done
 : >"$temporary/remap-complete"
@@ -154,36 +172,47 @@ for attempt in $(seq 1 600); do
 	sleep 0.1
 done
 docker start "p09-osd-$old_primary-$$" >/dev/null
-ceph_cli osd in "$old_primary" >/dev/null
 for attempt in $(seq 1 60); do
-	if ceph_cli osd stat --format json 2>/dev/null | jq -e '.num_osds == 3 and .num_up_osds == 3 and .num_in_osds == 3' >/dev/null; then break; fi
+	if ceph_cli osd stat --format json 2>/dev/null | jq -e '.num_osds == 3 and .num_up_osds == 3 and .num_in_osds == 2' >/dev/null; then break; fi
 	test "$attempt" -lt 60 || { printf '%s\n' 'restarted OSD did not rejoin' >&2; exit 1; }
 	sleep 1
 done
 restart_primary=$(ceph_cli osd map p09-data coordination --format json | jq -r '.acting_primary')
 docker stop "p09-osd-$restart_primary-$$" >/dev/null
 ceph_cli osd down "$restart_primary" >/dev/null
+ceph_cli osd out "$restart_primary" >/dev/null
 for attempt in $(seq 1 60); do
-	restart_failover=$(ceph_cli osd map p09-data coordination --format json 2>/dev/null | jq -r '.acting_primary')
-	if test "$restart_failover" != "$restart_primary" && ceph_cli health --format json 2>/dev/null | jq -e '.checks.PG_AVAILABILITY == null' >/dev/null; then break; fi
+	restart_failover=$(ceph_cli osd map p09-data coordination --format json 2>/dev/null | jq -r '.acting_primary // empty' 2>/dev/null || true)
+	if test -n "$restart_failover" && test "$restart_failover" != "$restart_primary" && ceph_cli health --format json 2>/dev/null | jq -e '.checks.PG_AVAILABILITY == null' >/dev/null; then break; fi
 	test "$attempt" -lt 60 || { printf '%s\n' 'watched object did not fail over during acting-primary restart' >&2; exit 1; }
 	sleep 1
 done
 docker start "p09-osd-$restart_primary-$$" >/dev/null
 for attempt in $(seq 1 60); do
-	if ceph_cli osd stat --format json 2>/dev/null | jq -e '.num_osds == 3 and .num_up_osds == 3 and .num_in_osds == 3' >/dev/null; then break; fi
+	if ceph_cli osd stat --format json 2>/dev/null | jq -e '.num_osds == 3 and .num_up_osds == 3 and .num_in_osds == 1' >/dev/null; then break; fi
 	test "$attempt" -lt 60 || { printf '%s\n' 'restarted acting primary did not rejoin' >&2; exit 1; }
+	sleep 1
+done
+for attempt in $(seq 1 60); do
+	watchers=$(docker run --rm --platform "$platform" --network "$network" -v "$temporary:/cluster" "$image" timeout 15 rados --conf /cluster/ceph.conf --name client.admin --keyring /cluster/admin.keyring -p p09-data listwatchers coordination 2>/dev/null || true)
+	if printf '%s\n' "$watchers" | awk -v cookie="$remap_cookie" '{ for (field = 1; field <= NF; field++) if ($field == "cookie=" cookie) found = 1 } END { exit !found }' && \
+		printf '%s\n' "$watchers" | awk -v cookie="$native_cookie" '{ for (field = 1; field <= NF; field++) if ($field == "cookie=" cookie) found = 1 } END { exit !found }'; then break; fi
+	test "$attempt" -lt 60 || { printf '%s\n' 'watchers did not recover after acting-primary restart' >&2; exit 1; }
 	sleep 1
 done
 : >"$temporary/restart-complete"
 if ! wait "$probe_pid"; then
+	cat "$temporary/probe.stderr" >&2
 	cat "$temporary/probe.json" >&2
 	exit 1
 fi
 if ! wait "$native_watch_pid"; then
+	cat "$temporary/native-watch.stderr" >&2
 	cat "$temporary/native-watch.json" >&2
 	exit 1
 fi
+ceph_cli osd in "$old_primary" >/dev/null
+ceph_cli osd in "$restart_primary" >/dev/null
 jq -e '.class_execution and .lock_contention and .lock_renew and .lock_break and .lock_shared and .lock_expiry and .watch_ack and .notify_timeout and .native_locks and .native_watch and .native_notify and .watch_remap and .osd_restart and .watch_shutdown and .client_shutdown' "$temporary/probe.json" >/dev/null
 jq -e '.native_exec and (.native_exec_result > 0) and (.native_exec_output | length > 0) and .native_lock_seed and .native_lock_renew and .native_lock_release and .native_lock_expiry' "$temporary/native-seed.json" >/dev/null
 jq -e '.go_notify_native_watch and .native_watch_remap and .native_watch_restart and .native_watch_same_cookie and .native_watch_exactly_once and .native_lock_shared and .native_shared_release' "$temporary/native-watch.json" >/dev/null

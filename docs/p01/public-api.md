@@ -36,6 +36,32 @@ func (c *Client) Close() error
 func (c *Client) FSID() string
 func (c *Client) InstanceID() uint64
 
+// Bounded cluster-map and local-session observation.
+type ClusterComponent uint8
+type ClusterChangeSource uint8
+type ClusterChangeKind uint8
+type OSDState struct { ID int32; Exists, Up, In, Destroyed bool; Addresses []string }
+type MONState struct { Name string; Rank int; Addresses []string; Priority, Weight uint16; Location map[string]string }
+type ClusterChange struct {
+    Sequence uint64
+    ObservedAt time.Time
+    Component ClusterComponent
+    Source ClusterChangeSource
+    Kind ClusterChangeKind
+    Epoch uint32
+    OSD, PreviousOSD *OSDState
+    MON, PreviousMON *MONState
+    Err error
+}
+type ClusterSubscriptionOptions struct { OSDs, MONs bool; Queue uint32 }
+type ClusterSubscription struct{}
+var ErrSubscriptionOverflow error
+func (c *Client) SubscribeClusterChanges(ctx context.Context, options ClusterSubscriptionOptions) (*ClusterSubscription, error)
+func (s *ClusterSubscription) Events() <-chan ClusterChange
+func (s *ClusterSubscription) Errors() <-chan error
+func (s *ClusterSubscription) Done() <-chan struct{}
+func (s *ClusterSubscription) Close()
+
 // Immutable object views and core results.
 type Pool struct{}
 type ObjectRef struct{}
@@ -194,6 +220,12 @@ an explicit overlay, and `WithOption`/`ParseArgs` are the final explicit
 overlay. Returned monitor slices, key bytes, and option state do not alias the
 input configuration. Unknown programmatic options remain observable through
 `Option` but have no effect on `New`.
+
+`New` preserves an explicitly supplied zero `OperationTimeout` as unlimited;
+this differs from the former zero-means-30-seconds behavior. Caller deadlines
+always win, and client close or shutdown cancels unlimited operations. Both
+`operation_timeout` and `rados_osd_op_timeout` expose the same value through
+`Option`, including `0s`.
 
 Administrative command arguments are one bounded JSON object passed as one
 Ceph command-vector element. Returned output and status are caller-owned and

@@ -17,11 +17,22 @@ type osdSession struct {
 	limits     osd.Limits
 	ackTimeout time.Duration
 
-	mu            sync.Mutex
-	backoffs      map[uint64]osd.Backoff
-	changed       chan struct{}
-	err           error
-	notifications chan osd.WatchNotification
+	mu             sync.Mutex
+	backoffs       map[uint64]osd.Backoff
+	submissions    map[uint64]*targetSubmission
+	nextSubmission uint64
+	changed        chan struct{}
+	err            error
+	notifications  chan osd.WatchNotification
+	interruptions  chan error
+	observe        func(bool, error)
+}
+
+type targetSubmission struct {
+	pg     maps.PG
+	object osd.HObject
+	cancel context.CancelFunc
+	resend bool
 }
 
 type osdTransport interface {
@@ -30,17 +41,24 @@ type osdTransport interface {
 	Send(context.Context, msgr.Message) error
 	Incoming() <-chan msgr.Message
 	Terminal() <-chan error
+	Events() <-chan msgr.SessionEvent
+	Resets() <-chan struct{}
 	Done() <-chan struct{}
 	Stop()
 }
 
-func newOSDSession(raw osdTransport, limits osd.Limits, ackTimeout time.Duration) *osdSession {
-	session := &osdSession{raw: raw, limits: limits, ackTimeout: ackTimeout, backoffs: make(map[uint64]osd.Backoff), changed: make(chan struct{}), notifications: make(chan osd.WatchNotification, 128)}
+func newOSDSession(raw osdTransport, limits osd.Limits, ackTimeout time.Duration, observers ...func(bool, error)) *osdSession {
+	var observe func(bool, error)
+	if len(observers) != 0 {
+		observe = observers[0]
+	}
+	session := &osdSession{raw: raw, limits: limits, ackTimeout: ackTimeout, backoffs: make(map[uint64]osd.Backoff), submissions: make(map[uint64]*targetSubmission), changed: make(chan struct{}), notifications: make(chan osd.WatchNotification, 128), interruptions: make(chan error, 1), observe: observe}
 	go session.receive()
 	return session
 }
 
 func (session *osdSession) Notifications() <-chan osd.WatchNotification { return session.notifications }
+func (session *osdSession) Interruptions() <-chan error                 { return session.interruptions }
 
 func (session *osdSession) NotificationError() error {
 	return session.failure(msgr.ErrSessionClosed)
@@ -69,9 +87,25 @@ func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object 
 			}
 		}
 		if !blocked {
+			attemptCtx, cancel := context.WithCancel(ctx)
+			session.nextSubmission++
+			for session.nextSubmission == 0 || session.submissions[session.nextSubmission] != nil {
+				session.nextSubmission++
+			}
+			id := session.nextSubmission
+			submission := &targetSubmission{pg: pg, object: object, cancel: cancel}
+			session.submissions[id] = submission
 			var unlock sync.Once
-			result, err := session.raw.SubmitAdmitted(ctx, message, func() { unlock.Do(session.mu.Unlock) })
+			result, err := session.raw.SubmitAdmitted(attemptCtx, message, func() { unlock.Do(session.mu.Unlock) })
 			unlock.Do(session.mu.Unlock)
+			session.mu.Lock()
+			delete(session.submissions, id)
+			resend := submission.resend
+			session.mu.Unlock()
+			cancel()
+			if resend && ctx.Err() == nil {
+				continue
+			}
 			if err != nil {
 				err = errors.Join(err, session.failure(err))
 			}
@@ -129,6 +163,8 @@ func (session *osdSession) Wait(ctx context.Context, pg maps.PG, object osd.HObj
 
 func (session *osdSession) receive() {
 	defer close(session.notifications)
+	events := session.raw.Events()
+	wasUnavailable := false
 	for {
 		select {
 		case message, ok := <-session.raw.Incoming():
@@ -180,7 +216,19 @@ func (session *osdSession) receive() {
 					return
 				}
 			} else {
-				session.update(func() { delete(session.backoffs, backoff.ID) })
+				session.update(func() {
+					blocked, ok := session.backoffs[backoff.ID]
+					delete(session.backoffs, backoff.ID)
+					if !ok {
+						return
+					}
+					for _, submission := range session.submissions {
+						if submission.pg == blocked.PG && blocked.Contains(submission.object) {
+							submission.resend = true
+							submission.cancel()
+						}
+					}
+				})
 			}
 		case <-session.raw.Done():
 			err := msgr.ErrSessionClosed
@@ -200,6 +248,26 @@ func (session *osdSession) receive() {
 			session.fail(err)
 			session.raw.Stop()
 			return
+		case <-session.raw.Resets():
+			wasUnavailable = true
+			session.update(func() { clear(session.backoffs) })
+			if session.observe != nil {
+				session.observe(false, msgr.ErrSessionDisconnected)
+			}
+			select {
+			case session.interruptions <- msgr.ErrSessionDisconnected:
+			default:
+			}
+		case event, ok := <-events:
+			if !ok {
+				events = nil
+				continue
+			}
+			recovered := event.Kind == msgr.EventReconnectOK || event.Kind == msgr.EventStateChanged && event.State == msgr.StateReady
+			if wasUnavailable && recovered && session.observe != nil {
+				wasUnavailable = false
+				session.observe(true, nil)
+			}
 		}
 	}
 }

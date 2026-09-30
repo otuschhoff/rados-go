@@ -17,7 +17,9 @@ The current public API includes:
 - erasure-coded pool capability discovery and the qualified EC operation subset;
 - cluster/pool statistics, monitor/manager/OSD/PG commands, pool and application
 	administration, session addresses, blocklisting, inconsistent-object queries,
-	sparse reads, checksums, writesame, allocation hints, and server-side copies.
+	sparse reads, checksums, writesame, allocation hints, and server-side copies;
+- bounded subscriptions to authoritative MON/OSD map changes and locally
+	observed monitor/OSD session availability.
 
 Live phase reports through P11 use Ceph 20.2.4 at commit
 `7f793731f1b39eb4f465e960113d2363c311b964`. That evidence does not certify
@@ -35,6 +37,20 @@ other Ceph releases or every cluster topology. See the
 No Ceph client package or shared library is needed to build or run an
 application. Native Ceph tools under `integration/` are isolated qualification
 infrastructure only.
+
+`DefaultConfig` uses a 30 second operation timeout. A `Config` passed directly
+to `New` with `OperationTimeout: 0` instead selects unlimited operations, which
+remain bounded by caller contexts and are canceled when the client closes or
+shuts down. Configuration accepts `operation_timeout` as a Go duration and the
+Ceph-compatible `rados_osd_op_timeout` alias as either a Go duration or bare
+seconds; zero means unlimited for both names.
+
+`SubscribeClusterChanges` may be called before `Connect` to observe the initial
+maps. Authoritative events report accepted ordered MonMap or OSDMap state;
+observed events report only this client's connection availability and are not
+cluster membership or health declarations. Each subscriber receives owned
+state copies. Cancellation or `Close` ends a subscription, and a full bounded
+queue closes it with `ErrSubscriptionOverflow` rather than dropping events.
 
 ## Examples
 

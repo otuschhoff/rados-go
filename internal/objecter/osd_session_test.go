@@ -50,6 +50,55 @@ func TestOSDSessionBackoffBlocksUntilUnblock(t *testing.T) {
 	}
 }
 
+func TestOSDSessionUnblockResubmitsAdmittedRequest(t *testing.T) {
+	transport := newFakeOSDTransport()
+	firstAdmitted := make(chan struct{})
+	secondAdmitted := make(chan struct{})
+	var submissions int
+	transport.submitAdmitted = func(ctx context.Context, _ msgr.Message, admitted func()) (msgr.Message, error) {
+		submissions++
+		admitted()
+		if submissions == 1 {
+			close(firstAdmitted)
+			<-ctx.Done()
+			return msgr.Message{}, ctx.Err()
+		}
+		close(secondAdmitted)
+		return msgr.Message{}, nil
+	}
+	session := newOSDSession(transport, backoffTestLimits, time.Second)
+	pg := maps.PG{Pool: 7, Seed: 3, Preferred: -1}
+	object := osd.HObject{Object: "object", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+	result := make(chan error, 1)
+	go func() {
+		_, err := session.SubmitTarget(context.Background(), pg, object, msgr.Message{Front: []byte("same request")})
+		result <- err
+	}()
+	<-firstAdmitted
+	block := osd.Backoff{PG: pg, Shard: -1, MapEpoch: 9, Operation: osd.BackoffBlock, ID: 42, Begin: object, End: object}
+	transport.incoming <- encodeBackoffMessage(t, block)
+	<-transport.sent
+	select {
+	case <-secondAdmitted:
+		t.Fatal("request resubmitted before unblock")
+	case <-time.After(20 * time.Millisecond):
+	}
+	unblock := block
+	unblock.Operation = osd.BackoffUnblock
+	transport.incoming <- encodeBackoffMessage(t, unblock)
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("unblock did not resubmit admitted request")
+	}
+	if submissions != 2 {
+		t.Fatalf("submissions=%d", submissions)
+	}
+}
+
 func TestOSDSessionBackoffIsSelectiveAndCancelable(t *testing.T) {
 	transport := newFakeOSDTransport()
 	session := newOSDSession(transport, backoffTestLimits, time.Second)
@@ -67,6 +116,55 @@ func TestOSDSessionBackoffIsSelectiveAndCancelable(t *testing.T) {
 	cancel()
 	if err := session.Wait(ctx, pg, object); !errors.Is(err, context.Canceled) {
 		t.Fatalf("wait error=%v", err)
+	}
+}
+
+func TestOSDSessionResetClearsBackoffsAndSignalsInterruption(t *testing.T) {
+	transport := newFakeOSDTransport()
+	session := newOSDSession(transport, backoffTestLimits, time.Second)
+	pg := maps.PG{Pool: 7, Seed: 3, Preferred: -1}
+	object := osd.HObject{Object: "object", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+	transport.incoming <- encodeBackoffMessage(t, osd.Backoff{PG: pg, Shard: -1, Operation: osd.BackoffBlock, ID: 1, Begin: object, End: object})
+	<-transport.sent
+	transport.resets <- struct{}{}
+	select {
+	case err := <-session.Interruptions():
+		if !errors.Is(err, msgr.ErrSessionDisconnected) {
+			t.Fatalf("interruption=%v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("reset did not signal interruption")
+	}
+	if err := session.Wait(context.Background(), pg, object); err != nil {
+		t.Fatalf("wait after reset: %v", err)
+	}
+}
+
+func TestOSDSessionObservesResetAndReconnect(t *testing.T) {
+	for _, test := range []struct {
+		name      string
+		reconnect msgr.SessionEvent
+	}{
+		{name: "resumed", reconnect: msgr.SessionEvent{Kind: msgr.EventReconnectOK}},
+		{name: "full", reconnect: msgr.SessionEvent{Kind: msgr.EventStateChanged, State: msgr.StateReady}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			transport := newFakeOSDTransport()
+			events := make(chan OSDSessionEvent, 2)
+			session := newOSDSession(transport, backoffTestLimits, time.Second, func(available bool, err error) {
+				events <- OSDSessionEvent{Available: available, Err: err}
+			})
+			defer session.Stop()
+
+			transport.resets <- struct{}{}
+			if event := <-events; event.Available || !errors.Is(event.Err, msgr.ErrSessionDisconnected) {
+				t.Fatalf("reset event = %+v", event)
+			}
+			transport.events <- test.reconnect
+			if event := <-events; !event.Available || event.Err != nil {
+				t.Fatalf("reconnect event = %+v", event)
+			}
+		})
 	}
 }
 
@@ -202,20 +300,26 @@ type fakeOSDTransport struct {
 	sent             chan msgr.Message
 	done             chan struct{}
 	terminal         chan error
+	events           chan msgr.SessionEvent
+	resets           chan struct{}
 	stopOnce         sync.Once
 	admissionStarted chan struct{}
 	admit            chan struct{}
+	submitAdmitted   func(context.Context, msgr.Message, func()) (msgr.Message, error)
 }
 
 func newFakeOSDTransport() *fakeOSDTransport {
-	return &fakeOSDTransport{incoming: make(chan msgr.Message, 4), sent: make(chan msgr.Message, 4), done: make(chan struct{}), terminal: make(chan error, 1)}
+	return &fakeOSDTransport{incoming: make(chan msgr.Message, 4), sent: make(chan msgr.Message, 4), done: make(chan struct{}), terminal: make(chan error, 1), events: make(chan msgr.SessionEvent, 4), resets: make(chan struct{}, 1)}
 }
 
 func (transport *fakeOSDTransport) Submit(context.Context, msgr.Message) (msgr.Message, error) {
 	return msgr.Message{}, nil
 }
 
-func (transport *fakeOSDTransport) SubmitAdmitted(_ context.Context, _ msgr.Message, admitted func()) (msgr.Message, error) {
+func (transport *fakeOSDTransport) SubmitAdmitted(ctx context.Context, message msgr.Message, admitted func()) (msgr.Message, error) {
+	if transport.submitAdmitted != nil {
+		return transport.submitAdmitted(ctx, message, admitted)
+	}
 	if transport.admissionStarted != nil {
 		close(transport.admissionStarted)
 		<-transport.admit
@@ -233,9 +337,11 @@ func (transport *fakeOSDTransport) Send(ctx context.Context, message msgr.Messag
 	}
 }
 
-func (transport *fakeOSDTransport) Incoming() <-chan msgr.Message { return transport.incoming }
-func (transport *fakeOSDTransport) Terminal() <-chan error        { return transport.terminal }
-func (transport *fakeOSDTransport) Done() <-chan struct{}         { return transport.done }
+func (transport *fakeOSDTransport) Incoming() <-chan msgr.Message    { return transport.incoming }
+func (transport *fakeOSDTransport) Terminal() <-chan error           { return transport.terminal }
+func (transport *fakeOSDTransport) Events() <-chan msgr.SessionEvent { return transport.events }
+func (transport *fakeOSDTransport) Resets() <-chan struct{}          { return transport.resets }
+func (transport *fakeOSDTransport) Done() <-chan struct{}            { return transport.done }
 func (transport *fakeOSDTransport) Stop() {
 	transport.stopOnce.Do(func() { close(transport.done) })
 }

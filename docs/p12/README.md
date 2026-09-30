@@ -51,8 +51,8 @@ Only after the candidate exists, complete exactly one accountable approval for e
 private key authorized for that exact role by `reviewer-trust.json`. The
 verifier never handles private keys. Print bytes to sign with
 `CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -check-human-review docs/p12/human-review.json -print-review-payload ROLE`.
-After inserting the detached base64 signature, run `make verify-p12-review` or
-`make verify-p12` with `P12_REVIEWER_TRUST_SHA256` set to the policy digest
+After inserting the detached base64 signatures, run `make verify-p12-review`
+with `P12_REVIEWER_TRUST_SHA256` set to the policy digest
 obtained through the protected external trust channel. Pending, unsigned,
 duplicated, stale, predated, mismatched,
 or unresolved critical/high review evidence blocks certification.

@@ -21,12 +21,12 @@ func TestDefaultConfig(t *testing.T) {
 }
 
 func TestParseConfigSelectsEntityAndAppliesKnownOptions(t *testing.T) {
-	data := []byte("[global]\ncluster = test\nname = client.test\nmon host = v2:192.0.2.1:3300/0 # preferred\nms mode = crc\ndial timeout = 3s\nunknown = ignored\n[client.other]\nmon_host = 192.0.2.9\n[client.test]\nmon_host = 192.0.2.2:3300\noperation_timeout = 9s\n")
+	data := []byte("[global]\ncluster = test\nname = client.test\nmon host = v2:192.0.2.1:3300/0 # preferred\nms mode = crc\ndial timeout = 3s\nunknown = ignored\n[client.other]\nmon_host = 192.0.2.9\n[client.test]\nmon_host = 192.0.2.2:3300\noperation_timeout = 9s\nrados_osd_op_timeout = 4\n")
 	config, err := ParseConfig(data)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.Entity != "client.test" || !reflect.DeepEqual(config.Monitors, []string{"192.0.2.2:3300"}) || config.SecurityMode != SecurityModeCRC || config.DialTimeout != 3*time.Second || config.OperationTimeout != 9*time.Second {
+	if config.Entity != "client.test" || !reflect.DeepEqual(config.Monitors, []string{"192.0.2.2:3300"}) || config.SecurityMode != SecurityModeCRC || config.DialTimeout != 3*time.Second || config.OperationTimeout != 4*time.Second {
 		t.Fatalf("config = %+v", config)
 	}
 	if _, ok := config.Option("unknown"); ok {
@@ -39,10 +39,29 @@ func TestConfigRejectsMalformedKnownValuesAndIncludes(t *testing.T) {
 		"[global]\nms_mode = plaintext\n",
 		"[global]\nfsid = no\n",
 		"[global]\ndial_timeout = forever\n",
+		"[global]\noperation_timeout = -1s\n",
+		"[global]\nrados_osd_op_timeout = -1\n",
 		"[global]\ninclude = /etc/ceph/other.conf\n",
 	} {
 		if _, err := ParseConfig([]byte(data)); !errors.Is(err, ErrInvalidArgument) {
 			t.Fatalf("ParseConfig(%q) error = %v", data, err)
+		}
+	}
+}
+
+func TestOperationTimeoutOptionsAcceptZeroAndAliasFormats(t *testing.T) {
+	config, err := ParseConfig([]byte("[global]\noperation_timeout = 0\n"))
+	if err != nil || config.OperationTimeout != 0 {
+		t.Fatalf("zero operation_timeout config=%+v error=%v", config, err)
+	}
+	config, err = config.WithOption("rados_osd_op_timeout", "250ms")
+	if err != nil || config.OperationTimeout != 250*time.Millisecond {
+		t.Fatalf("duration alias config=%+v error=%v", config, err)
+	}
+	for _, name := range []string{"operation_timeout", "rados_osd_op_timeout"} {
+		value, ok := (Config{}).Option(name)
+		if !ok || value != "0s" {
+			t.Fatalf("Option(%q)=%q,%t", name, value, ok)
 		}
 	}
 }
@@ -78,11 +97,11 @@ func TestWithOptionIsImmutableAndRetainsUnknown(t *testing.T) {
 }
 
 func TestParseArgsPrecedenceAndRemainder(t *testing.T) {
-	config, remainder, err := DefaultConfig().ParseArgs([]string{"input", "--unknown", "value", "--id=test", "--mon-host", "192.0.2.1:3300", "--operation-timeout=4s", "--", "--cluster=ignored"})
+	config, remainder, err := DefaultConfig().ParseArgs([]string{"input", "--unknown", "value", "--id=test", "--mon-host", "192.0.2.1:3300", "--operation-timeout=4s", "--rados-osd-op-timeout", "2", "--", "--cluster=ignored"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.Entity != "client.test" || config.OperationTimeout != 4*time.Second || !reflect.DeepEqual(config.Monitors, []string{"192.0.2.1:3300"}) {
+	if config.Entity != "client.test" || config.OperationTimeout != 2*time.Second || !reflect.DeepEqual(config.Monitors, []string{"192.0.2.1:3300"}) {
 		t.Fatalf("config = %+v", config)
 	}
 	if !reflect.DeepEqual(remainder, []string{"input", "--unknown", "value", "--", "--cluster=ignored"}) {
@@ -95,11 +114,13 @@ func TestParseEnvUsesOnlyExplicitPrefix(t *testing.T) {
 	t.Setenv("CUSTOM_ENTITY", "client.custom")
 	t.Setenv("CUSTOM_MON_HOST", "192.0.2.4")
 	t.Setenv("CUSTOM_HANDSHAKE_TIMEOUT", "7s")
+	t.Setenv("CUSTOM_OPERATION_TIMEOUT", "8s")
+	t.Setenv("CUSTOM_RADOS_OSD_OP_TIMEOUT", "1")
 	config, err := DefaultConfig().ParseEnv("CUSTOM")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.Entity != "client.custom" || config.HandshakeTimeout != 7*time.Second || !reflect.DeepEqual(config.Monitors, []string{"192.0.2.4"}) {
+	if config.Entity != "client.custom" || config.HandshakeTimeout != 7*time.Second || config.OperationTimeout != 8*time.Second || !reflect.DeepEqual(config.Monitors, []string{"192.0.2.4"}) {
 		t.Fatalf("config = %+v", config)
 	}
 }

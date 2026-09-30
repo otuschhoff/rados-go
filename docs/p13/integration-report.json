@@ -1,0 +1,4246 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "command": "./integration/p13/reproduce.sh",
+  "mode": "full",
+  "started_at": "2026-09-29T23:17:43Z",
+  "finished_at": "2026-09-29T23:26:50Z",
+  "failure": null,
+  "source": {
+    "repository": "https://github.com/otuschhoff/rados-go.git",
+    "artifacts": {
+      ".github/workflows/p00.yml": "5ebfc9c0b3ce4953408ad2c4aaae32aa90f88c9943a79cbb6c4c2122c10e291a",
+      ".gitignore": "4a210d79f18c1f6e50ac6da6cc147931f85eeb209fc055137908054481eb4360",
+      "LICENSE": "10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43",
+      "Makefile": "3e2e68256e6a4595ccce997d0b51d676e7c63430778e0c36c2fbfb468d384295",
+      "README.md": "4dbddfdd57f9a454ec480c6749fb3b17631faab09918397f44cbed934cf09c9c",
+      "SECURITY.md": "38c8479cd9dc70540c09e38957302a3e0c892d45b8622e4a933eb30a780813d9",
+      "SPEC.md": "933fb55517ee2aaaa9d7eefb775c561f01638b033fa1f541a2f69b67972cdd67",
+      "THIRD_PARTY_NOTICES": "7c36fce9f9ff6adfbf728b640ebff7c57dffe69c62ef07584cec894c7d35ecb1",
+      "admin.go": "633e981154cf48ebfb297cc5e617227f50e52a0457786cdabaaa333888211ae5",
+      "admin_test.go": "ccd2dd8e24ecd05e571acf6aeec4e83e06284a38d772b3975443326103cc578f",
+      "changes.go": "34106d934b1da23a751d78ef04899fb5edcf80aa73d8c235f0b57e95adc177e9",
+      "changes_test.go": "ac746f3f841f6d6b2fd1d9a1d492022f65ac18eb33148b46b9a86973e895ffb9",
+      "client.go": "6fd2098a3b47ea3ca753bb0fcb9c055acfac42b2f19da6fcb29b20684ca2dc71",
+      "client_test.go": "39210dbb828b5affb334428339954530ad0b460b498456f7300fd7b249fb3a87",
+      "config.go": "ef1c456d42fc405aedfe98c377e1f737550739eac1d8a6c18372d95586717be5",
+      "config_fuzz_test.go": "b5f2164d1be48126fd5ca3b0ef5e4d97222a2c66721b3cd1bd89407bd3d26fba",
+      "config_test.go": "d393b341c2ed49a21e6de9e8a5141b630377935d7d8a69832545286eecc2144d",
+      "coordination.go": "eaede536b5373251f9b0c1f99f5cde2295afcf8e57c21491a7fbb77d80815430",
+      "coordination_test.go": "52718d25d9b231fe872a357c9872a1448333357c3f78709c964a00a910fdf834",
+      "doc.go": "029e90e8a1a61bb7e92db5d30d97c26c6adb73e4afc11ea22e1f7d82c30f3f6e",
+      "docs/RUST_PORT_SPEC.md": "cb3500d5d06a298cfe7d31a512e8d3cb91c5c18a33d9df1fd85901900a7c6c6d",
+      "docs/p00/README.md": "1728266690d7ac1cbdd72870591d6587b4ede94cdbb8b3493e6c675fe3983fee",
+      "docs/p00/api-inventory.csv": "fc73c6b8f7cc63699a0e9e135342cf474c679d7577677ad858cb5a72118f623a",
+      "docs/p00/compatibility.md": "e0cb5d107e576d5f775ecbf2c71b24f31a754cc1294e9b7611d79182ad1da61c",
+      "docs/p00/evidence.json": "cb99af82fe52eea465b1e6a4f5e81b72a600807b21027f435bf36f2385a7a84f",
+      "docs/p00/licensing.md": "f67d0067c7ee339d2901a4bc1f15e45571c396b25d9d5352636611b838719cb7",
+      "docs/p00/protocol-sources.md": "2826b7096405cfaea4eee8d3bad288609c1569890948f2c641d2c25fcc5dc4bd",
+      "docs/p00/task-handoff.md": "f4a885f5be4e1cee03b3f13115466a32ad6d7802bfdc3cbafc2656d908b3f570",
+      "docs/p00/tasks.md": "c3dc1cd508c78bd2abef52e4ced7b319071e1b4b6e8df97fe6f3f887ed6db401",
+      "docs/p00/threat-model.md": "aefd2db97776f846109303d0c89b9ccd418efb8170574e69f5f915c4e37bbd65",
+      "docs/p01/README.md": "dafc588922ec8607126488995f8762c84fa7632c6195a70779c4aa347e38607b",
+      "docs/p01/api-contract.md": "58f29141009e0f322b1c94aa6b6cc6486c6d7904656a5248248bb5ecc0402676",
+      "docs/p01/evidence.json": "ea6f7350cc265dc23027aafbfac4a9a1d6d83a12aac8dfa995fe56dc88e040c9",
+      "docs/p01/provenance.md": "c2efa9b2472b4b34ef451b5e9d7fa0ac6ef53bbee83303b5c136f6b6f0ad37bc",
+      "docs/p01/public-api.md": "99fb6a557d608c805a4d656242ea3052d21348351ea1d5695ae59df7d339e24a",
+      "docs/p01/task-handoff.md": "a1d1a97589df6401c77e2df884972806970e8eae04c55ed63b1434ad95e6fa60",
+      "docs/p01/tasks.md": "b557f786d2d5fd8e00568e75c8b92e47d968df349e92baa89e42d45e01845cc1",
+      "docs/p02/README.md": "339e02b7a0f0dd4008a1cd853e7d3ad0b1573b79a58dcfa8b7c53e121ff6a251",
+      "docs/p02/architecture.md": "f35e001cf62b584ed57a1473b64a3d03062a79da328763fd66e24190429fa420",
+      "docs/p02/evidence.json": "9bed9432b6efe409a9a66189e22e76b1a24fbfd35a4353137c5831c27c6b4588",
+      "docs/p02/provenance.md": "6c1799f966fe7a1945891a0f964b43953847a4fce5bd11f22fd3461d06602f0a",
+      "docs/p02/security.md": "8eaa7bb4b7887e99376c3965675272df38d5f2cf4b4d859ad9fb7d88d025778e",
+      "docs/p02/task-handoff.md": "60ce2a28ada0e39cea8d0310198bd9d18ef6122610fff3b99efd015a85ef5f70",
+      "docs/p02/tasks.md": "a438972f75f8e9c7e6ab83fb386d1fccb3370f9c5d5a7f6afce81b631aa5ad3e",
+      "docs/p03/README.md": "05fae4acbd8c607aca9b0f424db62a3f9850c7bf9abf0dfa08eca22f81430a83",
+      "docs/p03/evidence.json": "f46f33a0dfff1afa1bf9bd5132fc873ad4ba91129192c3653eec82736f73cae8",
+      "docs/p03/integration-report.json": "9f899824d1d99de681d14dba345c9c4f1e9f46ff86f534c2ffd131a6b06a48f4",
+      "docs/p03/modules.txt": "58474bab6a17048075e8cdfc07b2006906620eba332acc4fcf72eb60c04183ae",
+      "docs/p03/provenance.md": "b2dc1c6c5f2345bdb5e185ecf4a32557f0494b9bb30dbb55c72cc961a4ffb493",
+      "docs/p03/security.md": "218b9eabeab18f130c0e4a4f746b5eadcdafee2d9da705f241537b63f24276cf",
+      "docs/p03/tasks.md": "56d276199d42982ccf90dfcd25367c935810bca998f77b67ccb36e2ba48d3147",
+      "docs/p04/configuration.md": "5725c43a3974c19c534e28c5e5eb82e3cf23e9e89d69c518e84ab336abc57328",
+      "docs/p04/integration-report.json": "a38fbfcca3c164af4645caece38b1fb5be404459cd5a9c6815591ad6b1321cea",
+      "docs/p04/provenance.md": "51389d19c4d5a60c5cdf69d2c1c3c94cd68ab0181acc044b4a27678af67482bf",
+      "docs/p04/tasks.md": "699db74543e65bbfe0c983f7318e013698b1cc5477bd9efe5f088ac4e33dc737",
+      "docs/p05/provenance.md": "16e6e866c7c99f3cb1af712d583029a46889ed909c5ab0e4c6bf9ca3de0b40f8",
+      "docs/p05/tasks.md": "5017ef5440f12bea59306f54012e6f92cc4f838d576d5115991f2b4630bbbc5b",
+      "docs/p06/integration-report.json": "f1f846f065ea227363b6c156ade1995166b34c432d3fc335da7dbee4e9747156",
+      "docs/p06/provenance.md": "f2552c6f4d0be72d289bed41acebb5111bd9d0ba1c92ee65c5f775500cc18307",
+      "docs/p06/tasks.md": "a121e52e6b6b7692a4e019fb86a47a4dfd1b8ca4cde000c1761c027476f8c23e",
+      "docs/p07/integration-report.json": "5772d9d47b468579a6faf123c5c70773fc14b35056dea496c7d56687a67a03e2",
+      "docs/p07/provenance.md": "446d842547cb93438ff50d3bcd90c30a200478b779f122f802979472cee7c164",
+      "docs/p07/tasks.md": "0ed1f9917cefe0799387fe983fae75b1032d26bdaad77b8ccf2bec84f5b8676d",
+      "docs/p08/integration-report.json": "1ee687eabd81b3ebdb4b39a80b86b7af31ff1103846c8e43f694350c10ea46cb",
+      "docs/p08/provenance.md": "9183ff0e77c3c5b00702f060b40f88a589eda14e4a623db89057a0061c9ea35b",
+      "docs/p08/tasks.md": "b7ffb6a83d62cfbc973812d8a5dd1d91b95ec1295895edd10c7d4c1f9a070c46",
+      "docs/p09/integration-report.json": "42ff614ac7e1781f7fffab679cb55a3e1ec6977503c9578cbd7dbec1415f35ee",
+      "docs/p09/provenance.md": "d928e23024df6ef36a7bbad594fad7133a83e4d828da707d99aeea5bc2083ab9",
+      "docs/p09/tasks.md": "d0c2e0ec62cb0c6f2deff0dd5f6fc415e61eb407bba7f2736f404f3bd20b9489",
+      "docs/p10/integration-report.json": "6626f08e1d44092bb6bd38ae95e12481d9675aaf8f3f9ad9ba07e011fbf9a5ef",
+      "docs/p10/provenance.md": "104d2fae853014f049371c6d5851eba382e4a59d2423256b0549a7e4f43e69f5",
+      "docs/p10/tasks.md": "f15b6c170e53ea8c4346e729eacd52b472aa939ba102114b00a68f63d02ecb0d",
+      "docs/p11/integration-report.json": "8b4154426336859e24d4a8671663eb816c37f99a3f5701bed55e3854f3ae2ad5",
+      "docs/p11/provenance.md": "3bde3fcd952d714e5450ef7642082ecd3c739780fb0449b5cf750911b8981c0d",
+      "docs/p11/tasks.md": "dfa0aade3a54b4e8bdf6aab78ba6473bebdda0009a2973e0e510db2eb3db4ea0",
+      "docs/p12/README.md": "b223dc4434750e1c30552130ae9242eda4d26735b43b2acd5bd5a7eed41b5786",
+      "docs/p12/api-coverage.md": "b50450fc2eeeb6da4a023607b2ea09bc70129d10cf28f906068049015b4c2c6f",
+      "docs/p12/automated-review.md": "9dd71612c07f768dbe94123bb440a8afc18b21cd863c0a88cad618b3a5e1d483",
+      "docs/p12/cgo-migration.md": "4910cc32b4fe8ad957ba97f889ffcac83a3aaf0437e9ceb8ebe327ff972566a8",
+      "docs/p12/compatibility.md": "ce9d22a7226a4a350b5fb521ce9034fb94246178f520ec10df92a6b5a1f2bf95",
+      "docs/p12/dependencies.md": "2422d446964119fc30abe3cf09ad4764055ac2dd5fdafb1ad99def83eb817762",
+      "docs/p12/fuzz-report.json": "e0b0c24e225874536c95bb280efd164b5e6c2a987fa9c2343582319eba69e983",
+      "docs/p12/human-review.json": "97cdadb295c765ff2f8720125c77605e4b4c7f12020714a27f0d68539924c1de",
+      "docs/p12/human-review.md": "1ad11e952be490cf51ba56dd23a32cd3d0c19463368c7e6dffad7418f0bd9837",
+      "docs/p12/performance.md": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf",
+      "docs/p12/qualification-report.json": "fea3a20d68b18d8bbbfb7f302849e40fc3b41c3e7176b04494bcb8c7f62c03dc",
+      "docs/p12/release.md": "4895fccd3c958a25dfc1f07e0e6190ae7c0ddda0f99e8b05d24c6f7e5082c62b",
+      "docs/p12/review-template.md": "7f89486c65bc75b7b17e39b83d75e4a535fccda89efd33256af3b55d7b3224ca",
+      "docs/p12/reviewer-trust.json": "9e2d9eaa0a8b30ebdc6226ae3c959bb2e89c7e2f48559b3af744b954dd6365e1",
+      "docs/p12/troubleshooting.md": "e40957defc66437ebbeca650092307bcc1daf3b3cc1f439ea650aa2c60e59c73",
+      "docs/p13/README.md": "a340926b4d887ab711460470c9bc38b3488af290d79ecb49c2869f045d143833",
+      "docs/p13/compatibility.md": "eb74c3391cce11cb3304f9be00ac76b5206fa9de5f9668d0efda701a7555e158",
+      "docs/p13/provenance.md": "1bf5ff41c9b7c4d6b96d6116cd88ab7cdc2edbdcd3c2f051238ce951b3f57e75",
+      "docs/p13/task-handoff.md": "f1874bb338077347a971ccb57565e6f99e2776fa463ab476413162c5b02421e4",
+      "docs/p13/tasks.md": "a8f7ab70d8b887ffc4d1555deed4c91b2382b569cb4f1e1eb2b518f27272cc6d",
+      "enumeration_test.go": "1c601263d1ddb9d0834ab453d496ca6efafddafc918ba5c714f42d7f3c9db1dd",
+      "errors.go": "907595385103cfb141d794ef3f8688d436ac13804858e48d0faec82b2855694b",
+      "errors_test.go": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7",
+      "examples/atomic/main.go": "3ac43d85dc843c0a2eb5ee463fef256040ffb6cfa26f3d4fe9b9e7272bba0638",
+      "examples/basic/main.go": "76497f3686d945b9b5e309d105e5c23c293866a86b1dad9de0d0f888f0aa997e",
+      "go.mod": "82c5d6809f3e77a2b68f41462004584d9399946795a90c97654439bff5ab5cdb",
+      "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c",
+      "integration/README.md": "e6d640ca6572d4516acaac89b0d4af5eb08d09e51b866dedd91646c0e9e44d6f",
+      "integration/manifest.schema.json": "e0204c3367ed57e5f152e4f2b97a5d0f3c2fcc2f6d6814d1b17efb16271f5038",
+      "integration/p00/oracle/Dockerfile": "8771c2758a7d994db357b96d0a845bb1e919d3acaf846908e425565c31dc186d",
+      "integration/p00/oracle/centos-stream.repo": "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b",
+      "integration/p00/oracle/main.cc": "bbcf6207628545d859546eb92d50e13027ab2d78154b0c54053b4befecc029ca",
+      "integration/p00/preflight.sh": "bd03469fad4c311d7324087a076f102597954434584529d007c047406f486616",
+      "integration/p00/run.sh": "095ada4b3ad2391d2a410437b20f5e5574a0c0bb123f2814994c3a5a1935c150",
+      "integration/p01/entity-addr-ipv6-seed.bin": "a5b18e8166e8aa1d0c3285a6c1a3470851ae2bd229b28da857328c3bd2217986",
+      "integration/p01/ipv6-fixture.c": "6dd4fb90dcf8f3e5b2e1380a5b3999a4d4a7ddd81f51c45f2ada5640179abdb4",
+      "integration/p01/reproduce.sh": "e7f23e66a19321227877b3722a7f59a542682f4a5c42b6dbdffe405bed99f8d4",
+      "integration/p02/Dockerfile": "bfaa51f4f49af164a94e82156c745e2ea21c620dac561658a37b230f3fd579a8",
+      "integration/p02/Dockerfile.upstream": "56c8b8d8f461c41c35991cf46781eb556e6267940e32a92a9c5fc3b67ca505e5",
+      "integration/p02/centos-stream.repo": "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b",
+      "integration/p02/oracle.cc": "7a14c655f4e93e7f350ebdc9e74ef233733ef19611ab9b7ebfe7b16c5cd9a8b7",
+      "integration/p02/reproduce-upstream.sh": "070d1ab50c79bee673965f22c148c15b884aef38902b6cae92a47cb841a1a04b",
+      "integration/p02/reproduce.sh": "987347390f1ca5be1e1e3902ad834c75effd5741ecf51285ed12f23605aba85a",
+      "integration/p02/upstream_oracle.cc": "043d94bfb9f590e9987e7ae15509d3a75813c1765e43a99ba4d7fbe06d49ee34",
+      "integration/p03/legacy-crush.txt": "5b07d221477e01a50ad37ab113cb8511ada2895bd3e848504518d0ef634f13ea",
+      "integration/p03/probe/main.go": "898b974ee575d1d1a51ecdac5c8abd51dd6ad3f9506c418371d15b1aeb1c842e",
+      "integration/p03/probe/main_test.go": "a4ec9a4d87d9ea9ca96c41486f11119664e43367f8110afa238f93b7fcddeb27",
+      "integration/p03/report.schema.json": "a402b69c0522220ad8f32aa7ea6c19e3e285106f20451e674574b2ef796fd9be",
+      "integration/p03/reproduce-fixtures.sh": "7fde6e6631885b908cf4ae31ef658f9f0b2be66ec546937948399a4c5db98794",
+      "integration/p03/reproduce.sh": "afc999ecc5b195ec93ba8c75487b16f5dc217ae9767df64fff35cb4771fced57",
+      "integration/p03/rfc8009-oracle/main.go": "acd8b9a14e8bfb7b43b9fcdbbf1ed6331f4df1b32bc64acf9b6ffa17823fdda8",
+      "integration/p03/rfc8009-oracle/main_test.go": "84f4e120788b9546d9def423f6986cdb7a095e93d327d2be2145537bec98c467",
+      "integration/p04/probe/main.go": "cd224092de706fdee1ded68dc66e2f5c650fb18308c452877f3ad4265d46894b",
+      "integration/p04/report.schema.json": "6bf75dab039d32000723bb832f9938a24ca1e3efef680203751a7a8f88de736d",
+      "integration/p04/reproduce-fixtures.sh": "becbdee94f963234a8a02f094bbd4d4551b4483e755990e16b32bab8cd553fa7",
+      "integration/p04/reproduce.sh": "f763fb7be3dfadd38dd4fd4cef29968e8c861f82d57d971cf8e957f614cf6466",
+      "integration/p05/crushmap.txt": "3720a2586790e8dd5cfdfc1a55256d908cd3197f980bf703b7f3035e52ec036e",
+      "integration/p05/reproduce.sh": "0cc4bf09f618d32c57fe42d8ee3a773865cc5b1d1715c1f8fb98b4c0cdd1c81c",
+      "integration/p06/probe/main.go": "e276d935a3c4777db4c5708b563585ba4e963c709a43347cddf1c14272000fab",
+      "integration/p06/report.schema.json": "e70a6c2339fa56c954fc06e22b9f0608bf88f096822c7db9767be44437880719",
+      "integration/p06/reproduce.sh": "c59c45ebef0545d45e0f22f8a7a193a2d6e0cc870947159adfbc26567a917081",
+      "integration/p07/benchmark/main.go": "c98c6f37656eb3d0e4276e1aaced4d206599e6a8148601d8aff3855ce7453041",
+      "integration/p07/benchmark/main_unsupported.go": "a44582b32ee261f2897b99c926cd23554053fe3d9b21ed7a18b0135dcb8ee1e2",
+      "integration/p07/native_benchmark.c": "5f2b01ec595782398acfba5e238b932391460aeb16dc5e7239fdff23891c29a5",
+      "integration/p07/native_driver.c": "f3d870f60dc6276117591641046ea40514a4be2226d193c7a58760dba8e5074c",
+      "integration/p07/probe/main.go": "38b9454bcd47c1134a5359c9fd4e82a23859523aa4cb9d999985b44e16ab635c",
+      "integration/p07/report.schema.json": "ce206427d5f0ea99f808347552bdfb900888ae9b5017fd63e59e0040f06f1a39",
+      "integration/p07/reproduce.sh": "14f27ab0099b34ff079e562950782a1d5491577f24bef848bc79a82ee453c182",
+      "integration/p08/native_driver.c": "21c82fcf6560b0ceb2a2442104007b0931efc4a3699fb301ed77d2f332fc0a5e",
+      "integration/p08/probe/main.go": "1766966c8568b472197854a5710f490356cb9c56ce3537fbc62f355c228eae77",
+      "integration/p08/report.schema.json": "b36c3e9fc974711db4094ccc25335373c7cfa94017658b7c08303f58ecb625dd",
+      "integration/p08/reproduce.sh": "7f38cb57c144ff599e62ad87f5d7912aeba109028091e8a9648e33f37e377a50",
+      "integration/p09/native_driver.c": "8e6a3816b64f507444284e8896b04334719f31d1c3ffb3e2b35530edd96ad020",
+      "integration/p09/probe/main.go": "3f83b8a601c17044af8c3c0c2210d23e73f137f4f129a48eb090fdc3d53d02a4",
+      "integration/p09/report.schema.json": "d3153203d77089fd1cff973724df5c11060fd22f7a9bb29b298d700758120fff",
+      "integration/p09/reproduce.sh": "29e4c88ae3ead3dae31abcaa0e56a317a594df34578e132adc6c1c08560d74b9",
+      "integration/p10/native_driver.c": "2b324e51591226c4cba33d74581266ffca0155efb5c25946962bad07c7f3bad1",
+      "integration/p10/probe/main.go": "c477c4de3b0697bf1bcd78ce00e33042ab12a27a3586ae868f28da549db64fb9",
+      "integration/p10/report.schema.json": "28dda3a5e1ecf76a2f7691a96cc0e0804a867f831dfaff122018d2e00cd80060",
+      "integration/p10/reproduce.sh": "ff9e518933012a274e1f228ec2c0c548036f018d9bb9d464e2d4b6865910b6d3",
+      "integration/p11/native_driver.c": "815798ad34c1c0f93f7638944fd2a60f4076d3cc9c10b73d911e323de42a492a",
+      "integration/p11/probe/main.go": "5112874c335b5f3851348b4f6b9f313c171511ea12a9f1362f03dca1aa1bd965",
+      "integration/p11/report.schema.json": "b749f9201436a592ffc775d9cd1cf4c6a34dbf4d1f4f552e038f2fb6cae1666b",
+      "integration/p11/reproduce.sh": "eaa8f0ae2d520961fcc0d91fd936f6ad7d2a3d1433e14a676eefe507efd6ad65",
+      "integration/p12/fuzz-report.schema.json": "47177df1907ef4b8fe4e4e63d9ce24affb27b45ade5032ef22b8a42aa5ff78f4",
+      "integration/p12/human-review.schema.json": "19c4deebcfbd86f3a81d23f29f71ddc48777211cde83a47a4af84d77efc06310",
+      "integration/p12/platform-probe/main.go": "7b5aa985d128aec1f64bc7464b06300d7f1e058586303efd103ad370636f72c9",
+      "integration/p12/probe/main.go": "d088e2d151bdbf8f3fa57d1b28af550ed7df15afca1165be60452ac9feabb905",
+      "integration/p12/probe/main_test.go": "f9365105caf82c5d7424412074e0a32e4a4f0570f313db6bbdf3946cc01d09cd",
+      "integration/p12/qualification-report.schema.json": "b84ac9934b4d6cd777bc7f13afbd9bf9f7a039445c7f2f102e64392e4dd1aeca",
+      "integration/p12/qualify.sh": "a09248167c60b49779d18b949a3c22bcb6180312a99bad062941497d88c44642",
+      "integration/p12/report.json": "1822f73e21ea81b812bae102ef4275e342065e3d5473d798a976b23c18a82b6b",
+      "integration/p12/report.schema.json": "3cc71ae86868a6df8455be832f7ec4be7bd37af516226526a105d3c2845a3234",
+      "integration/p12/reproduce.sh": "205e9fe4a8d5e05441d0a4c7c3089c17d6e2309e9bfda5bcbcd5db8880f72b07",
+      "integration/p12/reviewer-trust.schema.json": "39330228b468e61936711dcf9a84d98208cb7d9ae157ad40787ed8a9448b4ad2",
+      "integration/p13/native_driver.c": "5aba62bf8e1c9107b7b848ade3b7ad16ddd9a749e163660bd774d874106329b1",
+      "integration/p13/probe/main.go": "d9686964d77983f9ae210454137404181f23368c8895ba53de0161d83ed8b041",
+      "integration/p13/report.schema.json": "1bc96160e3101ea9258d6cb9809763d6a0e2d2d32a5abb7868d73cbddf54f88a",
+      "integration/p13/reproduce.sh": "3e3c8f4ebd3b21791613ffa698649368766d9390135ef4d81f54ca001e8d8627",
+      "integration/reports/p00-aea2e269-39df-4476-9e55-b6b3de3b67c0.json": "43cea08c14f2aa5f7d645b4fcf65da12cec0c8abde72bcd1d205fc867b8fd7b9",
+      "internal/cephx/connector.go": "c00a1e367c9f91996b344d810a929157f6c16d2811bdb3537ede235374a02ee2",
+      "internal/cephx/connector_test.go": "ce945cc21842a2445e900ed0e88f41700735ce16e9c247b0771ac9b76168003a",
+      "internal/cephx/core.go": "ad393c2a60c0067acb68afa68bfd09d876b11d968a58ab80840c0bb556af1d7b",
+      "internal/cephx/core_test.go": "c0349e6dd460b15c86ea32e100c7908fe3461708027fccfe4cba35feb0bff2f5",
+      "internal/cephx/credentials.go": "50e51d3d0db50dc9a979f4a3c95747fdf4777b79c0e619e1b6d8702253488255",
+      "internal/cephx/credentials_test.go": "f44c53c9253881f630c98345219516f61dd33a501aff74a5039827ccec9dce53",
+      "internal/cephx/fixture_test.go": "a59892b95c406ca6bb9ed77f0c4f428b5901330604b3c38e08f670a540f0e0d5",
+      "internal/cephx/fuzz_test.go": "987b6da5615ac292e35d14b5d30e02b9711c1870f8ab58d0480da09046825b65",
+      "internal/cephx/service_connector.go": "ec6169db8f38420f6770f21012ba2d1420045984185d85c67f125b32ec422884",
+      "internal/cephx/service_connector_test.go": "c963139bc2e8cd7c85290c729e526a5119cb02cd57e152d4f65f59edec54f4db",
+      "internal/crush/hash.go": "21fb469ca5af7d8008c278d534a949732155ff8b2546f5db3ba94bd2c21f973f",
+      "internal/crush/hash_test.go": "31fc74bfe4c1df7077a21b12397c7e978f5c7d290513738c18948bd1ec79eaca",
+      "internal/crush/ln.go": "c06d4879ed78ea648a89cd8763bbd6b0a8bb773572d6359d78c54701b8c104b7",
+      "internal/crush/map.go": "a8a6a726dd8da121b272faf31605cb04cc09f8ca15774fdbb4d4341478ededb8",
+      "internal/crush/map_test.go": "cdfe82ecf3bf51e846c5d61686da2784035281282ea6eb6517a103b137fa1aad",
+      "internal/crush/p05_fixture_test.go": "089e93c6716e2e3df1ff5a96beefaa3697270f12b2fb09a48818ac1a236b1de5",
+      "internal/crush/p10_fixture_test.go": "dc94467418fafd41c5fb2e916039684c18d8f45bfbdc8e23f23c634282f3ea82",
+      "internal/crush/place.go": "6637777ca25ad08a363ee0fde11214717086b887b3ef66fa5e23730734ac9ea3",
+      "internal/crush/place_test.go": "b9ca6f2877732c2280bf05afda56ede67b4e430cf58ef5b55f666db898ead699",
+      "internal/encoding/codec.go": "6352b11ed23db97a34bd63f33b272caf162b69cad2da7b9accd51e05f3c6068d",
+      "internal/encoding/codec_test.go": "ac3316834d1f0bb1bb2633f5c777c70b082f55bd3a14057f5e14772039cbcfc5",
+      "internal/encoding/crc.go": "9dce38e0846c80679a7182baeca6d4bd44a853b0a7841a507caa0a46675e9938",
+      "internal/maps/incremental.go": "d0d22c6b7d6c07d63b18bfa6869df96cf27b556c370513e97847f84e1ae14ee1",
+      "internal/maps/incremental_test.go": "6128818955e8e133c384b52645c98a6b38219e328fb986d7affe97ac03f6c05c",
+      "internal/maps/mgrmap.go": "32cad6af44c53081e24e417ce4de180fbc3fd72ddd270f12afe99b06b5d26b86",
+      "internal/maps/mgrmap_test.go": "c5a092832cbbf117ffdafa333c7da553f2747b0a183806a15fdbeb9428797081",
+      "internal/maps/monmap.go": "78bdda912e05c548ce55e827214dbedd0fe87e1e25cc0d5eb05edcf95c6979fb",
+      "internal/maps/monmap_test.go": "a40babf7628a12698984a674e6eecf83b5fafcde65ebd9201953d80ae0d194b7",
+      "internal/maps/osdmap.go": "ca674330b9588caad57a6d29c83b502bedce5bf40937383d24026f0e4a52e956",
+      "internal/maps/osdmap_test.go": "d19d42a04b0e226ea80e01f2c4bf02b65f338c5b9921484a2f93eb88d6588243",
+      "internal/maps/p04_fixture_test.go": "98953880e9e9d7633d0ad10206491523f223125698fffa788616035245ac7088",
+      "internal/maps/placement.go": "e6e627455f4966c2a15556c21b8aa58d025bc9c5d569965fbb53757764bc092e",
+      "internal/maps/placement_test.go": "cab88484a97678e2b349f9d0d1455d41af5a1c46858afd8c1b7446edd7c0fa8f",
+      "internal/maps/pool.go": "288ccdd4715dbc4a1ff8bcb936fc84ddd4d0c873138154ec9ec8fcabe0e86aea",
+      "internal/maps/pool_test.go": "ad8ca192e7c4140fa901a36f4b68a8094fa6db3e7be854a6423e67686517f34c",
+      "internal/mgr/client.go": "c66212ddcb4c72597cc5f586a99b853d21d4606d36e4de2e24fe27904b8f72f7",
+      "internal/mgr/client_test.go": "62cd3d3e7978f3001ed8b374940ce5d6e964319542bbfc85b063eb9572c960c1",
+      "internal/mgr/messages.go": "219f3f716e0235620411f89d63a176f07755f09d3b0f62367c61248e0bffa45f",
+      "internal/mgr/messages_test.go": "e222b249ed30f19a8c2cbc6dc724e2e8bb7d9aa034ff9a471a9d3f1c69201f0a",
+      "internal/mon/client.go": "395115b3f507e1800ded0e1cceba59c13a9329848ace875efb1843b261ba8511",
+      "internal/mon/client_test.go": "aac5cf7e88bd19cb938a943f4f97191e812dff49d75aa7ba364cbcd4f9b21c8b",
+      "internal/mon/config.go": "0eeb3a41c49cf8738a394a2123bc986b90d14a061557732f9b26dfe652d6f412",
+      "internal/mon/config_test.go": "336f697524ff14280570dbfd2bfb5ea367d78b9c72137977be7d4bc841178c02",
+      "internal/mon/messages.go": "7e8d9b718ee96afc49a91153fadcf52efc33969a44025122faae5dbf4f9d9191",
+      "internal/mon/messages_test.go": "2c4d97a81a9f3501ba35a480e8041531f8eb8cb8d151664d9bbc7009a75fb4d0",
+      "internal/mon/seeds.go": "2174e1a673959466deb2b40348075656a58edad124b440b4d4b382039ce69eb2",
+      "internal/mon/statfs_test.go": "60710977883279cb6744b8fbc1c67e002153f87a42a0037d7d5305fd0c3e7d11",
+      "internal/msgr/banner.go": "46a374d27b4e24422d830c848541d56baad74dd13417653a02c1a6c0e1010527",
+      "internal/msgr/banner_test.go": "0a956f1034ae80002a691504404dbc938356741ba7f182f502f34f47227af859",
+      "internal/msgr/control.go": "2d205b3fb5ddb4df7f856592b528fa4932ffc1b122ff65ea4da52a1390ea24df",
+      "internal/msgr/control_test.go": "212a88dbf2d14333bd722783c517d3d3b62554ba703555aa9cedbc5d49383b88",
+      "internal/msgr/fixture_test.go": "1b1b0c9514c2aa4546eef1533180f7d19a8274af4c3594f34c0b36c33864f844",
+      "internal/msgr/frame.go": "99b3062c65a50573a4b53f6bd889570506630a2813a0329dc3093dae27f32999",
+      "internal/msgr/frame_test.go": "82cb5c5e6d1304856c8458dd2fb5d7dd2e5bb5590b1e589a7e538aaa993350d2",
+      "internal/msgr/fuzz_test.go": "58bdbf6f7ed49e514b7985c2d29533872942699e149a654a1ad7411c2b8a4a96",
+      "internal/msgr/message.go": "ed791e5eeeed509f78866362a615bc4e3f6cc8cb9d54ec5619c7f9ffbcb40a48",
+      "internal/msgr/message_test.go": "6873041133f262f0f3eb8a63055d6eb8927164ad1b4f6545f72b8e6eebf15fac",
+      "internal/msgr/secure.go": "ebb73db8d335c428322c2353138ad5d37fc490f8039b3e0c553ae5b2642f7761",
+      "internal/msgr/secure_test.go": "f11365f07950edb47a493d8e71d393eeec15577156a7c000afe49ed0cc55eab2",
+      "internal/msgr/session.go": "5ae2471f74d292b115e06b4eb4956fb0b802a3581519e108ecbe6d1dbda21fb1",
+      "internal/msgr/session_test.go": "acba0daf81c190630ddeb2a3bf2fdcffa2839aa1ef6e08f82744e76f62490698",
+      "internal/msgr/testdata/fuzz/FuzzSessionScript/938f779fb2101a93": "938f779fb2101a931328ed6fb6810d6454ee91ebcad1c79cbbbceb27f156bb14",
+      "internal/msgr/transport.go": "72117d4104ed08c4200e1e2270f0e1fced17dd6311b96f33544395b07157a34b",
+      "internal/msgr/transport_test.go": "bfeeb5b3a42b266edd67f2e619241d3d96e9f6aacd77aa1f212d9f2c1e0b7fb7",
+      "internal/objecter/client.go": "caadd3381e8e88f2d4a7b18efc29f556971936267e4a19571b972ce65c94d8a0",
+      "internal/objecter/client_test.go": "04bffa704b8b4d4c8d9f913c14a2770dfdfad8f01d26032e0155d35cc036a072",
+      "internal/objecter/command.go": "6653a4d9acb835292c559423d94ae3638675f7b9af53b8d58d42260773d4a252",
+      "internal/objecter/command_test.go": "d25057f9a936e7e08629b9c1f72abd8dbbc4fc7e6cf49a18568d5c9d0396a051",
+      "internal/objecter/enumeration_test.go": "c9ebd319250f34d47bbdf2a4961394c02380f3671af5768494081ce0715b4be4",
+      "internal/objecter/inconsistent.go": "653be7a65a48ca4921bc42e76fd9f04e3f48a2ab36220bf6a0a9defc100384a4",
+      "internal/objecter/mutation.go": "572a35b5caa886efbd78aeeed3e8bfe11f554a77949153826823b80cf44719e2",
+      "internal/objecter/mutation_test.go": "435f97c5b8996aaea6990e84999e8f145412f533715e9e5cfd0639def519e561",
+      "internal/objecter/osd_session.go": "6fe903dc0f100bb14ad8a1c4eef5bbe793a120005dbb6d0dd6364fb9bbb9421c",
+      "internal/objecter/osd_session_test.go": "e5254b8151a6daca228c96ad45af32c8c8738284fcdfc078f913a0b80ec81d57",
+      "internal/objecter/watch.go": "74d35d1033696a46117c3e8b5a3fdea895b501b0a1c1ddde6e67e143c4b4feab",
+      "internal/objecter/watch_test.go": "913957f47cee2e898e5debde6211e4d458fe86853734326adfe0a7fb7c9fbc55",
+      "internal/osd/backoff.go": "d1680258d65be03b1274775f79050f46602db3b9f947643460b48a83b7ed7255",
+      "internal/osd/backoff_test.go": "17ae2cf89f4a0c2f26cf0f77f75b3acf84c53d671b159b188d6be0c6f7cc2184",
+      "internal/osd/checksum.go": "6a69191fe84993c7890f628cee1b80764370eeb9ca300b57034b7c0fbd886eac",
+      "internal/osd/checksum_test.go": "fe81835356512544e5eee3b3f6936095c4e219e0f9f53d733c9b1da1068036bd",
+      "internal/osd/command.go": "618fc109bf585513486b2d87d99b9077d61743763b1a2e077aca7e7d6772235e",
+      "internal/osd/command_test.go": "8b9f23562e54a05bd2a071e51539c927f6696f98b112c59159a30e57f63e85bc",
+      "internal/osd/enumeration.go": "265f141c9f61a984279c7b0cbea86a09535e06bfcf13b544c253206e4235e086",
+      "internal/osd/enumeration_test.go": "820019051633ea5f82d3432585b50502e57f9310d8cd75b83f27b6fde524e2fb",
+      "internal/osd/inconsistent.go": "8e8ad9e80680f75d09da560edc7acee7faa1b11a4f1a7b411c905502b23c3e7c",
+      "internal/osd/inconsistent_test.go": "148f317aa69a53a20c904d9ec74248bc4d2e5dc47888acc1e3389c490736c9df",
+      "internal/osd/lock.go": "bfdeb9bc9a5285dddd44d82ffa65eedb95cccb601996ca34851ac361b6f6d7f5",
+      "internal/osd/lock_test.go": "589e16d31eafd31974bb299040df12211077eb71c22fb275d33ae7d5caed6a18",
+      "internal/osd/messages.go": "84a0aa46a1681da2cf3d6c3c2bded3ab9a946be5d564a0423d4161bee2157ce7",
+      "internal/osd/messages_test.go": "a4fe1c8e40e21a0fd9de6c601a56529b4c981635312ac69232422ae79e0e9267",
+      "internal/osd/metadata.go": "7ea4eae91a47bc32dde896927c24b4ae5996bd4b258ba8da574ac2ea0b7854c7",
+      "internal/osd/metadata_test.go": "4421879d22d3543071cf3a5e29fa14a77ff482270220de2b57b201b640fa512c",
+      "internal/osd/sparse.go": "e0eb31cc118754243633ea9b817ee4396759a6722a0a38a78505a62c4f434610",
+      "internal/osd/sparse_test.go": "01ba7f17d2af91e7eba85786f3890788828479221d89dc2447af62ac00adf3d5",
+      "internal/osd/watch.go": "db74670ec4810a0b189c459b608d5161e5f0423aa0bb091f72af664a9f2c8ff6",
+      "internal/osd/watch_test.go": "2b88365eb4360f07cda270196ce09654d4e0f280e0a99af15cb3018804ee1943",
+      "internal/p12fuzzcontract/contract.go": "acf9dd3d47a26c1698b6686145458996a63fe36774dffb72303e291b30ad6810",
+      "internal/p12fuzzcontract/contract_test.go": "46b5d1cca0e595c357211348b63e106b51d5750bceb54eb5da295856a028ff79",
+      "internal/p12fuzzevidence/evidence.go": "e1b810387882cbc898bd1f3b9d2f1f6fdb078bfe87f9644098d2a4c9120f1622",
+      "internal/p12fuzzevidence/evidence_test.go": "5181097e1be05dfc384e4cffde2d4723f74271341e016c4b33c847d312aaf064",
+      "internal/p12qualcontract/contract.go": "69ddb92ff94de1110bedf68989e6d1f84212797cfc9ea9aa742aa720bb2fe15b",
+      "internal/p12qualcontract/contract_test.go": "f09417df8613fb71394db00814e2565e2037d4fe6701daa63e579ae6bf0295bb",
+      "internal/protocol/address.go": "802b49d86bda957c9f243ef9b619a57f49441b108b0e69cf8c814cbb4eb5c686",
+      "internal/protocol/entity.go": "bae43654cc37194c84ce1be63ef071aa1dac6050c68c012b969ef797b6f48b01",
+      "internal/protocol/errno.go": "853b8360670a28e8462d6e2eeb3c7d427e9dacf98fe9752b5da2bfad71baafcd",
+      "internal/protocol/features.go": "1031cd9b04982627ed180d948c4f0961f0afeff01d3dfc6aa1ed1b6c951b415e",
+      "internal/protocol/message_types.go": "57f3a95b49e8e4002a91ec99206f703cedd38aa86d12911c52ad1a8ea2169fe6",
+      "internal/protocol/message_types_test.go": "2d4397612a4ac944ee1442e719718ecf387b84ceed5a68290e96f49289bb89b1",
+      "internal/protocol/protocol_test.go": "2fd9418c3c3f6324ca9b65350b1857c990d89c9a184c0e91f0072d26f956ce68",
+      "metadata.go": "0d05c62980408ce2659965c4c56e01fea0da98039c1bde1f9d8928df930f65e5",
+      "metadata_test.go": "6146819994fe384c311042e062a20ca6043c5ae865357feb32fe9cbebe366322",
+      "object.go": "dfb2ee91396778d49541938f81641d999a6298b1f37155a836bef02b2e72a80f",
+      "p12_diagnostics.go": "23c99ad97433dcf13598ff3949b825fde1ac79edddc680aaa7d5c09f8b21667f",
+      "snapshot.go": "17657e979c8e9f5214d6cfddcc6025c075d353b5a38d87121c85151664cc2271",
+      "testdata/README.md": "589d1ba5b2e046f7f414fbc62632fbec4148a2102553bc35273c95b86129cec1",
+      "testdata/manifest.schema.json": "5db9a77a13bf998728fec98ab58410a387ba46041129c768b32848bc5a3d0a24",
+      "testdata/p01/entity-addr-ipv4-legacy.bin": "3e0124654f5817281cfaa1b056f14b4128b546ef38994d765b6bb09c00868fbf",
+      "testdata/p01/entity-addr-ipv4-legacy.bin.json": "0005ecb888beba6b13833e1edb32fc5851e59b1fd1f73b3e9b48ff956a14e00b",
+      "testdata/p01/entity-addr-ipv4-modern.bin": "43c8ed879a7fd14a2d86ac42f0d78d9ae6d5a785f5e60b6658bcba3b3eb2d7e7",
+      "testdata/p01/entity-addr-ipv4-modern.bin.json": "6085d858d521847cadf63c24e0c31aaf9f07b3d68fde5b43004838ab29890538",
+      "testdata/p01/entity-addr-ipv6-modern.bin": "a5b18e8166e8aa1d0c3285a6c1a3470851ae2bd229b28da857328c3bd2217986",
+      "testdata/p01/entity-addr-ipv6-modern.bin.json": "a822dda3fe0cfdb90c4b140c29c2f5a0c7c6bcf2ae00c3a3171d93c94bbfb43d",
+      "testdata/p01/entity-addrvec-modern.bin": "f26c6ce30fe8892264a14b6cd5042549d1eee314f921cf8019faf6be9d5c4345",
+      "testdata/p01/entity-addrvec-modern.bin.json": "7e368d4af8a02c2a417670d0ff8e2813c2d95ae5fe05750e8d61e0fd45cfc7d8",
+      "testdata/p01/entity-name-client-1.bin": "0ea9e19802a23c4674e289fabeaa6e600262fb9ad25ae64fd4fb927651b6abe9",
+      "testdata/p01/entity-name-client-1.bin.json": "910701f79ad25552ebdb61e3c4abac8103f3eee2a09a4f5b195d73120da98631",
+      "testdata/p01/entity-name-mon-new.bin": "1272f520cf7ca5cf117a0b5a3116518371bf20fb7fac043ac1be568b8c55b96c",
+      "testdata/p01/entity-name-mon-new.bin.json": "d2dad2e8d97cfcd80d880895300b6ef4c22f21e1aa10917556608044a1e61870",
+      "testdata/p02/banner-rev1.bin": "6819c56d3d3d3ccaa0545a80d55aaa8088d88e9f849113cdafa58feb298cfcca",
+      "testdata/p02/banner-rev1.bin.json": "51ed9ffdc49b36cfc9a64725cea2a500d2127701e0b7b2e83379e7a73eaeb646",
+      "testdata/p02/crc-four-segment.bin": "0fa63a785151214c426f128141faf3969eb0be008b9229505ab7146401dd8c42",
+      "testdata/p02/crc-four-segment.bin.json": "7c3a5ae9fe85315ceceda6fcfaa2111e82532443a87decb5ac3689ce38a581ea",
+      "testdata/p02/crc-one-segment.bin": "cc92c26d26b0ad4635944e3d2ac05a6cc87463162cd66a9f2884303fd95d37d4",
+      "testdata/p02/crc-one-segment.bin.json": "3af195bd7f5801f56745120f320391b4d3bf2bfcce0285ef4ab190e69c7050fb",
+      "testdata/p02/secure-multi-record.bin": "f0c516007c9473215ababf72c8ab9058e8a5936cab97e2ca59fdde28849d37a1",
+      "testdata/p02/secure-multi-record.bin.json": "95602cc7b5e4c7a01cc607b3a2baf6884dc56a26eec0d528f08c8bdb9e005aaf",
+      "testdata/p02/secure-one-segment.bin": "592152e22495cecb210cf5a7bfefac49f6cdd8bbbb14e223db3538bef0b3926d",
+      "testdata/p02/secure-one-segment.bin.json": "afc0479551c9643f793f79f31ca4baa0f2e33dd34d7ba3491d30ea397eaf0b0c",
+      "testdata/p02/upstream/upstream-ack-control.bin": "2496a22ad0abda5947019dcdbd5dfe482eab124a649d302cba119df923a6ce70",
+      "testdata/p02/upstream/upstream-ack-control.bin.json": "6a812bfe04deef21815008b058b8c574e6ca89457ab795d90becd3aae73764c3",
+      "testdata/p02/upstream/upstream-crc-disabled-one-segment.bin": "68cef6e79159b37891d93457c98a1748a311a6becc12cf2a67a7da90234e7569",
+      "testdata/p02/upstream/upstream-crc-disabled-one-segment.bin.json": "7dee67e33a2394487da12e23d06bf75894e5380375d4bcdcdf0b8a4889f6fde4",
+      "testdata/p02/upstream/upstream-crc-four-segment.bin": "0fa63a785151214c426f128141faf3969eb0be008b9229505ab7146401dd8c42",
+      "testdata/p02/upstream/upstream-crc-four-segment.bin.json": "6950e9fae5cebdeadd703f5139eba1a30b47b742f9392ce6485adda98d7d190d",
+      "testdata/p02/upstream/upstream-crc-one-segment.bin": "cc92c26d26b0ad4635944e3d2ac05a6cc87463162cd66a9f2884303fd95d37d4",
+      "testdata/p02/upstream/upstream-crc-one-segment.bin.json": "4724b28c4b5c8dafbdb2a636e2d1ee91634abc241ad57df7e632d0f9f05ab4cd",
+      "testdata/p02/upstream/upstream-message-frame.bin": "00a22987b019e085cf811b10852000116e3c63adc33bf86729485a2ecb81ff26",
+      "testdata/p02/upstream/upstream-message-frame.bin.json": "11f1e70a7d041c35f8ff886f40d8a31c461f87a7ec779b58432be9d1d3ffbd3e",
+      "testdata/p02/upstream/upstream-secure-multi-record.bin": "f0c516007c9473215ababf72c8ab9058e8a5936cab97e2ca59fdde28849d37a1",
+      "testdata/p02/upstream/upstream-secure-multi-record.bin.json": "8138588eff256d268a652ff4b0bb4b0586d24fc8dca87b3316de79079b17b8ed",
+      "testdata/p02/upstream/upstream-secure-one-segment.bin": "592152e22495cecb210cf5a7bfefac49f6cdd8bbbb14e223db3538bef0b3926d",
+      "testdata/p02/upstream/upstream-secure-one-segment.bin.json": "111db2e468acdb54c10854db0c25d97c09363ef611f50d4b006157d7b3ca241b",
+      "testdata/p03/cephx-encoding-vectors.json": "6b7c66e654f2f11a2effa2c51119b4cdcf19eba642952d8eaa292de3182f1cc4",
+      "testdata/p03/cephx-encoding-vectors.json.manifest.json": "fa72e75e9780ea2d63533d561acac35a57ce44e58dbee30e4466cdfc2d43586e",
+      "testdata/p03/crypto-vectors.json": "9baad25768d0d32c238cb1c98bc2d6c08f66f84dde724b92b5d518dce50b4591",
+      "testdata/p03/crypto-vectors.json.manifest.json": "87e796f2079d36430deb5602b41ee9a366c29f1c3374277440e0525005016e1d",
+      "testdata/p04/monmap-v9.bin": "d575f2f1267aaad35803d0c7fbd61bd0d1ab00ac7837bb6210a835a0d4c3e3da",
+      "testdata/p04/monmap-v9.bin.manifest.json": "6b01090488b2ad494327466fdc9b20fc3a21f88c42c8d21591b8927d3bb5d4f5",
+      "testdata/p04/osdmap-incremental-v8.bin": "57ee8c961bac016deb512b6f741b66231a9c337bc1bdfce0b54ef9697c0b9763",
+      "testdata/p04/osdmap-incremental-v8.bin.manifest.json": "8436e4948965ea6e43432e6b31d64d20b191584d9523f9464a84a3622381d41c",
+      "testdata/p04/osdmap-v8.bin": "7131ba24e481dd198a90b6121d6fc2a16b32dc61928dfcd9f5df9efc730acda8",
+      "testdata/p04/osdmap-v8.bin.manifest.json": "6aa5632a72d0f78385d12ec28b2933f88243cb682f6942ef2de02ed9f331c517",
+      "testdata/p05/crushmap.bin": "9679682ba0a62113d699006a09f96142536de2ae699dc92e9ffd39999792157f",
+      "testdata/p05/crushmap.bin.manifest.json": "b18232950ce37df5726eaab6cc6d23e77e7eb53ff2b93f4ca588d6ab5d3bc140",
+      "testdata/p05/mappings-osd1-out.txt": "2e77d33e59b2132df9c23320e2b76faf186b5164c10ca2f467e78cad08f5e494",
+      "testdata/p05/mappings-osd1-out.txt.manifest.json": "35ff21532fcbf712f670c4c68e34e191b62fb275ac31f593f999064c6890b205",
+      "testdata/p05/mappings.txt": "d110f6526ad142b627e16da860017b3ab848034af74cc292e36c03f89a8f2a30",
+      "testdata/p05/mappings.txt.manifest.json": "8f03749b6684b709656eafa1fae0ffb892181a638718c3e1d15d4212be14f411",
+      "testdata/p05/object-mappings-osd1-out.txt": "94528cd7b5fc23299e32badd8e58141c9996139c54d157b373d0f28b4f43e10b",
+      "testdata/p05/object-mappings-osd1-out.txt.manifest.json": "4c77d5254673b2522d2d91a8eda49f718ee9adeb6404d2cfeefa4c2a00ae63c2",
+      "testdata/p05/object-mappings-pg32.txt": "3008174c429e43fbc108027691ba77a1f371cf48b384df7a0cb62757af48bbe2",
+      "testdata/p05/object-mappings-pg32.txt.manifest.json": "aca7d681661b583effa205f83dd30b2e9c19133b0a4d24650722cfc94c803250",
+      "testdata/p05/object-mappings-upmap.txt": "6fada3798ac7be3a688dce4008716a7fea5471cceb056a24b845abc106b88789",
+      "testdata/p05/object-mappings-upmap.txt.manifest.json": "6d7e4a20da8ef0c80d61e261538c123285d08e22a28a0a0ebe03b53e189a5c15",
+      "testdata/p05/object-mappings.txt": "9efdb41a32bdbf955ff4b15b3901f19d50f845b2d46ac205c90010c9703da1b7",
+      "testdata/p05/object-mappings.txt.manifest.json": "bdff0f27be65e553b41aca943caf129b8167dc2103241668e74dc56057987911",
+      "testdata/p05/upmap-commands.txt": "d12e266eee65d2d822f711e5d14bd66c379db9eb078645feeb96ea2554b2d30b",
+      "testdata/p05/upmap-commands.txt.manifest.json": "285859aca86913af31056d74b2ec8b96dd519ea3dd693dc30ee1bfddccfe3f66",
+      "testdata/p10/crushmap.bin": "d2fcae471a000699a3ddd30ccb48b38a0f99a303e92332e52e134e71ea6b4a12",
+      "testdata/p10/mappings-osd1-out.txt": "696a2c45c271bb9d304029b8787d3997d151cc7abcb69abfabde4b574727c2c9",
+      "testdata/p10/mappings.txt": "9eec5c1a02050535d04e595b5d0340d4d8ba678277a7d4c0cb683b9f309c72cc",
+      "tools/api-inventory/main.go": "79f4f2be6abd36f655960a2b61637feee7a9f47e4f4a8c264a39b2d099dbf6a5",
+      "tools/api-inventory/main_test.go": "ee38fb24f1345df0a8643dec0fa0d17a138c337bc928b2c34889f146c80a14b3",
+      "tools/p00-verify/main.go": "d716e192481e089053533e1acfdec520ff42defce7679229260a36ebbf024d26",
+      "tools/p00-verify/main_test.go": "4c752473563a893516ec1978a625e8a8997aa058ae529aaa5528975905b9103a",
+      "tools/p01-verify/main.go": "55e1958684c712d47a3b686aed5e653ae6801fcd9f685bd04d38eeeb266065ed",
+      "tools/p01-verify/main_test.go": "487f009b0f904a889e962b91addca0d2dd67c398bb2786fa277766a144d9c510",
+      "tools/p02-verify/main.go": "af297b2a9602031d444865b2011271fbbfe33c83b4b8e6184ba50b4ad8e98515",
+      "tools/p02-verify/main_test.go": "826d6d3fe69ab4c44d5928ad586f4344c71bdb706cd64479b2ea8d5a2ea47365",
+      "tools/p03-verify/main.go": "9de45226395b1fbcda2ac9d9b9b8f1b65bdd92c05c531b3e87e77d69cf4a09bc",
+      "tools/p03-verify/main_test.go": "1678ff0f79d2a79b5c01394748652cab0e14f25743fdc93db1c3c17cb5b63892",
+      "tools/p04-verify/main.go": "0eab2f7df9facfb6b8f932232353fcbfa5705447ad6105893c45be26e4c53407",
+      "tools/p05-verify/main.go": "7a1b5d303213f5409a0482d8061acf58a9af12704c2d6d52f1f1c6df58da6cba",
+      "tools/p06-verify/main.go": "2cfc7028a47617916b64facaa27fa4f241c2ccd007b18e01493ff4c34c2a3347",
+      "tools/p07-verify/main.go": "817d2650f59119c26c2b83906cfa1fd844294a8ea31ed33cd56c9a6f441948d5",
+      "tools/p07-verify/main_test.go": "9d07dffe0313bbdfcee230d0e4b50ddb41fe09a4a151aff64aa370f431580665",
+      "tools/p08-verify/main.go": "fb170016231a2364995e4cce2b828616f3da04a01cec0c15f09d4d7951c8186d",
+      "tools/p08-verify/main_test.go": "697c0990b433db1675839c850ae52f2969638fc7802ac24d9e131446d22056ac",
+      "tools/p09-verify/main.go": "b589222979dc5c0b7891e38e5897368f7b69b3c9530152427adf5f91978b95af",
+      "tools/p09-verify/main_test.go": "45a569a70a069b531ed93ae051827ba3727d51016e872d3e95a773d3fe3d21d4",
+      "tools/p10-verify/main.go": "c1a2626509b1fa3f4eb2a7ee9483b7ff9023594d6f0fd3c899e1a06318fa6af1",
+      "tools/p10-verify/main_test.go": "128d07bf2800214beaec2fce56e6fdcf6b52b9347f224540da63defd8124fa0e",
+      "tools/p11-verify/main.go": "0a0e884d553cc0f32e6608fdb65b025bcccc96b2c6bd5b396c79936f42f4e7b1",
+      "tools/p11-verify/main_test.go": "c1e40d78b74d9e66909c7574e066d5a71b449eeeabab591afd9e26962929c2f0",
+      "tools/p12-fuzz/main.go": "8b94c2829cdb1725c043acfb6d2a48e1f9c04ca0d7bfcf3739a3496989818090",
+      "tools/p12-fuzz/main_test.go": "c4ead541bc27e57604a867698aa338e95ed0da40095970c2bdde8f7191ac7f2c",
+      "tools/p12-qualify/main.go": "305ab5eadf3a75e60ca6c1c5530b8ce44a8d56ec5d7c2e250f37f4009c45b6fa",
+      "tools/p12-qualify/main_test.go": "98e24258740c341fca7c249940e98ff728513a5d493620e5f9cd1a0f3ab62ba9",
+      "tools/p12-release/main.go": "7fd3a4436089b3a4105b8b02b5a8b08ed85005275d37b69c77798a5e9e425200",
+      "tools/p12-release/main_test.go": "6dadc8b91de5433c197ddda78614475eab20991842beb6f23d67164ecb8068c7",
+      "tools/p12-verify/budget.go": "4ee39f5e2d9350f839f12ace9801da5340847e126bb65bb7e9618119f51b3ffc",
+      "tools/p12-verify/budget_test.go": "f7bf15307d2e8ddeeb536379a808171113ea505296b4fb873f1b76a8e68dc9fd",
+      "tools/p12-verify/main.go": "9ac6cd02023b20883c3c92db633d1167f651501f14d3c729dd56b6f3a9e81997",
+      "tools/p12-verify/main_test.go": "de5fe2bf963b32565b42f814ab0ece7cf2ba07751da70340f7758a6c7694af9d",
+      "tools/p12-verify/qualification.go": "5b1f2083936c761f1f93aa37519d653ee0e0e8f028081089e60815e7e5f36445",
+      "tools/p12-verify/release.go": "21704da9aef374ecbd4519c9f0a0fa3373b4a304f01ad4ae8216bfc3e42b9ae1",
+      "tools/p12-verify/release_test.go": "366f6f23edd5ca25740249e3446e63766ad774dabef521ae5a8907cfadc205ac",
+      "tools/p12-verify/review.go": "aa0c5be0b7e1f35d716e9abb3aedbb5cfa6df5ced90ddf616d262a436e13cdb7",
+      "tools/p12-verify/review_signature_test.go": "615dfac4143df945a85b942d0d8e1741492d4cc20ef0f8e6df0b0c033ad99d74",
+      "tools/p12-verify/review_test.go": "c32c58b4d2d90f3a58bd140e9c0ec2fd8dcc783d6590b43f726af10d6f33e6e3",
+      "tools/p13-verify/main.go": "1e3ff039c8f16ef4e41774445f41d829cf8110ac86c9355e507d22b7e32e2bc0",
+      "tools/p13-verify/main_test.go": "afb7e6f8b0cbd7e39f2112a8d5d75f690e61c79394daf0fd655bed627d8f39a5"
+    }
+  },
+  "server": {
+    "image": "quay.io/ceph/ceph@sha256:6e6bc7b28fa1b334108a3646af5533dfb50db508efdf5b358eb7dd0dd37a48aa",
+    "platform": "linux/arm64",
+    "version": "ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)"
+  },
+  "native_runtime": {
+    "soname": "librados.so.2",
+    "path": "/usr/lib64/librados.so.2.0.0",
+    "sha256": "b630ea9d633d724bacfb116815915c852374d0a8ca351bdc488f0bbae4fb4bac"
+  },
+  "cluster": {
+    "fsid": "13131313-2222-4333-8444-131313131313",
+    "subnet": "172.30.113.0/24",
+    "monitors": [
+      "p13-mon-a",
+      "p13-mon-b",
+      "p13-mon-c"
+    ],
+    "manager": "p13-mgr-x",
+    "initial_osds": 3,
+    "device_bytes": 8589934592,
+    "pools": [
+      {
+        "name": "p13-size3",
+        "size": 3,
+        "min_size": 2
+      },
+      {
+        "name": "p13-size1",
+        "size": 1,
+        "min_size": 1
+      }
+    ],
+    "user": "client.p13"
+  },
+  "scenarios": [
+    {
+      "id": "p13-baseline-size3",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "none",
+      "injected_at": "2026-09-29T23:18:28Z",
+      "released_at": "2026-09-29T23:18:30Z",
+      "before": {
+        "epoch": 20,
+        "pgid": "2.6",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:28Z"
+      },
+      "after": {
+        "epoch": 20,
+        "pgid": "2.6",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:30Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "baseline-p13-size3",
+        "started_at": "2026-09-29T23:18:28.73553077Z",
+        "finished_at": "2026-09-29T23:18:28.736892398Z",
+        "elapsed_ns": 1362586,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "p13-size3-baseline",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "baseline-p13-size3",
+        "started_at": "2026-09-29T23:18:29.010956299Z",
+        "finished_at": "2026-09-29T23:18:29.011741258Z",
+        "elapsed_ns": 784877,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "p13-size3-baseline"
+      },
+      "final_data": "p13-size3-baseline",
+      "mutation_markers": [],
+      "notes": "Go and native baseline agree",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-baseline-size1",
+      "status": "passed",
+      "pool": "p13-size1",
+      "operation": "read",
+      "fault": "none",
+      "injected_at": "2026-09-29T23:18:32Z",
+      "released_at": "2026-09-29T23:18:34Z",
+      "before": {
+        "epoch": 20,
+        "pgid": "3.7",
+        "acting": [
+          0
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:32Z"
+      },
+      "after": {
+        "epoch": 20,
+        "pgid": "3.7",
+        "acting": [
+          0
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:34Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "baseline-p13-size1",
+        "started_at": "2026-09-29T23:18:32.483850042Z",
+        "finished_at": "2026-09-29T23:18:32.484881586Z",
+        "elapsed_ns": 1032044,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "p13-size1-baseline",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "baseline-p13-size1",
+        "started_at": "2026-09-29T23:18:32.774134724Z",
+        "finished_at": "2026-09-29T23:18:32.774817600Z",
+        "elapsed_ns": 682834,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "p13-size1-baseline"
+      },
+      "final_data": "p13-size1-baseline",
+      "mutation_markers": [],
+      "notes": "Go and native baseline agree",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-size3-one-down",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "osd-down",
+      "injected_at": "2026-09-29T23:18:35Z",
+      "released_at": "2026-09-29T23:18:47Z",
+      "before": {
+        "epoch": 20,
+        "pgid": "2.2",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:35Z"
+      },
+      "after": {
+        "epoch": 25,
+        "pgid": "2.2",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:48Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "one-down",
+        "started_at": "2026-09-29T23:18:38.25284694Z",
+        "finished_at": "2026-09-29T23:18:38.253692524Z",
+        "elapsed_ns": 846043,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "stable",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "one-down",
+        "started_at": "2026-09-29T23:18:38.564248328Z",
+        "finished_at": "2026-09-29T23:18:38.565228539Z",
+        "elapsed_ns": 980169,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "stable"
+      },
+      "final_data": "stable",
+      "mutation_markers": [],
+      "notes": "size 3 min 2 remained available with one replica down",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-size3-below-min-recovery",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "two-osds-down",
+      "injected_at": "2026-09-29T23:18:51Z",
+      "released_at": "2026-09-29T23:19:07Z",
+      "before": {
+        "epoch": 25,
+        "pgid": "2.3",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:18:50Z"
+      },
+      "after": {
+        "epoch": 30,
+        "pgid": "2.3",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:19:08Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "below-min",
+        "started_at": "2026-09-29T23:18:53.254498585Z",
+        "finished_at": "2026-09-29T23:19:02.24058086Z",
+        "elapsed_ns": 8986083692,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "parked",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "below-min",
+        "started_at": "2026-09-29T23:18:53.298844503Z",
+        "finished_at": "2026-09-29T23:19:02.238549606Z",
+        "elapsed_ns": 8939705020,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "parked"
+      },
+      "final_data": "parked",
+      "mutation_markers": [],
+      "notes": "operation remained pending for the configured minimum interval and completed after recovery",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-crc-below-min-recovery",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "two-osds-down",
+      "injected_at": "2026-09-29T23:19:11Z",
+      "released_at": "2026-09-29T23:19:26Z",
+      "before": {
+        "epoch": 30,
+        "pgid": "2.3",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:19:10Z"
+      },
+      "after": {
+        "epoch": 35,
+        "pgid": "2.3",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:19:28Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "crc",
+        "operation": "read",
+        "object": "below-min",
+        "started_at": "2026-09-29T23:19:13.746939636Z",
+        "finished_at": "2026-09-29T23:19:22.964875356Z",
+        "elapsed_ns": 9217937512,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "parked",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "crc",
+        "operation": "read",
+        "object": "below-min",
+        "started_at": "2026-09-29T23:19:13.786869754Z",
+        "finished_at": "2026-09-29T23:19:22.964918189Z",
+        "elapsed_ns": 9178048352,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "parked"
+      },
+      "final_data": "parked",
+      "mutation_markers": [],
+      "notes": "forced CRC clients remained pending below min_size and completed after recovery",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-size1-loss-recovery",
+      "status": "passed",
+      "pool": "p13-size1",
+      "operation": "read",
+      "fault": "sole-osd-down",
+      "injected_at": "2026-09-29T23:19:30Z",
+      "released_at": "2026-09-29T23:19:47Z",
+      "before": {
+        "epoch": 35,
+        "pgid": "3.1",
+        "acting": [
+          0
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:19:29Z"
+      },
+      "after": {
+        "epoch": 40,
+        "pgid": "3.1",
+        "acting": [
+          0
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:19:48Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "sole-loss",
+        "started_at": "2026-09-29T23:19:33.206013746Z",
+        "finished_at": "2026-09-29T23:19:42.6324837Z",
+        "elapsed_ns": 9426471995,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "sole",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "sole-loss",
+        "started_at": "2026-09-29T23:19:33.200037193Z",
+        "finished_at": "2026-09-29T23:19:45.118129800Z",
+        "elapsed_ns": 11918092273,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "sole"
+      },
+      "final_data": "sole",
+      "mutation_markers": [],
+      "notes": "size 1 operation parked and completed after the sole OSD restarted",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-silent-primary-map-wakeup",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "paused-primary-then-down-out",
+      "injected_at": "2026-09-29T23:19:51Z",
+      "released_at": "2026-09-29T23:20:11Z",
+      "before": {
+        "epoch": 40,
+        "pgid": "2.7",
+        "acting": [
+          1,
+          2,
+          0
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:19:50Z"
+      },
+      "after": {
+        "epoch": 47,
+        "pgid": "2.7",
+        "acting": [
+          2,
+          1,
+          0
+        ],
+        "primary": 2,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:20:12Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "silent-primary",
+        "started_at": "2026-09-29T23:19:51.338057062Z",
+        "finished_at": "2026-09-29T23:19:58.074819279Z",
+        "elapsed_ns": 6736763883,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "silent",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "silent-primary",
+        "started_at": "2026-09-29T23:19:51.388305867Z",
+        "finished_at": "2026-09-29T23:20:00.460400779Z",
+        "elapsed_ns": 9072094746,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "silent"
+      },
+      "final_data": "silent",
+      "mutation_markers": [],
+      "notes": "no completion during the minimum silent interval; newer map drove completion",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-flaky-stop-start",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "append",
+      "fault": "bounded-stop-start",
+      "injected_at": "2026-09-29T23:20:14Z",
+      "released_at": "2026-09-29T23:21:09Z",
+      "before": {
+        "epoch": 47,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:20:14Z"
+      },
+      "after": {
+        "epoch": 67,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:10Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "append",
+        "object": "flaky-mutation",
+        "started_at": "2026-09-29T23:20:53.459455418Z",
+        "finished_at": "2026-09-29T23:20:58.504241949Z",
+        "elapsed_ns": 5044788615,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 9,
+        "data": "",
+        "mutation_marker": "go-marker-4;",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "append",
+        "object": "flaky-mutation",
+        "started_at": "2026-09-29T23:20:53.452572654Z",
+        "finished_at": "2026-09-29T23:20:58.488518961Z",
+        "elapsed_ns": 5035946140,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 8,
+        "data": "",
+        "mutation_marker": "native-marker-4;"
+      },
+      "final_data": "native-marker-1;go-marker-1;go-marker-2;native-marker-2;native-marker-3;go-marker-3;native-marker-4;go-marker-4;",
+      "mutation_markers": [
+        "native-marker-1;",
+        "go-marker-1;",
+        "go-marker-2;",
+        "native-marker-2;",
+        "native-marker-3;",
+        "go-marker-3;",
+        "native-marker-4;",
+        "go-marker-4;"
+      ],
+      "notes": "paired appends remained pending on each paused primary, completed after map-driven failover, and each marker appears exactly once; probabilistic packet loss is not claimed",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": [
+        {
+          "injected_at": "2026-09-29T23:20:15Z",
+          "released_at": "2026-09-29T23:20:20Z"
+        },
+        {
+          "injected_at": "2026-09-29T23:20:28Z",
+          "released_at": "2026-09-29T23:20:33Z"
+        },
+        {
+          "injected_at": "2026-09-29T23:20:40Z",
+          "released_at": "2026-09-29T23:20:45Z"
+        },
+        {
+          "injected_at": "2026-09-29T23:20:53Z",
+          "released_at": "2026-09-29T23:20:58Z"
+        }
+      ]
+    },
+    {
+      "id": "p13-noout-read",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "global-noout-and-primary-restart",
+      "injected_at": "2026-09-29T23:21:16Z",
+      "released_at": "2026-09-29T23:21:48Z",
+      "before": {
+        "epoch": 67,
+        "pgid": "2.0",
+        "acting": [
+          2,
+          0,
+          1
+        ],
+        "primary": 2,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:12Z"
+      },
+      "after": {
+        "epoch": 70,
+        "pgid": "2.0",
+        "acting": [
+          0,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+undersized+degraded",
+        "observed_at": "2026-09-29T23:21:32Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "watch-object",
+        "started_at": "2026-09-29T23:21:33.69999595Z",
+        "finished_at": "2026-09-29T23:21:33.700854494Z",
+        "elapsed_ns": 859252,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "watch",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "watch-object",
+        "started_at": "2026-09-29T23:21:34.065315110Z",
+        "finished_at": "2026-09-29T23:21:34.066350654Z",
+        "elapsed_ns": 1035502,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "watch"
+      },
+      "final_data": "watch",
+      "mutation_markers": [],
+      "notes": "read completed while noout retained the down OSD",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-noout-write",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "write",
+      "fault": "global-noout-and-primary-restart",
+      "injected_at": "2026-09-29T23:21:16Z",
+      "released_at": "2026-09-29T23:21:48Z",
+      "before": {
+        "epoch": 67,
+        "pgid": "2.1",
+        "acting": [
+          1,
+          0,
+          2
+        ],
+        "primary": 1,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:14Z"
+      },
+      "after": {
+        "epoch": 70,
+        "pgid": "2.1",
+        "acting": [
+          1,
+          0
+        ],
+        "primary": 1,
+        "pg_state": "active+undersized+degraded",
+        "observed_at": "2026-09-29T23:21:33Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "write",
+        "object": "maintenance-write",
+        "started_at": "2026-09-29T23:21:34.339343511Z",
+        "finished_at": "2026-09-29T23:21:34.344163437Z",
+        "elapsed_ns": 4821426,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 2,
+        "data": "",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "write",
+        "object": "maintenance-write",
+        "started_at": "2026-09-29T23:21:34.647499102Z",
+        "finished_at": "2026-09-29T23:21:34.652699029Z",
+        "elapsed_ns": 5199843,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 3,
+        "data": ""
+      },
+      "final_data": "maintenance",
+      "mutation_markers": [],
+      "notes": "matching writes completed while noout retained the down OSD",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-noout-pg-command",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "pg-command",
+      "fault": "global-noout-and-primary-restart",
+      "injected_at": "2026-09-29T23:21:16Z",
+      "released_at": "2026-09-29T23:21:48Z",
+      "before": {
+        "epoch": 67,
+        "pgid": "2.0",
+        "acting": [
+          2,
+          0,
+          1
+        ],
+        "primary": 2,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:12Z"
+      },
+      "after": {
+        "epoch": 70,
+        "pgid": "2.0",
+        "acting": [
+          0,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+undersized+degraded",
+        "observed_at": "2026-09-29T23:21:32Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "pg-command",
+        "object": "2.0",
+        "started_at": "2026-09-29T23:21:35.310969834Z",
+        "finished_at": "2026-09-29T23:21:35.311909294Z",
+        "elapsed_ns": 940127,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\n    \"snap_trimq\": \"[]\",\n    \"snap_trimq_len\": 0,\n    \"state\": \"active+undersized+degraded\",\n    \"epoch\": 70,\n    \"up\": [\n        0,\n        1\n    ],\n    \"acting\": [\n        0,\n        1\n    ],\n    \"acting_recovery_backfill\": [\n        \"0\",\n        \"1\"\n    ],\n    \"info\": {\n        \"pgid\": \"2.0\",\n        \"shard\": \"255\",\n        \"last_update\": \"70'7\",\n        \"last_complete\": \"70'7\",\n        \"log_tail\": \"0'0\",\n        \"last_user_version\": 1,\n        \"last_backfill\": \"MAX\",\n        \"partial_writes_last_complete\": [],\n        \"partial_writes_last_complete_epoch\": \"70\",\n        \"purged_snaps\": [],\n        \"history\": {\n            \"epoch_created\": 12,\n            \"epoch_pool_created\": 12,\n            \"last_epoch_started\": 70,\n            \"last_interval_started\": 69,\n            \"last_epoch_clean\": 67,\n            \"last_interval_clean\": 66,\n            \"last_epoch_split\": 0,\n            \"last_epoch_marked_full\": 0,\n            \"same_up_since\": 69,\n            \"same_interval_since\": 69,\n            \"same_primary_since\": 69,\n            \"last_scrub\": \"0'0\",\n            \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_deep_scrub\": \"0'0\",\n            \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"prior_readable_until_ub\": 0\n        },\n        \"stats\": {\n            \"version\": \"70'7\",\n            \"reported_seq\": 232,\n            \"reported_epoch\": 70,\n            \"state\": \"active+undersized+degraded\",\n            \"last_fresh\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_change\": \"2026-09-29T23:21:18.256472+0000\",\n            \"last_active\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_peered\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_clean\": \"2026-09-29T23:21:14.203029+0000\",\n            \"last_became_active\": \"2026-09-29T23:21:18.256472+0000\",\n            \"last_became_peered\": \"2026-09-29T23:21:18.256472+0000\",\n            \"last_unstale\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_undegraded\": \"2026-09-29T23:21:18.248349+0000\",\n            \"last_fullsized\": \"2026-09-29T23:21:18.248029+0000\",\n            \"mapping_epoch\": 69,\n            \"log_start\": \"0'0\",\n            \"ondisk_log_start\": \"0'0\",\n            \"created\": 12,\n            \"last_epoch_clean\": 67,\n            \"parent\": \"0.0\",\n            \"parent_split_bits\": 0,\n            \"last_scrub\": \"0'0\",\n            \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_deep_scrub\": \"0'0\",\n            \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"objects_scrubbed\": 0,\n            \"log_size\": 7,\n            \"log_dups_size\": 0,\n            \"ondisk_log_size\": 7,\n            \"stats_invalid\": false,\n            \"dirty_stats_invalid\": false,\n            \"omap_stats_invalid\": false,\n            \"hitset_stats_invalid\": false,\n            \"hitset_bytes_stats_invalid\": false,\n            \"pin_stats_invalid\": false,\n            \"manifest_stats_invalid\": false,\n            \"snaptrimq_len\": 0,\n            \"last_scrub_duration\": 0,\n            \"scrub_schedule\": \"periodic scrub scheduled @ 2026-10-01T03:50:28.540401+0000\",\n            \"scrub_duration\": 0,\n            \"objects_trimmed\": 0,\n            \"snaptrim_duration\": 0,\n            \"stat_sum\": {\n                \"num_bytes\": 5,\n                \"num_objects\": 1,\n                \"num_object_clones\": 0,\n                \"num_object_copies\": 3,\n                \"num_objects_missing_on_primary\": 0,\n                \"num_objects_missing\": 0,\n                \"num_objects_degraded\": 1,\n                \"num_objects_misplaced\": 0,\n                \"num_objects_unfound\": 0,\n                \"num_objects_dirty\": 1,\n                \"num_whiteouts\": 0,\n                \"num_read\": 2,\n                \"num_read_kb\": 2,\n                \"num_write\": 1,\n                \"num_write_kb\": 1,\n                \"num_scrub_errors\": 0,\n                \"num_shallow_scrub_errors\": 0,\n                \"num_deep_scrub_errors\": 0,\n                \"num_objects_recovered\": 0,\n                \"num_bytes_recovered\": 0,\n                \"num_keys_recovered\": 0,\n                \"num_objects_omap\": 0,\n                \"num_objects_hit_set_archive\": 0,\n                \"num_bytes_hit_set_archive\": 0,\n                \"num_flush\": 0,\n                \"num_flush_kb\": 0,\n                \"num_evict\": 0,\n                \"num_evict_kb\": 0,\n                \"num_promote\": 0,\n                \"num_flush_mode_high\": 0,\n                \"num_flush_mode_low\": 0,\n                \"num_evict_mode_some\": 0,\n                \"num_evict_mode_full\": 0,\n                \"num_objects_pinned\": 0,\n                \"num_legacy_snapsets\": 0,\n                \"num_large_omap_objects\": 0,\n                \"num_objects_manifest\": 0,\n                \"num_omap_bytes\": 0,\n                \"num_omap_keys\": 0,\n                \"num_objects_repaired\": 0\n            },\n            \"up\": [\n                0,\n                1\n            ],\n            \"acting\": [\n                0,\n                1\n            ],\n            \"avail_no_missing\": [\n                \"0\",\n                \"1\"\n            ],\n            \"object_location_counts\": [\n                {\n                    \"shards\": \"0,1\",\n                    \"objects\": 1\n                }\n            ],\n            \"blocked_by\": [],\n            \"up_primary\": 0,\n            \"acting_primary\": 0,\n            \"purged_snaps\": []\n        },\n        \"empty\": 0,\n        \"dne\": 0,\n        \"incomplete\": 0,\n        \"last_epoch_started\": 70,\n        \"hit_set_history\": {\n            \"current_last_update\": \"0'0\",\n            \"history\": []\n        }\n    },\n    \"peer_info\": [\n        {\n            \"peer\": \"1\",\n            \"pgid\": \"2.0\",\n            \"shard\": \"255\",\n            \"last_update\": \"70'7\",\n            \"last_complete\": \"67'3\",\n            \"log_tail\": \"0'0\",\n            \"last_user_version\": 1,\n            \"last_backfill\": \"MAX\",\n            \"partial_writes_last_complete\": [],\n            \"partial_writes_last_complete_epoch\": \"40\",\n            \"purged_snaps\": [],\n            \"history\": {\n                \"epoch_created\": 12,\n                \"epoch_pool_created\": 12,\n                \"last_epoch_started\": 70,\n                \"last_interval_started\": 69,\n                \"last_epoch_clean\": 67,\n                \"last_interval_clean\": 66,\n                \"last_epoch_split\": 0,\n                \"last_epoch_marked_full\": 0,\n                \"same_up_since\": 69,\n                \"same_interval_since\": 69,\n                \"same_primary_since\": 69,\n                \"last_scrub\": \"0'0\",\n                \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_deep_scrub\": \"0'0\",\n                \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"prior_readable_until_ub\": 0\n            },\n            \"stats\": {\n                \"version\": \"67'2\",\n                \"reported_seq\": 213,\n                \"reported_epoch\": 67,\n                \"state\": \"active+clean\",\n                \"last_fresh\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_change\": \"2026-09-29T23:21:03.220116+0000\",\n                \"last_active\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_peered\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_clean\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_became_active\": \"2026-09-29T23:21:03.219962+0000\",\n                \"last_became_peered\": \"2026-09-29T23:21:03.219962+0000\",\n                \"last_unstale\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_undegraded\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_fullsized\": \"2026-09-29T23:21:14.203029+0000\",\n                \"mapping_epoch\": 69,\n                \"log_start\": \"0'0\",\n                \"ondisk_log_start\": \"0'0\",\n                \"created\": 12,\n                \"last_epoch_clean\": 67,\n                \"parent\": \"0.0\",\n                \"parent_split_bits\": 0,\n                \"last_scrub\": \"0'0\",\n                \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_deep_scrub\": \"0'0\",\n                \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"objects_scrubbed\": 0,\n                \"log_size\": 2,\n                \"log_dups_size\": 0,\n                \"ondisk_log_size\": 2,\n                \"stats_invalid\": false,\n                \"dirty_stats_invalid\": false,\n                \"omap_stats_invalid\": false,\n                \"hitset_stats_invalid\": false,\n                \"hitset_bytes_stats_invalid\": false,\n                \"pin_stats_invalid\": false,\n                \"manifest_stats_invalid\": false,\n                \"snaptrimq_len\": 0,\n                \"last_scrub_duration\": 0,\n                \"scrub_schedule\": \"periodic scrub scheduled @ 2026-09-30T23:30:50.642370+0000\",\n                \"scrub_duration\": 0,\n                \"objects_trimmed\": 0,\n                \"snaptrim_duration\": 0,\n                \"stat_sum\": {\n                    \"num_bytes\": 5,\n                    \"num_objects\": 1,\n                    \"num_object_clones\": 0,\n                    \"num_object_copies\": 3,\n                    \"num_objects_missing_on_primary\": 0,\n                    \"num_objects_missing\": 0,\n                    \"num_objects_degraded\": 0,\n                    \"num_objects_misplaced\": 0,\n                    \"num_objects_unfound\": 0,\n                    \"num_objects_dirty\": 1,\n                    \"num_whiteouts\": 0,\n                    \"num_read\": 0,\n                    \"num_read_kb\": 0,\n                    \"num_write\": 1,\n                    \"num_write_kb\": 1,\n                    \"num_scrub_errors\": 0,\n                    \"num_shallow_scrub_errors\": 0,\n                    \"num_deep_scrub_errors\": 0,\n                    \"num_objects_recovered\": 0,\n                    \"num_bytes_recovered\": 0,\n                    \"num_keys_recovered\": 0,\n                    \"num_objects_omap\": 0,\n                    \"num_objects_hit_set_archive\": 0,\n                    \"num_bytes_hit_set_archive\": 0,\n                    \"num_flush\": 0,\n                    \"num_flush_kb\": 0,\n                    \"num_evict\": 0,\n                    \"num_evict_kb\": 0,\n                    \"num_promote\": 0,\n                    \"num_flush_mode_high\": 0,\n                    \"num_flush_mode_low\": 0,\n                    \"num_evict_mode_some\": 0,\n                    \"num_evict_mode_full\": 0,\n                    \"num_objects_pinned\": 0,\n                    \"num_legacy_snapsets\": 0,\n                    \"num_large_omap_objects\": 0,\n                    \"num_objects_manifest\": 0,\n                    \"num_omap_bytes\": 0,\n                    \"num_omap_keys\": 0,\n                    \"num_objects_repaired\": 0\n                },\n                \"up\": [\n                    0,\n                    1\n                ],\n                \"acting\": [\n                    0,\n                    1\n                ],\n                \"avail_no_missing\": [],\n                \"object_location_counts\": [],\n                \"blocked_by\": [],\n                \"up_primary\": 0,\n                \"acting_primary\": 0,\n                \"purged_snaps\": []\n            },\n            \"empty\": 0,\n            \"dne\": 0,\n            \"incomplete\": 0,\n            \"last_epoch_started\": 70,\n            \"hit_set_history\": {\n                \"current_last_update\": \"0'0\",\n                \"history\": []\n            }\n        }\n    ],\n    \"recovery_state\": [\n        {\n            \"name\": \"Started/Primary/Active\",\n            \"enter_time\": \"2026-09-29T23:21:18.248334+0000\",\n            \"might_have_unfound\": [],\n            \"recovery_progress\": {\n                \"backfill_targets\": [],\n                \"waiting_on_backfill\": [],\n                \"last_backfill_started\": \"MIN\",\n                \"backfill_info\": {\n                    \"begin\": \"MIN\",\n                    \"end\": \"MIN\",\n                    \"objects\": []\n                },\n                \"peer_backfill_info\": [],\n                \"backfills_in_flight\": [],\n                \"recovering\": [],\n                \"pg_backend\": {\n                    \"pull_from_peer\": [],\n                    \"pushing\": []\n                }\n            }\n        },\n        {\n            \"name\": \"Started\",\n            \"enter_time\": \"2026-09-29T23:21:17.209231+0000\"\n        }\n    ],\n    \"scrubber\": {\n        \"active\": false,\n        \"must_scrub\": false,\n        \"must_deep_scrub\": false,\n        \"must_repair\": false,\n        \"scrub_reg_stamp\": \"2026-10-01T03:50:28.540401+0000\",\n        \"schedule\": \"scrub scheduled @ 2026-10-01T03:50:28.540 (2026-10-01T03:50:28.540)\"\n    },\n    \"agent_state\": {}\n}\n",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "pg-command",
+        "object": "2.0",
+        "started_at": "2026-09-29T23:21:35.603815355Z",
+        "finished_at": "2026-09-29T23:21:35.604931607Z",
+        "elapsed_ns": 1116169,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\n    \"snap_trimq\": \"[]\",\n    \"snap_trimq_len\": 0,\n    \"state\": \"active+undersized+degraded\",\n    \"epoch\": 70,\n    \"up\": [\n        0,\n        1\n    ],\n    \"acting\": [\n        0,\n        1\n    ],\n    \"acting_recovery_backfill\": [\n        \"0\",\n        \"1\"\n    ],\n    \"info\": {\n        \"pgid\": \"2.0\",\n        \"shard\": \"255\",\n        \"last_update\": \"70'7\",\n        \"last_complete\": \"70'7\",\n        \"log_tail\": \"0'0\",\n        \"last_user_version\": 1,\n        \"last_backfill\": \"MAX\",\n        \"partial_writes_last_complete\": [],\n        \"partial_writes_last_complete_epoch\": \"70\",\n        \"purged_snaps\": [],\n        \"history\": {\n            \"epoch_created\": 12,\n            \"epoch_pool_created\": 12,\n            \"last_epoch_started\": 70,\n            \"last_interval_started\": 69,\n            \"last_epoch_clean\": 67,\n            \"last_interval_clean\": 66,\n            \"last_epoch_split\": 0,\n            \"last_epoch_marked_full\": 0,\n            \"same_up_since\": 69,\n            \"same_interval_since\": 69,\n            \"same_primary_since\": 69,\n            \"last_scrub\": \"0'0\",\n            \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_deep_scrub\": \"0'0\",\n            \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"prior_readable_until_ub\": 0\n        },\n        \"stats\": {\n            \"version\": \"70'7\",\n            \"reported_seq\": 232,\n            \"reported_epoch\": 70,\n            \"state\": \"active+undersized+degraded\",\n            \"last_fresh\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_change\": \"2026-09-29T23:21:18.256472+0000\",\n            \"last_active\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_peered\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_clean\": \"2026-09-29T23:21:14.203029+0000\",\n            \"last_became_active\": \"2026-09-29T23:21:18.256472+0000\",\n            \"last_became_peered\": \"2026-09-29T23:21:18.256472+0000\",\n            \"last_unstale\": \"2026-09-29T23:21:34.215338+0000\",\n            \"last_undegraded\": \"2026-09-29T23:21:18.248349+0000\",\n            \"last_fullsized\": \"2026-09-29T23:21:18.248029+0000\",\n            \"mapping_epoch\": 69,\n            \"log_start\": \"0'0\",\n            \"ondisk_log_start\": \"0'0\",\n            \"created\": 12,\n            \"last_epoch_clean\": 67,\n            \"parent\": \"0.0\",\n            \"parent_split_bits\": 0,\n            \"last_scrub\": \"0'0\",\n            \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_deep_scrub\": \"0'0\",\n            \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n            \"objects_scrubbed\": 0,\n            \"log_size\": 7,\n            \"log_dups_size\": 0,\n            \"ondisk_log_size\": 7,\n            \"stats_invalid\": false,\n            \"dirty_stats_invalid\": false,\n            \"omap_stats_invalid\": false,\n            \"hitset_stats_invalid\": false,\n            \"hitset_bytes_stats_invalid\": false,\n            \"pin_stats_invalid\": false,\n            \"manifest_stats_invalid\": false,\n            \"snaptrimq_len\": 0,\n            \"last_scrub_duration\": 0,\n            \"scrub_schedule\": \"periodic scrub scheduled @ 2026-10-01T03:50:28.540401+0000\",\n            \"scrub_duration\": 0,\n            \"objects_trimmed\": 0,\n            \"snaptrim_duration\": 0,\n            \"stat_sum\": {\n                \"num_bytes\": 5,\n                \"num_objects\": 1,\n                \"num_object_clones\": 0,\n                \"num_object_copies\": 3,\n                \"num_objects_missing_on_primary\": 0,\n                \"num_objects_missing\": 0,\n                \"num_objects_degraded\": 1,\n                \"num_objects_misplaced\": 0,\n                \"num_objects_unfound\": 0,\n                \"num_objects_dirty\": 1,\n                \"num_whiteouts\": 0,\n                \"num_read\": 2,\n                \"num_read_kb\": 2,\n                \"num_write\": 1,\n                \"num_write_kb\": 1,\n                \"num_scrub_errors\": 0,\n                \"num_shallow_scrub_errors\": 0,\n                \"num_deep_scrub_errors\": 0,\n                \"num_objects_recovered\": 0,\n                \"num_bytes_recovered\": 0,\n                \"num_keys_recovered\": 0,\n                \"num_objects_omap\": 0,\n                \"num_objects_hit_set_archive\": 0,\n                \"num_bytes_hit_set_archive\": 0,\n                \"num_flush\": 0,\n                \"num_flush_kb\": 0,\n                \"num_evict\": 0,\n                \"num_evict_kb\": 0,\n                \"num_promote\": 0,\n                \"num_flush_mode_high\": 0,\n                \"num_flush_mode_low\": 0,\n                \"num_evict_mode_some\": 0,\n                \"num_evict_mode_full\": 0,\n                \"num_objects_pinned\": 0,\n                \"num_legacy_snapsets\": 0,\n                \"num_large_omap_objects\": 0,\n                \"num_objects_manifest\": 0,\n                \"num_omap_bytes\": 0,\n                \"num_omap_keys\": 0,\n                \"num_objects_repaired\": 0\n            },\n            \"up\": [\n                0,\n                1\n            ],\n            \"acting\": [\n                0,\n                1\n            ],\n            \"avail_no_missing\": [\n                \"0\",\n                \"1\"\n            ],\n            \"object_location_counts\": [\n                {\n                    \"shards\": \"0,1\",\n                    \"objects\": 1\n                }\n            ],\n            \"blocked_by\": [],\n            \"up_primary\": 0,\n            \"acting_primary\": 0,\n            \"purged_snaps\": []\n        },\n        \"empty\": 0,\n        \"dne\": 0,\n        \"incomplete\": 0,\n        \"last_epoch_started\": 70,\n        \"hit_set_history\": {\n            \"current_last_update\": \"0'0\",\n            \"history\": []\n        }\n    },\n    \"peer_info\": [\n        {\n            \"peer\": \"1\",\n            \"pgid\": \"2.0\",\n            \"shard\": \"255\",\n            \"last_update\": \"70'7\",\n            \"last_complete\": \"67'3\",\n            \"log_tail\": \"0'0\",\n            \"last_user_version\": 1,\n            \"last_backfill\": \"MAX\",\n            \"partial_writes_last_complete\": [],\n            \"partial_writes_last_complete_epoch\": \"40\",\n            \"purged_snaps\": [],\n            \"history\": {\n                \"epoch_created\": 12,\n                \"epoch_pool_created\": 12,\n                \"last_epoch_started\": 70,\n                \"last_interval_started\": 69,\n                \"last_epoch_clean\": 67,\n                \"last_interval_clean\": 66,\n                \"last_epoch_split\": 0,\n                \"last_epoch_marked_full\": 0,\n                \"same_up_since\": 69,\n                \"same_interval_since\": 69,\n                \"same_primary_since\": 69,\n                \"last_scrub\": \"0'0\",\n                \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_deep_scrub\": \"0'0\",\n                \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"prior_readable_until_ub\": 0\n            },\n            \"stats\": {\n                \"version\": \"67'2\",\n                \"reported_seq\": 213,\n                \"reported_epoch\": 67,\n                \"state\": \"active+clean\",\n                \"last_fresh\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_change\": \"2026-09-29T23:21:03.220116+0000\",\n                \"last_active\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_peered\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_clean\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_became_active\": \"2026-09-29T23:21:03.219962+0000\",\n                \"last_became_peered\": \"2026-09-29T23:21:03.219962+0000\",\n                \"last_unstale\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_undegraded\": \"2026-09-29T23:21:14.203029+0000\",\n                \"last_fullsized\": \"2026-09-29T23:21:14.203029+0000\",\n                \"mapping_epoch\": 69,\n                \"log_start\": \"0'0\",\n                \"ondisk_log_start\": \"0'0\",\n                \"created\": 12,\n                \"last_epoch_clean\": 67,\n                \"parent\": \"0.0\",\n                \"parent_split_bits\": 0,\n                \"last_scrub\": \"0'0\",\n                \"last_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_deep_scrub\": \"0'0\",\n                \"last_deep_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"last_clean_scrub_stamp\": \"2026-09-29T23:18:09.454465+0000\",\n                \"objects_scrubbed\": 0,\n                \"log_size\": 2,\n                \"log_dups_size\": 0,\n                \"ondisk_log_size\": 2,\n                \"stats_invalid\": false,\n                \"dirty_stats_invalid\": false,\n                \"omap_stats_invalid\": false,\n                \"hitset_stats_invalid\": false,\n                \"hitset_bytes_stats_invalid\": false,\n                \"pin_stats_invalid\": false,\n                \"manifest_stats_invalid\": false,\n                \"snaptrimq_len\": 0,\n                \"last_scrub_duration\": 0,\n                \"scrub_schedule\": \"periodic scrub scheduled @ 2026-09-30T23:30:50.642370+0000\",\n                \"scrub_duration\": 0,\n                \"objects_trimmed\": 0,\n                \"snaptrim_duration\": 0,\n                \"stat_sum\": {\n                    \"num_bytes\": 5,\n                    \"num_objects\": 1,\n                    \"num_object_clones\": 0,\n                    \"num_object_copies\": 3,\n                    \"num_objects_missing_on_primary\": 0,\n                    \"num_objects_missing\": 0,\n                    \"num_objects_degraded\": 0,\n                    \"num_objects_misplaced\": 0,\n                    \"num_objects_unfound\": 0,\n                    \"num_objects_dirty\": 1,\n                    \"num_whiteouts\": 0,\n                    \"num_read\": 0,\n                    \"num_read_kb\": 0,\n                    \"num_write\": 1,\n                    \"num_write_kb\": 1,\n                    \"num_scrub_errors\": 0,\n                    \"num_shallow_scrub_errors\": 0,\n                    \"num_deep_scrub_errors\": 0,\n                    \"num_objects_recovered\": 0,\n                    \"num_bytes_recovered\": 0,\n                    \"num_keys_recovered\": 0,\n                    \"num_objects_omap\": 0,\n                    \"num_objects_hit_set_archive\": 0,\n                    \"num_bytes_hit_set_archive\": 0,\n                    \"num_flush\": 0,\n                    \"num_flush_kb\": 0,\n                    \"num_evict\": 0,\n                    \"num_evict_kb\": 0,\n                    \"num_promote\": 0,\n                    \"num_flush_mode_high\": 0,\n                    \"num_flush_mode_low\": 0,\n                    \"num_evict_mode_some\": 0,\n                    \"num_evict_mode_full\": 0,\n                    \"num_objects_pinned\": 0,\n                    \"num_legacy_snapsets\": 0,\n                    \"num_large_omap_objects\": 0,\n                    \"num_objects_manifest\": 0,\n                    \"num_omap_bytes\": 0,\n                    \"num_omap_keys\": 0,\n                    \"num_objects_repaired\": 0\n                },\n                \"up\": [\n                    0,\n                    1\n                ],\n                \"acting\": [\n                    0,\n                    1\n                ],\n                \"avail_no_missing\": [],\n                \"object_location_counts\": [],\n                \"blocked_by\": [],\n                \"up_primary\": 0,\n                \"acting_primary\": 0,\n                \"purged_snaps\": []\n            },\n            \"empty\": 0,\n            \"dne\": 0,\n            \"incomplete\": 0,\n            \"last_epoch_started\": 70,\n            \"hit_set_history\": {\n                \"current_last_update\": \"0'0\",\n                \"history\": []\n            }\n        }\n    ],\n    \"recovery_state\": [\n        {\n            \"name\": \"Started/Primary/Active\",\n            \"enter_time\": \"2026-09-29T23:21:18.248334+0000\",\n            \"might_have_unfound\": [],\n            \"recovery_progress\": {\n                \"backfill_targets\": [],\n                \"waiting_on_backfill\": [],\n                \"last_backfill_started\": \"MIN\",\n                \"backfill_info\": {\n                    \"begin\": \"MIN\",\n                    \"end\": \"MIN\",\n                    \"objects\": []\n                },\n                \"peer_backfill_info\": [],\n                \"backfills_in_flight\": [],\n                \"recovering\": [],\n                \"pg_backend\": {\n                    \"pull_from_peer\": [],\n                    \"pushing\": []\n                }\n            }\n        },\n        {\n            \"name\": \"Started\",\n            \"enter_time\": \"2026-09-29T23:21:17.209231+0000\"\n        }\n    ],\n    \"scrubber\": {\n        \"active\": false,\n        \"must_scrub\": false,\n        \"must_deep_scrub\": false,\n        \"must_repair\": false,\n        \"scrub_reg_stamp\": \"2026-10-01T03:50:28.540401+0000\",\n        \"schedule\": \"scrub scheduled @ 2026-10-01T03:50:28.540 (2026-10-01T03:50:28.540)\"\n    },\n    \"agent_state\": {}\n}\n"
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "PG query followed the acting primary while noout retained the down OSD",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-noout-long-watch",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "watch",
+      "fault": "global-noout-and-primary-restart",
+      "injected_at": "2026-09-29T23:21:16Z",
+      "released_at": "2026-09-29T23:21:48Z",
+      "before": {
+        "epoch": 67,
+        "pgid": "2.0",
+        "acting": [
+          2,
+          0,
+          1
+        ],
+        "primary": 2,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:12Z"
+      },
+      "after": {
+        "epoch": 74,
+        "pgid": "2.0",
+        "acting": [
+          2,
+          0,
+          1
+        ],
+        "primary": 2,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:49Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "watch",
+        "object": "watch-object",
+        "started_at": "2026-09-29T23:21:14.197857587Z",
+        "finished_at": "2026-09-29T23:21:48.142428256Z",
+        "elapsed_ns": 33944572586,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "",
+        "mutation_marker": "",
+        "watch_cookie": 3501567745072196222,
+        "watch_events": 2,
+        "watch_interruptions": 6
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "watch",
+        "object": "watch-object",
+        "started_at": "2026-09-29T23:21:14.198942714Z",
+        "finished_at": "2026-09-29T23:21:48.137722831Z",
+        "elapsed_ns": 33938780117,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 1,
+        "data": "",
+        "watch_cookie": 836098064,
+        "watch_events": 2,
+        "watch_interruptions": 0
+      },
+      "final_data": "watch",
+      "mutation_markers": [],
+      "notes": "single-host global noout only; multi-host maintenance remains unqualified",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-add-osd-remap",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "add-osd-3",
+      "injected_at": "2026-09-29T23:22:56Z",
+      "released_at": "2026-09-29T23:23:16Z",
+      "before": {
+        "epoch": 74,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:21:54Z"
+      },
+      "after": {
+        "epoch": 82,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:15Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "remap-candidate-0",
+        "started_at": "2026-09-29T23:23:15.682112114Z",
+        "finished_at": "2026-09-29T23:23:15.683092324Z",
+        "elapsed_ns": 980919,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 10,
+        "data": "remap",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "remap-candidate-0",
+        "started_at": "2026-09-29T23:23:15.985040613Z",
+        "finished_at": "2026-09-29T23:23:15.985805114Z",
+        "elapsed_ns": 764460,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 10,
+        "data": "remap"
+      },
+      "final_data": "remap",
+      "mutation_markers": [],
+      "notes": "selected post-add PG acts on osd.3",
+      "lifecycle": null,
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-explicit-command-down",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "osd-command",
+      "fault": "osd-3-down",
+      "injected_at": "2026-09-29T23:23:17Z",
+      "released_at": "2026-09-29T23:23:28Z",
+      "before": {
+        "epoch": 82,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:17Z"
+      },
+      "after": {
+        "epoch": 85,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:27Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "osd-command",
+        "object": "3",
+        "started_at": "2026-09-29T23:23:28.445989419Z",
+        "finished_at": "2026-09-29T23:23:28.446012127Z",
+        "elapsed_ns": 22958,
+        "completed": false,
+        "errno": 6,
+        "outcome": "error",
+        "version": 0,
+        "data": "",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "osd-command",
+        "object": "3",
+        "started_at": "2026-09-29T23:23:28.744771701Z",
+        "finished_at": "2026-09-29T23:23:28.745068410Z",
+        "elapsed_ns": 296625,
+        "completed": false,
+        "errno": 6,
+        "outcome": "error",
+        "version": 0,
+        "data": ""
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "both clients report ENXIO for an existing down explicit target",
+      "lifecycle": {
+        "before": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "uuid": "13000000-0000-4000-8000-000000000003",
+          "address": "172.30.113.23:6800"
+        },
+        "after": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "uuid": "13000000-0000-4000-8000-000000000003",
+          "address": "172.30.113.23:6800"
+        }
+      },
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-out-down-remove",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "osd-3-out-down-purge",
+      "injected_at": "2026-09-29T23:23:17Z",
+      "released_at": "2026-09-29T23:23:31Z",
+      "before": {
+        "epoch": 82,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:17Z"
+      },
+      "after": {
+        "epoch": 87,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:32Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "remap-candidate-0",
+        "started_at": "2026-09-29T23:23:30.676219494Z",
+        "finished_at": "2026-09-29T23:23:30.677098204Z",
+        "elapsed_ns": 879876,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 10,
+        "data": "remap",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "remap-candidate-0",
+        "started_at": "2026-09-29T23:23:31.030390507Z",
+        "finished_at": "2026-09-29T23:23:31.031193509Z",
+        "elapsed_ns": 802960,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 10,
+        "data": "remap"
+      },
+      "final_data": "remap",
+      "mutation_markers": [],
+      "notes": "removed OSD is absent and both clients read through the remapped PG",
+      "lifecycle": {
+        "before": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "uuid": "13000000-0000-4000-8000-000000000003",
+          "address": "172.30.113.23:6800"
+        },
+        "after": {
+          "id": 3,
+          "exists": false,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "uuid": "",
+          "address": ""
+        }
+      },
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-explicit-command-absent",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "osd-command",
+      "fault": "osd-3-absent",
+      "injected_at": "2026-09-29T23:23:33Z",
+      "released_at": "2026-09-29T23:23:33Z",
+      "before": {
+        "epoch": 87,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:32Z"
+      },
+      "after": {
+        "epoch": 87,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:32Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "osd-command",
+        "object": "3",
+        "started_at": "2026-09-29T23:23:33.173464331Z",
+        "finished_at": "2026-09-29T23:23:33.17348254Z",
+        "elapsed_ns": 18583,
+        "completed": false,
+        "errno": 2,
+        "outcome": "error",
+        "version": 0,
+        "data": "",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "osd-command",
+        "object": "3",
+        "started_at": "2026-09-29T23:23:33.462332969Z",
+        "finished_at": "2026-09-29T23:23:33.462602845Z",
+        "elapsed_ns": 269834,
+        "completed": false,
+        "errno": 2,
+        "outcome": "error",
+        "version": 0,
+        "data": ""
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "both clients report ENOENT for an absent explicit target",
+      "lifecycle": {
+        "before": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "uuid": "13000000-0000-4000-8000-000000000003",
+          "address": "172.30.113.23:6800"
+        },
+        "after": {
+          "id": 3,
+          "exists": false,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "uuid": "",
+          "address": ""
+        }
+      },
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-destroy-recreate",
+      "status": "passed",
+      "pool": "p13-size3",
+      "operation": "read",
+      "fault": "destroy-recreate-osd-3-new-uuid-address",
+      "injected_at": "2026-09-29T23:23:52Z",
+      "released_at": "2026-09-29T23:24:20Z",
+      "before": {
+        "epoch": 94,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          1
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:23:51Z"
+      },
+      "after": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:24:21Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "read",
+        "object": "remap-candidate-0",
+        "started_at": "2026-09-29T23:24:19.756810485Z",
+        "finished_at": "2026-09-29T23:24:19.75756557Z",
+        "elapsed_ns": 759834,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 10,
+        "data": "remap",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "read",
+        "object": "remap-candidate-0",
+        "started_at": "2026-09-29T23:24:20.059260201Z",
+        "finished_at": "2026-09-29T23:24:20.059959327Z",
+        "elapsed_ns": 699085,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 10,
+        "data": "remap"
+      },
+      "final_data": "remap",
+      "mutation_markers": [],
+      "notes": "osd.3 reused only after destroy with a new UUID, volume, and client address",
+      "lifecycle": {
+        "before": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "uuid": "13000000-0000-4000-8000-000000000013",
+          "address": "172.30.113.23:6800"
+        },
+        "destroyed": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": true,
+          "uuid": "00000000-0000-0000-0000-000000000000",
+          "address": "172.30.113.23:6800"
+        },
+        "after": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "uuid": "13000000-0000-4000-8000-000000000023",
+          "address": "172.30.113.33:6800"
+        }
+      },
+      "monitor_lifecycle": null,
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-mon-offline-failover",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "monitor-command",
+      "fault": "mon-a-offline",
+      "injected_at": "2026-09-29T23:24:25Z",
+      "released_at": "2026-09-29T23:24:57Z",
+      "before": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:24:23Z"
+      },
+      "after": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:24:58Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:24:45.202880609Z",
+        "finished_at": "2026-09-29T23:24:56.17744933Z",
+        "elapsed_ns": 10974858471,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"MON_DOWN\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1/3 mons down, quorum b,c\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":12,\"quorum\":[1,2],\"quorum_names\":[\"b\",\"c\"],\"quorum_age\":11,\"monmap\":{\"epoch\":1,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":8,\"modified\":\"2026-09-29T23:23:30.804629+0000\",\"services\":{}},\"progress_events\":{}}\n",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:24:45.184702326Z",
+        "finished_at": "2026-09-29T23:24:45.185340661Z",
+        "elapsed_ns": 638251,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon b is low on available space\",\"count\":1},\"muted\":false},\"MON_DOWN\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1/3 mons down, quorum b,c\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":12,\"quorum\":[1,2],\"quorum_names\":[\"b\",\"c\"],\"quorum_age\":0,\"monmap\":{\"epoch\":1,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368,\"recovering_objects_per_sec\":1,\"recovering_bytes_per_sec\":9,\"recovering_keys_per_sec\":0,\"num_objects_recovered\":24,\"num_bytes_recovered\":120,\"num_keys_recovered\":0,\"read_bytes_sec\":170,\"read_op_per_sec\":0,\"write_op_per_sec\":0},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":8,\"modified\":\"2026-09-29T23:23:30.804629+0000\",\"services\":{}},\"progress_events\":{}}\n"
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "both clients failed over and completed a monitor command while mon.a was offline",
+      "lifecycle": null,
+      "monitor_lifecycle": {
+        "before": {
+          "epoch": 1,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        },
+        "after": {
+          "epoch": 1,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        }
+      },
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-mon-unreliable",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "monitor-command",
+      "fault": "bounded-mon-stop-start",
+      "injected_at": "2026-09-29T23:25:01Z",
+      "released_at": "2026-09-29T23:25:59Z",
+      "before": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:25:00Z"
+      },
+      "after": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:01Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:25:34.475121083Z",
+        "finished_at": "2026-09-29T23:25:58.93882062Z",
+        "elapsed_ns": 24463707287,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon b is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":28,\"quorum\":[1,2],\"quorum_names\":[\"b\",\"c\"],\"quorum_age\":26,\"monmap\":{\"epoch\":1,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:25:34.478557589Z",
+        "finished_at": "2026-09-29T23:25:34.479077257Z",
+        "elapsed_ns": 519584,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon b is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":28,\"quorum\":[1,2],\"quorum_names\":[\"b\",\"c\"],\"quorum_age\":1,\"monmap\":{\"epoch\":1,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":8,\"modified\":\"2026-09-29T23:23:30.804629+0000\",\"services\":{}},\"progress_events\":{}}\n"
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "bounded mon.b and mon.a outages preserved quorum and monitor-command completion",
+      "lifecycle": null,
+      "monitor_lifecycle": {
+        "before": {
+          "epoch": 1,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        },
+        "after": {
+          "epoch": 1,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        }
+      },
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-mon-changed",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "monitor-command",
+      "fault": "mon-c-location-change",
+      "injected_at": "2026-09-29T23:26:03Z",
+      "released_at": "2026-09-29T23:26:05Z",
+      "before": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:03Z"
+      },
+      "after": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:06Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:26:04.818961576Z",
+        "finished_at": "2026-09-29T23:26:04.819260785Z",
+        "elapsed_ns": 299876,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon a is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":34,\"quorum\":[0,1,2],\"quorum_names\":[\"a\",\"b\",\"c\"],\"quorum_age\":0,\"monmap\":{\"epoch\":2,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:26:05.133552138Z",
+        "finished_at": "2026-09-29T23:26:05.134020347Z",
+        "elapsed_ns": 468126,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon a is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":34,\"quorum\":[0,1,2],\"quorum_names\":[\"a\",\"b\",\"c\"],\"quorum_age\":1,\"monmap\":{\"epoch\":2,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n"
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "authoritative monmap changed mon.c location while commands remained available",
+      "lifecycle": null,
+      "monitor_lifecycle": {
+        "before": {
+          "epoch": 1,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        },
+        "after": {
+          "epoch": 2,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {
+                "rack": "r1"
+              }
+            }
+          ]
+        }
+      },
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-mon-removed",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "monitor-command",
+      "fault": "mon-c-removed",
+      "injected_at": "2026-09-29T23:26:09Z",
+      "released_at": "2026-09-29T23:26:26Z",
+      "before": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:08Z"
+      },
+      "after": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:27Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:26:25.56010922Z",
+        "finished_at": "2026-09-29T23:26:25.560410262Z",
+        "elapsed_ns": 301459,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon a is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":40,\"quorum\":[0,1],\"quorum_names\":[\"a\",\"b\"],\"quorum_age\":1,\"monmap\":{\"epoch\":3,\"min_mon_release_name\":\"tentacle\",\"num_mons\":2},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:26:25.876739101Z",
+        "finished_at": "2026-09-29T23:26:25.877138643Z",
+        "elapsed_ns": 399542,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon a is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":40,\"quorum\":[0,1],\"quorum_names\":[\"a\",\"b\"],\"quorum_age\":1,\"monmap\":{\"epoch\":3,\"min_mon_release_name\":\"tentacle\",\"num_mons\":2},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n"
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "authoritative monmap removed mon.c while the remaining quorum served both clients",
+      "lifecycle": null,
+      "monitor_lifecycle": {
+        "before": {
+          "epoch": 2,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {
+                "rack": "r1"
+              }
+            }
+          ]
+        },
+        "after": {
+          "epoch": 3,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        }
+      },
+      "fault_intervals": []
+    },
+    {
+      "id": "p13-mon-added",
+      "status": "passed",
+      "pool": "cluster",
+      "operation": "monitor-command",
+      "fault": "mon-c-added",
+      "injected_at": "2026-09-29T23:26:29Z",
+      "released_at": "2026-09-29T23:26:38Z",
+      "before": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:29Z"
+      },
+      "after": {
+        "epoch": 104,
+        "pgid": "2.4",
+        "acting": [
+          0,
+          2,
+          3
+        ],
+        "primary": 0,
+        "pg_state": "active+clean",
+        "observed_at": "2026-09-29T23:26:40Z"
+      },
+      "go": {
+        "implementation": "go",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:26:38.327976034Z",
+        "finished_at": "2026-09-29T23:26:38.328270326Z",
+        "elapsed_ns": 294709,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"AUTH_INSECURE_GLOBAL_ID_RECLAIM_ALLOWED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon is allowing insecure global_id reclaim\",\"count\":1},\"muted\":false},\"MON_DISK_LOW\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"mon a is low on available space\",\"count\":1},\"muted\":false},\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":44,\"quorum\":[0,1,2],\"quorum_names\":[\"a\",\"b\",\"c\"],\"quorum_age\":1,\"monmap\":{\"epoch\":4,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n",
+        "mutation_marker": "",
+        "watch_cookie": 0,
+        "watch_events": 0,
+        "watch_interruptions": 0
+      },
+      "native": {
+        "implementation": "native",
+        "transport": "secure",
+        "operation": "monitor-command",
+        "object": "status",
+        "started_at": "2026-09-29T23:26:38.637084068Z",
+        "finished_at": "2026-09-29T23:26:38.637436902Z",
+        "elapsed_ns": 352792,
+        "completed": true,
+        "errno": 0,
+        "outcome": "success",
+        "version": 0,
+        "data": "{\"fsid\":\"13131313-2222-4333-8444-131313131313\",\"health\":{\"status\":\"HEALTH_WARN\",\"checks\":{\"POOL_APP_NOT_ENABLED\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"2 pool(s) do not have an application enabled\",\"count\":2},\"muted\":false},\"POOL_NO_REDUNDANCY\":{\"severity\":\"HEALTH_WARN\",\"summary\":{\"message\":\"1 pool(s) have no replicas configured\",\"count\":1},\"muted\":false}},\"mutes\":[]},\"election_epoch\":44,\"quorum\":[0,1,2],\"quorum_names\":[\"a\",\"b\",\"c\"],\"quorum_age\":1,\"monmap\":{\"epoch\":4,\"min_mon_release_name\":\"tentacle\",\"num_mons\":3},\"osdmap\":{\"epoch\":104,\"num_osds\":4,\"num_up_osds\":4,\"osd_up_since\":1790724249,\"num_in_osds\":4,\"osd_in_since\":1790724249,\"num_remapped_pgs\":0},\"pgmap\":{\"pgs_by_state\":[{\"state_name\":\"active+clean\",\"count\":17}],\"num_pgs\":17,\"num_pools\":3,\"num_objects\":139,\"data_bytes\":460106,\"bytes_used\":139722752,\"bytes_avail\":34220015616,\"bytes_total\":34359738368},\"fsmap\":{\"epoch\":1,\"btime\":\"2026-09-29T23:17:51:305510+0000\",\"by_rank\":[],\"up:standby\":0},\"mgrmap\":{\"available\":true,\"num_standbys\":0,\"modules\":[\"iostat\",\"nfs\",\"nvmeof\"],\"services\":{}},\"servicemap\":{\"epoch\":10,\"modified\":\"2026-09-29T23:25:57.223992+0000\",\"services\":{\"mon\":{\"daemons\":{\"summary\":\"\",\"b\":{\"start_epoch\":0,\"start_stamp\":\"0.000000\",\"gid\":0,\"addr\":\"(unrecognized address family 0)/0\",\"metadata\":{},\"task_status\":{}}}}}},\"progress_events\":{}}\n"
+      },
+      "final_data": "",
+      "mutation_markers": [],
+      "notes": "mon.c rejoined the authoritative monmap and quorum; both clients completed commands",
+      "lifecycle": null,
+      "monitor_lifecycle": {
+        "before": {
+          "epoch": 3,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        },
+        "after": {
+          "epoch": 4,
+          "monitors": [
+            {
+              "name": "a",
+              "rank": 0,
+              "address": "172.30.113.10:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "b",
+              "rank": 1,
+              "address": "172.30.113.12:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            },
+            {
+              "name": "c",
+              "rank": 2,
+              "address": "172.30.113.13:3300",
+              "priority": 0,
+              "weight": 0,
+              "location": {}
+            }
+          ]
+        }
+      },
+      "fault_intervals": []
+    }
+  ],
+  "change_observations": {
+    "implementation": "go",
+    "transport": "secure",
+    "operation": "cluster-changes",
+    "object": "cluster",
+    "started_at": "2026-09-29T23:26:40.720371697Z",
+    "finished_at": "2026-09-29T23:26:41.722590021Z",
+    "elapsed_ns": 1002225200,
+    "completed": true,
+    "errno": 0,
+    "outcome": "success",
+    "version": 0,
+    "data": "",
+    "mutation_marker": "",
+    "watch_cookie": 0,
+    "watch_events": 0,
+    "watch_interruptions": 0,
+    "changes": [
+      {
+        "sequence": 1,
+        "observed_at": "2026-09-29T23:18:26.007904414Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "",
+          "rank": -1,
+          "addresses": [
+            "v2:172.30.113.10:3300"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 2,
+        "observed_at": "2026-09-29T23:18:26.009162292Z",
+        "component": "mon",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 1,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 3,
+        "observed_at": "2026-09-29T23:18:26.009163208Z",
+        "component": "mon",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 1,
+        "mon": {
+          "name": "b",
+          "rank": 1,
+          "addresses": [
+            "v2:172.30.113.12:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 4,
+        "observed_at": "2026-09-29T23:18:26.009163583Z",
+        "component": "mon",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 1,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 5,
+        "observed_at": "2026-09-29T23:18:26.009175958Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 20,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2178299282"
+          ]
+        }
+      },
+      {
+        "sequence": 6,
+        "observed_at": "2026-09-29T23:18:26.009176542Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 20,
+        "osd": {
+          "id": 1,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        }
+      },
+      {
+        "sequence": 7,
+        "observed_at": "2026-09-29T23:18:26.009177042Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 20,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3018436842"
+          ]
+        }
+      },
+      {
+        "sequence": 8,
+        "observed_at": "2026-09-29T23:18:36.890638744Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 21,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3018436842"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3018436842"
+          ]
+        }
+      },
+      {
+        "sequence": 9,
+        "observed_at": "2026-09-29T23:18:40.375954553Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 24,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3903361221"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3018436842"
+          ]
+        }
+      },
+      {
+        "sequence": 10,
+        "observed_at": "2026-09-29T23:18:40.375955511Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 24,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3903361221"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3018436842"
+          ]
+        }
+      },
+      {
+        "sequence": 11,
+        "observed_at": "2026-09-29T23:18:52.020274385Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 26,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2178299282"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2178299282"
+          ]
+        }
+      },
+      {
+        "sequence": 12,
+        "observed_at": "2026-09-29T23:18:52.020284218Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 26,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3903361221"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3903361221"
+          ]
+        }
+      },
+      {
+        "sequence": 13,
+        "observed_at": "2026-09-29T23:19:01.213653141Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 29,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/4184966145"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2178299282"
+          ]
+        }
+      },
+      {
+        "sequence": 14,
+        "observed_at": "2026-09-29T23:19:01.213655308Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 29,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/4184966145"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2178299282"
+          ]
+        }
+      },
+      {
+        "sequence": 15,
+        "observed_at": "2026-09-29T23:19:01.213660266Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 29,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3605229447"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3903361221"
+          ]
+        }
+      },
+      {
+        "sequence": 16,
+        "observed_at": "2026-09-29T23:19:01.213660558Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 29,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3605229447"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3903361221"
+          ]
+        }
+      },
+      {
+        "sequence": 17,
+        "observed_at": "2026-09-29T23:19:12.423256347Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 31,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/4184966145"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/4184966145"
+          ]
+        }
+      },
+      {
+        "sequence": 18,
+        "observed_at": "2026-09-29T23:19:12.423262472Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 31,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3605229447"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3605229447"
+          ]
+        }
+      },
+      {
+        "sequence": 19,
+        "observed_at": "2026-09-29T23:19:21.937996803Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 34,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/97627517"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/4184966145"
+          ]
+        }
+      },
+      {
+        "sequence": 20,
+        "observed_at": "2026-09-29T23:19:21.93799897Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 34,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/97627517"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/4184966145"
+          ]
+        }
+      },
+      {
+        "sequence": 21,
+        "observed_at": "2026-09-29T23:19:21.93800497Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 34,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/2971573255"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3605229447"
+          ]
+        }
+      },
+      {
+        "sequence": 22,
+        "observed_at": "2026-09-29T23:19:21.938005386Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 34,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/2971573255"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/3605229447"
+          ]
+        }
+      },
+      {
+        "sequence": 23,
+        "observed_at": "2026-09-29T23:19:31.963284696Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 36,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/97627517"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/97627517"
+          ]
+        }
+      },
+      {
+        "sequence": 24,
+        "observed_at": "2026-09-29T23:19:41.5637304Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 39,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2012614711"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/97627517"
+          ]
+        }
+      },
+      {
+        "sequence": 25,
+        "observed_at": "2026-09-29T23:19:41.563731275Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 39,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2012614711"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/97627517"
+          ]
+        }
+      },
+      {
+        "sequence": 26,
+        "observed_at": "2026-09-29T23:19:57.02309374Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 41,
+        "osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        },
+        "previous_osd": {
+          "id": 1,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        }
+      },
+      {
+        "sequence": 27,
+        "observed_at": "2026-09-29T23:19:58.061314128Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "out",
+        "epoch": 42,
+        "osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        },
+        "previous_osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        }
+      },
+      {
+        "sequence": 28,
+        "observed_at": "2026-09-29T23:20:02.041314928Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "in",
+        "epoch": 43,
+        "osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        },
+        "previous_osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        }
+      },
+      {
+        "sequence": 29,
+        "observed_at": "2026-09-29T23:20:05.097836813Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 46,
+        "osd": {
+          "id": 1,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/2070388350"
+          ]
+        },
+        "previous_osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        }
+      },
+      {
+        "sequence": 30,
+        "observed_at": "2026-09-29T23:20:05.097839105Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 46,
+        "osd": {
+          "id": 1,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/2070388350"
+          ]
+        },
+        "previous_osd": {
+          "id": 1,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.21:6800/3748732553"
+          ]
+        }
+      },
+      {
+        "sequence": 31,
+        "observed_at": "2026-09-29T23:20:21.640076846Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 48,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2012614711"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2012614711"
+          ]
+        }
+      },
+      {
+        "sequence": 32,
+        "observed_at": "2026-09-29T23:20:26.12193462Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 51,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/3029341792"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2012614711"
+          ]
+        }
+      },
+      {
+        "sequence": 33,
+        "observed_at": "2026-09-29T23:20:26.121936703Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 51,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/3029341792"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/2012614711"
+          ]
+        }
+      },
+      {
+        "sequence": 34,
+        "observed_at": "2026-09-29T23:20:34.140612834Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 53,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/3029341792"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/3029341792"
+          ]
+        }
+      },
+      {
+        "sequence": 35,
+        "observed_at": "2026-09-29T23:20:38.728063604Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 56,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1690187859"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/3029341792"
+          ]
+        }
+      },
+      {
+        "sequence": 36,
+        "observed_at": "2026-09-29T23:20:38.728065396Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 56,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1690187859"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/3029341792"
+          ]
+        }
+      },
+      {
+        "sequence": 37,
+        "observed_at": "2026-09-29T23:20:46.763898852Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 58,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1690187859"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1690187859"
+          ]
+        }
+      },
+      {
+        "sequence": 38,
+        "observed_at": "2026-09-29T23:20:50.81763992Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 61,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1814322802"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1690187859"
+          ]
+        }
+      },
+      {
+        "sequence": 39,
+        "observed_at": "2026-09-29T23:20:50.817642629Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 61,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1814322802"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1690187859"
+          ]
+        }
+      },
+      {
+        "sequence": 40,
+        "observed_at": "2026-09-29T23:20:58.762341658Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 63,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1814322802"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1814322802"
+          ]
+        }
+      },
+      {
+        "sequence": 41,
+        "observed_at": "2026-09-29T23:21:02.156021613Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 66,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/243156250"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1814322802"
+          ]
+        }
+      },
+      {
+        "sequence": 42,
+        "observed_at": "2026-09-29T23:21:02.156022572Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 66,
+        "osd": {
+          "id": 0,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/243156250"
+          ]
+        },
+        "previous_osd": {
+          "id": 0,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.20:6800/1814322802"
+          ]
+        }
+      },
+      {
+        "sequence": 43,
+        "observed_at": "2026-09-29T23:21:17.17786674Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 69,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/2971573255"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/2971573255"
+          ]
+        }
+      },
+      {
+        "sequence": 44,
+        "observed_at": "2026-09-29T23:21:38.945752645Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 72,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/1956616642"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/2971573255"
+          ]
+        }
+      },
+      {
+        "sequence": 45,
+        "observed_at": "2026-09-29T23:21:38.945756478Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 72,
+        "osd": {
+          "id": 2,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/1956616642"
+          ]
+        },
+        "previous_osd": {
+          "id": 2,
+          "exists": true,
+          "up": false,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.22:6800/2971573255"
+          ]
+        }
+      },
+      {
+        "sequence": 46,
+        "observed_at": "2026-09-29T23:23:04.435643891Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 80,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/1279226698"
+          ]
+        }
+      },
+      {
+        "sequence": 47,
+        "observed_at": "2026-09-29T23:23:18.633006573Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "out",
+        "epoch": 83,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/1279226698"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/1279226698"
+          ]
+        }
+      },
+      {
+        "sequence": 48,
+        "observed_at": "2026-09-29T23:23:25.753368914Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 85,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/1279226698"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/1279226698"
+          ]
+        }
+      },
+      {
+        "sequence": 49,
+        "observed_at": "2026-09-29T23:23:29.314471087Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "removed",
+        "epoch": 86,
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/1279226698"
+          ]
+        }
+      },
+      {
+        "sequence": 50,
+        "observed_at": "2026-09-29T23:23:40.982761037Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 92,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 51,
+        "observed_at": "2026-09-29T23:23:53.381876933Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "out",
+        "epoch": 95,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 52,
+        "observed_at": "2026-09-29T23:24:01.227238792Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "down",
+        "epoch": 97,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 53,
+        "observed_at": "2026-09-29T23:24:02.256084684Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 98,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": true,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 54,
+        "observed_at": "2026-09-29T23:24:03.469683306Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 99,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": true,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 55,
+        "observed_at": "2026-09-29T23:24:09.350515046Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "up",
+        "epoch": 103,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.33:6800/2215449095"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 56,
+        "observed_at": "2026-09-29T23:24:09.350515963Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "in",
+        "epoch": 103,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.33:6800/2215449095"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 57,
+        "observed_at": "2026-09-29T23:24:09.350516171Z",
+        "component": "osd",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 103,
+        "osd": {
+          "id": 3,
+          "exists": true,
+          "up": true,
+          "in": true,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.33:6800/2215449095"
+          ]
+        },
+        "previous_osd": {
+          "id": 3,
+          "exists": true,
+          "up": false,
+          "in": false,
+          "destroyed": false,
+          "addresses": [
+            "v2:172.30.113.23:6800/2554271573"
+          ]
+        }
+      },
+      {
+        "sequence": 58,
+        "observed_at": "2026-09-29T23:24:35.727352986Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 59,
+        "observed_at": "2026-09-29T23:24:56.055443608Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 60,
+        "observed_at": "2026-09-29T23:24:56.055652067Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 61,
+        "observed_at": "2026-09-29T23:24:56.163865805Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "b",
+          "rank": 1,
+          "addresses": [
+            "v2:172.30.113.12:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 62,
+        "observed_at": "2026-09-29T23:25:12.60093457Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "b",
+          "rank": 1,
+          "addresses": [
+            "v2:172.30.113.12:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 63,
+        "observed_at": "2026-09-29T23:25:12.936017345Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 64,
+        "observed_at": "2026-09-29T23:25:12.93603697Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 65,
+        "observed_at": "2026-09-29T23:25:13.261908228Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 66,
+        "observed_at": "2026-09-29T23:25:13.261928103Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 67,
+        "observed_at": "2026-09-29T23:25:17.680433627Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "b",
+          "rank": 1,
+          "addresses": [
+            "v2:172.30.113.12:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 68,
+        "observed_at": "2026-09-29T23:25:17.68043896Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "b",
+          "rank": 1,
+          "addresses": [
+            "v2:172.30.113.12:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 69,
+        "observed_at": "2026-09-29T23:25:17.781653894Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 70,
+        "observed_at": "2026-09-29T23:26:03.980958675Z",
+        "component": "mon",
+        "source": "authoritative",
+        "kind": "changed",
+        "epoch": 2,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {
+            "rack": "r1"
+          }
+        },
+        "previous_mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 71,
+        "observed_at": "2026-09-29T23:26:29.716975793Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "unavailable",
+        "epoch": 0,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {
+            "rack": "r1"
+          }
+        },
+        "error": "messenger reconnect attempts exhausted"
+      },
+      {
+        "sequence": 72,
+        "observed_at": "2026-09-29T23:26:29.823097074Z",
+        "component": "mon",
+        "source": "observed",
+        "kind": "available",
+        "epoch": 0,
+        "mon": {
+          "name": "a",
+          "rank": 0,
+          "addresses": [
+            "v2:172.30.113.10:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      },
+      {
+        "sequence": 73,
+        "observed_at": "2026-09-29T23:26:29.823348741Z",
+        "component": "mon",
+        "source": "authoritative",
+        "kind": "removed",
+        "epoch": 3,
+        "previous_mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {
+            "rack": "r1"
+          }
+        }
+      },
+      {
+        "sequence": 74,
+        "observed_at": "2026-09-29T23:26:31.255706616Z",
+        "component": "mon",
+        "source": "authoritative",
+        "kind": "added",
+        "epoch": 4,
+        "mon": {
+          "name": "c",
+          "rank": 2,
+          "addresses": [
+            "v2:172.30.113.13:3300/0"
+          ],
+          "priority": 0,
+          "weight": 0,
+          "location": {}
+        }
+      }
+    ]
+  },
+  "unqualified": {
+    "multi_host_maintenance": "unqualified: disposable harness uses one Docker host",
+    "probabilistic_packet_loss": "unqualified: no host-global or probabilistic network fault injection is used"
+  }
+}

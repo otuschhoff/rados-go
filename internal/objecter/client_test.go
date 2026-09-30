@@ -17,19 +17,83 @@ import (
 	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
-type fakeMapSource struct{ refresh func() }
+type fakeMapSource struct {
+	osdMap      *maps.OSDMap
+	refresh     func()
+	generations map[int32]uint64
+}
 
-func (source *fakeMapSource) OSDMap() *maps.OSDMap { return nil }
+func (source *fakeMapSource) OSDMap() *maps.OSDMap { return source.osdMap }
 func (source *fakeMapSource) RefreshOSDMap(context.Context, uint32) error {
 	if source.refresh != nil {
 		source.refresh()
 	}
 	return nil
 }
+func (source *fakeMapSource) OSDSessionGeneration(osdID int32) uint64 {
+	return source.generations[osdID]
+}
+
+type notifyingMapSource struct {
+	mu      sync.Mutex
+	osdMap  *maps.OSDMap
+	changed chan struct{}
+}
+
+func newNotifyingMapSource() *notifyingMapSource {
+	return &notifyingMapSource{changed: make(chan struct{})}
+}
+
+func (source *notifyingMapSource) OSDMap() *maps.OSDMap {
+	source.mu.Lock()
+	defer source.mu.Unlock()
+	return source.osdMap
+}
+
+func (*notifyingMapSource) RefreshOSDMap(context.Context, uint32) error { return nil }
+
+func (source *notifyingMapSource) WaitForOSDMap(ctx context.Context, after uint32) error {
+	for {
+		source.mu.Lock()
+		if source.osdMap != nil && source.osdMap.Epoch() > after {
+			source.mu.Unlock()
+			return nil
+		}
+		changed := source.changed
+		source.mu.Unlock()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-changed:
+		}
+	}
+}
+
+func (source *notifyingMapSource) publish(osdMap *maps.OSDMap) {
+	source.mu.Lock()
+	source.osdMap = osdMap
+	close(source.changed)
+	source.changed = make(chan struct{})
+	source.mu.Unlock()
+}
 
 type fakeRouter struct {
 	mu    sync.Mutex
 	route Route
+}
+
+type advancingRouter struct {
+	mu     sync.Mutex
+	routes []Route
+	calls  int
+}
+
+func (router *advancingRouter) Route(Target) (Route, error) {
+	router.mu.Lock()
+	defer router.mu.Unlock()
+	index := min(router.calls, len(router.routes)-1)
+	router.calls++
+	return router.routes[index], nil
 }
 
 func (router *fakeRouter) Route(Target) (Route, error) {
@@ -53,6 +117,49 @@ func (session *fakeSession) Submit(ctx context.Context, message msgr.Message) (m
 	return session.submit(ctx, message)
 }
 func (session *fakeSession) Stop() { session.stop = true }
+
+func TestOSDMapDownInvalidatesCachedSession(t *testing.T) {
+	address := protocol.EntityAddrVec{testAddress(t, "192.0.2.10:6800")}
+	active := &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) { return msgr.Message{}, nil }}
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{}, func(int32, protocol.EntityAddrVec) (session, error) { return active, nil })
+	defer client.Close()
+	if _, err := client.getSession(0, address); err != nil {
+		t.Fatal(err)
+	}
+
+	client.invalidateUnusableSessions(commandTestOSDMap(t, []uint32{1}, []protocol.EntityAddrVec{address}))
+
+	client.mu.Lock()
+	_, cached := client.sessions[0]
+	client.mu.Unlock()
+	if cached || !active.stop {
+		t.Fatalf("cached=%t stopped=%t", cached, active.stop)
+	}
+}
+
+func TestOSDGenerationReplacesSameAddressSession(t *testing.T) {
+	address := protocol.EntityAddrVec{testAddress(t, "192.0.2.10:6800")}
+	source := &fakeMapSource{generations: make(map[int32]uint64)}
+	created := make([]*fakeSession, 0, 2)
+	client := newTestClient(t, source, &fakeRouter{}, func(int32, protocol.EntityAddrVec) (session, error) {
+		active := &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) { return msgr.Message{}, nil }}
+		created = append(created, active)
+		return active, nil
+	})
+	defer client.Close()
+	first, err := client.getSession(0, address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	source.generations[0]++
+	second, err := client.getSession(0, address)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == second || len(created) != 2 || !created[0].stop {
+		t.Fatalf("same=%t created=%d old_stopped=%t", first == second, len(created), created[0].stop)
+	}
+}
 
 func TestReadRecoversToNewPrimary(t *testing.T) {
 	route0 := testRoute(t, 10, 0, "192.0.2.10:6800")
@@ -81,6 +188,205 @@ func TestReadRecoversToNewPrimary(t *testing.T) {
 	}
 	if string(result.Data) != "data" || result.Version != 42 || !created[0].stop {
 		t.Fatalf("result=%+v old_stopped=%t", result, created[0].stop)
+	}
+}
+
+func TestReadRemapsBlockedSubmissionOnPublishedMap(t *testing.T) {
+	oldRoute := testRoute(t, 8, 0, "192.0.2.10:6800")
+	newRoute := testRoute(t, 9, 1, "192.0.2.11:6800")
+	router := &fakeRouter{route: oldRoute}
+	source := newNotifyingMapSource()
+	firstSubmitted := make(chan struct{})
+	var firstOnce sync.Once
+	var transactionIDs []uint64
+	var transactionMu sync.Mutex
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			transactionMu.Lock()
+			transactionIDs = append(transactionIDs, message.Header.TransactionID)
+			transactionMu.Unlock()
+			if id == oldRoute.Primary {
+				firstOnce.Do(func() { close(firstSubmitted) })
+				<-ctx.Done()
+				return msgr.Message{}, ctx.Err()
+			}
+			return testReply(t, newRoute.Epoch, 42, 0, []byte("data")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	result := make(chan struct {
+		value Result
+		err   error
+	}, 1)
+	go func() {
+		value, err := client.Read(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+		result <- struct {
+			value Result
+			err   error
+		}{value: value, err: err}
+	}()
+	<-firstSubmitted
+	router.set(newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+
+	completed := <-result
+	if completed.err != nil {
+		t.Fatal(completed.err)
+	}
+	transactionMu.Lock()
+	defer transactionMu.Unlock()
+	if string(completed.value.Data) != "data" || len(transactionIDs) != 2 || transactionIDs[0] != transactionIDs[1] {
+		t.Fatalf("result=%+v transaction IDs=%v", completed.value, transactionIDs)
+	}
+}
+
+func TestReadKeepsSuccessfulReplyWhenRemapCancelsAttempt(t *testing.T) {
+	oldRoute := testRoute(t, 8, 0, "192.0.2.10:6800")
+	newRoute := testRoute(t, 9, 1, "192.0.2.11:6800")
+	router := &fakeRouter{route: oldRoute}
+	source := newNotifyingMapSource()
+	submitted := make(chan struct{})
+	submits := 0
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+			submits++
+			close(submitted)
+			<-ctx.Done()
+			return testReply(t, oldRoute.Epoch, 42, 0, []byte("data")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result := make(chan struct {
+		value Result
+		err   error
+	}, 1)
+	go func() {
+		value, err := client.Read(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+		result <- struct {
+			value Result
+			err   error
+		}{value: value, err: err}
+	}()
+	<-submitted
+	router.set(newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+
+	completed := <-result
+	if completed.err != nil || string(completed.value.Data) != "data" || submits != 1 {
+		t.Fatalf("result=%+v error=%v submits=%d", completed.value, completed.err, submits)
+	}
+}
+
+func TestReadObservesMapPublishedBeforeAttemptRegistration(t *testing.T) {
+	oldRoute := testRoute(t, 8, 0, "192.0.2.10:6800")
+	newRoute := testRoute(t, 9, 1, "192.0.2.11:6800")
+	source := newNotifyingMapSource()
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+	router := &advancingRouter{routes: []Route{oldRoute, newRoute}}
+	var transactionIDs []uint64
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			transactionIDs = append(transactionIDs, message.Header.TransactionID)
+			if id == oldRoute.Primary {
+				<-ctx.Done()
+				return msgr.Message{}, ctx.Err()
+			}
+			return testReply(t, newRoute.Epoch, 42, 0, []byte("data")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	result, err := client.Read(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Data) != "data" || len(transactionIDs) != 2 || transactionIDs[0] != transactionIDs[1] {
+		t.Fatalf("result=%+v transaction IDs=%v", result, transactionIDs)
+	}
+}
+
+func TestReadDoesNotRemapBlockedSubmissionForEquivalentRoute(t *testing.T) {
+	route := testRoute(t, 8, 0, "192.0.2.10:6800")
+	router := &fakeRouter{route: route}
+	source := newNotifyingMapSource()
+	submitted := make(chan struct{})
+	release := make(chan struct{})
+	canceled := make(chan struct{}, 1)
+	var submits int
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+			submits++
+			close(submitted)
+			select {
+			case <-ctx.Done():
+				canceled <- struct{}{}
+				return msgr.Message{}, ctx.Err()
+			case <-release:
+				return testReply(t, 9, 42, 0, []byte("data")), nil
+			}
+		}}, nil
+	})
+	defer client.Close()
+
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Read(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+		result <- err
+	}()
+	<-submitted
+	router.set(testRoute(t, 9, 0, "192.0.2.10:6800"))
+	source.publish(commandTestOSDMapEpoch(t, 9, nil, nil))
+	select {
+	case <-canceled:
+		t.Fatal("equivalent route canceled submission")
+	case <-time.After(20 * time.Millisecond):
+	}
+	close(release)
+	if err := <-result; err != nil || submits != 1 {
+		t.Fatalf("error=%v submits=%d", err, submits)
+	}
+}
+
+func TestCloseCancelsTrackedSubmissionAndMapWatcher(t *testing.T) {
+	route := testRoute(t, 8, 0, "192.0.2.10:6800")
+	source := newNotifyingMapSource()
+	submitted := make(chan struct{})
+	client := newTestClient(t, source, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+			close(submitted)
+			<-ctx.Done()
+			return msgr.Message{}, ctx.Err()
+		}}, nil
+	})
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Read(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+		result <- err
+	}()
+	<-submitted
+	closed := make(chan struct{})
+	go func() {
+		client.Close()
+		close(closed)
+	}()
+	select {
+	case <-closed:
+	case <-time.After(time.Second):
+		t.Fatal("Close did not stop map watcher")
+	}
+	select {
+	case err := <-result:
+		if !errors.Is(err, ErrClosed) {
+			t.Fatalf("read error=%v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Close did not cancel tracked submission")
 	}
 }
 
@@ -151,6 +457,37 @@ func TestReadRecoveryUsesContextBudgetBeyondMaxAttempts(t *testing.T) {
 		t.Fatal(err)
 	}
 	if string(result.Data) != "data" || result.Version != 43 || refreshes != 4 {
+		t.Fatalf("result=%+v refreshes=%d", result, refreshes)
+	}
+}
+
+func TestReadUnlimitedRetriesBeyondMaxAttempts(t *testing.T) {
+	failed := testRoute(t, 10, 0, "192.0.2.10:6800")
+	recovered := testRoute(t, 11, 1, "192.0.2.11:6800")
+	router := &fakeRouter{route: failed}
+	refreshes := 0
+	source := &fakeMapSource{refresh: func() {
+		refreshes++
+		if refreshes == 5 {
+			router.set(recovered)
+		}
+	}}
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(context.Context, msgr.Message) (msgr.Message, error) {
+			if id == failed.Primary {
+				return msgr.Message{}, errors.New("primary unavailable")
+			}
+			return testReply(t, 11, 43, 0, []byte("data")), nil
+		}}, nil
+	})
+	client.config.UnlimitedRetries = true
+	defer client.Close()
+
+	result, err := client.Read(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, 0, 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(result.Data) != "data" || result.Version != 43 || refreshes != 5 {
 		t.Fatalf("result=%+v refreshes=%d", result, refreshes)
 	}
 }

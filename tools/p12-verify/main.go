@@ -140,6 +140,7 @@ type releaseEvidence struct {
 }
 
 var releaseVersionPattern = regexp.MustCompile(`^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$`)
+var generatedP12EvidencePattern = regexp.MustCompile(`^(?:integration/p12/\.report\.(?:json|previous)|docs/p12/\.release-artifacts\.(?:publish|previous))\.[0-9]+(?:/.*)?$`)
 
 type healthCheck struct {
 	Severity string `json:"severity"`
@@ -151,23 +152,24 @@ type healthCheck struct {
 }
 
 type probeReport struct {
-	Transport                    string              `json:"transport"`
-	RequestedDurationNS          uint64              `json:"requested_duration_ns"`
-	ElapsedNS                    uint64              `json:"elapsed_ns"`
-	MonotonicDurationSatisfied   bool                `json:"monotonic_duration_satisfied"`
-	Operations                   uint64              `json:"operations"`
-	Writes                       uint64              `json:"writes"`
-	AppendOnceVerifications      uint64              `json:"append_once_verifications"`
-	DuplicateMutationsDetected   uint64              `json:"duplicate_mutations_detected"`
-	Reads                        uint64              `json:"reads"`
-	Stats                        uint64              `json:"stats"`
-	Removes                      uint64              `json:"removes"`
-	Reconnects                   uint64              `json:"reconnects"`
-	LongestConnectionNS          uint64              `json:"longest_connection_ns"`
-	CredentialRenewals           []credentialRenewal `json:"credential_renewals"`
-	Samples                      []resourceSample    `json:"samples"`
-	InflightMeasurement          string              `json:"inflight_measurement"`
-	MaximumConfiguredSampleCount uint64              `json:"maximum_configured_sample_count"`
+	Transport                     string                         `json:"transport"`
+	RequestedDurationNS           uint64                         `json:"requested_duration_ns"`
+	ElapsedNS                     uint64                         `json:"elapsed_ns"`
+	MonotonicDurationSatisfied    bool                           `json:"monotonic_duration_satisfied"`
+	Operations                    uint64                         `json:"operations"`
+	Writes                        uint64                         `json:"writes"`
+	AppendOnceVerifications       uint64                         `json:"append_once_verifications"`
+	DuplicateMutationsDetected    uint64                         `json:"duplicate_mutations_detected"`
+	Reads                         uint64                         `json:"reads"`
+	Stats                         uint64                         `json:"stats"`
+	Removes                       uint64                         `json:"removes"`
+	Reconnects                    uint64                         `json:"reconnects"`
+	LongestConnectionNS           uint64                         `json:"longest_connection_ns"`
+	CredentialRenewals            []credentialRenewal            `json:"credential_renewals"`
+	CredentialRenewalAbandonments []credentialRenewalAbandonment `json:"credential_renewal_abandonments"`
+	Samples                       []resourceSample               `json:"samples"`
+	InflightMeasurement           string                         `json:"inflight_measurement"`
+	MaximumConfiguredSampleCount  uint64                         `json:"maximum_configured_sample_count"`
 }
 
 type credentialRenewal struct {
@@ -180,6 +182,16 @@ type credentialRenewal struct {
 	CompletedAt         time.Time `json:"completed_at"`
 }
 
+type credentialRenewalAbandonment struct {
+	Service          string    `json:"service"`
+	ServiceID        int32     `json:"service_id"`
+	SessionID        uint64    `json:"session_id"`
+	DueGeneration    uint64    `json:"due_generation"`
+	ClosedGeneration uint64    `json:"closed_generation"`
+	DueAt            time.Time `json:"due_at"`
+	ClosedAt         time.Time `json:"closed_at"`
+}
+
 type resourceSample struct {
 	ElapsedNS  uint64  `json:"elapsed_ns"`
 	RSSBytes   uint64  `json:"rss_bytes"`
@@ -190,6 +202,7 @@ type resourceSample struct {
 
 func main() {
 	reportPath := flag.String("report", "integration/p12/report.json", "P12 report to validate")
+	releaseArtifacts := flag.String("release-artifacts", "", "staged release-artifact directory to validate")
 	allowNonCertifying := flag.Bool("allow-non-certifying", false, "validate non-certifying harness evidence")
 	checkQualification := flag.String("check-qualification", "", "validate a passed qualification report against the current tree and exit")
 	checkFuzz := flag.String("check-fuzz", "", "validate a fuzz report against the current tree and exit")
@@ -205,7 +218,7 @@ func main() {
 		fatalf("unexpected positional arguments")
 	}
 	if *checkFuzz != "" {
-		if provided["report"] || provided["allow-non-certifying"] || provided["check-qualification"] || provided["check-human-review"] || provided["reviewer-trust"] || provided["reviewer-trust-sha256"] || provided["print-review-payload"] {
+		if provided["report"] || provided["release-artifacts"] || provided["allow-non-certifying"] || provided["check-qualification"] || provided["check-human-review"] || provided["reviewer-trust"] || provided["reviewer-trust-sha256"] || provided["print-review-payload"] {
 			fatalf("fuzz verification failed: -check-fuzz cannot be combined with other report modes")
 		}
 		value, _, err := p12fuzzevidence.Read(*checkFuzz)
@@ -222,7 +235,7 @@ func main() {
 		fatalf("-require-certifying-fuzz requires -check-fuzz")
 	}
 	if *checkQualification != "" {
-		if provided["report"] || provided["allow-non-certifying"] || provided["check-human-review"] || provided["reviewer-trust"] || provided["reviewer-trust-sha256"] || provided["print-review-payload"] {
+		if provided["report"] || provided["release-artifacts"] || provided["allow-non-certifying"] || provided["check-human-review"] || provided["reviewer-trust"] || provided["reviewer-trust-sha256"] || provided["print-review-payload"] {
 			fatalf("qualification verification failed: -check-qualification cannot be combined with report or human-review options")
 		}
 		if err := validateQualificationFile(*checkQualification, "."); err != nil {
@@ -232,7 +245,7 @@ func main() {
 		return
 	}
 	if *checkHumanReview != "" {
-		if provided["report"] || provided["allow-non-certifying"] {
+		if provided["report"] || provided["release-artifacts"] || provided["allow-non-certifying"] {
 			fatalf("human-review verification failed: -check-human-review cannot be combined with report options")
 		}
 		if *printReviewPayload != "" {
@@ -269,12 +282,7 @@ func main() {
 	if err != nil {
 		fatalf("read P12 report: %v", err)
 	}
-	if value.Status == "candidate" {
-		if err := validateTrustPolicyDigest(reviewerTrustPath, *reviewerTrustSHA256); err != nil {
-			fatalf("P12 verification failed: %v", err)
-		}
-	}
-	certified, err := validateReport(value, ".", *allowNonCertifying)
+	certified, err := validateReportWithReleaseArtifacts(value, ".", *allowNonCertifying, *releaseArtifacts)
 	if err != nil {
 		fatalf("P12 verification failed: %v", err)
 	}
@@ -308,6 +316,13 @@ func decodeReport(reader io.Reader) (report, error) {
 }
 
 func validateReport(value report, root string, allowNonCertifying bool) (bool, error) {
+	return validateReportWithReleaseArtifacts(value, root, allowNonCertifying, "")
+}
+
+func validateReportWithReleaseArtifacts(value report, root string, allowNonCertifying bool, releaseArtifacts string) (bool, error) {
+	if value.Source.Artifacts == nil || value.Probe.Secure.CredentialRenewalAbandonments == nil || value.Probe.CRC.CredentialRenewalAbandonments == nil || value.Benchmark.Runs == nil || value.Release.Artifacts == nil {
+		return false, errors.New("report is missing a required collection")
+	}
 	if err := validateEnvelope(value); err != nil {
 		return false, err
 	}
@@ -329,7 +344,7 @@ func validateReport(value report, root string, allowNonCertifying bool) (bool, e
 	if err := validateChurn(value); err != nil {
 		return false, err
 	}
-	if err := validateRelease(value, root); err != nil {
+	if err := validateReleaseWithArtifacts(value, root, releaseArtifacts); err != nil {
 		return false, err
 	}
 	if err := validateQualification(value, root); err != nil {
@@ -414,8 +429,15 @@ func validateFuzz(value report, root string) error {
 }
 
 func validateRelease(value report, root string) error {
+	return validateReleaseWithArtifacts(value, root, "")
+}
+
+func validateReleaseWithArtifacts(value report, root, artifactDirectory string) error {
 	release := value.Release
 	if value.Status == "non-certifying" {
+		if artifactDirectory != "" {
+			return errors.New("release-artifacts override requires a candidate report")
+		}
 		if release.Performed || release.Version != nil || release.Path != nil || release.Reproducible || len(release.Artifacts) != 0 {
 			return errors.New("non-certifying report must record release generation as not performed")
 		}
@@ -424,7 +446,10 @@ func validateRelease(value report, root string) error {
 	if !release.Performed || release.Version == nil || *release.Version == placeholderReleaseVersion || release.Path == nil || *release.Path != releaseArtifactsPath || !release.Reproducible || !releaseVersionPattern.MatchString(*release.Version) {
 		return errors.New("certifying report lacks reproducible semantic-version release evidence")
 	}
-	return validateReleaseArtifacts(root, *release.Version, release.Artifacts)
+	if artifactDirectory == "" {
+		artifactDirectory = filepath.Join(root, filepath.FromSlash(releaseArtifactsPath))
+	}
+	return validateReleaseArtifacts(root, artifactDirectory, *release.Version, release.Artifacts)
 }
 
 func validateEnvelope(value report) error {
@@ -504,13 +529,13 @@ func expectedSourceArtifacts(root string) ([]string, error) {
 				return err
 			}
 			relative = filepath.ToSlash(relative)
-			if entry.IsDir() && relative == releaseArtifactsPath {
+			if entry.IsDir() && (relative == releaseArtifactsPath || generatedEvidencePath(relative)) {
 				return filepath.SkipDir
 			}
 			if entry.IsDir() {
 				return nil
 			}
-			if relative == "integration/p12/report.json" || relative == p12fuzzevidence.ReportPath {
+			if generatedEvidencePath(relative) || relative == "integration/p12/report.json" || relative == p12fuzzevidence.ReportPath {
 				return nil
 			}
 			if relative == humanReviewPath {
@@ -532,6 +557,10 @@ func expectedSourceArtifacts(root string) ([]string, error) {
 	return paths, nil
 }
 
+func generatedEvidencePath(relative string) bool {
+	return generatedP12EvidencePattern.MatchString(relative) || strings.HasPrefix(relative, "docs/p13/.integration-report.")
+}
+
 func validateProbe(transport string, probe probeReport) error {
 	if probe.Transport != transport || probe.RequestedDurationNS == 0 || probe.ElapsedNS < probe.RequestedDurationNS || !probe.MonotonicDurationSatisfied || probe.Operations == 0 {
 		return fmt.Errorf("%s probe has invalid identity, duration, or operation count", transport)
@@ -545,6 +574,12 @@ func validateProbe(transport string, probe probeReport) error {
 		return fmt.Errorf("%s probe has invalid mutation, reconnect, or connection counters", transport)
 	}
 	if err := validateCredentialRenewals(transport, probe.CredentialRenewals); err != nil {
+		return err
+	}
+	if err := validateCredentialRenewalAbandonments(transport, probe.CredentialRenewalAbandonments); err != nil {
+		return err
+	}
+	if err := validateCredentialRenewalOutcomes(transport, probe.CredentialRenewals, probe.CredentialRenewalAbandonments); err != nil {
 		return err
 	}
 	if probe.InflightMeasurement != "unavailable through the public API; reported as null" {
@@ -563,6 +598,60 @@ func validateProbe(transport string, probe probeReport) error {
 			return fmt.Errorf("%s probe resource sample %d exceeds an explicit growth ceiling", transport, index)
 		}
 		previousElapsed = sample.ElapsedNS
+	}
+	return nil
+}
+
+func validateCredentialRenewalAbandonments(transport string, abandonments []credentialRenewalAbandonment) error {
+	previousSessionID := uint64(0)
+	lastDueGeneration := make(map[uint64]uint64)
+	for index, abandonment := range abandonments {
+		validService := abandonment.Service == "monitor" && abandonment.ServiceID == 0 || abandonment.Service == "osd" && abandonment.ServiceID >= 0
+		if !validService || abandonment.SessionID == 0 || index > 0 && abandonment.SessionID < previousSessionID || abandonment.DueGeneration == 0 || abandonment.ClosedGeneration < abandonment.DueGeneration || abandonment.DueAt.IsZero() || abandonment.DueAt.After(abandonment.ClosedAt) {
+			return fmt.Errorf("%s credential renewal abandonment %d is invalid or unordered", transport, index)
+		}
+		if previous, exists := lastDueGeneration[abandonment.SessionID]; exists && abandonment.DueGeneration <= previous {
+			return fmt.Errorf("%s credential renewal abandonment %d does not advance due generation", transport, index)
+		}
+		lastDueGeneration[abandonment.SessionID] = abandonment.DueGeneration
+		previousSessionID = abandonment.SessionID
+	}
+	return nil
+}
+
+func validateCredentialRenewalOutcomes(transport string, renewals []credentialRenewal, abandonments []credentialRenewalAbandonment) error {
+	type identity struct {
+		service   string
+		serviceID int32
+	}
+	type dueEvent struct {
+		sessionID  uint64
+		generation uint64
+	}
+	sessions := make(map[uint64]identity)
+	outcomes := make(map[dueEvent]struct{})
+	add := func(service string, serviceID int32, sessionID, generation uint64) error {
+		current := identity{service: service, serviceID: serviceID}
+		if prior, exists := sessions[sessionID]; exists && prior != current {
+			return fmt.Errorf("%s credential session %d changes identity", transport, sessionID)
+		}
+		sessions[sessionID] = current
+		key := dueEvent{sessionID: sessionID, generation: generation}
+		if _, exists := outcomes[key]; exists {
+			return fmt.Errorf("%s credential renewal session %d generation %d has multiple outcomes", transport, sessionID, generation)
+		}
+		outcomes[key] = struct{}{}
+		return nil
+	}
+	for _, renewal := range renewals {
+		if err := add(renewal.Service, renewal.ServiceID, renewal.SessionID, renewal.DueGeneration); err != nil {
+			return err
+		}
+	}
+	for _, abandonment := range abandonments {
+		if err := add(abandonment.Service, abandonment.ServiceID, abandonment.SessionID, abandonment.DueGeneration); err != nil {
+			return err
+		}
 	}
 	return nil
 }

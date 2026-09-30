@@ -130,6 +130,7 @@ type Request struct {
 	ClientIncarnation int32
 	Retry             int32
 	Flags             uint32
+	ExplicitFlags     bool
 	Features          uint64
 	Operations        []Operation
 }
@@ -204,11 +205,15 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	encodeSPGWithShard(encoder, request.PG, shard)
 	encoder.Uint32(request.ObjectHash)
 	encoder.Uint32(request.MapEpoch)
-	flags := FlagRead
-	if mutation || request.Flags&FlagWrite != 0 {
-		flags = FlagWrite | FlagOnDisk
+	flags := request.Flags
+	if !request.ExplicitFlags {
+		flags = FlagRead
+		if mutation || request.Flags&FlagWrite != 0 {
+			flags = FlagWrite | FlagOnDisk
+		}
+		flags |= request.Flags
 	}
-	encoder.Uint32(flags | request.Flags)
+	encoder.Uint32(flags)
 	encodeRequestID(encoder, request.ClientGlobalID, request.TransactionID, request.ClientIncarnation)
 	encodeTrace(encoder)
 	encoder.Int32(request.ClientIncarnation)

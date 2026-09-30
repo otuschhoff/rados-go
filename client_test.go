@@ -225,7 +225,7 @@ func TestConnectGateHonorsContextAndClientClose(t *testing.T) {
 
 const testPublicKey = "AQB7AAAAyAEAABAAMTIzNDU2Nzg5MDEyMzQ1Ng=="
 
-func TestNewCopiesConfigAndAppliesFiniteTimeouts(t *testing.T) {
+func TestNewCopiesConfigAndPreservesUnlimitedOperationTimeout(t *testing.T) {
 	config := Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey)}
 	client, err := New(config)
 	if err != nil {
@@ -236,8 +236,66 @@ func TestNewCopiesConfigAndAppliesFiniteTimeouts(t *testing.T) {
 	if client.config.Monitors[0] != "127.0.0.1:3300" || string(client.config.Key) != testPublicKey {
 		t.Fatal("caller mutation changed client configuration")
 	}
-	if client.config.DialTimeout != 10*time.Second || client.config.HandshakeTimeout != 15*time.Second || client.config.OperationTimeout != 30*time.Second {
+	if client.config.DialTimeout != 10*time.Second || client.config.HandshakeTimeout != 15*time.Second || client.config.OperationTimeout != 0 {
 		t.Fatalf("timeouts=%s/%s/%s", client.config.DialTimeout, client.config.HandshakeTimeout, client.config.OperationTimeout)
+	}
+}
+
+func TestOperationContextTimeoutPolicy(t *testing.T) {
+	callerCtx, callerCancel := context.WithTimeout(context.Background(), time.Hour)
+	defer callerCancel()
+	callerDeadline, _ := callerCtx.Deadline()
+
+	for _, test := range []struct {
+		name           string
+		timeout        time.Duration
+		ctx            context.Context
+		wantDeadline   bool
+		callerDeadline bool
+	}{
+		{name: "unlimited", ctx: context.Background()},
+		{name: "configured", timeout: time.Minute, ctx: context.Background(), wantDeadline: true},
+		{name: "caller wins", timeout: time.Second, ctx: callerCtx, wantDeadline: true, callerDeadline: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			client, err := New(Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey), OperationTimeout: test.timeout})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer client.Close()
+			operationCtx, cancel := client.operationContext(test.ctx)
+			defer cancel()
+			deadline, ok := operationCtx.Deadline()
+			if ok != test.wantDeadline {
+				t.Fatalf("deadline present=%t, want %t", ok, test.wantDeadline)
+			}
+			if test.callerDeadline && !deadline.Equal(callerDeadline) {
+				t.Fatalf("deadline=%v, want caller deadline %v", deadline, callerDeadline)
+			}
+		})
+	}
+}
+
+func TestShutdownCancelsUnlimitedOperationContext(t *testing.T) {
+	client, err := New(Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	operationCtx, cancel := client.operationContext(context.Background())
+	defer cancel()
+	if _, ok := operationCtx.Deadline(); ok {
+		t.Fatal("unlimited operation has deadline")
+	}
+	if err := client.Shutdown(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-operationCtx.Done():
+		if !errors.Is(operationCtx.Err(), context.Canceled) {
+			t.Fatalf("operation error=%v", operationCtx.Err())
+		}
+	case <-time.After(time.Second):
+		t.Fatal("shutdown did not cancel unlimited operation")
 	}
 }
 

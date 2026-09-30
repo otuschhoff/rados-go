@@ -93,6 +93,28 @@ func TestOSDClientAddressesAreImmutable(t *testing.T) {
 	}
 }
 
+func TestOSDStateReportsLifecycleBits(t *testing.T) {
+	osdMap := &OSDMap{osdState: []uint32{0, 1 << 0, 1<<0 | 1<<1, 1<<0 | 1<<7, 1<<0 | 1<<12}}
+	wants := []OSDState{
+		{},
+		{Exists: true},
+		{Exists: true, Up: true},
+		{Exists: true, Destroyed: true},
+		{Exists: true},
+	}
+	for id, want := range wants {
+		got, ok := osdMap.OSDState(int32(id))
+		if !ok || got != want {
+			t.Fatalf("osd.%d state=%+v found=%t want=%+v", id, got, ok, want)
+		}
+	}
+	for _, id := range []int32{-1, int32(len(wants))} {
+		if _, ok := osdMap.OSDState(id); ok {
+			t.Fatalf("out-of-range osd.%d found", id)
+		}
+	}
+}
+
 func encodeTestOSDMap(t *testing.T, epoch uint32) []byte {
 	return encodeTestOSDMapNamed(t, epoch, "data")
 }

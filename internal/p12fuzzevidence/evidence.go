@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -22,6 +23,8 @@ const (
 	ReportPath = "docs/p12/fuzz-report.json"
 	Command    = "CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-fuzz"
 )
+
+var generatedEvidencePattern = regexp.MustCompile(`^(?:integration/p12/\.report\.(?:json|previous)|docs/p12/\.release-artifacts\.(?:publish|previous))\.[0-9]+(?:/.*)?$`)
 
 type Report struct {
 	SchemaVersion int               `json:"schema_version"`
@@ -162,12 +165,12 @@ func SourceArtifacts(root string) (map[string]string, error) {
 		}
 		relative = filepath.ToSlash(relative)
 		if entry.IsDir() {
-			if relative == ".git" || relative == "docs/p12/release-artifacts" {
+			if relative == ".git" || relative == "docs/p12/release-artifacts" || generatedEvidencePath(relative) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
-		if !entry.Type().IsRegular() || slices.Contains([]string{ReportPath, "docs/p12/qualification-report.json", "docs/p12/human-review.json", "integration/p12/report.json"}, relative) {
+		if !entry.Type().IsRegular() || entry.Name() == ".DS_Store" || generatedEvidencePath(relative) || slices.Contains([]string{ReportPath, "docs/p12/qualification-report.json", "docs/p12/human-review.json", "docs/p13/integration-report.json", "integration/p12/report.json"}, relative) {
 			return nil
 		}
 		data, err := os.ReadFile(path)
@@ -179,6 +182,10 @@ func SourceArtifacts(root string) (map[string]string, error) {
 		return nil
 	})
 	return result, err
+}
+
+func generatedEvidencePath(relative string) bool {
+	return generatedEvidencePattern.MatchString(relative) || strings.HasPrefix(relative, "docs/p13/.integration-report.")
 }
 
 func Write(path string, value Report) error {

@@ -104,10 +104,9 @@ var releaseDependencies = []releaseDependency{
 	{name: "golang.org/x/crypto", version: "v0.56.0", license: "BSD-3-Clause"},
 }
 
-func validateReleaseArtifacts(root, version string, reported map[string]string) error {
+func validateReleaseArtifacts(root, directory, version string, reported map[string]string) error {
 	base := "rados-go-" + version
 	names := []string{base + ".spdx.json", base + ".tar.gz", base + ".zip", "SHA256SUMS"}
-	directory := filepath.Join(root, filepath.FromSlash(releaseArtifactsPath))
 	entries, err := os.ReadDir(directory)
 	if err != nil {
 		return fmt.Errorf("read retained release artifacts: %w", err)

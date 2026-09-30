@@ -189,7 +189,7 @@ func (osdMap *OSDMap) applyUpmap(pg PG, source []int32) []int32 {
 
 func (osdMap *OSDMap) validateUpmap(pg PG) error {
 	if replacement, ok := osdMap.pgUpmap[pg]; ok {
-		if err := osdMap.validatePlacementSet("pg_upmap", replacement); err != nil {
+		if err := osdMap.validatePlacementSet("pg_upmap", replacement, false); err != nil {
 			return err
 		}
 	}
@@ -233,7 +233,7 @@ func (osdMap *OSDMap) tempMapping(pool Pool, pg PG) ([]int32, int32, error) {
 	if !ok {
 		return nil, primary, nil
 	}
-	if err := osdMap.validatePlacementSet("pg_temp", source); err != nil {
+	if err := osdMap.validatePlacementSet("pg_temp", source, pool.poolType == poolTypeErasure); err != nil {
 		return nil, -1, err
 	}
 	result := osdMap.upOSDs(pool, source)
@@ -337,14 +337,14 @@ func (osdMap *OSDMap) applyPrimaryAffinity(pool Pool, seed uint32, osds []int32,
 }
 
 func (osdMap *OSDMap) exists(osd int32) bool {
-	return osd >= 0 && int(osd) < len(osdMap.osdState) && osdMap.osdState[osd]&(1<<0) != 0
+	return osd >= 0 && int(osd) < len(osdMap.osdState) && osdMap.osdState[osd]&osdStateExists != 0
 }
 
 func (osdMap *OSDMap) isUp(osd int32) bool {
-	return osdMap.exists(osd) && osdMap.osdState[osd]&(1<<1) != 0
+	return osdMap.exists(osd) && osdMap.osdState[osd]&osdStateUp != 0
 }
 
-func (osdMap *OSDMap) validatePlacementSet(name string, osds []int32) error {
+func (osdMap *OSDMap) validatePlacementSet(name string, osds []int32, allowDuplicates bool) error {
 	seen := make(map[int32]struct{}, len(osds))
 	for _, osd := range osds {
 		if osd == crushItemNone {
@@ -353,7 +353,7 @@ func (osdMap *OSDMap) validatePlacementSet(name string, osds []int32) error {
 		if !osdMap.exists(osd) {
 			return fmt.Errorf("%w: %s references nonexistent osd.%d", ErrUnsupportedPlacement, name, osd)
 		}
-		if _, duplicate := seen[osd]; duplicate {
+		if _, duplicate := seen[osd]; duplicate && !allowDuplicates {
 			return fmt.Errorf("%w: %s contains duplicate osd.%d", ErrUnsupportedPlacement, name, osd)
 		}
 		seen[osd] = struct{}{}

@@ -1,6 +1,6 @@
-# P13 OSD Lifecycle and Failure Parity Tasks
+# P13 OSD and Monitor Lifecycle Parity Tasks
 
-Status: **planned**. Check a task only after its acceptance commands and
+Status: **implemented and qualified**. Check a task only after its acceptance commands and
 evidence requirements pass. Each task should produce one reviewable commit.
 
 ## P13-T00 Freeze Upstream Behavior and Oracle Contract
@@ -300,18 +300,18 @@ evidence requirements pass. Each task should produce one reviewable commit.
 
 ## Completion Checklist
 
-- [ ] P13-T00 upstream behavior and oracle contract
-- [ ] P13-T01 ordered OSDMap change observation
-- [ ] P13-T02 timeout/configuration parity
-- [ ] P13-T03 flaky and slow messenger behavior
-- [ ] P13-T04 in-flight non-mutating map rescan
-- [ ] P13-T05 mutation safety through recovery
-- [ ] P13-T06 watch/linger recovery
-- [ ] P13-T07 explicit OSD and PG commands
-- [ ] P13-T08 OSD lifecycle map corpus
-- [ ] P13-T09 disposable lifecycle harness
-- [ ] P13-T10 strict verifier and evidence binding
-- [ ] P13-T11 CI, qualification, and release rebinding
+- [x] P13-T00 upstream behavior and oracle contract
+- [x] P13-T01 ordered OSDMap change observation
+- [x] P13-T02 timeout/configuration parity
+- [x] P13-T03 flaky and slow messenger behavior
+- [x] P13-T04 in-flight non-mutating map rescan
+- [x] P13-T05 mutation safety through recovery
+- [x] P13-T06 watch/linger recovery
+- [x] P13-T07 explicit OSD and PG commands
+- [x] P13-T08 OSD lifecycle map corpus
+- [x] P13-T09 disposable lifecycle harness
+- [x] P13-T10 strict verifier and evidence binding
+- [ ] P13-T11 final full qualification and release rebinding
 
 ## Commit Checkpoints
 

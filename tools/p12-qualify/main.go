@@ -276,7 +276,7 @@ func sourceArtifacts(root string) (map[string]string, error) {
 			}
 			return nil
 		}
-		if !entry.Type().IsRegular() || relative == "docs/p12/qualification-report.json" || relative == "docs/p12/human-review.json" || relative == "integration/p12/report.json" || relative == p12fuzzevidence.ReportPath {
+		if !entry.Type().IsRegular() || relative == "docs/p12/qualification-report.json" || relative == "docs/p12/human-review.json" || relative == "docs/p13/integration-report.json" || relative == "integration/p12/report.json" || relative == p12fuzzevidence.ReportPath {
 			return nil
 		}
 		digest, err := hashFile(path)

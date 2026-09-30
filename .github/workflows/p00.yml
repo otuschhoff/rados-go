@@ -1,4 +1,4 @@
-name: P00 through P12 non-live verification
+name: P00 through P13 non-live verification
 
 on:
   push:
@@ -386,6 +386,12 @@ jobs:
         run: sh -n integration/p12/qualify.sh integration/p12/reproduce.sh
       - name: Test P12 evidence tools
         run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go test ./internal/p12fuzzcontract ./internal/p12fuzzevidence ./tools/p12-fuzz ./tools/p12-qualify ./tools/p12-release ./tools/p12-verify
+      - name: Compile P13 schema and test verifier
+        run: |
+          npx --yes --package=ajv-cli@5.0.0 --package=ajv-formats@3.0.1 ajv compile --spec=draft2020 -c ajv-formats -s integration/p13/report.schema.json >/dev/null
+          CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go test ./tools/p13-verify
+      - name: Verify checked-in P13 lifecycle evidence
+        run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p13-verify
       - name: Report checked-in P12 fuzz status
         run: CGO_ENABLED=0 GOTOOLCHAIN="go${{ matrix.go }}" go run ./tools/p12-verify -check-fuzz docs/p12/fuzz-report.json
       - name: Verify checked-in quick report
@@ -412,6 +418,30 @@ jobs:
           path: docs/p12/fuzz-report.json
           if-no-files-found: error
 
+  p13-live:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: pins
+    runs-on: [self-hosted, linux, p13-ceph]
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        repetition: [1, 2]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 1.27.1
+          check-latest: false
+      - name: Run pinned P13 lifecycle qualification
+        run: make integration-p13
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ always() }}
+        with:
+          name: p13-live-${{ runner.arch }}-${{ matrix.repetition }}
+          path: docs/p13/integration-report.json
+          if-no-files-found: error
+
   certification-boundary:
     runs-on: ubuntu-latest
     steps:
@@ -423,4 +453,7 @@ jobs:
             'Verify that binding with: make verify-p12-fuzz' \
             'Full certification is a manual 24-hour run on a controlled Docker host:' \
             'P12_RELEASE_VERSION=vX.Y.Z ./integration/p12/reproduce.sh' \
-            'Then obtain four detached signed approvals and run: make verify-p12'
+            'Then obtain four detached signed approvals and run:' \
+            'P12_REVIEWER_TRUST_SHA256=<protected-policy-sha256> make verify-p12-review' \
+            'Finally run the candidate gates with: make verify-p12' \
+            'P13 live lifecycle certification requires a controlled Docker host: make integration-p13'

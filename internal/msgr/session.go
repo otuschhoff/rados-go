@@ -157,6 +157,7 @@ type SessionDiagnosticKind uint8
 const (
 	DiagnosticCredentialRenewalDue SessionDiagnosticKind = iota + 1
 	DiagnosticCredentialRenewalCompleted
+	DiagnosticSessionClosed
 )
 
 type SessionDiagnostic struct {
@@ -176,6 +177,8 @@ type SessionConfig struct {
 	MaxRetainedBytes          uint64
 	MaxInFlightTransactions   int
 	MaxReconnectAttempts      int
+	InitialReconnectBackoff   time.Duration
+	MaxReconnectBackoff       time.Duration
 	MaxHandshakeTransitions   int
 	EventBuffer               int
 	ReconnectPolicy           ReconnectPolicy
@@ -192,7 +195,13 @@ type SessionConfig struct {
 	DiagnosticSessionID       uint64
 	DiagnosticSessionIDSource func() uint64
 	DiagnosticNow             func() time.Time
+	reconnectWait             func(context.Context, time.Duration) error
 }
+
+const (
+	defaultInitialReconnectBackoff = 200 * time.Millisecond
+	defaultMaxReconnectBackoff     = 15 * time.Second
+)
 
 type GlobalSequenceSource interface {
 	Next(after uint64) (uint64, error)
@@ -229,6 +238,7 @@ func nextGlobalSequence(source GlobalSequenceSource, after uint64) (uint64, erro
 type Session struct {
 	commands chan any
 	events   chan SessionEvent
+	resets   chan struct{}
 	incoming chan Message
 	terminal chan error
 	done     chan struct{}
@@ -278,6 +288,7 @@ type renewalDue struct{ generation uint64 }
 type connectRequest struct {
 	generation uint64
 	ctx        context.Context
+	delay      time.Duration
 }
 
 type connectResult struct {
@@ -363,8 +374,20 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 	if config.MaxQueuedMessages <= 0 || config.MaxRetainedBytes == 0 || config.MaxInFlightTransactions <= 0 {
 		return nil, fmt.Errorf("%w: session limits must be positive", ErrQueueSaturated)
 	}
-	if config.MaxReconnectAttempts < 0 || config.MaxHandshakeTransitions <= 0 || config.EventBuffer < 0 {
+	if config.MaxReconnectAttempts < 0 || config.InitialReconnectBackoff < 0 || config.MaxReconnectBackoff < 0 || config.MaxHandshakeTransitions <= 0 || config.EventBuffer < 0 {
 		return nil, fmt.Errorf("%w: invalid session configuration", ErrMalformed)
+	}
+	if config.InitialReconnectBackoff == 0 {
+		config.InitialReconnectBackoff = defaultInitialReconnectBackoff
+	}
+	if config.MaxReconnectBackoff == 0 {
+		config.MaxReconnectBackoff = defaultMaxReconnectBackoff
+	}
+	if config.InitialReconnectBackoff > config.MaxReconnectBackoff {
+		return nil, fmt.Errorf("%w: initial reconnect backoff exceeds maximum", ErrMalformed)
+	}
+	if config.reconnectWait == nil {
+		config.reconnectWait = waitReconnectBackoff
 	}
 	if config.Limits.MaxSegmentBytes == 0 || config.Limits.MaxFrameBytes == 0 {
 		return nil, fmt.Errorf("%w: frame limits must be positive", ErrMalformed)
@@ -404,6 +427,7 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 	session := &Session{
 		commands: make(chan any),
 		events:   make(chan SessionEvent, config.EventBuffer),
+		resets:   make(chan struct{}, 1),
 		incoming: make(chan Message, config.MaxQueuedMessages),
 		terminal: make(chan error, 1),
 		done:     make(chan struct{}),
@@ -525,6 +549,7 @@ func (session *Session) Snapshot(ctx context.Context) (SessionSnapshot, error) {
 }
 
 func (session *Session) Events() <-chan SessionEvent { return session.events }
+func (session *Session) Resets() <-chan struct{}     { return session.resets }
 func (session *Session) Incoming() <-chan Message    { return session.incoming }
 func (session *Session) Terminal() <-chan error      { return session.terminal }
 func (session *Session) Done() <-chan struct{}       { return session.done }
@@ -926,6 +951,7 @@ func (owner *sessionOwner) transitionAllowed(want SessionState) bool {
 
 func (owner *sessionOwner) handleReset(full bool) {
 	owner.emit(SessionEvent{Kind: EventSessionReset, Full: full})
+	owner.signalReset()
 	owner.serverCookie = 0
 	owner.serverFlags = 0
 	owner.connectSeq = 0
@@ -1035,6 +1061,7 @@ func (owner *sessionOwner) handleFault(err error) {
 		return
 	}
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})
+	owner.signalReset()
 	if owner.transport != nil {
 		_ = owner.transport.Close()
 		owner.transport = nil
@@ -1057,6 +1084,13 @@ func (owner *sessionOwner) handleFault(err error) {
 	}
 	owner.setState(StateDisconnected)
 	owner.beginReconnect()
+}
+
+func (owner *sessionOwner) signalReset() {
+	select {
+	case owner.session.resets <- struct{}{}:
+	default:
+	}
 }
 
 func (owner *sessionOwner) failTerminal(err error) {
@@ -1082,15 +1116,35 @@ func (owner *sessionOwner) failTerminal(err error) {
 }
 
 func (owner *sessionOwner) beginReconnect() {
-	if owner.config.MaxReconnectAttempts == 0 || owner.reconnectAttempts >= owner.config.MaxReconnectAttempts {
+	if owner.config.MaxReconnectAttempts > 0 && owner.reconnectAttempts >= owner.config.MaxReconnectAttempts {
 		owner.failTerminal(ErrReconnectExhausted)
 		return
 	}
+	delay := owner.nextReconnectBackoff()
 	owner.reconnectAttempts++
 	owner.connectPending = true
 	owner.generation++
-	request := connectRequest{generation: owner.generation, ctx: owner.connectorContext}
+	request := connectRequest{generation: owner.generation, ctx: owner.connectorContext, delay: delay}
 	owner.connectorRequests <- request
+}
+
+func (owner *sessionOwner) nextReconnectBackoff() time.Duration {
+	if !owner.connectedOnce && owner.reconnectAttempts == 0 {
+		return 0
+	}
+	steps := owner.reconnectAttempts
+	if !owner.connectedOnce {
+		steps--
+	}
+	delay := owner.config.InitialReconnectBackoff
+	for steps > 0 && delay < owner.config.MaxReconnectBackoff {
+		if delay > owner.config.MaxReconnectBackoff/2 {
+			return owner.config.MaxReconnectBackoff
+		}
+		delay *= 2
+		steps--
+	}
+	return min(delay, owner.config.MaxReconnectBackoff)
 }
 
 func (owner *sessionOwner) handleConnected(result connectResult) {
@@ -1282,9 +1336,12 @@ func (owner *sessionOwner) connectorPump(ctx context.Context, connector Connecto
 		case request := <-owner.connectorRequests:
 			var transport Transport
 			var err error
-			if connector == nil {
+			if request.delay > 0 {
+				err = owner.config.reconnectWait(request.ctx, request.delay)
+			}
+			if err == nil && connector == nil {
 				err = ErrSessionDisconnected
-			} else {
+			} else if err == nil {
 				transport, err = connector.Connect(request.ctx)
 			}
 			select {
@@ -1301,8 +1358,22 @@ func (owner *sessionOwner) connectorPump(ctx context.Context, connector Connecto
 	}
 }
 
+func waitReconnectBackoff(ctx context.Context, delay time.Duration) error {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func (owner *sessionOwner) stop(done chan struct{}) {
 	owner.setState(StateStopped)
+	if owner.renewalInProgress {
+		owner.emitDiagnostic(DiagnosticSessionClosed)
+	}
 	owner.failAll(ErrSessionClosed)
 	owner.connectorCancel()
 	if owner.transport != nil {

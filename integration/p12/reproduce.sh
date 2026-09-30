@@ -11,7 +11,7 @@ case "${1:-}" in
 	*) printf 'usage: %s [--quick]\n' "$0" >&2; exit 2 ;;
 esac
 
-for command_name in docker go jq shasum; do
+for command_name in docker go jq npm shasum; do
 	command -v "$command_name" >/dev/null 2>&1 || { printf 'P12 requires %s\n' "$command_name" >&2; exit 2; }
 done
 docker info >/dev/null 2>&1 || { printf '%s\n' 'P12 requires a running Docker daemon' >&2; exit 2; }
@@ -24,8 +24,9 @@ esac
 duration=${P12_DURATION:-24h}
 reconnect_interval=50m
 sample_interval=1m
+workload_interval=1s
 ticket_ttl_seconds=900
-churn_interval=15m
+churn_interval=900
 operation_timeout=2m
 renewal_settle_timeout=20m
 probe_timeout=26h
@@ -33,6 +34,7 @@ if test "$quick" = true; then
 	duration=${P12_DURATION:-3m}
 	reconnect_interval=2m
 	sample_interval=10s
+	workload_interval=0s
 	ticket_ttl_seconds=30
 	churn_interval=30
 	renewal_settle_timeout=1m
@@ -48,25 +50,55 @@ image_index=$(jq -er '.images.qualification.reference' docs/p00/evidence.json)
 image_digest=$(jq -er --arg architecture "$goarch" '.images.qualification[$architecture]' docs/p00/evidence.json)
 image="${image_index%@*}@$image_digest"
 temporary=$(mktemp -d)
+ajv_root=$(mktemp -d)
 network="rados-go-p12-$$"
 fsid=31111111-2222-4333-8444-121212121212
 subnet=172.30.112.0/24
 report="$root/integration/p12/.report.json.$$"
 final_report="$root/integration/p12/report.json"
-release_stage="$root/docs/p12/.release-artifacts.$$"
+release_stage="$temporary/release-artifacts"
+release_publish_stage="$root/docs/p12/.release-artifacts.publish.$$"
+release_backup="$root/docs/p12/.release-artifacts.previous.$$"
+report_backup="$root/integration/p12/.report.previous.$$"
+publication_started=false
+publication_complete=false
 
 cleanup() {
 	exit_code=$?
 	trap - EXIT HUP INT TERM
+	if test "$publication_started" = true && test "$publication_complete" = false; then
+		rollback_failed=false
+		if test -e "$release_backup"; then
+			rm -rf "$root/docs/p12/release-artifacts" || rollback_failed=true
+			mv "$release_backup" "$root/docs/p12/release-artifacts" || rollback_failed=true
+		elif test ! -e "$release_publish_stage"; then
+			rm -rf "$root/docs/p12/release-artifacts" || rollback_failed=true
+		fi
+		if test -e "$report_backup"; then
+			rm -f "$final_report" || rollback_failed=true
+			mv "$report_backup" "$final_report" || rollback_failed=true
+		elif test ! -e "$report"; then
+			rm -f "$final_report" || rollback_failed=true
+		fi
+		if test "$rollback_failed" = true; then
+			printf 'P12 publication rollback failed; retained backups: %s %s\n' "$release_backup" "$report_backup" >&2
+			exit_code=1
+		fi
+	fi
 	if test "$exit_code" -ne 0; then
+		if test -s "$report"; then
+			failed_report=${TMPDIR:-/tmp}/rados-go-p12-report-failed-$$.json
+			cp "$report" "$failed_report"
+			printf 'P12 staged report retained for diagnosis: %s\n' "$failed_report" >&2
+		fi
 		for daemon in "p12-probe-secure-$$" "p12-probe-crc-$$" "p12-mon-$$" "p12-mgr-$$" "p12-osd-0-$$" "p12-osd-1-$$" "p12-osd-2-$$"; do
 			printf 'last logs for %s\n' "$daemon" >&2
 			docker logs --tail 40 "$daemon" >&2 || true
 		done
 		for transport in secure crc; do
 			if test -s "$temporary/probe-$transport.json"; then
-				printf 'partial report for %s probe\n' "$transport" >&2
-				cat "$temporary/probe-$transport.json" >&2
+				printf 'report summary for %s probe\n' "$transport" >&2
+				jq -c '{transport,requested_duration_ns,elapsed_ns,monotonic_duration_satisfied,operations,reconnects,credential_renewals:(.credential_renewals | length),credential_renewal_abandonments:(.credential_renewal_abandonments | length),samples:(.samples | length),maximum_configured_sample_count}' "$temporary/probe-$transport.json" >&2 || true
 			fi
 		done
 	fi
@@ -75,8 +107,13 @@ cleanup() {
 	done
 	for id in 0 1 2; do docker volume rm "rados-go-p12-osd-$id-$$" >/dev/null 2>&1 || true; done
 	docker network rm "$network" >/dev/null 2>&1 || true
+	rm -rf "$release_publish_stage"
+	if test "${rollback_failed:-false}" = false; then
+		rm -rf "$release_backup"
+		rm -f "$report_backup"
+	fi
 	rm -rf "$temporary"
-	rm -rf "$release_stage"
+	rm -rf "$ajv_root"
 	rm -f "$report"
 	exit "$exit_code"
 }
@@ -176,6 +213,7 @@ ceph_cli osd crush rule create-replicated p12-rule default osd >/dev/null
 ceph_cli osd pool create p12-data 16 16 replicated p12-rule >/dev/null
 ceph_cli osd pool set p12-data size 2 >/dev/null
 ceph_cli osd pool set p12-data min_size 1 >/dev/null
+ceph_cli osd pool application enable p12-data rados >/dev/null
 ceph_cli auth get-or-create client.p12 mon 'allow r' osd 'allow rw pool=p12-data' >/dev/null
 ceph_cli auth get-key client.p12 >"$temporary/client.key"
 # P07 benchmark programs intentionally use this fixed identity.
@@ -183,7 +221,13 @@ ceph_cli auth get-or-create client.p07 mon 'allow r' osd 'allow rw pool=p12-data
 ceph_cli auth get-key client.p07 >"$temporary/p07.key"
 ceph_cli auth get client.p07 -o /cluster/p07.keyring >/dev/null
 docker exec "p12-mon-$$" ceph --admin-daemon /run/ceph/ceph-mon.a.asok config get auth_service_ticket_ttl >"$temporary/observed-ticket-ttl.json"
-jq -er '.auth_service_ticket_ttl | tonumber | floor' "$temporary/observed-ticket-ttl.json" >"$temporary/observed-ticket-ttl"
+jq -er '
+	.auth_service_ticket_ttl |
+	if type == "number" then floor
+	else capture("^(?<value>[0-9]+(?:[.][0-9]+)?)(?<unit>ms|s|m|h|d)?$") |
+		(.value | tonumber) * ({ms:0.001,s:1,m:60,h:3600,d:86400}[.unit // "s"]) | floor
+	end
+' "$temporary/observed-ticket-ttl.json" >"$temporary/observed-ticket-ttl"
 test "$(cat "$temporary/observed-ticket-ttl")" = "$ticket_ttl_seconds"
 
 printf 'p12-ready\n' >"$temporary/ready-payload"
@@ -198,8 +242,8 @@ docker run --rm --platform "$platform" --network "$network" -v "$temporary:/clus
 
 for transport in secure crc; do
 	docker run -d --name "p12-probe-$transport-$$" --platform "$platform" --network "$network" -v "$temporary:/work" "$image" \
-		sh -c 'exec timeout "$1" /work/probe -monitors 172.30.112.10:3300 -key-file /work/client.key -fsid 31111111-2222-4333-8444-121212121212 -pool p12-data -entity client.p12 -transport "$2" -duration "$3" -reconnect-interval "$4" -sample-interval "$5" -operation-timeout "$6" -renewal-settle-timeout "$7" -control-dir /work >"/work/probe-$2.json"' \
-		sh "$probe_timeout" "$transport" "$duration" "$reconnect_interval" "$sample_interval" "$operation_timeout" "$renewal_settle_timeout" >/dev/null
+		sh -c 'exec timeout "$1" /work/probe -monitors 172.30.112.10:3300 -key-file /work/client.key -fsid 31111111-2222-4333-8444-121212121212 -pool p12-data -entity client.p12 -transport "$2" -duration "$3" -reconnect-interval "$4" -sample-interval "$5" -workload-interval "$6" -operation-timeout "$7" -renewal-settle-timeout "$8" -control-dir /work >"/work/probe-$2.json"' \
+		sh "$probe_timeout" "$transport" "$duration" "$reconnect_interval" "$sample_interval" "$workload_interval" "$operation_timeout" "$renewal_settle_timeout" >/dev/null
 done
 
 monitor_restarts=0
@@ -233,7 +277,11 @@ while :; do
 			docker restart "p12-osd-$id-$$" >/dev/null
 			osd_restarts=$((osd_restarts + 1))
 			for attempt in $(seq 1 120); do
-				if ceph_cli osd stat --format json 2>/dev/null | jq -e '.num_up_osds == 3 and .num_in_osds == 3' >/dev/null; then osd_recoveries=$((osd_recoveries + 1)); break; fi
+				if ceph_cli osd stat --format json 2>/dev/null | jq -e '.num_osds == 3 and .num_up_osds == 3 and .num_in_osds == 3' >/dev/null &&
+					ceph_cli pg dump pgs_brief --format json 2>/dev/null | jq -e '.pg_stats | length > 0 and all(.[]; .state == "active+clean")' >/dev/null; then
+					osd_recoveries=$((osd_recoveries + 1))
+					break
+				fi
 				test "$attempt" -lt 120 || exit 1
 				sleep 1
 			done
@@ -307,10 +355,8 @@ if test "$certifying" = true; then
 		cp "$artifact" "$release_stage/"
 	done
 	test "$(find "$release_stage" -type f | wc -l | tr -d ' ')" -eq 4
-	rm -rf "$root/docs/p12/release-artifacts"
-	mv "$release_stage" "$root/docs/p12/release-artifacts"
 	printf '{}\n' >"$temporary/release-artifacts.json"
-	for artifact in "$root/docs/p12/release-artifacts"/*; do
+	for artifact in "$release_stage"/*; do
 		name=${artifact##*/}
 		hash=$(shasum -a 256 "$artifact" | awk '{print $1}')
 		jq --arg name "$name" --arg hash "$hash" '. + {($name):$hash}' "$temporary/release-artifacts.json" >"$temporary/release-artifacts.next"
@@ -358,5 +404,41 @@ jq -n \
 	'{schema_version:2,status:$status,command:$command,started_at:$started_at,finished_at:$finished_at,qualification:$qualification,fuzz:$fuzz,reviews:null,source:{repository:"https://github.com/otuschhoff/rados-go.git",identity:"content-addressed-artifacts",artifacts:$artifacts},server:{repository:"https://github.com/ceph/ceph.git",source_anchor_commit:"7f793731f1b39eb4f465e960113d2363c311b964",version:$version,image:$image,platform:$platform,binaries:{mon_sha256:$mon_sha256,osd_sha256:$osd_sha256}},cluster:{fsid:"31111111-2222-4333-8444-121212121212",network:"172.30.112.0/24",monitors:["v2:172.30.112.10:3300"],osds:3,pool:{name:"p12-data",size:2,min_size:1,pg_num:16},external_defaults:false,service_ticket_ttl_seconds:$ticket_ttl,transports:["secure","crc"]},probe:{secure:$secure,crc:$crc},churn:($churn + {final_osd_stat:$final_osds,final_health:$final_health}),benchmark:{performed:($runs | length == 4),runs:$runs},release:$release}' >"$report"
 
 jq -e 'if .status == "candidate" then .command == "./integration/p12/reproduce.sh" and .qualification.status == "passed" and .fuzz == {path:"docs/p12/fuzz-report.json",status:"passed",profile:"certifying",sha256:.fuzz.sha256} and .reviews == null and .benchmark.performed and (.benchmark.runs | length) == 4 and .release.performed and .release.path == "docs/p12/release-artifacts" and .release.reproducible and (.release.artifacts | length) == 4 else .status == "non-certifying" and .qualification == null and .fuzz == null and .reviews == null and .command != "./integration/p12/reproduce.sh" and (.benchmark.runs | length) == 0 and (.release == {performed:false,version:null,path:null,reproducible:false,artifacts:{}}) end' "$report" >/dev/null
-mv "$report" "$final_report"
+npm install --silent --ignore-scripts --no-audit --no-fund --prefix "$ajv_root" ajv@8.17.1 ajv-formats@3.0.1
+if ! node - "$ajv_root" integration/p12/report.schema.json "$report" <<'NODE'
+const fs = require("fs");
+const root = process.argv[2];
+const Ajv2020 = require(`${root}/node_modules/ajv/dist/2020`).default;
+const addFormats = require(`${root}/node_modules/ajv-formats`);
+const schema = JSON.parse(fs.readFileSync(process.argv[3], "utf8"));
+const data = JSON.parse(fs.readFileSync(process.argv[4], "utf8"));
+const ajv = new Ajv2020({allErrors: true, strict: true});
+addFormats(ajv);
+const validate = ajv.compile(schema);
+if (!validate(data)) {
+	console.error(JSON.stringify(validate.errors, null, 2));
+	process.exit(1);
+}
+NODE
+then
+	exit 1
+fi
+if test "$certifying" = true; then
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -report "$report" -release-artifacts "$release_stage"
+	mkdir "$release_publish_stage"
+	cp "$release_stage"/* "$release_publish_stage/"
+	CGO_ENABLED=0 GOTOOLCHAIN=go1.27.1 go run ./tools/p12-verify -report "$report" -release-artifacts "$release_publish_stage"
+	publication_started=true
+	if test -e "$root/docs/p12/release-artifacts"; then
+		mv "$root/docs/p12/release-artifacts" "$release_backup"
+	fi
+	if test -e "$final_report"; then
+		mv "$final_report" "$report_backup"
+	fi
+	mv "$release_publish_stage" "$root/docs/p12/release-artifacts"
+	mv "$report" "$final_report"
+	publication_complete=true
+else
+	mv "$report" "$final_report"
+fi
 printf 'P12 harness completed with status %s: %s\n' "$status" "$final_report"

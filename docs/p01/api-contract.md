@@ -74,12 +74,17 @@ for writes accepted before its watermark and reports unknown outcomes.
 ## Timeouts and Cancellation
 
 Every network operation accepts a context. An earlier caller deadline wins over
-a configured finite default. With no caller deadline, the operation default is
-applied. Defaults are 10 seconds for dialing, 15 seconds for a handshake, and 30
-seconds for an operation. A zero configured duration selects that default; a
-negative duration is invalid. A caller can request a longer finite deadline by
-setting both the configured timeout and context accordingly. No operation waits
-forever by default.
+a configured finite timeout, and a later explicit caller deadline also remains
+unchanged. With no caller deadline, a positive operation timeout is applied.
+`DefaultConfig` supplies 10 second dial, 15 second handshake, and 30 second
+operation timeouts. A `Config` passed directly to `New` keeps an
+`OperationTimeout` of zero as unlimited; negative durations are invalid.
+Unlimited operations are still canceled by client close or shutdown.
+
+For notify, a positive operation timeout is also sent to the OSD in whole
+seconds and the local wait receives one additional second of grace when the
+caller supplied no deadline. Zero sends a zero server timeout and creates no
+local timer. An explicit caller deadline is never replaced by notify grace.
 
 Cancellation prevents unsent work from being dispatched and stops the caller's
 wait. It cannot undo a request accepted by an OSD. When execution may have
@@ -112,3 +117,24 @@ converted through the host `syscall.Errno` namespace.
 Targets used in errors and future logs must not expose credentials, tickets,
 payloads, or unrestricted object names. Compound sub-operation results remain
 separate from the top-level transport/OSD result.
+
+## Additive Cluster Observation API
+
+P13 adds `Client.SubscribeClusterChanges` without changing the frozen lifecycle
+or object-I/O signatures. A caller selects MON events, OSD events, or both and
+provides a nonzero bounded queue no larger than `MaxWatchQueue`. Subscribing
+before `Connect` includes initial accepted maps; subscribing later observes only
+future publications.
+
+`ClusterChangeAuthoritative` means an ordered MonMap or OSDMap was accepted by
+the client. `ClusterChangeObserved` means this client observed one monitor or
+OSD session become available or unavailable; it does not assert authoritative
+membership, quorum, daemon `up`, or cluster health. Sequence numbers are global
+to the client and monotonic, but filtered subscribers may observe gaps.
+
+Every delivered event owns its slices, maps, and pointed-to states. A slow
+subscriber never blocks monitor or objecter work: queue overflow terminates
+that subscription and reports `ErrSubscriptionOverflow`. Context cancellation,
+explicit subscription close, and client close terminate delivery. Consumers
+must select on `Events`, `Errors`, and `Done` rather than assume an error is
+present for normal cancellation.

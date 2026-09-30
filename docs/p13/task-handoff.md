@@ -1,6 +1,6 @@
 # P13 Task Handoff
 
-Status: **planning baseline; implementation has not started**.
+Status: **implementation complete; quick qualification passed, full source-bound qualification pending**.
 
 This file is the durable handoff for P13. Update it after every completed task
 with files changed, exact commands and exit status, evidence identities, and
@@ -38,18 +38,21 @@ observed output.
 
 These points are regression constraints, not proof of P13 completion.
 
-## Open Findings
+## Resolved Findings
 
-| ID | Severity | Current behavior | Required resolution |
+| ID | Severity | Prior behavior | Resolution |
 | --- | --- | --- | --- |
-| P13-F01 | High | An in-flight request blocked on a silent old primary is not directly awakened when the monitor publishes a remapping OSDMap | Add map-generation observation and rescan/cancel/resubmit semantics matching `Objecter::_scan_requests` |
-| P13-F02 | High | Watch recovery stops after the internal `RefreshWait * MaxAttempts` window | Keep linger recovery alive according to watch/client lifetime and configured operation semantics; preserve observable possible loss |
-| P13-F03 | Medium | Initial watch registration bypasses homeless-route waiting | Route registration through the shared recoverable path |
-| P13-F04 | Medium | Explicit OSD command routing uses address presence without an exact exists/up check | Return absent versus down errors matching librados and never remap explicit targets |
-| P13-F05 | Medium | Zero cannot express librados's unlimited OSD operation timeout and the native option name is not parsed | Freeze and implement compatible timeout/config semantics with migration documentation |
-| P13-F06 | Medium | OSD add/remove/destroy/recreate and address replacement lack a native differential map corpus and live qualification | Add fixtures, session-retirement tests, and disposable lifecycle scenarios |
-| P13-F07 | Medium | Slow/flaky behavior is covered mostly by scripted unit faults, not controlled live latency/loss | Add bounded fault injection with native comparison and exact outcome recording |
-| P13-F08 | Evidence | Maintenance/noout behavior has no dedicated qualification | Add maintenance scenarios without inventing client-side policy |
+| P13-F01 | High | Silent in-flight requests ignored remapping maps | Ordered map publication now cancels and reroutes affected object and PG-command attempts. |
+| P13-F02 | High | Watch recovery stopped after the internal attempt budget | Established watches recover for their lifetime with stable cookies and observable interruptions. |
+| P13-F03 | Medium | Initial watch registration bypassed homeless-route waiting | Registration now uses recoverable routing. |
+| P13-F04 | Medium | Explicit command routing lacked exact exists/up checks | Explicit commands now return native-matching `ENOENT`/`ENXIO` and never remap. |
+| P13-F05 | Medium | Zero could not express unlimited OSD operation waiting | Zero now means unlimited, including retries; `DefaultConfig` keeps a finite convenience default. |
+| P13-F06 | Medium | OSD lifecycle and address replacement lacked qualification | Deterministic tests and live add/remove/destroy/recreate evidence cover the lifecycle. |
+| P13-F07 | Medium | Flaky behavior lacked controlled live evidence | Paired Go/native appends are held on paused primaries, remapped, and checked for exact marker multiplicity. |
+| P13-F08 | Evidence | Maintenance/noout lacked dedicated qualification | The live matrix covers reads, writes, PG commands, and long-lived watches under global `noout`. |
+| P13-F09 | High | Monitor sessions retried one failed endpoint indefinitely | Monitor reconnect is bounded per endpoint so the client can fail over through the accepted monitor set. |
+| P13-F10 | Medium | A read-only monitor command could fail with the replaced session | Allowlisted read-only commands retry after definitive session replacement; mutating commands do not. |
+| P13-F11 | API | Callers could not observe MON/OSD topology and local availability changes | Bounded subscriptions now separate authoritative map facts from observed session state. |
 
 Severity describes the P13 parity risk, not a claim of data loss or a production
 incident. Re-rank findings only with a reproducer and source evidence.
@@ -158,5 +161,44 @@ Next unblocked task:
 
 ## Current Next Step
 
-Start P13-T00. Freeze the upstream behavior matrix and native oracle contract
-before changing timeout defaults, map notifications, or request state.
+Regenerate P12 qualification and the final full P13 report for the exact source
+tree, run the cumulative gates, and commit the completed phase.
+
+## Implementation Record
+
+Tasks: P13-T00 through P13-T08
+Status: complete
+Baseline: `6f8abc7` planning commit
+Ceph source: v20.2.0 `69f84cc2651aa259a15bc192ddaabd3baba07489`
+Files changed: public configuration and coordination API; map, monitor,
+messenger, objecter, and OSD protocol packages; focused tests and API docs.
+Behavior proved: ordered map observation, map-driven request rescan, unlimited
+timeout semantics, unbounded reconnect backoff, backoff replay, stable mutation
+identity, recoverable watches, explicit command state errors, and OSD lifecycle
+state/address handling.
+Validation: full Go suite passed; race-enabled maps/monitor/messenger/objecter
+suite passed; `go vet ./...` and `go build ./...` passed.
+
+Tasks: P13-T09 and P13-T10
+Status: complete
+Files changed: `integration/p13` and `tools/p13-verify`.
+Behavior proved: the current quick report completed 22 scenarios, including
+five MON lifecycle cases, and recorded 60 ordered subscription events;
+paired mutations remained pending across paused-primary failover; intermediate
+destroyed state and same-ID/new-UUID/new-address recreation were observed;
+forced failure exited 97, retained artifacts, published a failed report, and
+removed all P13 containers, volumes, and networks. The strict verifier rejects
+unknown/trailing JSON, invalid chronology and topology, nonzero errno, native
+mismatch, unbound mutation markers, and incomplete lifecycle observations.
+Known limitations: multi-host maintenance and probabilistic packet loss remain
+explicitly unqualified.
+
+Task: P13-T11
+Status: in progress
+Files changed: `Makefile`, `.github/workflows/p00.yml`, P13 documentation and
+reports, and P12 source-binding logic and evidence.
+Validation so far: the strict schema and semantic verifier accepted a fresh
+quick report with 22 scenarios and 60 events. Full P12/P13 source-bound
+qualification, cumulative gates, final review, and commit remain pending.
+The default verifier and non-live CI intentionally reject quick evidence; the
+checked-in report must be replaced by a passing full report before commit.

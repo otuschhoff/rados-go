@@ -36,8 +36,9 @@ owns object-operation completion and durability semantics.
 - Cancellation removes queued or in-flight bookkeeping and releases retained
   bytes. It stops local waiting and replay eligibility; P02 does not claim to
   undo remote work already observed by a peer.
-- Connector failures retry immediately until `MaxReconnectAttempts` is
-  exhausted. The current session implements no delay, jitter, or backoff.
+- Connector failures use bounded exponential backoff. A positive
+  `MaxReconnectAttempts` bounds retries; zero retries until context cancellation
+  or session shutdown.
 
 ## Context and Socket Contract
 

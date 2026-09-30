@@ -281,9 +281,19 @@ func TestPlaceObjectRejectsInvalidReplicaAndTemporaryPrimary(t *testing.T) {
 	base.primaryTemp = nil
 	base.pgTemp = map[PG][]int32{identity.PG: {0, 0}}
 	if _, err := base.PlaceObject(2, "object", "", ""); !errors.Is(err, ErrUnsupportedPlacement) {
-		t.Fatalf("duplicate temporary set error=%v", err)
+		t.Fatalf("duplicate replicated temporary set error=%v", err)
+	}
+	pool.poolType = poolTypeErasure
+	base.pools[2] = pool
+	placement, err := base.PlaceObject(2, "object", "", "")
+	if err != nil || !reflect.DeepEqual(placement.Acting, []int32{0, 0}) {
+		t.Fatalf("duplicate erasure temporary set placement=%+v error=%v", placement, err)
 	}
 	base.pgTemp = nil
+	base.pgUpmap = map[PG][]int32{identity.PG: {0, 0}}
+	if _, err := base.PlaceObject(2, "object", "", ""); !errors.Is(err, ErrUnsupportedPlacement) {
+		t.Fatalf("duplicate erasure upmap error=%v", err)
+	}
 	base.pgUpmap = map[PG][]int32{identity.PG: {0, 99}}
 	if _, err := base.PlaceObject(2, "object", "", ""); !errors.Is(err, ErrUnsupportedPlacement) {
 		t.Fatalf("nonexistent upmap target error=%v", err)

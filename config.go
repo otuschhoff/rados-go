@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -163,8 +164,8 @@ func (config Config) withOption(name, value string, loadKeyring bool) (Config, e
 			return Config{}, err
 		}
 		config.HandshakeTimeout = duration
-	case "operation_timeout":
-		duration, err := parsePositiveDuration(name, value)
+	case "operation_timeout", "rados_osd_op_timeout":
+		duration, err := parseOperationDuration(name, value, name == "rados_osd_op_timeout")
 		if err != nil {
 			return Config{}, err
 		}
@@ -211,8 +212,8 @@ func (config Config) Option(name string) (string, bool) {
 		return durationOption(config.DialTimeout)
 	case "handshake_timeout":
 		return durationOption(config.HandshakeTimeout)
-	case "operation_timeout":
-		return durationOption(config.OperationTimeout)
+	case "operation_timeout", "rados_osd_op_timeout":
+		return config.OperationTimeout.String(), true
 	default:
 		value, ok := config.options[normalizeOptionName(name)]
 		return value, ok
@@ -334,7 +335,7 @@ func (config *Config) applySection(values map[string]string) error {
 	if _, exists := values["include_dir"]; exists {
 		return invalidConfig("include_dir", errors.New("includes are not supported"))
 	}
-	ordered := []string{"cluster", "entity", "name", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout"}
+	ordered := []string{"cluster", "entity", "name", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout"}
 	for _, name := range ordered {
 		value, exists := values[name]
 		if !exists {
@@ -396,6 +397,19 @@ func parsePositiveDuration(name, value string) (time.Duration, error) {
 	return duration, nil
 }
 
+func parseOperationDuration(name, value string, bareSeconds bool) (time.Duration, error) {
+	if bareSeconds {
+		if _, err := strconv.ParseInt(value, 10, 64); err == nil {
+			value += "s"
+		}
+	}
+	duration, err := time.ParseDuration(value)
+	if err != nil || duration < 0 {
+		return 0, invalidConfig(name, errors.New("duration must be non-negative and finite"))
+	}
+	return duration, nil
+}
+
 func durationOption(duration time.Duration) (string, bool) {
 	if duration == 0 {
 		return "", false
@@ -411,7 +425,7 @@ func normalizeOptionName(name string) string {
 
 func isArgumentOption(name string) bool {
 	switch name {
-	case "name", "id", "cluster", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout":
+	case "name", "id", "cluster", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout":
 		return true
 	default:
 		return false

@@ -335,7 +335,7 @@ func newFuzzSessionOwner(t *testing.T) *sessionOwner {
 	config.MaxQueuedMessages = 8
 	config.MaxRetainedBytes = 2048
 	config.MaxInFlightTransactions = 4
-	config.MaxReconnectAttempts = 0
+	config.MaxReconnectAttempts = 1
 	config.MaxHandshakeTransitions = 8
 	config.EventBuffer = 64
 
@@ -347,18 +347,19 @@ func newFuzzSessionOwner(t *testing.T) *sessionOwner {
 	}
 	_, cancel := context.WithCancel(context.Background())
 	return &sessionOwner{
-		session:         session,
-		config:          config,
-		state:           StateReady,
-		byRequest:       make(map[*submitCommand]*pendingRequest),
-		byTID:           make(map[uint64]*pendingRequest),
-		nextOutbound:    1,
-		nextTID:         1,
-		clientCookie:    config.ClientCookie,
-		serverCookie:    config.ServerCookie,
-		globalSeq:       config.GlobalSequence,
-		connectSeq:      config.ConnectSequence,
-		connectorCancel: cancel,
+		session:           session,
+		config:            config,
+		state:             StateReady,
+		byRequest:         make(map[*submitCommand]*pendingRequest),
+		byTID:             make(map[uint64]*pendingRequest),
+		nextOutbound:      1,
+		nextTID:           1,
+		clientCookie:      config.ClientCookie,
+		serverCookie:      config.ServerCookie,
+		globalSeq:         config.GlobalSequence,
+		connectSeq:        config.ConnectSequence,
+		reconnectAttempts: 1,
+		connectorCancel:   cancel,
 	}
 }
 

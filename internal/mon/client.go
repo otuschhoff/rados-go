@@ -39,15 +39,24 @@ type session interface {
 
 type SessionFactory func(context.Context, Endpoint) (session, error)
 
+type ConnectionEvent struct {
+	Endpoint  Endpoint
+	Available bool
+	Err       error
+}
+
 type ClientConfig struct {
-	Endpoints       []Endpoint
-	ExpectedFSID    *maps.FSID
-	Hostname        string
-	MapLimits       maps.Limits
-	MessageLimits   MessageLimits
-	CommandItems    uint32
-	SubscribePeriod time.Duration
-	RetryDelay      time.Duration
+	Endpoints         []Endpoint
+	ExpectedFSID      *maps.FSID
+	Hostname          string
+	MapLimits         maps.Limits
+	MessageLimits     MessageLimits
+	CommandItems      uint32
+	SubscribePeriod   time.Duration
+	RetryDelay        time.Duration
+	ObserveMonMap     func(*maps.MonMap, *maps.MonMap)
+	ObserveOSDMap     func(*maps.OSDMap, *maps.OSDMap)
+	ObserveConnection func(ConnectionEvent)
 }
 
 type Client struct {
@@ -66,6 +75,9 @@ type Client struct {
 
 	mu             sync.Mutex
 	session        session
+	sessionContext context.Context
+	sessionCancel  context.CancelFunc
+	sessionChanged chan struct{}
 	nextEndpoint   int
 	started        bool
 	runStarted     bool
@@ -73,6 +85,8 @@ type Client struct {
 	readyErr       error
 	closed         bool
 	refreshPending bool
+	osdMapChanged  chan struct{}
+	osdGenerations map[int32]uint64
 	seedEndpoints  []Endpoint
 	activeEndpoint Endpoint
 	hasActive      bool
@@ -94,7 +108,7 @@ func NewClient(config ClientConfig, factory SessionFactory) (*Client, error) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	config.Endpoints = append([]Endpoint(nil), config.Endpoints...)
-	client := &Client{config: config, factory: factory, ctx: ctx, cancel: cancel, done: make(chan struct{}), errors: make(chan error, 16), ready: make(chan struct{}), readyFailure: make(chan struct{}), startDone: make(chan struct{}), seedEndpoints: append([]Endpoint(nil), config.Endpoints...)}
+	client := &Client{config: config, factory: factory, ctx: ctx, cancel: cancel, done: make(chan struct{}), errors: make(chan error, 16), ready: make(chan struct{}), readyFailure: make(chan struct{}), startDone: make(chan struct{}), sessionChanged: make(chan struct{}), osdMapChanged: make(chan struct{}), osdGenerations: make(map[int32]uint64), seedEndpoints: append([]Endpoint(nil), config.Endpoints...)}
 	if config.ExpectedFSID != nil {
 		fsid := *config.ExpectedFSID
 		client.pinnedFSID = &fsid
@@ -228,6 +242,8 @@ func (client *Client) start() {
 	}
 	if err == nil {
 		client.session = active
+		client.sessionContext, client.sessionCancel = context.WithCancel(client.ctx)
+		client.signalSessionChangeLocked()
 		client.activeEndpoint = endpoint
 		client.hasActive = true
 		client.runStarted = true
@@ -254,6 +270,12 @@ func (client *Client) Close() {
 		client.mu.Lock()
 		active := client.session
 		runStarted := client.runStarted
+		if client.sessionCancel != nil {
+			client.sessionCancel()
+			client.sessionCancel = nil
+			client.sessionContext = nil
+			client.signalSessionChangeLocked()
+		}
 		client.session = nil
 		client.mu.Unlock()
 		if active != nil {
@@ -273,6 +295,12 @@ func (client *Client) MonMap() *maps.MonMap  { return client.monMap.Load() }
 func (client *Client) MgrMap() *maps.MgrMap  { return client.mgrMap.Load() }
 func (client *Client) OSDMap() *maps.OSDMap  { return client.osdMap.Load() }
 
+func (client *Client) OSDSessionGeneration(osdID int32) uint64 {
+	client.mu.Lock()
+	defer client.mu.Unlock()
+	return client.osdGenerations[osdID]
+}
+
 func (client *Client) PoolByName(name string) (maps.Pool, bool) {
 	osdMap := client.osdMap.Load()
 	if osdMap == nil {
@@ -285,9 +313,24 @@ func (client *Client) RefreshOSDMap(ctx context.Context, after uint32) error {
 	if err := client.requestFullMap(); err != nil {
 		return err
 	}
-	ticker := time.NewTicker(10 * time.Millisecond)
-	defer ticker.Stop()
+	return client.WaitForOSDMap(ctx, after)
+}
+
+func (client *Client) WaitForOSDMap(ctx context.Context, after uint32) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	for {
+		if current := client.osdMap.Load(); current != nil && current.Epoch() > after {
+			return nil
+		}
+		client.mu.Lock()
+		changed := client.osdMapChanged
+		closed := client.closed
+		client.mu.Unlock()
+		if closed {
+			return ErrClosed
+		}
 		if current := client.osdMap.Load(); current != nil && current.Epoch() > after {
 			return nil
 		}
@@ -296,7 +339,7 @@ func (client *Client) RefreshOSDMap(ctx context.Context, after uint32) error {
 			return ctx.Err()
 		case <-client.done:
 			return ErrClosed
-		case <-ticker.C:
+		case <-changed:
 		}
 	}
 }
@@ -317,13 +360,7 @@ func (client *Client) Command(ctx context.Context, command []string, input []byt
 	if err != nil {
 		return CommandReply{}, err
 	}
-	client.mu.Lock()
-	active := client.session
-	client.mu.Unlock()
-	if active == nil {
-		return CommandReply{}, ErrClosed
-	}
-	reply, err := active.Submit(ctx, message)
+	reply, err := client.submitCommand(ctx, message, isReadOnlyCommand(command))
 	if err != nil {
 		return CommandReply{}, err
 	}
@@ -335,6 +372,53 @@ func (client *Client) Command(ctx context.Context, command []string, input []byt
 		return decoded, protocol.WireErrno(decoded.Result)
 	}
 	return decoded, nil
+}
+
+func (client *Client) submitCommand(ctx context.Context, message msgr.Message, retry bool) (msgr.Message, error) {
+	for {
+		client.mu.Lock()
+		active, lifetime, changed, closed := client.session, client.sessionContext, client.sessionChanged, client.closed
+		client.mu.Unlock()
+		if closed {
+			return msgr.Message{}, ErrClosed
+		}
+		if active != nil && lifetime == nil {
+			lifetime = client.ctx
+		}
+		if active == nil || lifetime == nil {
+			select {
+			case <-ctx.Done():
+				return msgr.Message{}, ctx.Err()
+			case <-client.done:
+				return msgr.Message{}, ErrClosed
+			case <-changed:
+				continue
+			}
+		}
+		attemptCtx, cancel := context.WithCancel(ctx)
+		stop := context.AfterFunc(lifetime, cancel)
+		reply, err := active.Submit(attemptCtx, message)
+		stop()
+		cancel()
+		if err == nil || !retry || ctx.Err() != nil {
+			return reply, err
+		}
+		sameSessionRetry := errors.Is(err, msgr.ErrSessionDisconnected) || errors.Is(err, msgr.ErrOutcomeUnknown)
+		retryable := sameSessionRetry || errors.Is(err, msgr.ErrReconnectExhausted) || errors.Is(err, msgr.ErrSessionClosed) || errors.Is(err, context.Canceled) && lifetime.Err() != nil
+		if !retryable {
+			return reply, err
+		}
+		if sameSessionRetry && lifetime.Err() == nil {
+			continue
+		}
+		select {
+		case <-ctx.Done():
+			return msgr.Message{}, ctx.Err()
+		case <-client.done:
+			return msgr.Message{}, ErrClosed
+		case <-lifetime.Done():
+		}
+	}
 }
 
 func (client *Client) StatFS(ctx context.Context) (StatFSReply, error) {
@@ -469,6 +553,10 @@ func (client *Client) waitForOSDMap(ctx context.Context, epoch uint32) error {
 
 func (client *Client) run(active session) {
 	defer close(client.done)
+	client.mu.Lock()
+	initialEndpoint := client.activeEndpoint
+	client.mu.Unlock()
+	client.observeConnection(initialEndpoint, true, nil)
 	timer := time.NewTimer(client.config.SubscribePeriod)
 	if err := client.subscribe(active); err != nil {
 		client.reportNonfatal(err)
@@ -480,12 +568,14 @@ func (client *Client) run(active session) {
 			return
 		case _, ok := <-active.Events():
 			if !ok {
+				client.observeActiveConnection(false, msgr.ErrSessionDisconnected)
 				if !client.failover(&active) {
 					return
 				}
 				continue
 			}
 		case <-active.Done():
+			client.observeActiveConnection(false, msgr.ErrSessionDisconnected)
 			if !client.failover(&active) {
 				return
 			}
@@ -495,6 +585,7 @@ func (client *Client) run(active session) {
 				client.report(err)
 				return
 			}
+			client.observeActiveConnection(false, err)
 			if !client.waitRetry() {
 				return
 			}
@@ -503,6 +594,7 @@ func (client *Client) run(active session) {
 			}
 		case message, ok := <-active.Incoming():
 			if !ok {
+				client.observeActiveConnection(false, msgr.ErrSessionDisconnected)
 				if !client.failover(&active) {
 					return
 				}
@@ -561,6 +653,9 @@ func (client *Client) handleMessage(active session, message msgr.Message) (time.
 		if current == nil || monMap.Epoch() > current.Epoch() {
 			activePresent := client.replaceMonMapEndpoints(monMap)
 			client.monMap.Store(monMap)
+			if client.config.ObserveMonMap != nil {
+				client.config.ObserveMonMap(current, monMap)
+			}
 			if client.osdMap.Load() != nil {
 				client.onceReady()
 			}
@@ -616,8 +711,10 @@ func (client *Client) waitRetry() bool {
 }
 
 func (client *Client) applyBatch(batch OSDMapBatch) (bool, error) {
-	current := client.osdMap.Load()
+	previous := client.osdMap.Load()
+	current := previous
 	appliedFull := false
+	invalidated := make(map[int32]struct{})
 	fullEpochs := sortedEpochs(batch.FullMaps)
 	for _, epoch := range fullEpochs {
 		if current != nil && epoch <= current.Epoch() {
@@ -629,6 +726,11 @@ func (client *Client) applyBatch(batch OSDMapBatch) (bool, error) {
 		}
 		if decoded.Epoch() != epoch || decoded.FSID() != batch.FSID {
 			return false, fmt.Errorf("%w: full map envelope identity mismatch", maps.ErrMalformedMap)
+		}
+		if current != nil {
+			for osdID := int32(0); osdID < max(current.MaxOSD(), decoded.MaxOSD()); osdID++ {
+				invalidated[osdID] = struct{}{}
+			}
 		}
 		current = decoded
 		appliedFull = true
@@ -647,10 +749,12 @@ func (client *Client) applyBatch(batch OSDMapBatch) (bool, error) {
 		if incremental.Epoch() != epoch || incremental.FSID() != batch.FSID {
 			return false, fmt.Errorf("%w: incremental envelope identity mismatch", maps.ErrMalformedMap)
 		}
-		current, err = maps.ApplyOSDMapIncremental(current, incremental, client.config.MapLimits)
+		next, err := maps.ApplyOSDMapIncremental(current, incremental, client.config.MapLimits)
 		if err != nil {
 			return false, err
 		}
+		collectOSDStateTransitions(current, next, invalidated)
+		current = next
 	}
 	if batch.NewestMap != 0 && (current == nil || current.Epoch() < batch.NewestMap) {
 		return false, fmt.Errorf("%w: current epoch %d, trim lower bound %d, newest %d", ErrMapGap, mapEpoch(current), batch.TrimLowerBound, batch.NewestMap)
@@ -658,13 +762,35 @@ func (client *Client) applyBatch(batch OSDMapBatch) (bool, error) {
 	if current != nil && batch.TrimLowerBound != 0 && current.Epoch() < batch.TrimLowerBound {
 		return false, fmt.Errorf("%w: current epoch %d below trim lower bound %d", ErrMapGap, current.Epoch(), batch.TrimLowerBound)
 	}
-	if current != nil {
+	if current != nil && current != previous {
+		client.mu.Lock()
+		for osdID := range invalidated {
+			client.osdGenerations[osdID]++
+		}
+		client.mu.Unlock()
 		client.osdMap.Store(current)
+		if client.config.ObserveOSDMap != nil {
+			client.config.ObserveOSDMap(previous, current)
+		}
+		client.mu.Lock()
+		close(client.osdMapChanged)
+		client.osdMapChanged = make(chan struct{})
+		client.mu.Unlock()
 		if client.monMap.Load() != nil {
 			client.onceReady()
 		}
 	}
 	return appliedFull, nil
+}
+
+func collectOSDStateTransitions(previous, current *maps.OSDMap, changed map[int32]struct{}) {
+	for osdID := int32(0); osdID < max(previous.MaxOSD(), current.MaxOSD()); osdID++ {
+		before, beforeOK := previous.OSDState(osdID)
+		after, afterOK := current.OSDState(osdID)
+		if beforeOK != afterOK || before != after {
+			changed[osdID] = struct{}{}
+		}
+	}
 }
 
 func mapEpoch(osdMap *maps.OSDMap) uint32 {
@@ -729,6 +855,16 @@ func (client *Client) requestFullMap() error {
 
 func (client *Client) failover(active *session) bool {
 	(*active).Stop()
+	client.mu.Lock()
+	if client.session == *active {
+		client.session = nil
+		if client.sessionCancel != nil {
+			client.sessionCancel()
+		}
+		client.sessionContext, client.sessionCancel = nil, nil
+		client.signalSessionChangeLocked()
+	}
+	client.mu.Unlock()
 	for {
 		if client.ctx.Err() != nil {
 			return false
@@ -739,6 +875,8 @@ func (client *Client) failover(active *session) bool {
 		refreshPending := client.refreshPending
 		if err == nil && !closed {
 			client.session = next
+			client.sessionContext, client.sessionCancel = context.WithCancel(client.ctx)
+			client.signalSessionChangeLocked()
 			client.activeEndpoint = endpoint
 			client.hasActive = true
 			client.refreshPending = false
@@ -758,6 +896,7 @@ func (client *Client) failover(active *session) bool {
 					client.reportNonfatal(err)
 				}
 			}
+			client.observeConnection(endpoint, true, nil)
 			return true
 		}
 		client.reportNonfatal(err)
@@ -769,6 +908,25 @@ func (client *Client) failover(active *session) bool {
 		case <-timer.C:
 		}
 	}
+}
+
+func (client *Client) signalSessionChangeLocked() {
+	close(client.sessionChanged)
+	client.sessionChanged = make(chan struct{})
+}
+
+func (client *Client) observeActiveConnection(available bool, err error) {
+	client.mu.Lock()
+	endpoint := client.activeEndpoint
+	client.mu.Unlock()
+	client.observeConnection(endpoint, available, err)
+}
+
+func (client *Client) observeConnection(endpoint Endpoint, available bool, err error) {
+	if client.config.ObserveConnection == nil {
+		return
+	}
+	client.config.ObserveConnection(ConnectionEvent{Endpoint: endpoint, Available: available, Err: err})
 }
 
 func (client *Client) openNext(ctx context.Context) (session, Endpoint, error) {
@@ -835,11 +993,6 @@ func (client *Client) replaceMonMapEndpoints(monMap *maps.MonMap) bool {
 		}
 		return discovered[left].weight > discovered[right].weight
 	})
-	for _, endpoint := range client.seedEndpoints {
-		if _, exists := seen[endpoint.Address]; !exists {
-			discovered = append(discovered, endpoint)
-		}
-	}
 	client.config.Endpoints = discovered
 	client.nextEndpoint = 0
 	return !client.hasActive || activePresent

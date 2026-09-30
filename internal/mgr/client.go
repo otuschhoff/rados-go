@@ -37,6 +37,7 @@ type Config struct {
 	MessageLimits    uint32
 	RetryDelay       time.Duration
 	MaxAttempts      int
+	UnlimitedRetries bool
 	SessionFactory   SessionFactory
 }
 
@@ -107,7 +108,7 @@ func (client *Client) Command(ctx context.Context, command []string, input []byt
 	request.Header.TransactionID = tid
 
 	var lastErr error
-	for attempt := 0; attempt < client.config.MaxAttempts; attempt++ {
+	for attempt := 0; client.config.UnlimitedRetries || attempt < client.config.MaxAttempts; attempt++ {
 		target, err := client.currentTarget()
 		if err != nil {
 			if !errors.Is(err, ErrNoActiveManager) {
@@ -125,7 +126,7 @@ func (client *Client) Command(ctx context.Context, command []string, input []byt
 				return CommandReply{}, preserveContextErr(ctx, err)
 			}
 			lastErr = err
-			if attempt+1 < client.config.MaxAttempts {
+			if client.config.UnlimitedRetries || attempt+1 < client.config.MaxAttempts {
 				if err := client.waitRetry(ctx); err != nil {
 					return CommandReply{}, err
 				}
@@ -148,7 +149,7 @@ func (client *Client) Command(ctx context.Context, command []string, input []byt
 			}
 			client.invalidate(active)
 			lastErr = err
-			if attempt+1 < client.config.MaxAttempts {
+			if client.config.UnlimitedRetries || attempt+1 < client.config.MaxAttempts {
 				if err := client.waitRetry(ctx); err != nil {
 					return CommandReply{}, err
 				}

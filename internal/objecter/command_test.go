@@ -6,8 +6,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"net/netip"
+	"reflect"
 	"sync"
 	"testing"
+	"time"
 
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
 	"github.com/otuschhoff/rados-go/internal/maps"
@@ -145,6 +147,116 @@ func TestOSDCommandReturnsUnknownOSDError(t *testing.T) {
 	if _, err := client.OSDCommand(context.Background(), 42, []string{"ping"}, nil); !errors.Is(err, ErrUnknownOSD) {
 		t.Fatalf("err=%v", err)
 	}
+}
+
+func TestCommandMapRouterExplicitOSDLifecycle(t *testing.T) {
+	oldAddress := testAddress(t, "192.0.2.70:6800")
+	newAddress := testAddress(t, "192.0.2.71:6800")
+	replacementAddress := testAddress(t, "192.0.2.72:6800")
+	tests := []struct {
+		name        string
+		target      int32
+		state       uint32
+		address     protocol.EntityAddrVec
+		wantErr     error
+		wantAddress protocol.EntityAddr
+	}{
+		{name: "absent", target: 2, wantErr: protocol.WireErrno(-2)},
+		{name: "down retaining address", target: 1, state: 1, address: protocol.EntityAddrVec{oldAddress}, wantErr: protocol.WireErrno(-6)},
+		{name: "removed retaining address", target: 1, address: protocol.EntityAddrVec{oldAddress}, wantErr: protocol.WireErrno(-2)},
+		{name: "up", target: 1, state: 3, address: protocol.EntityAddrVec{oldAddress}, wantAddress: oldAddress},
+		{name: "destroyed", target: 1, state: (1 << 0) | (1 << 12), address: protocol.EntityAddrVec{oldAddress}, wantErr: protocol.WireErrno(-6)},
+		{name: "recreated", target: 1, state: 3, address: protocol.EntityAddrVec{newAddress}, wantAddress: newAddress},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			osdMap := commandTestOSDMap(t, []uint32{3, test.state}, []protocol.EntityAddrVec{{replacementAddress}, test.address})
+			router := commandMapRouter{source: &fakeMapSource{osdMap: osdMap}}
+			route, err := router.RouteOSD(test.target)
+			if test.wantErr != nil {
+				if !errors.Is(err, test.wantErr) {
+					t.Fatalf("err=%v want=%v", err, test.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if route.Primary != test.target || len(route.Addresses) != 1 || !reflect.DeepEqual(route.Addresses[0], test.wantAddress) {
+				t.Fatalf("route=%+v want osd.%d at %+v", route, test.target, test.wantAddress)
+			}
+		})
+	}
+}
+
+func commandTestOSDMap(t *testing.T, states []uint32, addresses []protocol.EntityAddrVec) *maps.OSDMap {
+	return commandTestOSDMapEpoch(t, 9, states, addresses)
+}
+
+func commandTestOSDMapEpoch(t *testing.T, epoch uint32, states []uint32, addresses []protocol.EntityAddrVec) *maps.OSDMap {
+	t.Helper()
+	if len(states) != len(addresses) {
+		t.Fatal("state and address vector lengths differ")
+	}
+	const maxBytes = 64 << 10
+	encoder := wire.NewEncoder(maxBytes)
+	var encodeErr error
+	encoder.Versioned(8, 7, func(wrapper *wire.Encoder) {
+		wrapper.Versioned(10, 1, func(client *wire.Encoder) {
+			client.Raw(make([]byte, 16))
+			client.Uint32(epoch)
+			client.Raw(make([]byte, 16))
+			client.Uint32(0)
+			client.Uint32(0)
+			client.Int32(0)
+			client.Uint32(0)
+			client.Int32(int32(len(states)))
+			client.Uint32(uint32(len(states)))
+			for _, state := range states {
+				client.Uint32(state)
+			}
+			client.Uint32(uint32(len(states)))
+			for range states {
+				client.Uint32(0x10000)
+			}
+			client.Uint32(uint32(len(addresses)))
+			for _, address := range addresses {
+				if encodeErr == nil {
+					encodeErr = address.Encode(client, protocol.FeatureMessageAddress2)
+				}
+			}
+			for range 3 {
+				client.Uint32(0)
+			}
+			client.Bytes(nil)
+			for range 3 {
+				client.Uint32(0)
+			}
+			client.Uint32(0)
+			client.Uint32(0)
+			client.Uint32(0)
+			client.Raw(make([]byte, 16))
+			client.Uint32(0)
+		})
+		wrapper.Versioned(12, 1, func(*wire.Encoder) {})
+		wrapper.Uint32(0)
+	})
+	if encodeErr != nil {
+		t.Fatal(encodeErr)
+	}
+	data, err := encoder.BytesResult()
+	if err != nil {
+		t.Fatal(err)
+	}
+	crcOffset := len(data) - 4
+	binary.LittleEndian.PutUint32(data[crcOffset:], wire.CRC32C(^uint32(0), data[:crcOffset]))
+	osdMap, err := maps.DecodeOSDMap(data, maps.Limits{
+		MaxBytes: maxBytes, MaxPools: 1, MaxOSDs: 8, MaxAddresses: 4, MaxPGMappings: 4, MaxCollectionEntries: 4,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return osdMap
 }
 
 func TestOSDCommandRefreshesMapOnEAGAIN(t *testing.T) {
@@ -298,6 +410,114 @@ func TestPGCommandFollowsMapChange(t *testing.T) {
 	result, err := client.PGCommand(context.Background(), pg, []string{"scrub"}, nil)
 	if err != nil || string(result.Output) != "done" || !factoryFor[1] || !factoryFor[2] {
 		t.Fatalf("result=%+v err=%v sessions=%v", result, err, factoryFor)
+	}
+}
+
+func TestPGCommandRemapsBlockedSubmissionOnPublishedMap(t *testing.T) {
+	oldRoute := testRoute(t, 10, 1, "192.0.2.60:6800")
+	newRoute := testRoute(t, 11, 2, "192.0.2.61:6800")
+	pg := maps.PG{Pool: 3, Seed: 5, Preferred: -1}
+	router := &fakeCommandRouter{}
+	router.setPG(pg, oldRoute)
+	source := newNotifyingMapSource()
+	firstSubmitted := make(chan struct{})
+	var firstOnce sync.Once
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			if id == oldRoute.Primary {
+				firstOnce.Do(func() { close(firstSubmitted) })
+				<-ctx.Done()
+				return msgr.Message{}, ctx.Err()
+			}
+			return commandReplyMessage(t, message.Header.TransactionID, 0, "ok", []byte("done")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	result := make(chan struct {
+		value CommandResult
+		err   error
+	}, 1)
+	go func() {
+		value, err := client.PGCommand(ctx, pg, []string{"query"}, nil)
+		result <- struct {
+			value CommandResult
+			err   error
+		}{value: value, err: err}
+	}()
+	<-firstSubmitted
+	router.setPG(pg, newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+
+	completed := <-result
+	if completed.err != nil || string(completed.value.Output) != "done" {
+		t.Fatalf("result=%+v err=%v", completed.value, completed.err)
+	}
+}
+
+func TestPGCommandKeepsSuccessfulReplyWhenRemapCancelsAttempt(t *testing.T) {
+	oldRoute := testRoute(t, 10, 1, "192.0.2.60:6800")
+	newRoute := testRoute(t, 11, 2, "192.0.2.61:6800")
+	pg := maps.PG{Pool: 3, Seed: 5, Preferred: -1}
+	router := &fakeCommandRouter{}
+	router.setPG(pg, oldRoute)
+	source := newNotifyingMapSource()
+	submitted := make(chan struct{})
+	submits := 0
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			submits++
+			close(submitted)
+			<-ctx.Done()
+			return commandReplyMessage(t, message.Header.TransactionID, 0, "ok", []byte("done")), nil
+		}}, nil
+	})
+	defer client.Close()
+
+	result := make(chan struct {
+		value CommandResult
+		err   error
+	}, 1)
+	go func() {
+		value, err := client.PGCommand(context.Background(), pg, []string{"query"}, nil)
+		result <- struct {
+			value CommandResult
+			err   error
+		}{value: value, err: err}
+	}()
+	<-submitted
+	router.setPG(pg, newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+
+	completed := <-result
+	if completed.err != nil || string(completed.value.Output) != "done" || submits != 1 {
+		t.Fatalf("result=%+v error=%v submits=%d", completed.value, completed.err, submits)
+	}
+}
+
+func TestPGCommandUnlimitedRetriesBeyondMaxAttempts(t *testing.T) {
+	address := testAddress(t, "192.0.2.62:6800")
+	pg := maps.PG{Pool: 3, Seed: 6, Preferred: -1}
+	router := &fakeCommandRouter{}
+	router.setPG(pg, Route{Epoch: 10, PG: pg, Primary: 1, Addresses: protocol.EntityAddrVec{address}})
+	attempts := 0
+	client := newTestClient(t, &fakeMapSource{}, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			attempts++
+			if attempts <= 5 {
+				return commandReplyMessage(t, message.Header.TransactionID, -11, "try again", nil), nil
+			}
+			return commandReplyMessage(t, message.Header.TransactionID, 0, "ok", []byte("done")), nil
+		}}, nil
+	})
+	client.config.UnlimitedRetries = true
+	defer client.Close()
+
+	result, err := client.PGCommand(context.Background(), pg, []string{"scrub"}, nil)
+	if err != nil || string(result.Output) != "done" || attempts != 6 {
+		t.Fatalf("result=%+v err=%v attempts=%d", result, err, attempts)
 	}
 }
 

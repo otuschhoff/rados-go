@@ -2,8 +2,8 @@
   "schema_version": 2,
   "status": "non-certifying",
   "command": "./integration/p12/reproduce.sh --quick",
-  "started_at": "2026-09-17T00:02:03Z",
-  "finished_at": "2026-09-17T00:05:40Z",
+  "started_at": "2026-09-24T16:06:17Z",
+  "finished_at": "2026-09-24T16:09:54Z",
   "qualification": null,
   "fuzz": null,
   "reviews": null,
@@ -12,50 +12,52 @@
     "identity": "content-addressed-artifacts",
     "artifacts": {
       "object.go": "dfb2ee91396778d49541938f81641d999a6298b1f37155a836bef02b2e72a80f",
-      "config.go": "8bb8015bf0fd3244d88faa3fd2ad5a446ede81269a0a3ec0edd431799e906813",
+      "config.go": "ef1c456d42fc405aedfe98c377e1f737550739eac1d8a6c18372d95586717be5",
       "metadata.go": "0d05c62980408ce2659965c4c56e01fea0da98039c1bde1f9d8928df930f65e5",
       "go.mod": "82c5d6809f3e77a2b68f41462004584d9399946795a90c97654439bff5ab5cdb",
       "errors_test.go": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7",
       "THIRD_PARTY_NOTICES": "7c36fce9f9ff6adfbf728b640ebff7c57dffe69c62ef07584cec894c7d35ecb1",
+      "changes.go": "34106d934b1da23a751d78ef04899fb5edcf80aa73d8c235f0b57e95adc177e9",
       "LICENSE": "10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43",
-      "Makefile": "d574a847c82d29b55ba9e0714ff58c5f19948d3b9af578475c777484a3c2ce29",
+      "Makefile": "7a7f45e9f55cca1ac2aa057c3f46341a6a18515c1b7c28cc6d3cd6f2a8e894c5",
       "config_fuzz_test.go": "b5f2164d1be48126fd5ca3b0ef5e4d97222a2c66721b3cd1bd89407bd3d26fba",
-      "client.go": "6c02df1a568560d08dad7092c55d811b1f8b0d588e1caf5c45a48c021b3ee5e1",
+      "client.go": "6fd2098a3b47ea3ca753bb0fcb9c055acfac42b2f19da6fcb29b20684ca2dc71",
       "admin_test.go": "ccd2dd8e24ecd05e571acf6aeec4e83e06284a38d772b3975443326103cc578f",
       "go.sum": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c",
-      "README.md": "93d3d339767eaac5a37297c89466e064dd77212295a054f8e3fca3bffbf356d8",
+      "README.md": "4dbddfdd57f9a454ec480c6749fb3b17631faab09918397f44cbed934cf09c9c",
       "enumeration_test.go": "1c601263d1ddb9d0834ab453d496ca6efafddafc918ba5c714f42d7f3c9db1dd",
       "doc.go": "029e90e8a1a61bb7e92db5d30d97c26c6adb73e4afc11ea22e1f7d82c30f3f6e",
-      "coordination_test.go": "33f421dfe934f783b06fd591ec76559fde68df515ad71e877614f3db44aa1083",
+      "coordination_test.go": "52718d25d9b231fe872a357c9872a1448333357c3f78709c964a00a910fdf834",
       "admin.go": "633e981154cf48ebfb297cc5e617227f50e52a0457786cdabaaa333888211ae5",
       "SPEC.md": "933fb55517ee2aaaa9d7eefb775c561f01638b033fa1f541a2f69b67972cdd67",
       "metadata_test.go": "6146819994fe384c311042e062a20ca6043c5ae865357feb32fe9cbebe366322",
       "snapshot.go": "17657e979c8e9f5214d6cfddcc6025c075d353b5a38d87121c85151664cc2271",
-      "config_test.go": "650cb73d0a4a42a809bede29464d09058d54a941786b8b8fd1d6f7bb7ace1a83",
-      "client_test.go": "07e3d69e091e69cd7035d51f606ebcbe82b5458e3394d51bcbbae26ffc0f8aa7",
-      "coordination.go": "a0581199f4794b78a28456751b69745add6ecd238e725d01876410a06e96864d",
-      "p12_diagnostics.go": "cb741fc587f6c983a1c25945055110d079dae26349f9150d934e5956cb1374ee",
+      "config_test.go": "d393b341c2ed49a21e6de9e8a5141b630377935d7d8a69832545286eecc2144d",
+      "client_test.go": "39210dbb828b5affb334428339954530ad0b460b498456f7300fd7b249fb3a87",
+      "coordination.go": "eaede536b5373251f9b0c1f99f5cde2295afcf8e57c21491a7fbb77d80815430",
+      "changes_test.go": "ac746f3f841f6d6b2fd1d9a1d492022f65ac18eb33148b46b9a86973e895ffb9",
+      "p12_diagnostics.go": "23c99ad97433dcf13598ff3949b825fde1ac79edddc680aaa7d5c09f8b21667f",
       "SECURITY.md": "38c8479cd9dc70540c09e38957302a3e0c892d45b8622e4a933eb30a780813d9",
       "errors.go": "907595385103cfb141d794ef3f8688d436ac13804858e48d0faec82b2855694b",
-      "internal/maps/incremental_test.go": "e489177feac306122e3b6a274d85d3f0d3c59938a975b028a967c6c9d45c7d52",
+      "internal/maps/incremental_test.go": "6128818955e8e133c384b52645c98a6b38219e328fb986d7affe97ac03f6c05c",
       "internal/maps/monmap.go": "78bdda912e05c548ce55e827214dbedd0fe87e1e25cc0d5eb05edcf95c6979fb",
       "internal/maps/mgrmap.go": "32cad6af44c53081e24e417ce4de180fbc3fd72ddd270f12afe99b06b5d26b86",
-      "internal/maps/osdmap_test.go": "0017b6e8b018dd18dfc9a4cd4a9f01f6b862123148020723177c38f32406b950",
+      "internal/maps/osdmap_test.go": "d19d42a04b0e226ea80e01f2c4bf02b65f338c5b9921484a2f93eb88d6588243",
       "internal/maps/mgrmap_test.go": "c5a092832cbbf117ffdafa333c7da553f2747b0a183806a15fdbeb9428797081",
       "internal/maps/monmap_test.go": "a40babf7628a12698984a674e6eecf83b5fafcde65ebd9201953d80ae0d194b7",
-      "internal/maps/osdmap.go": "9004607b897dc2672e4e73bf59c1469711d13299c9d2be46c6f7964b6217bbb6",
-      "internal/maps/placement_test.go": "1360dfd7014d02449a5745da59dc3acbebcb33b8c2731f3673994a1366c9924c",
-      "internal/maps/incremental.go": "e3bf1582b00b47b3490c7beadf31a7f2b66da8e81bafbc567e92175e41f47639",
+      "internal/maps/osdmap.go": "ca674330b9588caad57a6d29c83b502bedce5bf40937383d24026f0e4a52e956",
+      "internal/maps/placement_test.go": "cab88484a97678e2b349f9d0d1455d41af5a1c46858afd8c1b7446edd7c0fa8f",
+      "internal/maps/incremental.go": "d0d22c6b7d6c07d63b18bfa6869df96cf27b556c370513e97847f84e1ae14ee1",
       "internal/maps/p04_fixture_test.go": "98953880e9e9d7633d0ad10206491523f223125698fffa788616035245ac7088",
       "internal/maps/pool_test.go": "ad8ca192e7c4140fa901a36f4b68a8094fa6db3e7be854a6423e67686517f34c",
-      "internal/maps/pool.go": "60e2515538310dc868cccc9653dfcfa0736dd86c45cdc9176aa2ffcbc73597c7",
-      "internal/maps/placement.go": "8ea017ead7b9aafbe47e629b5f36f5b8f1ac79d18b15fb155b007c50e83f1c57",
+      "internal/maps/pool.go": "288ccdd4715dbc4a1ff8bcb936fc84ddd4d0c873138154ec9ec8fcabe0e86aea",
+      "internal/maps/placement.go": "e6e627455f4966c2a15556c21b8aa58d025bc9c5d569965fbb53757764bc092e",
       "internal/osd/enumeration.go": "265f141c9f61a984279c7b0cbea86a09535e06bfcf13b544c253206e4235e086",
       "internal/osd/metadata.go": "7ea4eae91a47bc32dde896927c24b4ae5996bd4b258ba8da574ac2ea0b7854c7",
       "internal/osd/checksum_test.go": "fe81835356512544e5eee3b3f6936095c4e219e0f9f53d733c9b1da1068036bd",
       "internal/osd/command.go": "618fc109bf585513486b2d87d99b9077d61743763b1a2e077aca7e7d6772235e",
       "internal/osd/checksum.go": "6a69191fe84993c7890f628cee1b80764370eeb9ca300b57034b7c0fbd886eac",
-      "internal/osd/messages_test.go": "4a2fd4a6418615d6ad317c39b4e490f64e067620832494dc03bd4e7d704e5212",
+      "internal/osd/messages_test.go": "a4fe1c8e40e21a0fd9de6c601a56529b4c981635312ac69232422ae79e0e9267",
       "internal/osd/backoff_test.go": "17ae2cf89f4a0c2f26cf0f77f75b3acf84c53d671b159b188d6be0c6f7cc2184",
       "internal/osd/backoff.go": "d1680258d65be03b1274775f79050f46602db3b9f947643460b48a83b7ed7255",
       "internal/osd/command_test.go": "8b9f23562e54a05bd2a071e51539c927f6696f98b112c59159a30e57f63e85bc",
@@ -63,25 +65,25 @@
       "internal/osd/inconsistent_test.go": "148f317aa69a53a20c904d9ec74248bc4d2e5dc47888acc1e3389c490736c9df",
       "internal/osd/enumeration_test.go": "820019051633ea5f82d3432585b50502e57f9310d8cd75b83f27b6fde524e2fb",
       "internal/osd/sparse.go": "e0eb31cc118754243633ea9b817ee4396759a6722a0a38a78505a62c4f434610",
-      "internal/osd/messages.go": "8019556da81f14a426202ad7becf635dc7186e82a639b85de891eee9f8ea4d6e",
+      "internal/osd/messages.go": "84a0aa46a1681da2cf3d6c3c2bded3ab9a946be5d564a0423d4161bee2157ce7",
       "internal/osd/lock.go": "bfdeb9bc9a5285dddd44d82ffa65eedb95cccb601996ca34851ac361b6f6d7f5",
       "internal/osd/watch_test.go": "2b88365eb4360f07cda270196ce09654d4e0f280e0a99af15cb3018804ee1943",
       "internal/osd/metadata_test.go": "4421879d22d3543071cf3a5e29fa14a77ff482270220de2b57b201b640fa512c",
       "internal/osd/sparse_test.go": "01ba7f17d2af91e7eba85786f3890788828479221d89dc2447af62ac00adf3d5",
       "internal/osd/inconsistent.go": "8e8ad9e80680f75d09da560edc7acee7faa1b11a4f1a7b411c905502b23c3e7c",
       "internal/osd/watch.go": "db74670ec4810a0b189c459b608d5161e5f0423aa0bb091f72af664a9f2c8ff6",
-      "internal/objecter/command.go": "564de20660e87b3da91c754ae57c8089ea957a9252ba0b79064f319700c5e489",
-      "internal/objecter/command_test.go": "3bfd4528c34159ef5a00df0f658f8aa69e967a9717b4e6a888269dfbdb56c715",
-      "internal/objecter/client.go": "99df219373327be372b5c722cbda0a4c9d661dcd3e1951cb5624cb2e5d398d20",
-      "internal/objecter/mutation_test.go": "181d4439b2ae7a33829fe46865bce2414342f9766ac25ec4c885fdb084ea42c1",
+      "internal/objecter/command.go": "6653a4d9acb835292c559423d94ae3638675f7b9af53b8d58d42260773d4a252",
+      "internal/objecter/command_test.go": "d25057f9a936e7e08629b9c1f72abd8dbbc4fc7e6cf49a18568d5c9d0396a051",
+      "internal/objecter/client.go": "077d3986184842ed8b33c292ebf4612e2ec5fb93435416189faf0cfc881b2830",
+      "internal/objecter/mutation_test.go": "435f97c5b8996aaea6990e84999e8f145412f533715e9e5cfd0639def519e561",
       "internal/objecter/mutation.go": "572a35b5caa886efbd78aeeed3e8bfe11f554a77949153826823b80cf44719e2",
-      "internal/objecter/enumeration_test.go": "fe9de073d6ecd1ed4e23103ce7aed02d8d75602adcd9a6a095d3b5aa655df12b",
-      "internal/objecter/osd_session.go": "2482b7511fa59c90fd7c2cb5c78d82e08b89aec3e235ee94d077ffe37222559a",
-      "internal/objecter/watch_test.go": "5ad60339995e7bbc5db7754f6c9bc83a5499cddb8943a5caee8cbd5673177d6b",
-      "internal/objecter/osd_session_test.go": "66f9544ce8d72bd0a48465432ae85d5313dace2e3b349f6c2229d1dcfc1a6390",
+      "internal/objecter/enumeration_test.go": "c9ebd319250f34d47bbdf2a4961394c02380f3671af5768494081ce0715b4be4",
+      "internal/objecter/osd_session.go": "6fe903dc0f100bb14ad8a1c4eef5bbe793a120005dbb6d0dd6364fb9bbb9421c",
+      "internal/objecter/watch_test.go": "2d9fb8f7743e84e15d4ecbaf9507b1ecdd646bbad3f2d80e61b923ef35e0b2b9",
+      "internal/objecter/osd_session_test.go": "e5254b8151a6daca228c96ad45af32c8c8738284fcdfc078f913a0b80ec81d57",
       "internal/objecter/inconsistent.go": "653be7a65a48ca4921bc42e76fd9f04e3f48a2ab36220bf6a0a9defc100384a4",
-      "internal/objecter/client_test.go": "7d59d5ff4774fb78b45f20e9bf706c196197ebc7587ca6891c554f7cae1db433",
-      "internal/objecter/watch.go": "6dd9e9eb3a15d1336543afe8ee106e5bf0be5226613f3e1c70acf2397673a16b",
+      "internal/objecter/client_test.go": "04bffa704b8b4d4c8d9f913c14a2770dfdfad8f01d26032e0155d35cc036a072",
+      "internal/objecter/watch.go": "178cc94ead0895e342efb57ef18e9037603dc42d1fb23b47d5dd10e5196e686e",
       "internal/encoding/crc.go": "9dce38e0846c80679a7182baeca6d4bd44a853b0a7841a507caa0a46675e9938",
       "internal/encoding/codec_test.go": "ac3316834d1f0bb1bb2633f5c777c70b082f55bd3a14057f5e14772039cbcfc5",
       "internal/encoding/codec.go": "6352b11ed23db97a34bd63f33b272caf162b69cad2da7b9accd51e05f3c6068d",
@@ -95,17 +97,17 @@
       "internal/mon/config.go": "0eeb3a41c49cf8738a394a2123bc986b90d14a061557732f9b26dfe652d6f412",
       "internal/mon/statfs_test.go": "60710977883279cb6744b8fbc1c67e002153f87a42a0037d7d5305fd0c3e7d11",
       "internal/mon/messages_test.go": "2c4d97a81a9f3501ba35a480e8041531f8eb8cb8d151664d9bbc7009a75fb4d0",
-      "internal/mon/client.go": "b8dadd1d85ad5da9ba7347954fa7ea83680e98976945ff73245f2f9297d9a902",
+      "internal/mon/client.go": "6faef43f61805d8cfc3e396604c2d3ee1ddaa614ed428bf2260806d32b3f3f96",
       "internal/mon/messages.go": "7e8d9b718ee96afc49a91153fadcf52efc33969a44025122faae5dbf4f9d9191",
       "internal/mon/config_test.go": "336f697524ff14280570dbfd2bfb5ea367d78b9c72137977be7d4bc841178c02",
-      "internal/mon/client_test.go": "129565af6d6edb739b176a55ae6a39fda7e887d0347de069b6dc4161019d26f1",
+      "internal/mon/client_test.go": "36b7da1edc5ede424c8b78305af9deb7ae1fb4562501d69e2e7664452b660839",
       "internal/mon/seeds.go": "2174e1a673959466deb2b40348075656a58edad124b440b4d4b382039ce69eb2",
       "internal/msgr/transport.go": "72117d4104ed08c4200e1e2270f0e1fced17dd6311b96f33544395b07157a34b",
-      "internal/msgr/fuzz_test.go": "7a5f00b111204bdad98c0c0f421585ad4c558800c5b93988fff111bf20984ba9",
+      "internal/msgr/fuzz_test.go": "58bdbf6f7ed49e514b7985c2d29533872942699e149a654a1ad7411c2b8a4a96",
       "internal/msgr/control_test.go": "212a88dbf2d14333bd722783c517d3d3b62554ba703555aa9cedbc5d49383b88",
       "internal/msgr/frame_test.go": "82cb5c5e6d1304856c8458dd2fb5d7dd2e5bb5590b1e589a7e538aaa993350d2",
       "internal/msgr/message.go": "ed791e5eeeed509f78866362a615bc4e3f6cc8cb9d54ec5619c7f9ffbcb40a48",
-      "internal/msgr/session.go": "ad2e79e628e99c3a6cdbd604cd88e418510117938d8d1207c6424c52c4ecb9d1",
+      "internal/msgr/session.go": "5ae2471f74d292b115e06b4eb4956fb0b802a3581519e108ecbe6d1dbda21fb1",
       "internal/msgr/secure.go": "ebb73db8d335c428322c2353138ad5d37fc490f8039b3e0c553ae5b2642f7761",
       "internal/msgr/fixture_test.go": "1b1b0c9514c2aa4546eef1533180f7d19a8274af4c3594f34c0b36c33864f844",
       "internal/msgr/message_test.go": "6873041133f262f0f3eb8a63055d6eb8927164ad1b4f6545f72b8e6eebf15fac",
@@ -113,13 +115,13 @@
       "internal/msgr/secure_test.go": "f11365f07950edb47a493d8e71d393eeec15577156a7c000afe49ed0cc55eab2",
       "internal/msgr/frame.go": "99b3062c65a50573a4b53f6bd889570506630a2813a0329dc3093dae27f32999",
       "internal/msgr/banner_test.go": "0a956f1034ae80002a691504404dbc938356741ba7f182f502f34f47227af859",
-      "internal/msgr/session_test.go": "bfe54721cc15e6c2f4dc9de2c6b5bdb90f1cc127f83fe77953dec00d2bc53de2",
+      "internal/msgr/session_test.go": "acba0daf81c190630ddeb2a3bf2fdcffa2839aa1ef6e08f82744e76f62490698",
       "internal/msgr/transport_test.go": "bfeeb5b3a42b266edd67f2e619241d3d96e9f6aacd77aa1f212d9f2c1e0b7fb7",
       "internal/msgr/banner.go": "46a374d27b4e24422d830c848541d56baad74dd13417653a02c1a6c0e1010527",
       "internal/mgr/messages_test.go": "e222b249ed30f19a8c2cbc6dc724e2e8bb7d9aa034ff9a471a9d3f1c69201f0a",
-      "internal/mgr/client.go": "84c7ec1f8f5c7db8324b28de73665af90f7049a7f6b40234a8ed2a98ad075dfa",
+      "internal/mgr/client.go": "c66212ddcb4c72597cc5f586a99b853d21d4606d36e4de2e24fe27904b8f72f7",
       "internal/mgr/messages.go": "219f3f716e0235620411f89d63a176f07755f09d3b0f62367c61248e0bffa45f",
-      "internal/mgr/client_test.go": "797787286196d8f55a7fc5fd1e5a4587f2ffc34f82c71fb2aa405cce8d14a738",
+      "internal/mgr/client_test.go": "62cd3d3e7978f3001ed8b374940ce5d6e964319542bbfc85b063eb9572c960c1",
       "internal/crush/p10_fixture_test.go": "dc94467418fafd41c5fb2e916039684c18d8f45bfbdc8e23f23c634282f3ea82",
       "internal/crush/place.go": "6637777ca25ad08a363ee0fde11214717086b887b3ef66fa5e23730734ac9ea3",
       "internal/crush/ln.go": "c06d4879ed78ea648a89cd8763bbd6b0a8bb773572d6359d78c54701b8c104b7",
@@ -139,20 +141,22 @@
       "internal/cephx/service_connector_test.go": "c963139bc2e8cd7c85290c729e526a5119cb02cd57e152d4f65f59edec54f4db",
       "internal/cephx/connector_test.go": "ce945cc21842a2445e900ed0e88f41700735ce16e9c247b0771ac9b76168003a",
       "internal/cephx/credentials_test.go": "f44c53c9253881f630c98345219516f61dd33a501aff74a5039827ccec9dce53",
-      "internal/p12fuzzcontract/contract_test.go": "a75e62ed676976ff663a4ff7e85af7cad73e20bdff1b1b54bf25d4c9516871e4",
-      "internal/p12fuzzcontract/contract.go": "b6101dd2fc2f2828ceb55b184e3702ab0465cbcf63e4ac4619e6f30373f82c00",
+      "internal/p12fuzzcontract/contract_test.go": "46b5d1cca0e595c357211348b63e106b51d5750bceb54eb5da295856a028ff79",
+      "internal/p12fuzzcontract/contract.go": "acf9dd3d47a26c1698b6686145458996a63fe36774dffb72303e291b30ad6810",
       "internal/p12qualcontract/contract_test.go": "f09417df8613fb71394db00814e2565e2037d4fe6701daa63e579ae6bf0295bb",
       "internal/p12qualcontract/contract.go": "69ddb92ff94de1110bedf68989e6d1f84212797cfc9ea9aa742aa720bb2fe15b",
-      "internal/p12fuzzevidence/evidence_test.go": "e6da60dd19a2b0a12a6dc269d98ca52a6872783410be3ce3466965f2bc79dab6",
-      "internal/p12fuzzevidence/evidence.go": "ae72aa8423eea9c408f00a35e96ad1b7f9741746ce351c861574f9b522a2f3d7",
-      "examples/basic/main.go": "ec269e11d1e372d2f9b98fee9ad6efb91176e9b26f255c8a5e13b802ab622c1d",
-      "examples/atomic/main.go": "e0f86d313e8f24583a18a07d94f553681dd85ec4093321be6cdd3bbcc6217afa",
+      "internal/p12fuzzevidence/evidence_test.go": "a78798a9bd22072cbb7b850cf95e8c861fcd867c464b2075d6d05bb3a3c9a14d",
+      "internal/p12fuzzevidence/evidence.go": "628cbf54f080b40286702894bbbde8c34cc777d92b44b59d64600ab09f3b8046",
+      "examples/basic/main.go": "76497f3686d945b9b5e309d105e5c23c293866a86b1dad9de0d0f888f0aa997e",
+      "examples/atomic/main.go": "3ac43d85dc843c0a2eb5ee463fef256040ffb6cfa26f3d4fe9b9e7272bba0638",
+      "tools/p13-verify/main.go": "378956342e18d05f5cc50c5c5eb8106eb232f0306418a102907d1c51507f7df4",
+      "tools/p13-verify/main_test.go": "ff2bfb8fad66d17aeac2474d0404d39fb3e45022dfca62bb744e01be5d8598dc",
       "tools/api-inventory/main.go": "79f4f2be6abd36f655960a2b61637feee7a9f47e4f4a8c264a39b2d099dbf6a5",
       "tools/api-inventory/main_test.go": "ee38fb24f1345df0a8643dec0fa0d17a138c337bc928b2c34889f146c80a14b3",
       "tools/p01-verify/main.go": "55e1958684c712d47a3b686aed5e653ae6801fcd9f685bd04d38eeeb266065ed",
       "tools/p01-verify/main_test.go": "487f009b0f904a889e962b91addca0d2dd67c398bb2786fa277766a144d9c510",
-      "tools/p12-qualify/main.go": "21a38f34bf1e3b1cdef82d2fe3b75a40da555270d5c8808d54451033fdc9e3eb",
-      "tools/p12-qualify/main_test.go": "6c239b4b67627b21959e09680054a1142fd07fcdcadad4e8adc46d49f77b5b93",
+      "tools/p12-qualify/main.go": "305ab5eadf3a75e60ca6c1c5530b8ce44a8d56ec5d7c2e250f37f4009c45b6fa",
+      "tools/p12-qualify/main_test.go": "98e24258740c341fca7c249940e98ff728513a5d493620e5f9cd1a0f3ab62ba9",
       "tools/p03-verify/main.go": "9de45226395b1fbcda2ac9d9b9b8f1b65bdd92c05c531b3e87e77d69cf4a09bc",
       "tools/p03-verify/main_test.go": "1678ff0f79d2a79b5c01394748652cab0e14f25743fdc93db1c3c17cb5b63892",
       "tools/p11-verify/main.go": "0a0e884d553cc0f32e6608fdb65b025bcccc96b2c6bd5b396c79936f42f4e7b1",
@@ -165,18 +169,18 @@
       "tools/p09-verify/main.go": "b589222979dc5c0b7891e38e5897368f7b69b3c9530152427adf5f91978b95af",
       "tools/p09-verify/main_test.go": "45a569a70a069b531ed93ae051827ba3727d51016e872d3e95a773d3fe3d21d4",
       "tools/p12-verify/release_test.go": "366f6f23edd5ca25740249e3446e63766ad774dabef521ae5a8907cfadc205ac",
-      "tools/p12-verify/release.go": "7207e6c3e7f7a74dbcdf264750d987bba9274a7085701ecaa7989aa5b0e521d8",
+      "tools/p12-verify/release.go": "21704da9aef374ecbd4519c9f0a0fa3373b4a304f01ad4ae8216bfc3e42b9ae1",
       "tools/p12-verify/budget_test.go": "f7bf15307d2e8ddeeb536379a808171113ea505296b4fb873f1b76a8e68dc9fd",
-      "tools/p12-verify/review.go": "ad5552b6dcb7f2c6b7b5ef1664580d07b63209b924e07ace02608310af9490e4",
+      "tools/p12-verify/review.go": "aa0c5be0b7e1f35d716e9abb3aedbb5cfa6df5ced90ddf616d262a436e13cdb7",
       "tools/p12-verify/budget.go": "4ee39f5e2d9350f839f12ace9801da5340847e126bb65bb7e9618119f51b3ffc",
-      "tools/p12-verify/qualification.go": "deb09602379aa58263e26ee319e0ba957c3e38db7e7472341e69a08c65551249",
-      "tools/p12-verify/review_signature_test.go": "ad916dac2bc304ab355b7be075380633c7569b896cb7129c0278db13ecfbc52f",
+      "tools/p12-verify/qualification.go": "5b1f2083936c761f1f93aa37519d653ee0e0e8f028081089e60815e7e5f36445",
+      "tools/p12-verify/review_signature_test.go": "615dfac4143df945a85b942d0d8e1741492d4cc20ef0f8e6df0b0c033ad99d74",
       "tools/p12-verify/review_test.go": "c32c58b4d2d90f3a58bd140e9c0ec2fd8dcc783d6590b43f726af10d6f33e6e3",
-      "tools/p12-verify/main.go": "bc31a241f8cd15ac1475a0125613086c627ec4230eb6695807ff31b7e6429f5e",
-      "tools/p12-verify/main_test.go": "ea67d9adea7e5df33c30a449302bdee9e782f6789a88cdf2de6c1ab82f1a5163",
+      "tools/p12-verify/main.go": "9ac6cd02023b20883c3c92db633d1167f651501f14d3c729dd56b6f3a9e81997",
+      "tools/p12-verify/main_test.go": "de5fe2bf963b32565b42f814ab0ece7cf2ba07751da70340f7758a6c7694af9d",
       "tools/p00-verify/main.go": "d716e192481e089053533e1acfdec520ff42defce7679229260a36ebbf024d26",
       "tools/p00-verify/main_test.go": "4c752473563a893516ec1978a625e8a8997aa058ae529aaa5528975905b9103a",
-      "tools/p02-verify/main.go": "983520fdbe41d8e98065f5ad42d77d884376af2c173c144973e4630597726b78",
+      "tools/p02-verify/main.go": "af297b2a9602031d444865b2011271fbbfe33c83b4b8e6184ba50b4ad8e98515",
       "tools/p02-verify/main_test.go": "826d6d3fe69ab4c44d5928ad586f4344c71bdb706cd64479b2ea8d5a2ea47365",
       "tools/p10-verify/main.go": "c1a2626509b1fa3f4eb2a7ee9483b7ff9023594d6f0fd3c899e1a06318fa6af1",
       "tools/p10-verify/main_test.go": "128d07bf2800214beaec2fce56e6fdcf6b52b9347f224540da63defd8124fa0e",
@@ -188,17 +192,17 @@
       "tools/p12-fuzz/main_test.go": "c4ead541bc27e57604a867698aa338e95ed0da40095970c2bdde8f7191ac7f2c",
       "integration/p12/platform-probe/main.go": "7b5aa985d128aec1f64bc7464b06300d7f1e058586303efd103ad370636f72c9",
       "integration/p12/human-review.schema.json": "19c4deebcfbd86f3a81d23f29f71ddc48777211cde83a47a4af84d77efc06310",
-      "integration/p12/report.schema.json": "bbc653d471a7dd1435e3fb8f02b8e2a949700207a9a090bce7a6fbea7cfd9d48",
+      "integration/p12/report.schema.json": "3cc71ae86868a6df8455be832f7ec4be7bd37af516226526a105d3c2845a3234",
       "integration/p12/reviewer-trust.schema.json": "39330228b468e61936711dcf9a84d98208cb7d9ae157ad40787ed8a9448b4ad2",
       "integration/p12/fuzz-report.schema.json": "47177df1907ef4b8fe4e4e63d9ce24affb27b45ade5032ef22b8a42aa5ff78f4",
       "integration/p12/qualify.sh": "a09248167c60b49779d18b949a3c22bcb6180312a99bad062941497d88c44642",
-      "integration/p12/reproduce.sh": "f1afbee4cb2c73d28394d9ea85a8b01aecce32894b1e6f8400a1e8a5b884c042",
-      "integration/p12/probe/main.go": "97d2318534086e43193e5fb1cc22069132d42f49c81b276ec23c33ad0b73cab2",
-      "integration/p12/probe/main_test.go": "ef3b465cbf1d3a3653944cd9a457ffcc40ffc99d260a9cedc3ee4097d18d7acf",
+      "integration/p12/reproduce.sh": "205e9fe4a8d5e05441d0a4c7c3089c17d6e2309e9bfda5bcbcd5db8880f72b07",
+      "integration/p12/probe/main.go": "d088e2d151bdbf8f3fa57d1b28af550ed7df15afca1165be60452ac9feabb905",
+      "integration/p12/probe/main_test.go": "f9365105caf82c5d7424412074e0a32e4a4f0570f313db6bbdf3946cc01d09cd",
       "integration/p12/qualification-report.schema.json": "b84ac9934b4d6cd777bc7f13afbd9bf9f7a039445c7f2f102e64392e4dd1aeca",
       "docs/p12/cgo-migration.md": "4910cc32b4fe8ad957ba97f889ffcac83a3aaf0437e9ceb8ebe327ff972566a8",
       "docs/p12/troubleshooting.md": "e40957defc66437ebbeca650092307bcc1daf3b3cc1f439ea650aa2c60e59c73",
-      "docs/p12/qualification-report.json": "2ffcd5adfff7ed0763d7257b357c7b1289dddec8014f2ebe97362f3257478faa",
+      "docs/p12/qualification-report.json": "d55a4b78f15708fde4c265520776f94069e2e9d1e70976dcb7e8a414addfe4b8",
       "docs/p12/dependencies.md": "2422d446964119fc30abe3cf09ad4764055ac2dd5fdafb1ad99def83eb817762",
       "docs/p12/review-template.md": "7f89486c65bc75b7b17e39b83d75e4a535fccda89efd33256af3b55d7b3224ca",
       "docs/p12/performance.md": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf",
@@ -209,7 +213,7 @@
       "docs/p12/api-coverage.md": "b50450fc2eeeb6da4a023607b2ea09bc70129d10cf28f906068049015b4c2c6f",
       "docs/p12/human-review.md": "1ad11e952be490cf51ba56dd23a32cd3d0c19463368c7e6dffad7418f0bd9837",
       "docs/p12/automated-review.md": "9dd71612c07f768dbe94123bb440a8afc18b21cd863c0a88cad618b3a5e1d483",
-      ".github/workflows/p00.yml": "0c274fd1e103e7be1375e869dfa9d0b5aaa3d0c796f64524c2783dd507ae33ce",
+      ".github/workflows/p00.yml": "d8fcfc4f95a628888c7ea1228b99ecd2ce49b01a4ca3a7aedd28974878c3c4ed",
       ".gitignore": "4a210d79f18c1f6e50ac6da6cc147931f85eeb209fc055137908054481eb4360",
       "integration/p07/benchmark/main.go": "c98c6f37656eb3d0e4276e1aaced4d206599e6a8148601d8aff3855ce7453041",
       "integration/p07/benchmark/main_unsupported.go": "a44582b32ee261f2897b99c926cd23554053fe3d9b21ed7a18b0135dcb8ee1e2",
@@ -254,17 +258,17 @@
     "secure": {
       "transport": "secure",
       "requested_duration_ns": 180000000000,
-      "elapsed_ns": 180338071493,
+      "elapsed_ns": 180000569376,
       "monotonic_duration_satisfied": true,
-      "operations": 20928,
-      "writes": 20928,
-      "append_once_verifications": 20928,
+      "operations": 19973,
+      "writes": 19973,
+      "append_once_verifications": 19973,
       "duplicate_mutations_detected": 0,
-      "reads": 20928,
-      "stats": 20928,
-      "removes": 20928,
+      "reads": 19973,
+      "stats": 19973,
+      "removes": 19973,
       "reconnects": 1,
-      "longest_connection_ns": 120003680369,
+      "longest_connection_ns": 120004866272,
       "credential_renewals": [
         {
           "service": "monitor",
@@ -272,8 +276,35 @@
           "session_id": 1,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:53.94797437Z",
-          "completed_at": "2026-09-17T00:02:53.948664768Z"
+          "due_at": "2026-09-24T16:07:10.132685972Z",
+          "completed_at": "2026-09-24T16:07:10.33459388Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 1,
+          "due_generation": 7,
+          "completed_generation": 9,
+          "due_at": "2026-09-24T16:07:40.300662846Z",
+          "completed_at": "2026-09-24T16:07:40.502398981Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 1,
+          "due_generation": 9,
+          "completed_generation": 11,
+          "due_at": "2026-09-24T16:08:03.003458111Z",
+          "completed_at": "2026-09-24T16:08:03.209149819Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 1,
+          "due_generation": 11,
+          "completed_generation": 13,
+          "due_at": "2026-09-24T16:08:25.709852402Z",
+          "completed_at": "2026-09-24T16:08:25.911753661Z"
         },
         {
           "service": "osd",
@@ -281,8 +312,8 @@
           "session_id": 2,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:57.697956663Z",
-          "completed_at": "2026-09-17T00:02:57.699233121Z"
+          "due_at": "2026-09-24T16:07:13.883650157Z",
+          "completed_at": "2026-09-24T16:07:14.084772767Z"
         },
         {
           "service": "osd",
@@ -290,35 +321,8 @@
           "session_id": 2,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:20.198813742Z",
-          "completed_at": "2026-09-17T00:03:20.199630185Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 2,
-          "due_generation": 6,
-          "completed_generation": 8,
-          "due_at": "2026-09-17T00:03:20.199579558Z",
-          "completed_at": "2026-09-17T00:03:20.205701842Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 2,
-          "due_generation": 8,
-          "completed_generation": 10,
-          "due_at": "2026-09-17T00:03:20.202510154Z",
-          "completed_at": "2026-09-17T00:03:20.20637203Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 2,
-          "due_generation": 10,
-          "completed_generation": 14,
-          "due_at": "2026-09-17T00:03:20.206330987Z",
-          "completed_at": "2026-09-17T00:03:31.422233126Z"
+          "due_at": "2026-09-24T16:07:36.584556025Z",
+          "completed_at": "2026-09-24T16:07:36.787636379Z"
         },
         {
           "service": "osd",
@@ -326,8 +330,8 @@
           "session_id": 3,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:57.697748364Z",
-          "completed_at": "2026-09-17T00:02:57.698695062Z"
+          "due_at": "2026-09-24T16:07:13.883747783Z",
+          "completed_at": "2026-09-24T16:07:14.084871726Z"
         },
         {
           "service": "osd",
@@ -335,8 +339,8 @@
           "session_id": 3,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:20.198765073Z",
-          "completed_at": "2026-09-17T00:03:20.199378885Z"
+          "due_at": "2026-09-24T16:07:36.584455399Z",
+          "completed_at": "2026-09-24T16:07:36.787896547Z"
         },
         {
           "service": "osd",
@@ -344,8 +348,8 @@
           "session_id": 3,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-09-17T00:03:20.199309799Z",
-          "completed_at": "2026-09-17T00:03:20.202046722Z"
+          "due_at": "2026-09-24T16:07:44.0494551Z",
+          "completed_at": "2026-09-24T16:07:44.25839596Z"
         },
         {
           "service": "osd",
@@ -353,8 +357,8 @@
           "session_id": 3,
           "due_generation": 8,
           "completed_generation": 10,
-          "due_at": "2026-09-17T00:03:20.201882092Z",
-          "completed_at": "2026-09-17T00:03:20.206204983Z"
+          "due_at": "2026-09-24T16:08:06.752668242Z",
+          "completed_at": "2026-09-24T16:08:06.962726111Z"
         },
         {
           "service": "osd",
@@ -362,17 +366,8 @@
           "session_id": 3,
           "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-09-17T00:03:20.205871722Z",
-          "completed_at": "2026-09-17T00:03:20.206647748Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 1,
-          "session_id": 3,
-          "due_generation": 12,
-          "completed_generation": 16,
-          "due_at": "2026-09-17T00:03:20.20663183Z",
-          "completed_at": "2026-09-17T00:03:31.422280752Z"
+          "due_at": "2026-09-24T16:08:29.459170736Z",
+          "completed_at": "2026-09-24T16:08:29.671695414Z"
         },
         {
           "service": "osd",
@@ -380,8 +375,8 @@
           "session_id": 4,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:57.697743031Z",
-          "completed_at": "2026-09-17T00:02:57.699233538Z"
+          "due_at": "2026-09-24T16:07:13.883744241Z",
+          "completed_at": "2026-09-24T16:07:14.085072228Z"
         },
         {
           "service": "osd",
@@ -389,35 +384,62 @@
           "session_id": 4,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:20.198806408Z",
-          "completed_at": "2026-09-17T00:03:20.205974642Z"
+          "due_at": "2026-09-24T16:07:36.584626275Z",
+          "completed_at": "2026-09-24T16:07:36.787460335Z"
         },
         {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 7,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:27.672788576Z",
-          "completed_at": "2026-09-17T00:03:27.673687004Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 7,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:50.173704973Z",
-          "completed_at": "2026-09-17T00:03:50.174367072Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 7,
+          "service": "osd",
+          "service_id": 2,
+          "session_id": 4,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-09-17T00:04:12.675634127Z",
-          "completed_at": "2026-09-17T00:04:12.677337374Z"
+          "due_at": "2026-09-24T16:07:44.049711519Z",
+          "completed_at": "2026-09-24T16:07:44.255378644Z"
+        },
+        {
+          "service": "osd",
+          "service_id": 2,
+          "session_id": 4,
+          "due_generation": 8,
+          "completed_generation": 10,
+          "due_at": "2026-09-24T16:08:06.752624992Z",
+          "completed_at": "2026-09-24T16:08:06.962369358Z"
+        },
+        {
+          "service": "osd",
+          "service_id": 2,
+          "session_id": 4,
+          "due_generation": 10,
+          "completed_generation": 12,
+          "due_at": "2026-09-24T16:08:29.459149861Z",
+          "completed_at": "2026-09-24T16:08:29.67167908Z"
+        },
+        {
+          "service": "osd",
+          "service_id": 0,
+          "session_id": 6,
+          "due_generation": 2,
+          "completed_generation": 4,
+          "due_at": "2026-09-24T16:08:29.459179361Z",
+          "completed_at": "2026-09-24T16:08:29.670937366Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 7,
+          "due_generation": 2,
+          "completed_generation": 4,
+          "due_at": "2026-09-24T16:09:10.141495459Z",
+          "completed_at": "2026-09-24T16:09:10.348942012Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 7,
+          "due_generation": 4,
+          "completed_generation": 6,
+          "due_at": "2026-09-24T16:09:32.849330802Z",
+          "completed_at": "2026-09-24T16:09:33.051572854Z"
         },
         {
           "service": "osd",
@@ -425,8 +447,8 @@
           "session_id": 8,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:31.421214696Z",
-          "completed_at": "2026-09-17T00:03:31.422219626Z"
+          "due_at": "2026-09-24T16:09:13.88987766Z",
+          "completed_at": "2026-09-24T16:09:14.091938795Z"
         },
         {
           "service": "osd",
@@ -434,35 +456,8 @@
           "session_id": 8,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:53.923749826Z",
-          "completed_at": "2026-09-17T00:03:53.926160798Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 2,
-          "session_id": 8,
-          "due_generation": 6,
-          "completed_generation": 8,
-          "due_at": "2026-09-17T00:04:16.428982138Z",
-          "completed_at": "2026-09-17T00:04:16.430217707Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 1,
-          "session_id": 9,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:53.92362349Z",
-          "completed_at": "2026-09-17T00:03:53.924488885Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 1,
-          "session_id": 9,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:04:16.42937798Z",
-          "completed_at": "2026-09-17T00:04:16.430175331Z"
+          "due_at": "2026-09-24T16:09:36.598249049Z",
+          "completed_at": "2026-09-24T16:09:36.798971423Z"
         },
         {
           "service": "osd",
@@ -470,8 +465,8 @@
           "session_id": 10,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:53.923645615Z",
-          "completed_at": "2026-09-17T00:03:53.92457122Z"
+          "due_at": "2026-09-24T16:09:13.89003537Z",
+          "completed_at": "2026-09-24T16:09:14.092205464Z"
         },
         {
           "service": "osd",
@@ -479,189 +474,155 @@
           "session_id": 10,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:04:16.429080973Z",
-          "completed_at": "2026-09-17T00:04:16.430105663Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 13,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:04:53.954283104Z",
-          "completed_at": "2026-09-17T00:04:53.957153336Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 13,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:05:16.458142468Z",
-          "completed_at": "2026-09-17T00:05:16.459129657Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 14,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:04:57.710972107Z",
-          "completed_at": "2026-09-17T00:04:57.715233538Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 14,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:05:20.208138444Z",
-          "completed_at": "2026-09-17T00:05:20.208844585Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 2,
-          "session_id": 17,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:05:20.208154694Z",
-          "completed_at": "2026-09-17T00:05:20.210107405Z"
+          "due_at": "2026-09-24T16:09:36.598220132Z",
+          "completed_at": "2026-09-24T16:09:36.799092632Z"
         },
         {
           "service": "osd",
           "service_id": 1,
-          "session_id": 18,
+          "session_id": 11,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:05:20.207969815Z",
-          "completed_at": "2026-09-17T00:05:20.208839918Z"
+          "due_at": "2026-09-24T16:09:36.598288341Z",
+          "completed_at": "2026-09-24T16:09:36.799476135Z"
+        }
+      ],
+      "credential_renewal_abandonments": [
+        {
+          "service": "osd",
+          "service_id": 0,
+          "session_id": 2,
+          "due_generation": 6,
+          "closed_generation": 7,
+          "due_at": "2026-09-24T16:07:44.049449016Z",
+          "closed_at": "2026-09-24T16:07:44.049585976Z"
         }
       ],
       "samples": [
         {
-          "elapsed_ns": 2385703,
-          "rss_bytes": 5611520,
-          "goroutines": 7,
-          "heap_bytes": 663960,
+          "elapsed_ns": 2090351,
+          "rss_bytes": 6139904,
+          "goroutines": 8,
+          "heap_bytes": 676744,
           "inflight": null
         },
         {
-          "elapsed_ns": 10003279777,
-          "rss_bytes": 11862016,
-          "goroutines": 28,
-          "heap_bytes": 1464472,
+          "elapsed_ns": 10004741969,
+          "rss_bytes": 12185600,
+          "goroutines": 29,
+          "heap_bytes": 1365680,
           "inflight": null
         },
         {
-          "elapsed_ns": 20003123693,
-          "rss_bytes": 12042240,
-          "goroutines": 28,
-          "heap_bytes": 1902568,
+          "elapsed_ns": 20003560515,
+          "rss_bytes": 12115968,
+          "goroutines": 29,
+          "heap_bytes": 1294992,
           "inflight": null
         },
         {
-          "elapsed_ns": 30004995300,
-          "rss_bytes": 11980800,
-          "goroutines": 28,
-          "heap_bytes": 574080,
+          "elapsed_ns": 31300630391,
+          "rss_bytes": 12414976,
+          "goroutines": 30,
+          "heap_bytes": 595408,
           "inflight": null
         },
         {
-          "elapsed_ns": 40002495305,
-          "rss_bytes": 11915264,
-          "goroutines": 28,
-          "heap_bytes": 3260472,
+          "elapsed_ns": 40001373774,
+          "rss_bytes": 11816960,
+          "goroutines": 30,
+          "heap_bytes": 2851848,
           "inflight": null
         },
         {
-          "elapsed_ns": 50764550370,
-          "rss_bytes": 12734464,
-          "goroutines": 28,
-          "heap_bytes": 948952,
+          "elapsed_ns": 50000434862,
+          "rss_bytes": 11952128,
+          "goroutines": 30,
+          "heap_bytes": 2235184,
           "inflight": null
         },
         {
-          "elapsed_ns": 60006212683,
-          "rss_bytes": 11747328,
-          "goroutines": 28,
-          "heap_bytes": 721360,
+          "elapsed_ns": 60005697523,
+          "rss_bytes": 12333056,
+          "goroutines": 30,
+          "heap_bytes": 3073904,
           "inflight": null
         },
         {
-          "elapsed_ns": 72949627356,
-          "rss_bytes": 12046336,
-          "goroutines": 21,
-          "heap_bytes": 1526024,
+          "elapsed_ns": 75606462736,
+          "rss_bytes": 12730368,
+          "goroutines": 23,
+          "heap_bytes": 1497744,
           "inflight": null
         },
         {
-          "elapsed_ns": 80005588082,
-          "rss_bytes": 11804672,
-          "goroutines": 28,
-          "heap_bytes": 792232,
+          "elapsed_ns": 80004005830,
+          "rss_bytes": 12627968,
+          "goroutines": 30,
+          "heap_bytes": 2527584,
           "inflight": null
         },
         {
-          "elapsed_ns": 90002687051,
-          "rss_bytes": 12152832,
-          "goroutines": 28,
-          "heap_bytes": 2000256,
+          "elapsed_ns": 90004413576,
+          "rss_bytes": 11956224,
+          "goroutines": 30,
+          "heap_bytes": 1466456,
           "inflight": null
         },
         {
-          "elapsed_ns": 100000546620,
+          "elapsed_ns": 100000191884,
+          "rss_bytes": 11706368,
+          "goroutines": 30,
+          "heap_bytes": 906008,
+          "inflight": null
+        },
+        {
+          "elapsed_ns": 110007599849,
           "rss_bytes": 11923456,
-          "goroutines": 28,
-          "heap_bytes": 2013376,
+          "goroutines": 31,
+          "heap_bytes": 911736,
           "inflight": null
         },
         {
-          "elapsed_ns": 110004549788,
-          "rss_bytes": 11587584,
-          "goroutines": 28,
-          "heap_bytes": 3134976,
+          "elapsed_ns": 120000362028,
+          "rss_bytes": 11939840,
+          "goroutines": 31,
+          "heap_bytes": 1307272,
           "inflight": null
         },
         {
-          "elapsed_ns": 120008431286,
-          "rss_bytes": 11665408,
-          "goroutines": 7,
-          "heap_bytes": 806320,
+          "elapsed_ns": 130002820370,
+          "rss_bytes": 12005376,
+          "goroutines": 29,
+          "heap_bytes": 3103696,
           "inflight": null
         },
         {
-          "elapsed_ns": 130001832628,
-          "rss_bytes": 12013568,
-          "goroutines": 28,
-          "heap_bytes": 2025000,
+          "elapsed_ns": 140006643681,
+          "rss_bytes": 11902976,
+          "goroutines": 29,
+          "heap_bytes": 2168072,
           "inflight": null
         },
         {
-          "elapsed_ns": 146522188622,
-          "rss_bytes": 11849728,
-          "goroutines": 21,
-          "heap_bytes": 795288,
+          "elapsed_ns": 155254622461,
+          "rss_bytes": 12455936,
+          "goroutines": 22,
+          "heap_bytes": 2235448,
           "inflight": null
         },
         {
-          "elapsed_ns": 150074664438,
-          "rss_bytes": 11337728,
-          "goroutines": 28,
-          "heap_bytes": 677920,
+          "elapsed_ns": 160002679125,
+          "rss_bytes": 12283904,
+          "goroutines": 29,
+          "heap_bytes": 2628208,
           "inflight": null
         },
         {
-          "elapsed_ns": 160001568726,
-          "rss_bytes": 11710464,
-          "goroutines": 28,
-          "heap_bytes": 1363192,
-          "inflight": null
-        },
-        {
-          "elapsed_ns": 170001386215,
-          "rss_bytes": 12091392,
-          "goroutines": 28,
-          "heap_bytes": 1819200,
+          "elapsed_ns": 170002206109,
+          "rss_bytes": 12345344,
+          "goroutines": 29,
+          "heap_bytes": 578864,
           "inflight": null
         }
       ],
@@ -671,17 +632,17 @@
     "crc": {
       "transport": "crc",
       "requested_duration_ns": 180000000000,
-      "elapsed_ns": 180130391430,
+      "elapsed_ns": 180000306306,
       "monotonic_duration_satisfied": true,
-      "operations": 20948,
-      "writes": 20948,
-      "append_once_verifications": 20948,
+      "operations": 19925,
+      "writes": 19925,
+      "append_once_verifications": 19925,
       "duplicate_mutations_detected": 0,
-      "reads": 20948,
-      "stats": 20948,
-      "removes": 20948,
+      "reads": 19925,
+      "stats": 19925,
+      "removes": 19925,
       "reconnects": 1,
-      "longest_connection_ns": 120004508388,
+      "longest_connection_ns": 120000498794,
       "credential_renewals": [
         {
           "service": "monitor",
@@ -689,8 +650,35 @@
           "session_id": 1,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:54.149406367Z",
-          "completed_at": "2026-09-17T00:02:54.150184309Z"
+          "due_at": "2026-09-24T16:07:10.346840106Z",
+          "completed_at": "2026-09-24T16:07:10.549276102Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 1,
+          "due_generation": 7,
+          "completed_generation": 9,
+          "due_at": "2026-09-24T16:07:40.299365169Z",
+          "completed_at": "2026-09-24T16:07:40.501745184Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 1,
+          "due_generation": 9,
+          "completed_generation": 11,
+          "due_at": "2026-09-24T16:08:03.006344926Z",
+          "completed_at": "2026-09-24T16:08:03.209468613Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 1,
+          "due_generation": 11,
+          "completed_generation": 13,
+          "due_at": "2026-09-24T16:08:25.710660659Z",
+          "completed_at": "2026-09-24T16:08:25.911687285Z"
         },
         {
           "service": "osd",
@@ -698,8 +686,8 @@
           "session_id": 2,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:57.899038565Z",
-          "completed_at": "2026-09-17T00:02:57.899746505Z"
+          "due_at": "2026-09-24T16:07:14.096099485Z",
+          "completed_at": "2026-09-24T16:07:14.297385722Z"
         },
         {
           "service": "osd",
@@ -707,44 +695,35 @@
           "session_id": 2,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:20.401277481Z",
-          "completed_at": "2026-09-17T00:03:20.402132425Z"
+          "due_at": "2026-09-24T16:07:36.799653851Z",
+          "completed_at": "2026-09-24T16:07:37.001382236Z"
         },
         {
           "service": "osd",
-          "service_id": 0,
-          "session_id": 3,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:57.899089233Z",
-          "completed_at": "2026-09-17T00:02:57.901298097Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 3,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:20.401251605Z",
-          "completed_at": "2026-09-17T00:03:20.402038089Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 3,
+          "service_id": 2,
+          "session_id": 2,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-09-17T00:03:20.4018745Z",
-          "completed_at": "2026-09-17T00:03:20.402860782Z"
+          "due_at": "2026-09-24T16:07:44.05013923Z",
+          "completed_at": "2026-09-24T16:07:44.26047806Z"
         },
         {
           "service": "osd",
-          "service_id": 0,
-          "session_id": 3,
+          "service_id": 2,
+          "session_id": 2,
           "due_generation": 8,
+          "completed_generation": 10,
+          "due_at": "2026-09-24T16:08:06.752116613Z",
+          "completed_at": "2026-09-24T16:08:06.963279491Z"
+        },
+        {
+          "service": "osd",
+          "service_id": 2,
+          "session_id": 2,
+          "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-09-17T00:03:20.402824281Z",
-          "completed_at": "2026-09-17T00:03:31.424993162Z"
+          "due_at": "2026-09-24T16:08:29.459444363Z",
+          "completed_at": "2026-09-24T16:08:29.671568788Z"
         },
         {
           "service": "osd",
@@ -752,8 +731,8 @@
           "session_id": 4,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:02:57.899030981Z",
-          "completed_at": "2026-09-17T00:02:57.899726338Z"
+          "due_at": "2026-09-24T16:07:14.096242111Z",
+          "completed_at": "2026-09-24T16:07:14.297270471Z"
         },
         {
           "service": "osd",
@@ -761,8 +740,8 @@
           "session_id": 4,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:20.401215312Z",
-          "completed_at": "2026-09-17T00:03:20.401962295Z"
+          "due_at": "2026-09-24T16:07:36.799625809Z",
+          "completed_at": "2026-09-24T16:07:37.001546487Z"
         },
         {
           "service": "osd",
@@ -770,35 +749,53 @@
           "session_id": 4,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-09-17T00:03:20.401891084Z",
-          "completed_at": "2026-09-17T00:03:20.402446935Z"
+          "due_at": "2026-09-24T16:07:44.050144355Z",
+          "completed_at": "2026-09-24T16:07:44.259741929Z"
         },
         {
           "service": "osd",
           "service_id": 1,
           "session_id": 4,
           "due_generation": 8,
-          "completed_generation": 12,
-          "due_at": "2026-09-17T00:03:20.402358516Z",
-          "completed_at": "2026-09-17T00:03:31.426073427Z"
+          "completed_generation": 10,
+          "due_at": "2026-09-24T16:08:06.752021612Z",
+          "completed_at": "2026-09-24T16:08:06.965050713Z"
         },
         {
           "service": "osd",
           "service_id": 1,
           "session_id": 4,
           "due_generation": 10,
-          "completed_generation": 14,
-          "due_at": "2026-09-17T00:03:31.424244778Z",
-          "completed_at": "2026-09-17T00:03:53.925255735Z"
+          "completed_generation": 12,
+          "due_at": "2026-09-24T16:08:29.459346112Z",
+          "completed_at": "2026-09-24T16:08:29.669234227Z"
         },
         {
           "service": "osd",
-          "service_id": 1,
-          "session_id": 4,
-          "due_generation": 12,
-          "completed_generation": 16,
-          "due_at": "2026-09-17T00:03:53.924598387Z",
-          "completed_at": "2026-09-17T00:04:16.430229791Z"
+          "service_id": 0,
+          "session_id": 5,
+          "due_generation": 2,
+          "completed_generation": 4,
+          "due_at": "2026-09-24T16:07:36.799585059Z",
+          "completed_at": "2026-09-24T16:07:37.001186234Z"
+        },
+        {
+          "service": "osd",
+          "service_id": 0,
+          "session_id": 5,
+          "due_generation": 4,
+          "completed_generation": 6,
+          "due_at": "2026-09-24T16:07:44.050063521Z",
+          "completed_at": "2026-09-24T16:07:44.255639396Z"
+        },
+        {
+          "service": "osd",
+          "service_id": 0,
+          "session_id": 6,
+          "due_generation": 2,
+          "completed_generation": 4,
+          "due_at": "2026-09-24T16:08:29.459402613Z",
+          "completed_at": "2026-09-24T16:08:29.671536287Z"
         },
         {
           "service": "monitor",
@@ -806,8 +803,8 @@
           "session_id": 7,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:27.673707004Z",
-          "completed_at": "2026-09-17T00:03:27.674180469Z"
+          "due_at": "2026-09-24T16:09:10.349125847Z",
+          "completed_at": "2026-09-24T16:09:10.553879504Z"
         },
         {
           "service": "monitor",
@@ -815,44 +812,26 @@
           "session_id": 7,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:50.174692371Z",
-          "completed_at": "2026-09-17T00:03:50.175498139Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 7,
-          "due_generation": 6,
-          "completed_generation": 8,
-          "due_at": "2026-09-17T00:04:12.675682628Z",
-          "completed_at": "2026-09-17T00:04:12.67731929Z"
+          "due_at": "2026-09-24T16:09:33.054171209Z",
+          "completed_at": "2026-09-24T16:09:33.255751715Z"
         },
         {
           "service": "osd",
           "service_id": 2,
-          "session_id": 8,
+          "session_id": 9,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:31.424109359Z",
-          "completed_at": "2026-09-17T00:03:31.425009496Z"
+          "due_at": "2026-09-24T16:09:14.09879335Z",
+          "completed_at": "2026-09-24T16:09:14.30056615Z"
         },
         {
           "service": "osd",
           "service_id": 2,
-          "session_id": 8,
+          "session_id": 9,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:03:53.924552969Z",
-          "completed_at": "2026-09-17T00:03:53.925260235Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 2,
-          "session_id": 8,
-          "due_generation": 6,
-          "completed_generation": 8,
-          "due_at": "2026-09-17T00:04:16.429486232Z",
-          "completed_at": "2026-09-17T00:04:16.430388836Z"
+          "due_at": "2026-09-24T16:09:36.804598218Z",
+          "completed_at": "2026-09-24T16:09:37.00753386Z"
         },
         {
           "service": "osd",
@@ -860,8 +839,8 @@
           "session_id": 10,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:03:53.924543552Z",
-          "completed_at": "2026-09-17T00:03:53.9255287Z"
+          "due_at": "2026-09-24T16:09:14.09877335Z",
+          "completed_at": "2026-09-24T16:09:14.300980111Z"
         },
         {
           "service": "osd",
@@ -869,198 +848,155 @@
           "session_id": 10,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-09-17T00:04:16.429018514Z",
-          "completed_at": "2026-09-17T00:04:16.430122247Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 13,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:04:54.155723103Z",
-          "completed_at": "2026-09-17T00:04:54.156475328Z"
-        },
-        {
-          "service": "monitor",
-          "service_id": 0,
-          "session_id": 13,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:05:16.656624691Z",
-          "completed_at": "2026-09-17T00:05:16.657441418Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 2,
-          "session_id": 14,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:04:57.910788653Z",
-          "completed_at": "2026-09-17T00:04:57.91359855Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 2,
-          "session_id": 14,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:05:20.407074803Z",
-          "completed_at": "2026-09-17T00:05:20.408260163Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 15,
-          "due_generation": 2,
-          "completed_generation": 4,
-          "due_at": "2026-09-17T00:04:57.910017844Z",
-          "completed_at": "2026-09-17T00:04:57.913001537Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
-          "session_id": 15,
-          "due_generation": 4,
-          "completed_generation": 6,
-          "due_at": "2026-09-17T00:05:20.406849881Z",
-          "completed_at": "2026-09-17T00:05:20.408144244Z"
+          "due_at": "2026-09-24T16:09:36.804450342Z",
+          "completed_at": "2026-09-24T16:09:37.007552902Z"
         },
         {
           "service": "osd",
           "service_id": 1,
-          "session_id": 18,
+          "session_id": 11,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-09-17T00:05:20.407381477Z",
-          "completed_at": "2026-09-17T00:05:20.410642217Z"
+          "due_at": "2026-09-24T16:09:36.804569093Z",
+          "completed_at": "2026-09-24T16:09:37.007855863Z"
+        }
+      ],
+      "credential_renewal_abandonments": [
+        {
+          "service": "osd",
+          "service_id": 0,
+          "session_id": 3,
+          "due_generation": 2,
+          "closed_generation": 3,
+          "due_at": "2026-09-24T16:07:14.096192944Z",
+          "closed_at": "2026-09-24T16:07:14.096413488Z"
         }
       ],
       "samples": [
         {
-          "elapsed_ns": 3782915,
-          "rss_bytes": 5730304,
-          "goroutines": 7,
-          "heap_bytes": 669376,
+          "elapsed_ns": 3589946,
+          "rss_bytes": 6033408,
+          "goroutines": 8,
+          "heap_bytes": 677288,
           "inflight": null
         },
         {
-          "elapsed_ns": 10004164348,
-          "rss_bytes": 11640832,
-          "goroutines": 28,
-          "heap_bytes": 2793360,
+          "elapsed_ns": 10001578527,
+          "rss_bytes": 12337152,
+          "goroutines": 29,
+          "heap_bytes": 2376080,
           "inflight": null
         },
         {
-          "elapsed_ns": 20004611742,
-          "rss_bytes": 12021760,
-          "goroutines": 28,
-          "heap_bytes": 3310408,
+          "elapsed_ns": 20002677966,
+          "rss_bytes": 12046336,
+          "goroutines": 29,
+          "heap_bytes": 1912760,
           "inflight": null
         },
         {
-          "elapsed_ns": 30002325504,
-          "rss_bytes": 11796480,
-          "goroutines": 28,
-          "heap_bytes": 803376,
+          "elapsed_ns": 31074934662,
+          "rss_bytes": 12054528,
+          "goroutines": 30,
+          "heap_bytes": 2433240,
           "inflight": null
         },
         {
-          "elapsed_ns": 40006582272,
-          "rss_bytes": 11833344,
-          "goroutines": 28,
-          "heap_bytes": 1396912,
+          "elapsed_ns": 40001074313,
+          "rss_bytes": 12238848,
+          "goroutines": 30,
+          "heap_bytes": 3315360,
           "inflight": null
         },
         {
-          "elapsed_ns": 50766214425,
-          "rss_bytes": 11997184,
-          "goroutines": 28,
-          "heap_bytes": 1031696,
+          "elapsed_ns": 50003313528,
+          "rss_bytes": 12529664,
+          "goroutines": 30,
+          "heap_bytes": 2426336,
           "inflight": null
         },
         {
-          "elapsed_ns": 60000462694,
-          "rss_bytes": 11972608,
-          "goroutines": 28,
-          "heap_bytes": 2502456,
+          "elapsed_ns": 60004818409,
+          "rss_bytes": 12312576,
+          "goroutines": 30,
+          "heap_bytes": 1020712,
           "inflight": null
         },
         {
-          "elapsed_ns": 72435311818,
-          "rss_bytes": 11845632,
-          "goroutines": 21,
-          "heap_bytes": 1291600,
+          "elapsed_ns": 75478214048,
+          "rss_bytes": 12218368,
+          "goroutines": 23,
+          "heap_bytes": 1697432,
           "inflight": null
         },
         {
-          "elapsed_ns": 80007756627,
-          "rss_bytes": 11698176,
-          "goroutines": 28,
-          "heap_bytes": 2831272,
+          "elapsed_ns": 80004502518,
+          "rss_bytes": 12316672,
+          "goroutines": 30,
+          "heap_bytes": 1699120,
           "inflight": null
         },
         {
-          "elapsed_ns": 90005337232,
-          "rss_bytes": 12103680,
-          "goroutines": 28,
-          "heap_bytes": 2270960,
+          "elapsed_ns": 90007399744,
+          "rss_bytes": 12029952,
+          "goroutines": 30,
+          "heap_bytes": 478768,
           "inflight": null
         },
         {
-          "elapsed_ns": 100005430019,
-          "rss_bytes": 11898880,
-          "goroutines": 28,
-          "heap_bytes": 2079952,
+          "elapsed_ns": 100000415151,
+          "rss_bytes": 12091392,
+          "goroutines": 30,
+          "heap_bytes": 853904,
           "inflight": null
         },
         {
-          "elapsed_ns": 110008686211,
-          "rss_bytes": 11550720,
-          "goroutines": 28,
-          "heap_bytes": 2155520,
+          "elapsed_ns": 110001922818,
+          "rss_bytes": 12025856,
+          "goroutines": 31,
+          "heap_bytes": 2274600,
           "inflight": null
         },
         {
-          "elapsed_ns": 120007184628,
-          "rss_bytes": 11927552,
-          "goroutines": 7,
-          "heap_bytes": 2175984,
+          "elapsed_ns": 120003416693,
+          "rss_bytes": 12226560,
+          "goroutines": 8,
+          "heap_bytes": 1423512,
           "inflight": null
         },
         {
-          "elapsed_ns": 130002028837,
-          "rss_bytes": 12111872,
-          "goroutines": 28,
-          "heap_bytes": 847712,
+          "elapsed_ns": 130006156204,
+          "rss_bytes": 12767232,
+          "goroutines": 29,
+          "heap_bytes": 2098520,
           "inflight": null
         },
         {
-          "elapsed_ns": 145710170895,
-          "rss_bytes": 11882496,
-          "goroutines": 21,
-          "heap_bytes": 1741208,
+          "elapsed_ns": 140008893714,
+          "rss_bytes": 12263424,
+          "goroutines": 29,
+          "heap_bytes": 1329704,
           "inflight": null
         },
         {
-          "elapsed_ns": 150004374418,
-          "rss_bytes": 11517952,
-          "goroutines": 28,
-          "heap_bytes": 2717016,
+          "elapsed_ns": 154977985780,
+          "rss_bytes": 12029952,
+          "goroutines": 22,
+          "heap_bytes": 2276304,
           "inflight": null
         },
         {
-          "elapsed_ns": 160006162410,
-          "rss_bytes": 11251712,
-          "goroutines": 28,
-          "heap_bytes": 2120392,
+          "elapsed_ns": 160007338928,
+          "rss_bytes": 12308480,
+          "goroutines": 29,
+          "heap_bytes": 1707704,
           "inflight": null
         },
         {
-          "elapsed_ns": 170002612489,
-          "rss_bytes": 11964416,
-          "goroutines": 28,
-          "heap_bytes": 2709848,
+          "elapsed_ns": 170003939555,
+          "rss_bytes": 12193792,
+          "goroutines": 29,
+          "heap_bytes": 2341240,
           "inflight": null
         }
       ],
@@ -1069,17 +1005,17 @@
     }
   },
   "churn": {
-    "monitor_restarts": 3,
-    "monitor_recoveries": 3,
+    "monitor_restarts": 2,
+    "monitor_recoveries": 2,
     "osd_restarts": 2,
     "osd_recoveries": 2,
     "final_osd_stat": {
-      "epoch": 27,
+      "epoch": 28,
       "num_osds": 3,
       "num_up_osds": 3,
-      "osd_up_since": 1789603496,
+      "osd_up_since": 1790266155,
       "num_in_osds": 3,
-      "osd_in_since": 1789603335,
+      "osd_in_since": 1790265990,
       "num_remapped_pgs": 0
     },
     "final_health": {

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
 	"github.com/otuschhoff/rados-go/internal/msgr"
@@ -87,5 +88,40 @@ func TestDecodeNotifyReplyPreservesMetadataAndRejectsEmpty(t *testing.T) {
 	timedOut := reply.TimedOut[0]
 	if ack.Client != 11 || ack.Cookie != 12 || !bytes.Equal(ack.Data, []byte{0, 0xff}) || timedOut.Client != 21 || timedOut.Cookie != 22 {
 		t.Fatalf("reply metadata=%+v", reply)
+	}
+}
+
+func TestNotifyTimeoutPolicy(t *testing.T) {
+	if got := durationSeconds(0); got != 0 {
+		t.Fatalf("durationSeconds(0)=%d", got)
+	}
+	if got := durationSeconds(1500 * time.Millisecond); got != 2 {
+		t.Fatalf("durationSeconds(1.5s)=%d", got)
+	}
+
+	unlimited := &Client{}
+	unlimitedCtx, unlimitedCancel := unlimited.notifyContext(context.Background())
+	defer unlimitedCancel()
+	if _, ok := unlimitedCtx.Deadline(); ok {
+		t.Fatal("unlimited notify has deadline")
+	}
+
+	finite := &Client{config: Config{OperationTimeout: time.Minute}}
+	start := time.Now()
+	finiteCtx, finiteCancel := finite.notifyContext(context.Background())
+	defer finiteCancel()
+	deadline, ok := finiteCtx.Deadline()
+	if !ok || deadline.Before(start.Add(60*time.Second)) || deadline.After(start.Add(62*time.Second)) {
+		t.Fatalf("finite notify deadline=%v", deadline)
+	}
+
+	callerCtx, callerCancel := context.WithTimeout(context.Background(), time.Hour)
+	defer callerCancel()
+	callerDeadline, _ := callerCtx.Deadline()
+	configuredCtx, configuredCancel := finite.notifyContext(callerCtx)
+	defer configuredCancel()
+	configuredDeadline, ok := configuredCtx.Deadline()
+	if !ok || !configuredDeadline.Equal(callerDeadline) {
+		t.Fatalf("notify deadline=%v, want caller deadline %v", configuredDeadline, callerDeadline)
 	}
 }

@@ -1,13 +1,14 @@
-# P13 OSD Lifecycle and Failure Parity
+# P13 OSD and Monitor Lifecycle Parity
 
-Status: **planned; no P13 implementation or qualification is claimed**.
+Status: **implemented; qualification is accepted only when the strict verifier validates a full live report**.
 
-P13 closes the remaining behavioral gap between rados-go and the pinned
-librados Objecter when OSDs fail, become slow or unreliable, recover, are
-added or removed, or enter and leave maintenance. The implementation baseline
-is rados-go commit `2807112`, which added map-driven no-primary recovery for
-ordinary object I/O, mutations, PG commands, and enumeration. The source
-semantics baseline remains Ceph v20.2.0 commit
+P13 closes lifecycle gaps between rados-go and pinned librados when OSDs or
+monitors fail, become unreliable, recover, change, are added, or are removed.
+It also adds bounded public observation of authoritative MON/OSD map changes
+and local session availability. The implementation baseline is rados-go commit
+`2807112`, which added map-driven no-primary recovery for ordinary object I/O,
+mutations, PG commands, and enumeration. The source semantics baseline remains
+Ceph v20.2.0 commit
 `69f84cc2651aa259a15bc192ddaabd3baba07489`; live differential evidence must
 use the pinned Ceph v20.2.4 image and commit already recorded by P12.
 
@@ -29,32 +30,28 @@ native-librados comparison where the behavior depends on cluster state.
 | OSD marked out or removed | Stop targeting absent/down OSDs, retire stale sessions, remap PG work, and preserve direct-command errno distinctions | Incremental fixtures, explicit-command tests, and live out/purge scenarios |
 | OSD destroyed then recreated | Treat destroyed/down entries as unusable while preserving legal ID reuse and new address/session identity | Native map fixtures and a disposable recreate scenario |
 | Maintenance / `noout` | Follow observed `up`, `acting`, and `pg_temp` state; do not infer availability from `in` weight or maintenance flags; recover when daemons return | Host/subtree `noout` or equivalent single-host scenario with reads, writes, watches, and commands |
+| Monitor offline or unreliable | Bound reconnect to one endpoint, fail over through the seed/MonMap set, and preserve command availability while quorum remains | Three-monitor outages plus paired Go/native read-only monitor commands |
+| Monitor changed, removed, or added | Accept ordered MonMaps, update endpoint identity and location, and never treat local connection loss as authoritative removal | Epoch snapshots for mon.c location change, removal, and re-addition |
+| Public cluster changes | Separate authoritative map facts from locally observed availability; deliver owned ordered events through bounded cancellable queues | Long-lived Go subscription covering the complete live matrix and strict sequence/state verification |
 
-## Known Gaps at Phase Start
+## Resolved Findings
 
-1. Monitor OSDMap publication is atomic but has no objecter subscription that
-   rescans an already blocked request. A silent old primary can therefore hold
-   a request until its context expires even after a newer map selects another
-   primary. librados runs `Objecter::_scan_requests` for each new map.
-2. `Watch` resolves its initial route directly instead of entering the shared
-   homeless-route wait. A watch created while a PG has no primary fails early.
-3. Watch keepalive recovery uses `RefreshWait * MaxAttempts`, currently about
-   eight seconds, rather than the watch/client lifetime behavior of librados
-   linger operations. Extended maintenance can terminate an otherwise
-   recoverable watch.
-4. Explicit `OSDCommand` routing checks address presence but not the map's
-   `exists` and `up` state, so down and removed OSDs may not produce the same
-   `ENXIO`/`ENOENT` distinction as `Objecter::_calc_command_target`.
-5. rados-go's zero-value `OperationTimeout` becomes 30 seconds and the parser
-   accepts only positive `operation_timeout`. librados exposes
-   `rados_osd_op_timeout`, where zero means no Objecter timeout. Exact behavior
-   and a safe migration path must be made explicit.
-6. Incremental OSD add/remove/state/address application has unit coverage but
-   no P13 differential corpus covering destroyed entries, ID reuse, address
-   replacement, and session retirement.
-7. Existing live evidence covers selected size-2/min-1 failover, watch restart,
-   and paused-workload churn. It does not certify size-3/min-2 loss thresholds,
-   size-1 outage/recovery, slow or flaky OSDs, add/remove, or maintenance.
+1. Monitor OSDMap generations now wake and rescan in-flight routed requests.
+2. Initial watches use recoverable routing, and established watches reconnect
+  for their lifetime with stable cookies and increasing generations.
+3. Messenger reconnect uses unbounded exponential backoff and exposes reset
+  events to watch recovery; OSD backoff unblock replays admitted operations.
+4. Explicit OSD commands distinguish absent and down targets without remapping.
+5. `OperationTimeout: 0` and `rados_osd_op_timeout = 0` mean unlimited waiting;
+  `DefaultConfig` retains a finite convenience default.
+6. OSD map state, weight, address replacement, removal, destruction, and ID
+  reuse are covered by deterministic tests and the disposable live harness.
+7. Monitor sessions use bounded same-peer reconnect so alternate monitors can
+  be selected; only allowlisted read-only commands retry after session change.
+8. Public subscriptions distinguish accepted map facts from local connection
+  observations and fail explicitly on queue overflow.
+9. The harness records 22 size, outage, maintenance, OSD, and MON lifecycle
+  scenarios plus one long-lived stream of ordered cluster-change events.
 
 ## Upstream Anchors
 
@@ -80,16 +77,19 @@ identity needed for a differential assertion.
 
 ## Implementation Shape
 
-P13 should add a bounded OSDMap publication signal owned by the monitor client.
-The objecter should use it to wake route waits and in-flight submissions when a
-new epoch can change their target. Do not poll by spawning one goroutine per
-operation, and do not let a slow consumer block map publication.
+P13 adds a bounded OSDMap publication signal owned by the monitor client. The
+objecter uses it to wake route waits and in-flight submissions when a new epoch
+can change their target. Public observation is a separate bounded broker whose
+events cannot block map publication or share mutable state across subscribers.
 
 The objecter must retain one logical operation identity across reconnect/remap
-where librados resends the same request. Reads and idempotent work may be
-resubmitted after transport loss. Mutations require the existing conservative
-`ErrOutcomeUnknown` contract whenever acceptance or completion cannot be
-proved; cancellation never retracts accepted work.
+where librados resends the same request. Deterministic encoded-request tests
+verify the Go transaction ID and incarnation directly; the live C API cannot
+expose librados's internal TID, so live evidence records unique payload markers
+and independently verifies their final multiplicity. Reads and idempotent work
+may be resubmitted after transport loss. Mutations require the existing
+conservative `ErrOutcomeUnknown` contract whenever acceptance or completion
+cannot be proved; cancellation never retracts accepted work.
 
 Direct OSD commands and PG-targeted operations remain distinct. A PG command
 may become homeless and later recover. A command to a caller-selected OSD must
@@ -99,9 +99,10 @@ to another OSD.
 Maintenance is tested as a composition of monitor/OSDMap behavior. P13 does not
 add a client-side maintenance mode or duplicate Ceph orchestrator policy.
 
-## Planned Artifacts
+## Artifacts
 
 - `internal/mon`: nonblocking map-generation notification API and race tests.
+- `changes.go`: bounded public MON/OSD authoritative and observed subscriptions.
 - `internal/maps`: exact OSD existence/up/in/address lifecycle accessors and
   differential full/incremental fixtures.
 - `internal/msgr`: deterministic slow, reset, reconnect, replay, and exhaustion
@@ -119,8 +120,7 @@ add a client-side maintenance mode or duplicate Ceph orchestrator policy.
 
 ## Exit Gate
 
-The following targets are planned deliverables and are not available merely
-because this document exists:
+The following targets are implemented:
 
 ```sh
 make unit-p13
@@ -145,3 +145,7 @@ results agree, no mutation duplicates are observed, all waits terminate under
 explicit deadlines, unlimited mode is tested without leaking workers, and the
 final evidence is bound to one exact source tree. Multi-host failure domains
 remain unqualified unless the P13 runner actually provisions them.
+
+The checked-in report records 22 scenarios and ordered cluster-change events.
+Its `mode` and source-artifact binding are authoritative: quick mode is
+development evidence only, while certification requires a current full report.

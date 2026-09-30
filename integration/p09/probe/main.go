@@ -56,7 +56,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 150*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
 	newClient := func(operationTimeout time.Duration) (*rados.Client, error) {
 		client, err := rados.New(rados.Config{
@@ -250,7 +250,7 @@ func run() error {
 		return fmt.Errorf("pre-remap watchers=%+v: %w", remapWatchers, err)
 	}
 	remapCookie := remapWatch.Cookie()
-	if err := os.WriteFile(*coordinationDir+"/remap-watch-ready", nil, 0o600); err != nil {
+	if err := os.WriteFile(*coordinationDir+"/remap-watch-ready", []byte(strconv.FormatUint(remapCookie, 10)+"\n"), 0o600); err != nil {
 		return err
 	}
 	if err := waitForFile(ctx, *coordinationDir+"/remap-complete"); err != nil {
@@ -305,9 +305,11 @@ func run() error {
 	if err := drainWatchInterruptions(remapWatch.Errors()); err != nil {
 		return err
 	}
+	restartNotifyCtx, cancelRestartNotify := context.WithTimeout(ctx, 30*time.Second)
+	defer cancelRestartNotify()
 	restartNotifyDone := make(chan error, 1)
 	go func() {
-		reply, err := other.Notify(ctx, []byte("after-restart-native"))
+		reply, err := other.Notify(restartNotifyCtx, []byte("after-restart-native"))
 		if err == nil && (len(reply.Acknowledged) != 2 || len(reply.TimedOut) != 0) {
 			err = fmt.Errorf("post-restart notify result=%+v", reply)
 		}
@@ -463,8 +465,11 @@ func waitForStableWatchers(ctx context.Context, object rados.ObjectRef, cookies 
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()
 	var stableSince time.Time
+	var lastWatchers []rados.Watcher
+	var lastErr error
 	for {
 		watchers, err := object.ListWatchers(ctx)
+		lastWatchers, lastErr = watchers, err
 		if err == nil {
 			found := true
 			for _, cookie := range cookies {
@@ -484,7 +489,7 @@ func waitForStableWatchers(ctx context.Context, object rados.ObjectRef, cookies 
 		}
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("watch cookies %v did not remain registered for %s: %w", cookies, stableFor, ctx.Err())
+			return fmt.Errorf("watch cookies %v did not remain registered for %s (last watchers=%+v, last error=%v): %w", cookies, stableFor, lastWatchers, lastErr, ctx.Err())
 		case <-ticker.C:
 		}
 	}

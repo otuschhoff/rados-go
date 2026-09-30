@@ -31,6 +31,20 @@
         "completed_at": {"type": "string", "format": "date-time"}
       }
     },
+    "credential_renewal_abandonment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "service_id", "session_id", "due_generation", "closed_generation", "due_at", "closed_at"],
+      "properties": {
+        "service": {"enum": ["monitor", "osd"]},
+        "service_id": {"type": "integer", "minimum": 0},
+        "session_id": {"type": "integer", "minimum": 1},
+        "due_generation": {"type": "integer", "minimum": 1},
+        "closed_generation": {"type": "integer", "minimum": 1},
+        "due_at": {"type": "string", "format": "date-time"},
+        "closed_at": {"type": "string", "format": "date-time"}
+      }
+    },
     "probe": {
       "type": "object",
       "additionalProperties": false,
@@ -49,6 +63,7 @@
         "reconnects",
         "longest_connection_ns",
         "credential_renewals",
+        "credential_renewal_abandonments",
         "samples",
         "inflight_measurement",
         "maximum_configured_sample_count"
@@ -75,6 +90,10 @@
             {"contains": {"type": "object", "properties": {"service": {"const": "monitor"}}, "required": ["service"]}},
             {"contains": {"type": "object", "properties": {"service": {"const": "osd"}}, "required": ["service"]}}
           ]
+        },
+        "credential_renewal_abandonments": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/credential_renewal_abandonment"}
         },
         "samples": {
           "type": "array",

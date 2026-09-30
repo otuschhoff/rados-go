@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "mapping": {
+      "type": "object", "additionalProperties": false,
+      "required": ["epoch", "pgid", "acting", "primary", "pg_state", "observed_at"],
+      "properties": {
+        "epoch": {"type": "integer", "minimum": 1}, "pgid": {"type": "string", "minLength": 1},
+        "acting": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "primary": {"type": "integer", "minimum": -1}, "pg_state": {"type": "string", "minLength": 1}, "observed_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "operationResult": {
+      "type": "object", "additionalProperties": false,
+      "required": ["implementation", "transport", "operation", "object", "started_at", "finished_at", "elapsed_ns", "completed", "errno", "outcome", "version", "data"],
+      "properties": {
+        "implementation": {"enum": ["go", "native"]}, "transport": {"enum": ["secure", "crc"]}, "operation": {"enum": ["read", "write", "append", "watch", "cluster-changes", "monitor-command", "osd-command", "pg-command"]},
+        "object": {"type": "string", "minLength": 1}, "started_at": {"$ref": "#/$defs/timestamp"}, "finished_at": {"$ref": "#/$defs/timestamp"},
+        "elapsed_ns": {"type": "integer", "minimum": 0}, "completed": {"type": "boolean"}, "errno": {"type": "integer", "minimum": 0},
+        "outcome": {"enum": ["success", "error", "timeout", "unknown"]}, "version": {"type": "integer", "minimum": 0}, "data": {"type": "string"},
+        "mutation_marker": {"type": "string"}, "watch_cookie": {"type": "integer", "minimum": 0}, "watch_events": {"type": "integer", "minimum": 0}, "watch_interruptions": {"type": "integer", "minimum": 0},
+        "changes": {"type":"array","items":{"$ref":"#/$defs/changeObservation"}}
+      }
+    },
+    "publicOSDState": {
+      "type":"object","additionalProperties":false,"required":["id","exists","up","in","destroyed","addresses"],
+      "properties":{"id":{"type":"integer","minimum":0},"exists":{"type":"boolean"},"up":{"type":"boolean"},"in":{"type":"boolean"},"destroyed":{"type":"boolean"},"addresses":{"type":"array","items":{"type":"string"}}}
+    },
+    "publicMONState": {
+      "type":"object","additionalProperties":false,"required":["name","rank","addresses","priority","weight","location"],
+      "properties":{"name":{"type":"string"},"rank":{"type":"integer","minimum":-1},"addresses":{"type":"array","items":{"type":"string"}},"priority":{"type":"integer","minimum":0},"weight":{"type":"integer","minimum":0},"location":{"type":"object","additionalProperties":{"type":"string"}}}
+    },
+    "changeObservation": {
+      "type":"object","additionalProperties":false,"required":["sequence","observed_at","component","source","kind","epoch"],
+      "properties":{"sequence":{"type":"integer","minimum":1},"observed_at":{"$ref":"#/$defs/timestamp"},"component":{"enum":["osd","mon"]},"source":{"enum":["authoritative","observed"]},"kind":{"enum":["added","removed","changed","up","down","in","out","available","unavailable"]},"epoch":{"type":"integer","minimum":0},"osd":{"$ref":"#/$defs/publicOSDState"},"previous_osd":{"$ref":"#/$defs/publicOSDState"},"mon":{"$ref":"#/$defs/publicMONState"},"previous_mon":{"$ref":"#/$defs/publicMONState"},"error":{"type":"string"}}
+    },
+    "osdState": {
+      "type": "object", "additionalProperties": false, "required": ["id", "exists", "up", "in", "destroyed", "uuid", "address"],
+      "properties": {"id":{"type":"integer","minimum":0},"exists":{"type":"boolean"},"up":{"type":"boolean"},"in":{"type":"boolean"},"destroyed":{"type":"boolean"},"uuid":{"type":"string"},"address":{"type":"string"}}
+    },
+    "monitorMap": {
+      "type":"object","additionalProperties":false,"required":["epoch","monitors"],
+      "properties":{"epoch":{"type":"integer","minimum":1},"monitors":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["name","rank","address","priority","weight","location"],"properties":{"name":{"type":"string","minLength":1},"rank":{"type":"integer","minimum":0},"address":{"type":"string","minLength":1},"priority":{"type":"integer","minimum":0},"weight":{"type":"integer","minimum":0},"location":{"type":"object","additionalProperties":{"type":"string"}}}}}}
+    },
+    "scenario": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "pool", "operation", "fault", "injected_at", "released_at", "before", "after", "go", "native", "final_data", "mutation_markers", "notes", "lifecycle", "monitor_lifecycle", "fault_intervals"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^p13-[a-z0-9-]+$"}, "status": {"const": "passed"},
+        "pool": {"enum": ["p13-size3", "p13-size1", "cluster"]}, "operation": {"type": "string", "minLength": 1},
+        "fault": {"type": "string", "minLength": 1}, "injected_at": {"$ref": "#/$defs/timestamp"}, "released_at": {"$ref": "#/$defs/timestamp"},
+        "before": {"$ref": "#/$defs/mapping"}, "after": {"$ref": "#/$defs/mapping"},
+        "go": {"$ref": "#/$defs/operationResult"}, "native": {"$ref": "#/$defs/operationResult"},
+        "final_data": {"type": ["string", "null"]}, "mutation_markers": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "notes": {"type": "string"},
+        "fault_intervals": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["injected_at","released_at"],"properties":{"injected_at":{"$ref":"#/$defs/timestamp"},"released_at":{"$ref":"#/$defs/timestamp"}}}},
+        "lifecycle": {"type":["object","null"],"additionalProperties":false,"required":["before","after"],"properties":{"before":{"$ref":"#/$defs/osdState"},"destroyed":{"$ref":"#/$defs/osdState"},"after":{"$ref":"#/$defs/osdState"}}},
+        "monitor_lifecycle": {"type":["object","null"],"additionalProperties":false,"required":["before","after"],"properties":{"before":{"$ref":"#/$defs/monitorMap"},"after":{"$ref":"#/$defs/monitorMap"}}}
+      }
+    }
+  },
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "status", "command", "mode", "started_at", "finished_at", "failure", "source", "server", "native_runtime", "cluster", "scenarios", "change_observations", "unqualified"],
+  "properties": {
+    "schema_version": {"const": 1}, "status": {"enum": ["passed", "failed"]},
+    "command": {"enum": ["./integration/p13/reproduce.sh", "./integration/p13/reproduce.sh --quick", "not run"]},
+    "mode": {"enum": ["full", "quick", "placeholder"]}, "started_at": {"$ref": "#/$defs/timestamp"}, "finished_at": {"$ref": "#/$defs/timestamp"},
+    "failure": {"type": ["string", "null"]},
+    "source": {
+      "type": "object", "additionalProperties": false, "required": ["repository", "artifacts"],
+      "properties": {"repository": {"const": "https://github.com/otuschhoff/rados-go.git"}, "artifacts": {"type": "object", "additionalProperties": {"$ref": "#/$defs/sha256"}}}
+    },
+    "server": {
+      "type": ["object", "null"],
+      "properties": {"image": {"type": "string"}, "platform": {"enum": ["linux/amd64", "linux/arm64"]}, "version": {"type": "string"}},
+      "required": ["image", "platform", "version"], "additionalProperties": false
+    },
+    "native_runtime": {
+      "type": ["object", "null"],
+      "properties": {"soname": {"const": "librados.so.2"}, "path": {"type": "string"}, "sha256": {"$ref": "#/$defs/sha256"}},
+      "required": ["soname", "path", "sha256"], "additionalProperties": false
+    },
+    "cluster": {
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": ["fsid", "subnet", "monitors", "manager", "initial_osds", "device_bytes", "pools", "user"],
+      "properties": {
+        "fsid": {"const": "13131313-2222-4333-8444-131313131313"}, "subnet": {"const": "172.30.113.0/24"},
+        "monitors": {"const": ["p13-mon-a","p13-mon-b","p13-mon-c"]}, "manager": {"const": "p13-mgr-x"}, "initial_osds": {"const": 3},
+        "device_bytes": {"type": "integer", "minimum": 1073741824}, "user": {"const": "client.p13"},
+        "pools": {"const": [{"name":"p13-size3","size":3,"min_size":2},{"name":"p13-size1","size":1,"min_size":1}]}
+      }
+    },
+    "scenarios": {"type": "array", "items": {"$ref": "#/$defs/scenario"}},
+    "change_observations": {"anyOf":[{"$ref":"#/$defs/operationResult"},{"type":"null"}]},
+    "unqualified": {
+      "type": "object", "additionalProperties": false, "required": ["multi_host_maintenance", "probabilistic_packet_loss"],
+      "properties": {
+        "multi_host_maintenance": {"const": "unqualified: disposable harness uses one Docker host"},
+        "probabilistic_packet_loss": {"const": "unqualified: no host-global or probabilistic network fault injection is used"}
+      }
+    }
+  },
+  "allOf": [{
+    "if": {"properties": {"status": {"const": "passed"}}, "required": ["status"]},
+    "then": {
+      "properties": {"failure": {"type": "null"}, "scenarios": {"type": "array", "minItems": 22}, "change_observations":{"$ref":"#/$defs/operationResult"}, "server": {"type": "object"}, "native_runtime": {"type": "object"}, "cluster": {"type": "object"}},
+      "required": ["server", "native_runtime", "cluster", "change_observations"]
+    },
+    "else": {"properties": {"failure": {"type": "string", "minLength": 1}}}
+  }]
+}

@@ -271,12 +271,12 @@ func qualificationSourceArtifacts(root string) (map[string]string, error) {
 		}
 		relative = filepath.ToSlash(relative)
 		if entry.IsDir() {
-			if relative == ".git" || relative == releaseArtifactsPath {
+			if relative == ".git" || relative == releaseArtifactsPath || generatedEvidencePath(relative) {
 				return filepath.SkipDir
 			}
 			return nil
 		}
-		if !entry.Type().IsRegular() || relative == "docs/p12/qualification-report.json" || relative == "docs/p12/human-review.json" || relative == "integration/p12/report.json" || relative == p12fuzzevidence.ReportPath {
+		if !entry.Type().IsRegular() || entry.Name() == ".DS_Store" || generatedEvidencePath(relative) || relative == "docs/p12/qualification-report.json" || relative == "docs/p12/human-review.json" || relative == "docs/p13/integration-report.json" || relative == "integration/p12/report.json" || relative == p12fuzzevidence.ReportPath {
 			return nil
 		}
 		digest, err := qualificationHashFile(path)

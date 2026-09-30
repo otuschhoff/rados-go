@@ -207,10 +207,7 @@ func (object ObjectRef) Notify(ctx context.Context, data []byte) (NotifyReply, e
 	}
 	defer done()
 	serverTimeout := object.pool.client.config.OperationTimeout
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	operationCtx, cancel := context.WithTimeout(ctx, serverTimeout+time.Second)
+	operationCtx, cancel := object.pool.client.notifyContext(ctx)
 	defer cancel()
 	notification, notifyErr := objects.Notify(operationCtx, object.target(), append([]byte(nil), data...), durationSeconds(serverTimeout))
 	if notifyErr != nil && len(notification.Data) == 0 {
@@ -261,7 +258,7 @@ func durationSeconds(duration time.Duration) uint32 {
 		seconds++
 	}
 	if seconds <= 0 {
-		return 1
+		return 0
 	}
 	if seconds > math.MaxUint32 {
 		return math.MaxUint32

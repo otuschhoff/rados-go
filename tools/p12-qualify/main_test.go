@@ -18,6 +18,8 @@ func TestSourceArtifactsRejectsGeneratedReportsAndChangesWithSource(t *testing.T
 		"docs/p12/qualification-report.json":          "generated",
 		"docs/p12/qualification-report.json.backup":   "source",
 		"docs/p12/human-review.json":                  "generated review evidence",
+		"docs/p13/integration-report.json":            "generated P13 evidence",
+		"docs/p13/integration-report.json.backup":     "source",
 		"docs/p12/reviewer-trust.json":                "pending trust policy",
 		"integration/p12/reviewer-trust.schema.json":  "trust schema",
 		"docs/p12/release-artifacts/archive":          "generated release evidence",
@@ -37,17 +39,17 @@ func TestSourceArtifactsRejectsGeneratedReportsAndChangesWithSource(t *testing.T
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{".github/workflows/p00.yml", ".gitignore", "main.go", "docs/p12/qualification-report.json.backup", "docs/p12/reviewer-trust.json", "docs/p12/release-artifacts-copy/archive", "integration/p12/report.json.release-control", "integration/p12/reviewer-trust.schema.json"} {
+	for _, path := range []string{".github/workflows/p00.yml", ".gitignore", "main.go", "docs/p12/qualification-report.json.backup", "docs/p12/reviewer-trust.json", "docs/p12/release-artifacts-copy/archive", "docs/p13/integration-report.json.backup", "integration/p12/report.json.release-control", "integration/p12/reviewer-trust.schema.json"} {
 		if first[path] == "" {
 			t.Fatalf("release-control source %q was excluded: %#v", path, first)
 		}
 	}
-	for _, path := range []string{".git/objects/generated", "docs/p12/fuzz-report.json", "docs/p12/qualification-report.json", "docs/p12/human-review.json", "docs/p12/release-artifacts/archive", "integration/p12/report.json"} {
+	for _, path := range []string{".git/objects/generated", "docs/p12/fuzz-report.json", "docs/p12/qualification-report.json", "docs/p12/human-review.json", "docs/p12/release-artifacts/archive", "docs/p13/integration-report.json", "integration/p12/report.json"} {
 		if _, included := first[path]; included {
 			t.Fatalf("generated artifact %q was included: %#v", path, first)
 		}
 	}
-	if len(first) != 8 {
+	if len(first) != 9 {
 		t.Fatalf("unexpected source map: %#v", first)
 	}
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package changed\n"), 0o644); err != nil {

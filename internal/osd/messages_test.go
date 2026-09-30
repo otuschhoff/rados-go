@@ -61,6 +61,30 @@ func TestEncodeReadRequestV8(t *testing.T) {
 	}
 }
 
+func TestEncodeCoordinationRequestPreservesExplicitFlags(t *testing.T) {
+	for _, operation := range []Operation{
+		{Code: OpWatch, WatchCookie: 1, WatchOperation: WatchOperationRegister},
+		{Code: OpNotify, WatchCookie: 1, Data: []byte{1}},
+		{Code: OpNotifyAck, WatchCookie: 1, Data: []byte{1}},
+	} {
+		message, err := EncodeRequest(Request{PG: maps.PG{Pool: 1, Preferred: -1}, PoolID: 1, Snapshot: NoSnap, Flags: 0, ExplicitFlags: true, Operations: []Operation{operation}}, testLimits)
+		if err != nil {
+			t.Fatalf("operation %#x: %v", operation.Code, err)
+		}
+		decoder := wire.NewDecoder(message.Front, wire.Limits{MaxBytes: testLimits.MaxBytes})
+		_, spg := decoder.Versioned(1)
+		if _, err := decodePG(spg); err != nil {
+			t.Fatalf("operation %#x PG: %v", operation.Code, err)
+		}
+		spg.Uint8()
+		decoder.Uint32()
+		decoder.Uint32()
+		if flags := decoder.Uint32(); flags != 0 {
+			t.Fatalf("operation %#x flags=%#x", operation.Code, flags)
+		}
+	}
+}
+
 func TestEncodeRequestIncludesErasureShard(t *testing.T) {
 	request := Request{
 		PG: maps.PG{Pool: 7, Seed: 3, Preferred: -1}, Shard: 2, Sharded: true,

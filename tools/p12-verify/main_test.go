@@ -199,6 +199,29 @@ func TestCandidateSourceSetExcludesOnlyGeneratedOutputs(t *testing.T) {
 	}
 }
 
+func TestGeneratedEvidencePathMatchesOnlyHarnessStaging(t *testing.T) {
+	for _, path := range []string{
+		"integration/p12/.report.json.123",
+		"integration/p12/.report.previous.123",
+		"docs/p12/.release-artifacts.publish.123/artifact",
+		"docs/p12/.release-artifacts.previous.123/artifact",
+		"docs/p13/.integration-report.failed.123",
+	} {
+		if !generatedEvidencePath(path) {
+			t.Fatalf("generated path included: %s", path)
+		}
+	}
+	for _, path := range []string{
+		"integration/p12/.report.json.backup",
+		"docs/p12/release-artifacts-copy/artifact",
+		"docs/p13/integration-report.backup.json",
+	} {
+		if generatedEvidencePath(path) {
+			t.Fatalf("non-generated lookalike excluded: %s", path)
+		}
+	}
+}
+
 func TestQualificationRejectsInexactExecutionEvidence(t *testing.T) {
 	tests := map[string]func(*qualificationReport){
 		"substituted command":   func(value *qualificationReport) { value.Checks[0].Command += " -count=1" },
@@ -354,6 +377,27 @@ func TestReleaseEvidenceDistinguishesQuickAndCertifyingReports(t *testing.T) {
 	}
 }
 
+func TestReleaseEvidenceValidatesStagedArtifacts(t *testing.T) {
+	version := "v1.2.3"
+	root := seedRetainedRelease(t, version)
+	canonical := filepath.Join(root, filepath.FromSlash(releaseArtifactsPath))
+	staged := filepath.Join(root, "staged-release")
+	artifacts := hashRetainedRelease(t, root)
+	if err := os.Rename(canonical, staged); err != nil {
+		t.Fatal(err)
+	}
+	artifactPath := releaseArtifactsPath
+	value := report{Status: "candidate", Release: releaseEvidence{Performed: true, Version: &version, Path: &artifactPath, Reproducible: true, Artifacts: artifacts}}
+	if err := validateReleaseWithArtifacts(value, root, staged); err != nil {
+		t.Fatalf("staged release evidence rejected: %v", err)
+	}
+	value.Status = "non-certifying"
+	value.Release = releaseEvidence{Artifacts: map[string]string{}}
+	if err := validateReleaseWithArtifacts(value, root, staged); err == nil || !strings.Contains(err.Error(), "requires a candidate") {
+		t.Fatalf("non-certifying staged release accepted: %v", err)
+	}
+}
+
 func TestReleaseEvidenceRejectsChangedRetainedBytesAndExtraFiles(t *testing.T) {
 	version := "v1.2.3"
 	root := seedRetainedRelease(t, version)
@@ -479,6 +523,38 @@ func TestCredentialRenewalsRejectGenerationRegressions(t *testing.T) {
 			mutate(values)
 			if err := validateCredentialRenewals("secure", values); err == nil {
 				t.Fatal("generation regression was accepted")
+			}
+		})
+	}
+}
+
+func TestCredentialRenewalOutcomesRejectContradictions(t *testing.T) {
+	now := time.Unix(100, 0).UTC()
+	renewals := []credentialRenewal{{Service: "osd", ServiceID: 1, SessionID: 7, DueGeneration: 2, CompletedGeneration: 3, DueAt: now, CompletedAt: now.Add(time.Second)}}
+	abandonments := []credentialRenewalAbandonment{{Service: "osd", ServiceID: 1, SessionID: 7, DueGeneration: 2, ClosedGeneration: 4, DueAt: now, ClosedAt: now.Add(2 * time.Second)}}
+	if err := validateCredentialRenewalOutcomes("secure", renewals, abandonments); err == nil {
+		t.Fatal("contradictory renewal outcomes were accepted")
+	}
+	abandonments[0].DueGeneration = 3
+	abandonments[0].ServiceID = 2
+	if err := validateCredentialRenewalOutcomes("secure", renewals, abandonments); err == nil {
+		t.Fatal("changed session identity was accepted")
+	}
+}
+
+func TestValidateReportRejectsMissingRequiredCollections(t *testing.T) {
+	for name, mutate := range map[string]func(*report){
+		"source artifacts":        func(value *report) { value.Source.Artifacts = nil },
+		"secure abandonments":     func(value *report) { value.Probe.Secure.CredentialRenewalAbandonments = nil },
+		"crc abandonments":        func(value *report) { value.Probe.CRC.CredentialRenewalAbandonments = nil },
+		"benchmark runs":          func(value *report) { value.Benchmark.Runs = nil },
+		"release artifact hashes": func(value *report) { value.Release.Artifacts = nil },
+	} {
+		t.Run(name, func(t *testing.T) {
+			value := loadFixture(t)
+			mutate(&value)
+			if _, err := validateReport(value, "../..", true); err == nil {
+				t.Fatal("missing required collection was accepted")
 			}
 		})
 	}

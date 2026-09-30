@@ -85,20 +85,29 @@ func TestDecodeRejectsUnknownAndTrailingJSON(t *testing.T) {
 
 func TestSourceArtifactsExcludeOnlyGeneratedEvidence(t *testing.T) {
 	root := seedSource(t)
-	for _, path := range []string{ReportPath, "docs/p12/qualification-report.json", "docs/p12/human-review.json", "integration/p12/report.json", "docs/p12/release-artifacts/archive", "docs/p12/fuzz-report.json.backup"} {
+	for _, path := range []string{ReportPath, "docs/p12/qualification-report.json", "docs/p12/human-review.json", "docs/p13/integration-report.json", "integration/p12/report.json", "integration/p12/.report.json.123", "integration/p12/.report.previous.123", "docs/p12/release-artifacts/archive", "docs/p12/.release-artifacts.publish.123/archive", "docs/p12/.release-artifacts.previous.123/archive", "docs/p13/.integration-report.failed.123", "docs/p12/fuzz-report.json.backup", "integration/p12/.report.json.backup", "docs/p12/.release-artifacts.publish.backup/archive", "docs/p13/integration-report.json.backup", "docs/.DS_Store", "docs/.DS_Store.backup"} {
 		writeTestFile(t, root, path, path)
 	}
 	artifacts, err := SourceArtifacts(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, excluded := range []string{ReportPath, "docs/p12/qualification-report.json", "docs/p12/human-review.json", "integration/p12/report.json", "docs/p12/release-artifacts/archive"} {
+	for _, excluded := range []string{ReportPath, "docs/p12/qualification-report.json", "docs/p12/human-review.json", "docs/p13/integration-report.json", "integration/p12/report.json", "integration/p12/.report.json.123", "integration/p12/.report.previous.123", "docs/p12/release-artifacts/archive", "docs/p12/.release-artifacts.publish.123/archive", "docs/p12/.release-artifacts.previous.123/archive", "docs/p13/.integration-report.failed.123", "docs/.DS_Store"} {
 		if artifacts[excluded] != "" {
 			t.Fatalf("generated evidence %q was hashed", excluded)
 		}
 	}
 	if artifacts["docs/p12/fuzz-report.json.backup"] == "" {
 		t.Fatal("similarly named source was excluded")
+	}
+	if artifacts["integration/p12/.report.json.backup"] == "" || artifacts["docs/p12/.release-artifacts.publish.backup/archive"] == "" {
+		t.Fatal("similarly named staging source was excluded")
+	}
+	if artifacts["docs/p13/integration-report.json.backup"] == "" {
+		t.Fatal("similarly named P13 source was excluded")
+	}
+	if artifacts["docs/.DS_Store.backup"] == "" {
+		t.Fatal("similarly named host file was excluded")
 	}
 }
 

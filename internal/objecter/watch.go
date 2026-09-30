@@ -21,8 +21,10 @@ type Watch struct {
 	target    Target
 	cookie    uint64
 	timeout   uint32
+	lifetime  context.Context
+	cancel    context.CancelFunc
 	primaryMu sync.RWMutex
-	primary   int32
+	route     Route
 
 	events    chan osd.WatchNotification
 	errors    chan error
@@ -42,12 +44,18 @@ func (watch *Watch) Done() <-chan struct{}                { return watch.done }
 func (watch *Watch) primaryOSD() int32 {
 	watch.primaryMu.RLock()
 	defer watch.primaryMu.RUnlock()
-	return watch.primary
+	return watch.route.Primary
 }
 
-func (watch *Watch) setPrimary(osdID int32) {
+func (watch *Watch) currentRoute() Route {
+	watch.primaryMu.RLock()
+	defer watch.primaryMu.RUnlock()
+	return watch.route
+}
+
+func (watch *Watch) setRoute(route Route) {
 	watch.primaryMu.Lock()
-	watch.primary = osdID
+	watch.route = route
 	watch.primaryMu.Unlock()
 }
 
@@ -55,29 +63,37 @@ func (client *Client) Watch(ctx context.Context, target Target, queue, timeout u
 	if queue == 0 || queue > maxWatchQueue || target.Snapshot != osd.NoSnap {
 		return nil, wire.ErrMalformed
 	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	cookie, err := randomWatchCookie()
 	if err != nil {
 		return nil, err
 	}
-	route, err := client.config.Router.Route(target)
+	route, err := client.waitForRoute(ctx, target, client.config.Router.Route)
 	if err != nil {
 		return nil, err
 	}
-	watch := &Watch{client: client, target: target, cookie: cookie, timeout: timeout, primary: route.Primary, events: make(chan osd.WatchNotification, queue), errors: make(chan error, 1), done: make(chan struct{}), reconnect: make(chan struct{}, 1), ops: make(chan struct{}, 1)}
+	lifetime, cancel := context.WithCancel(context.Background())
+	watch := &Watch{client: client, target: target, cookie: cookie, timeout: timeout, lifetime: lifetime, cancel: cancel, route: route, events: make(chan osd.WatchNotification, queue), errors: make(chan error, 1), done: make(chan struct{}), reconnect: make(chan struct{}, 1), ops: make(chan struct{}, 1)}
 	watch.ops <- struct{}{}
 	client.mu.Lock()
 	if client.closed {
 		client.mu.Unlock()
+		cancel()
 		return nil, ErrClosed
 	}
 	client.watches[cookie] = watch
 	watch.workers.Add(1)
 	client.mu.Unlock()
-	if err := client.watchOperation(ctx, target, cookie, osd.WatchOperationRegister, 0, timeout); err != nil {
+	registeredRoute, err := client.watchOperation(ctx, target, cookie, osd.WatchOperationRegister, 0, timeout)
+	if err != nil {
 		client.removeWatch(cookie)
+		cancel()
 		watch.workers.Done()
 		return nil, err
 	}
+	watch.setRoute(registeredRoute)
 	go func() {
 		defer watch.workers.Done()
 		watch.keepalive()
@@ -90,8 +106,13 @@ func (watch *Watch) Ack(ctx context.Context, notifyID uint64, data []byte) error
 	if err != nil {
 		return err
 	}
-	_, err = watch.client.executeTrackedOutcomeSensitive(ctx, watch.target, osd.Operation{Code: osd.OpNotifyAck, WatchCookie: watch.cookie, Length: uint64(len(payload)), Data: payload})
-	return err
+	sequence, transactionID, operation, err := watch.client.admitMutation(ctx, osd.Operation{Code: osd.OpNotifyAck, WatchCookie: watch.cookie, Length: uint64(len(payload)), Data: payload})
+	if err != nil {
+		return err
+	}
+	_, ackErr := watch.client.executeRoutedOperations(ctx, watch.target, []osd.Operation{operation}, transactionID, true, false, osd.FlagRead, watch.client.config.Router.Route)
+	watch.client.completeMutation(sequence, ackErr)
+	return ackErr
 }
 
 func (watch *Watch) Close(ctx context.Context) error {
@@ -100,6 +121,7 @@ func (watch *Watch) Close(ctx context.Context) error {
 	}
 	watch.stopOnce.Do(func() {
 		watch.client.removeWatch(watch.cookie)
+		watch.cancelLifetime()
 		close(watch.done)
 	})
 	select {
@@ -111,7 +133,7 @@ func (watch *Watch) Close(ctx context.Context) error {
 	if watch.unwatched {
 		return nil
 	}
-	err := watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationUnwatch, 0, 0)
+	_, err := watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationUnwatch, 0, 0)
 	if err == nil {
 		watch.unwatched = true
 	}
@@ -120,6 +142,7 @@ func (watch *Watch) Close(ctx context.Context) error {
 
 func (watch *Watch) stop(err error) {
 	watch.stopOnce.Do(func() {
+		watch.cancelLifetime()
 		if err != nil {
 			select {
 			case watch.errors <- err:
@@ -131,6 +154,12 @@ func (watch *Watch) stop(err error) {
 }
 
 func (watch *Watch) wait() { watch.workers.Wait() }
+
+func (watch *Watch) cancelLifetime() {
+	if watch.cancel != nil {
+		watch.cancel()
+	}
+}
 
 func (watch *Watch) keepalive() {
 	period := time.Duration(watch.timeout) * time.Second / 3
@@ -149,7 +178,11 @@ func (watch *Watch) keepalive() {
 		case <-watch.reconnect:
 			forceReconnect = true
 		}
-		<-watch.ops
+		select {
+		case <-watch.done:
+			return
+		case <-watch.ops:
+		}
 		select {
 		case <-watch.done:
 			watch.ops <- struct{}{}
@@ -157,46 +190,40 @@ func (watch *Watch) keepalive() {
 		default:
 		}
 		route, routeErr := watch.client.config.Router.Route(watch.target)
-		routeChanged := routeErr == nil && route.Primary != watch.primaryOSD()
+		routeChanged := routeErr == nil && !sameRelevantRoute(watch.currentRoute(), route)
 		if routeChanged {
 			watch.reportInterruption(ErrStaleMap)
 		}
 		if forceReconnect || routeChanged {
-			generation++
-			ctx, cancel := context.WithTimeout(context.Background(), watch.client.config.RefreshWait*time.Duration(watch.client.config.MaxAttempts))
-			err := watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationReconnect, generation, watch.timeout)
-			cancel()
+			var err error
+			generation, err = watch.recover(generation)
 			if err == nil {
-				if routeErr == nil {
-					watch.setPrimary(route.Primary)
-				}
 				watch.ops <- struct{}{}
 				continue
 			}
+			watch.ops <- struct{}{}
+			if watch.lifetime.Err() != nil {
+				return
+			}
+			watch.client.removeWatch(watch.cookie)
+			watch.stop(err)
+			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), watch.client.config.RefreshWait)
-		err := watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationPing, generation, 0)
+		ctx, cancel := context.WithTimeout(watch.lifetime, watch.client.config.RefreshWait)
+		route, err := watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationPing, generation, 0)
 		cancel()
 		if err == nil {
+			watch.setRoute(route)
 			watch.ops <- struct{}{}
 			continue
 		}
 		watch.reportInterruption(err)
-		generation++
-		ctx, cancel = context.WithTimeout(context.Background(), watch.client.config.RefreshWait*time.Duration(watch.client.config.MaxAttempts))
-		err = watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationReconnect, generation, watch.timeout)
-		if err != nil {
-			err = watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationRegister, 0, watch.timeout)
-			generation = 0
-		}
-		if err == nil {
-			if route, routeErr := watch.client.config.Router.Route(watch.target); routeErr == nil {
-				watch.setPrimary(route.Primary)
-			}
-		}
-		cancel()
+		generation, err = watch.recover(generation)
 		watch.ops <- struct{}{}
 		if err != nil {
+			if watch.lifetime.Err() != nil {
+				return
+			}
 			watch.client.removeWatch(watch.cookie)
 			watch.stop(err)
 			return
@@ -204,10 +231,82 @@ func (watch *Watch) keepalive() {
 	}
 }
 
-func (client *Client) watchOperation(ctx context.Context, target Target, cookie uint64, operation uint8, generation, timeout uint32) error {
+func (watch *Watch) recover(generation uint32) (uint32, error) {
+	for {
+		if generation == ^uint32(0) {
+			return generation, wire.ErrLimitExceeded
+		}
+		generation++
+		ctx, cancel := context.WithTimeout(watch.lifetime, watch.client.config.RefreshWait)
+		route, err := watch.client.watchOperation(ctx, watch.target, watch.cookie, osd.WatchOperationReconnect, generation, watch.timeout)
+		cancel()
+		if err == nil {
+			watch.setRoute(route)
+			return generation, nil
+		}
+		if watch.lifetime.Err() != nil {
+			return generation, watch.lifetime.Err()
+		}
+		if terminalWatchError(err) {
+			return generation, err
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			watch.client.invalidateTargetSession(watch.target)
+		}
+		timer := time.NewTimer(watch.client.config.RefreshWait)
+		select {
+		case <-watch.lifetime.Done():
+			if !timer.Stop() {
+				select {
+				case <-timer.C:
+				default:
+				}
+			}
+			return generation, watch.lifetime.Err()
+		case <-timer.C:
+		}
+	}
+}
+
+func (client *Client) invalidateTargetSession(target Target) {
+	route, err := client.config.Router.Route(target)
+	if err != nil || route.Primary < 0 {
+		return
+	}
+	client.mu.Lock()
+	entry, ok := client.sessions[route.Primary]
+	client.mu.Unlock()
+	if ok {
+		client.invalidate(route.Primary, entry.session)
+	}
+}
+
+func terminalWatchError(err error) bool {
+	var errno protocol.WireErrno
+	if !errors.As(err, &errno) {
+		return false
+	}
+	switch errno.Class() {
+	case protocol.ErrorNotFound, protocol.ErrorPermission, protocol.ErrorUnsupported, protocol.ErrorInvalid:
+		return true
+	default:
+		return false
+	}
+}
+
+func (client *Client) watchOperation(ctx context.Context, target Target, cookie uint64, operation uint8, generation, timeout uint32) (Route, error) {
 	op := osd.Operation{Code: osd.OpWatch, WatchCookie: cookie, WatchOperation: operation, WatchGeneration: generation, WatchTimeout: timeout}
-	_, err := client.Mutate(ctx, target, op)
-	return err
+	if operation == osd.WatchOperationPing {
+		result, err := client.executeRoutedOperations(ctx, target, []osd.Operation{op}, 0, false, false, osd.FlagRead|osd.FlagWrite, client.config.Router.Route)
+		return result.route, err
+	}
+	sequence, transactionID, owned, err := client.admitMutation(ctx, op)
+	if err != nil {
+		return Route{}, err
+	}
+	result, watchErr := client.executeRoutedOperations(ctx, target, []osd.Operation{owned}, transactionID, false, true, osd.FlagRead|osd.FlagWrite, client.config.Router.Route)
+	client.completeMutation(sequence, watchErr)
+	return result.route, watchErr
 }
 
 func (client *Client) Notify(ctx context.Context, target Target, data []byte, timeout uint32) (notification osd.WatchNotification, notifyErr error) {
@@ -237,7 +336,7 @@ func (client *Client) Notify(ctx context.Context, target Target, data []byte, ti
 		return osd.WatchNotification{}, err
 	}
 	defer func() { client.completeMutation(sequence, notifyErr) }()
-	result, err := client.executeRoutedOperations(ctx, target, []osd.Operation{operation}, transactionID, true, false, 0, client.config.Router.Route)
+	result, err := client.executeRoutedOperations(ctx, target, []osd.Operation{operation}, transactionID, true, false, osd.FlagRead, client.config.Router.Route)
 	if err != nil {
 		return osd.WatchNotification{}, err
 	}
@@ -264,12 +363,19 @@ func (client *Client) Notify(ctx context.Context, target Target, data []byte, ti
 }
 
 func (client *Client) dispatchNotifications(osdID int32, active session, source notificationSession) {
+	var interruptions <-chan error
+	if resetSource, ok := source.(sessionInterruptionSource); ok {
+		interruptions = resetSource.Interruptions()
+	}
 	for {
 		var notification osd.WatchNotification
 		var ok bool
 		select {
 		case <-client.done:
 			return
+		case err := <-interruptions:
+			client.signalSessionWatches(osdID, active, err)
+			continue
 		case notification, ok = <-source.Notifications():
 			if !ok {
 				client.interruptSessionWatches(osdID, active, source.NotificationError())
@@ -309,6 +415,25 @@ func (client *Client) dispatchNotifications(osdID int32, active session, source 
 			client.removeWatch(notification.Cookie)
 			watch.stop(errors.Join(ErrWatchInterrupted, msgr.ErrQueueSaturated))
 		}
+	}
+}
+
+func (client *Client) signalSessionWatches(osdID int32, active session, err error) {
+	client.mu.Lock()
+	current, ok := client.sessions[osdID]
+	if client.closed || !ok || current.session != active {
+		client.mu.Unlock()
+		return
+	}
+	watches := make([]*Watch, 0)
+	for _, watch := range client.watches {
+		if watch.primaryOSD() == osdID {
+			watches = append(watches, watch)
+		}
+	}
+	client.mu.Unlock()
+	for _, watch := range watches {
+		watch.interrupt(err)
 	}
 }
 

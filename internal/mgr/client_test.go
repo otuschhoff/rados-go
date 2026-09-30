@@ -379,6 +379,27 @@ func TestCommandRejectsEmptyArgs(t *testing.T) {
 	}
 }
 
+func TestCommandUnlimitedRetriesUntilContextCancellation(t *testing.T) {
+	source := &fakeMgrMapSource{mgrMap: testMgrMap(t, mgrMapFixture{name: "active-a", gid: 7, endpoint: "192.0.2.50:7000", activeFeatures: uint64(protocol.FeatureServerOctopusMask)})}
+	attempts := 0
+	client := newTestManagerClient(t, source, func(context.Context, ActiveTarget) (session, error) {
+		attempts++
+		return nil, errors.New("dial failed")
+	})
+	client.config.MaxAttempts = 4
+	client.config.UnlimitedRetries = true
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	if _, err := client.Command(ctx, []string{"status"}, nil); !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error=%v", err)
+	}
+	if attempts <= client.config.MaxAttempts {
+		t.Fatalf("attempts=%d, finite budget=%d", attempts, client.config.MaxAttempts)
+	}
+}
+
 func newTestManagerClient(t *testing.T, source *fakeMgrMapSource, factory SessionFactory) *Client {
 	t.Helper()
 	address := testMgrClientAddress(t, "192.0.2.99:7000")

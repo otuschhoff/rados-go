@@ -352,6 +352,44 @@ func TestSessionCredentialRenewalDiagnosticRequiresFreshCredential(t *testing.T)
 	}
 }
 
+func TestSessionClosedDiagnosticRequiresPendingRenewal(t *testing.T) {
+	t.Run("normal close", func(t *testing.T) {
+		diagnostics := make(chan SessionDiagnostic, 1)
+		config := testSessionConfig(t)
+		config.DiagnosticService = "monitor"
+		config.DiagnosticSessionID = 9
+		config.DiagnosticObserver = func(event SessionDiagnostic) { diagnostics <- event }
+		session := newTestSession(t, newFakeTransport(), nil, config)
+		session.Stop()
+		select {
+		case event := <-diagnostics:
+			t.Fatalf("normal close emitted diagnostic: %+v", event)
+		default:
+		}
+	})
+
+	t.Run("renewal close", func(t *testing.T) {
+		transport := &renewableFakeTransport{fakeTransport: newFakeTransport(), renewal: make(chan struct{})}
+		diagnostics := make(chan SessionDiagnostic, 2)
+		config := testSessionConfig(t)
+		config.DiagnosticService = "osd"
+		config.DiagnosticServiceID = 7
+		config.DiagnosticSessionID = 9
+		config.DiagnosticObserver = func(event SessionDiagnostic) { diagnostics <- event }
+		connector := ConnectorFunc(func(ctx context.Context) (Transport, error) {
+			<-ctx.Done()
+			return nil, ctx.Err()
+		})
+		session := newTestSession(t, transport, connector, config)
+		close(transport.renewal)
+		waitEvent(t, session, EventCredentialRenewal)
+		session.Stop()
+		if due, closed := <-diagnostics, <-diagnostics; due.Kind != DiagnosticCredentialRenewalDue || closed.Kind != DiagnosticSessionClosed {
+			t.Fatalf("close diagnostics = (%+v, %+v)", due, closed)
+		}
+	})
+}
+
 func TestSessionSendCompletesAfterWrite(t *testing.T) {
 	transport := newFakeTransport()
 	session := newTestSession(t, transport, nil, testSessionConfig(t))
@@ -674,6 +712,27 @@ func TestSessionRejectsConflictingGlobalSequences(t *testing.T) {
 	}
 }
 
+func TestSessionRejectsInvalidReconnectBackoff(t *testing.T) {
+	for _, test := range []struct {
+		name    string
+		initial time.Duration
+		maximum time.Duration
+	}{
+		{name: "negative initial", initial: -time.Millisecond},
+		{name: "negative maximum", maximum: -time.Millisecond},
+		{name: "initial exceeds maximum", initial: 2 * time.Second, maximum: time.Second},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			config := testSessionConfig(t)
+			config.InitialReconnectBackoff = test.initial
+			config.MaxReconnectBackoff = test.maximum
+			if _, err := NewSession(nil, nil, config); !errors.Is(err, ErrMalformed) {
+				t.Fatalf("NewSession error = %v, want ErrMalformed", err)
+			}
+		})
+	}
+}
+
 func TestSessionAckedRequestCompletesFromPeerReplayAfterReconnect(t *testing.T) {
 	firstTransport := newFakeTransport()
 	secondTransport := newFakeTransport()
@@ -936,7 +995,8 @@ func TestSessionRejectsInvalidServerIdent(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			owner := newUnitSessionOwner(t)
 			owner.state = StateConnecting
-			owner.config.MaxReconnectAttempts = 0
+			owner.config.MaxReconnectAttempts = 1
+			owner.reconnectAttempts = 1
 			if test.name == "missing client required feature" {
 				owner.config.ClientIdent.RequiredFeatures = 2
 			}
@@ -969,7 +1029,8 @@ func TestSessionRejectsAcknowledgmentBeyondOutboundSequence(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			owner := newUnitSessionOwner(t)
 			owner.state = test.state
-			owner.config.MaxReconnectAttempts = 0
+			owner.config.MaxReconnectAttempts = 1
+			owner.reconnectAttempts = 1
 			owner.nextOutbound = 2
 			test.handle(owner)
 			if owner.state != StateDisconnected || owner.terminalErr == nil {
@@ -1166,6 +1227,107 @@ func TestSessionReconnectAttemptsAreBounded(t *testing.T) {
 	}
 }
 
+func TestSessionReconnectBackoffSequence(t *testing.T) {
+	delays := make(chan time.Duration, 3)
+	release := make(chan struct{}, 3)
+	attempts := make(chan struct{}, 4)
+	connector := ConnectorFunc(func(context.Context) (Transport, error) {
+		attempts <- struct{}{}
+		return nil, errors.New("connect failed")
+	})
+	config := testSessionConfig(t)
+	config.MaxReconnectAttempts = 4
+	config.InitialReconnectBackoff = 0
+	config.MaxReconnectBackoff = 0
+	config.reconnectWait = func(ctx context.Context, delay time.Duration) error {
+		delays <- delay
+		select {
+		case <-release:
+			return nil
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+	session := newTestSession(t, nil, connector, config)
+	defer session.Stop()
+
+	<-attempts
+	for _, want := range []time.Duration{200 * time.Millisecond, 400 * time.Millisecond, 800 * time.Millisecond} {
+		if got := <-delays; got != want {
+			t.Fatalf("reconnect delay = %s, want %s", got, want)
+		}
+		release <- struct{}{}
+		<-attempts
+	}
+	select {
+	case err := <-session.Terminal():
+		if !errors.Is(err, ErrReconnectExhausted) {
+			t.Fatalf("terminal error = %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("finite reconnect budget was not exhausted")
+	}
+}
+
+func TestSessionReconnectBackoffCapsAndStopCancelsWait(t *testing.T) {
+	config := testSessionConfig(t)
+	config.MaxReconnectAttempts = 0
+	owner := newUnitSessionOwner(t)
+	owner.config = config
+	owner.connectedOnce = true
+	owner.reconnectAttempts = 100
+	if got := owner.nextReconnectBackoff(); got != 15*time.Second {
+		t.Fatalf("capped reconnect delay = %s", got)
+	}
+
+	first := newFakeTransport()
+	waiting := make(chan struct{})
+	canceled := make(chan error, 1)
+	config.reconnectWait = func(ctx context.Context, _ time.Duration) error {
+		close(waiting)
+		<-ctx.Done()
+		canceled <- ctx.Err()
+		return ctx.Err()
+	}
+	session := newTestSession(t, first, ConnectorFunc(func(context.Context) (Transport, error) {
+		return nil, errors.New("unexpected connect")
+	}), config)
+	first.fail(errors.New("fault"))
+	<-waiting
+	session.Stop()
+	if err := <-canceled; !errors.Is(err, context.Canceled) {
+		t.Fatalf("backoff cancellation = %v", err)
+	}
+}
+
+func TestSessionUnlimitedReconnectStillHonorsSubmitContext(t *testing.T) {
+	config := testSessionConfig(t)
+	config.MaxReconnectAttempts = 0
+	waits := make(chan time.Duration, 1)
+	config.reconnectWait = func(ctx context.Context, delay time.Duration) error {
+		waits <- delay
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	session := newTestSession(t, nil, ConnectorFunc(func(context.Context) (Transport, error) {
+		return nil, errors.New("connect failed")
+	}), config)
+	defer session.Stop()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	result := submitAsync(session, ctx, testMessage("pending"))
+	if got := <-waits; got != 200*time.Millisecond {
+		t.Fatalf("first retry delay = %s", got)
+	}
+	cancel()
+	if err := waitOutcome(t, result).err; !errors.Is(err, context.Canceled) {
+		t.Fatalf("submit error = %v", err)
+	}
+	if snapshot := getSnapshot(t, session); snapshot.State != StateDisconnected || snapshot.ReconnectAttempts != 2 {
+		t.Fatalf("unlimited reconnect snapshot = %+v", snapshot)
+	}
+}
+
 func TestSessionMalformedPreReadyPeersConsumeReconnectBudget(t *testing.T) {
 	transports := make(chan *fakeTransport, 2)
 	first := newFakeTransport()
@@ -1240,7 +1402,8 @@ func TestSessionReadyOnlyFramesFaultOutsideReady(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			owner := newUnitSessionOwner(t)
 			owner.state = test.state
-			owner.config.MaxReconnectAttempts = 0
+			owner.config.MaxReconnectAttempts = 1
+			owner.reconnectAttempts = 1
 			owner.handleFrame(test.frame)
 			if owner.lastInbound != 0 || owner.terminalErr == nil || owner.state != StateDisconnected {
 				t.Fatalf("ready-only frame mutated protocol state: state=%d inbound=%d terminal=%v", owner.state, owner.lastInbound, owner.terminalErr)
@@ -1418,10 +1581,13 @@ func testSessionConfig(t *testing.T) SessionConfig {
 		MaxRetainedBytes:        1 << 20,
 		MaxInFlightTransactions: 4,
 		MaxReconnectAttempts:    4,
+		InitialReconnectBackoff: 200 * time.Millisecond,
+		MaxReconnectBackoff:     15 * time.Second,
 		MaxHandshakeTransitions: 8,
 		EventBuffer:             64,
 		ReconnectPolicy:         ReplayPending,
 		GlobalSequenceSource:    &atomicGlobalSequenceSource{},
+		reconnectWait:           func(context.Context, time.Duration) error { return nil },
 		ClientIdent: ClientIdent{
 			Addresses:     protocol.EntityAddrVec{address},
 			TargetAddress: address,

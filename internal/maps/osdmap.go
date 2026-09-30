@@ -55,9 +55,24 @@ type Interval struct {
 	Length uint64
 }
 
+// OSDState is the immutable lifecycle state of one OSD slot.
+type OSDState struct {
+	Exists    bool
+	Up        bool
+	In        bool
+	Destroyed bool
+}
+
 const defaultPrimaryAffinity = uint32(0x10000)
 
-const osdMapFlagSortBitwise = uint32(1 << 15)
+const (
+	osdStateExists    = uint32(1 << 0)
+	osdStateUp        = uint32(1 << 1)
+	osdStateDestroyed = uint32(1 << 7)
+	osdStateStop      = uint32(1 << 12)
+
+	osdMapFlagSortBitwise = uint32(1 << 15)
+)
 
 func DecodeOSDMap(data []byte, limits Limits) (*OSDMap, error) {
 	if err := validateOSDMapLimits(limits); err != nil {
@@ -388,6 +403,20 @@ func (osdMap *OSDMap) OSDClientAddresses(id int32) (protocol.EntityAddrVec, bool
 	}
 	return cloneAddressVector(addresses), true
 }
+func (osdMap *OSDMap) OSDState(id int32) (OSDState, bool) {
+	if id < 0 || int(id) >= len(osdMap.osdState) {
+		return OSDState{}, false
+	}
+	state := osdMap.osdState[id]
+	in := int(id) < len(osdMap.osdWeight) && osdMap.osdWeight[id] != 0
+	return OSDState{
+		Exists:    state&osdStateExists != 0,
+		Up:        state&osdStateUp != 0,
+		In:        in,
+		Destroyed: state&osdStateDestroyed != 0,
+	}, true
+}
+func (osdMap *OSDMap) MaxOSD() int32     { return osdMap.maxOSD }
 func (osdMap *OSDMap) CrushData() []byte { return append([]byte(nil), osdMap.crushData...) }
 
 // Equivalent reports whether two snapshots contain identical retained map

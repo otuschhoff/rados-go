@@ -108,6 +108,9 @@ func TestSignedHumanReviewValidation(t *testing.T) {
 }
 
 func TestCandidateRejectsEmbeddedReviewBinding(t *testing.T) {
+	if err := validateDetachedReviews(report{Status: "candidate", Reviews: nil}, t.TempDir()); err != nil {
+		t.Fatalf("candidate with null reviews rejected: %v", err)
+	}
 	value := report{Status: "candidate", Reviews: &reviewBinding{Path: humanReviewPath, Status: "approved", SHA256: strings.Repeat("a", 64)}}
 	if err := validateDetachedReviews(value, t.TempDir()); err == nil {
 		t.Fatal("candidate with embedded review binding accepted")

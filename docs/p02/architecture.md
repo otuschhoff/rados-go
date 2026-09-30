@@ -49,7 +49,7 @@ stateDiagram-v2
 bounded reconnect identity. A partial reset enters `Connecting` and preserves
 eligible replay identity; a full reset clears cookies, counters, replay state,
 and pending calls before starting a fresh identification exchange. Connector
-errors and transport faults consume `MaxReconnectAttempts` and immediately
-queue the next connector request. The current session has no retry timer,
-delay, jitter, or exponential backoff; callers must not infer backoff behavior
-from the bounded attempt count.
+errors and transport faults consume `MaxReconnectAttempts` when it is positive.
+Zero selects unlimited retries. Retries use exponential delay from
+`InitialReconnectBackoff` through `MaxReconnectBackoff`; callers must still use
+contexts or client shutdown when they need an outer lifetime bound.

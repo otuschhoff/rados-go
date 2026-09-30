@@ -40,24 +40,35 @@ type credentialRenewal struct {
 	CompletedAt         time.Time `json:"completed_at"`
 }
 
+type credentialRenewalAbandonment struct {
+	Service          string    `json:"service"`
+	ServiceID        int32     `json:"service_id"`
+	SessionID        uint64    `json:"session_id"`
+	DueGeneration    uint64    `json:"due_generation"`
+	ClosedGeneration uint64    `json:"closed_generation"`
+	DueAt            time.Time `json:"due_at"`
+	ClosedAt         time.Time `json:"closed_at"`
+}
+
 type report struct {
-	Transport                    string              `json:"transport"`
-	RequestedDurationNS          int64               `json:"requested_duration_ns"`
-	ElapsedNS                    int64               `json:"elapsed_ns"`
-	MonotonicDurationSatisfied   bool                `json:"monotonic_duration_satisfied"`
-	Operations                   uint64              `json:"operations"`
-	Writes                       uint64              `json:"writes"`
-	AppendOnceVerifications      uint64              `json:"append_once_verifications"`
-	DuplicateMutationsDetected   uint64              `json:"duplicate_mutations_detected"`
-	Reads                        uint64              `json:"reads"`
-	Stats                        uint64              `json:"stats"`
-	Removes                      uint64              `json:"removes"`
-	Reconnects                   uint64              `json:"reconnects"`
-	LongestConnectionNS          int64               `json:"longest_connection_ns"`
-	CredentialRenewals           []credentialRenewal `json:"credential_renewals"`
-	Samples                      []resourceSample    `json:"samples"`
-	InflightMeasurement          string              `json:"inflight_measurement"`
-	MaximumConfiguredSampleCount int                 `json:"maximum_configured_sample_count"`
+	Transport                     string                         `json:"transport"`
+	RequestedDurationNS           int64                          `json:"requested_duration_ns"`
+	ElapsedNS                     int64                          `json:"elapsed_ns"`
+	MonotonicDurationSatisfied    bool                           `json:"monotonic_duration_satisfied"`
+	Operations                    uint64                         `json:"operations"`
+	Writes                        uint64                         `json:"writes"`
+	AppendOnceVerifications       uint64                         `json:"append_once_verifications"`
+	DuplicateMutationsDetected    uint64                         `json:"duplicate_mutations_detected"`
+	Reads                         uint64                         `json:"reads"`
+	Stats                         uint64                         `json:"stats"`
+	Removes                       uint64                         `json:"removes"`
+	Reconnects                    uint64                         `json:"reconnects"`
+	LongestConnectionNS           int64                          `json:"longest_connection_ns"`
+	CredentialRenewals            []credentialRenewal            `json:"credential_renewals"`
+	CredentialRenewalAbandonments []credentialRenewalAbandonment `json:"credential_renewal_abandonments"`
+	Samples                       []resourceSample               `json:"samples"`
+	InflightMeasurement           string                         `json:"inflight_measurement"`
+	MaximumConfiguredSampleCount  int                            `json:"maximum_configured_sample_count"`
 }
 
 type configuration struct {
@@ -70,6 +81,7 @@ type configuration struct {
 	duration         time.Duration
 	reconnect        time.Duration
 	sampleInterval   time.Duration
+	workloadInterval time.Duration
 	operationTimeout time.Duration
 	renewalSettle    time.Duration
 	controlDir       string
@@ -84,7 +96,7 @@ func main() {
 
 func run() error {
 	var monitors, keyFile, fsid, pool, entity, transport, controlDir string
-	var duration, reconnect, sampleInterval, operationTimeout, renewalSettle time.Duration
+	var duration, reconnect, sampleInterval, workloadInterval, operationTimeout, renewalSettle time.Duration
 	flag.StringVar(&monitors, "monitors", "", "comma-separated monitor endpoints")
 	flag.StringVar(&keyFile, "key-file", "", "CephX key file")
 	flag.StringVar(&fsid, "fsid", "", "required cluster FSID")
@@ -94,6 +106,7 @@ func run() error {
 	flag.DurationVar(&duration, "duration", 24*time.Hour, "monotonic soak duration")
 	flag.DurationVar(&reconnect, "reconnect-interval", 30*time.Minute, "maximum connection lifetime")
 	flag.DurationVar(&sampleInterval, "sample-interval", time.Minute, "runtime sample interval")
+	flag.DurationVar(&workloadInterval, "workload-interval", 0, "minimum interval between verified CRUD cycles")
 	flag.DurationVar(&operationTimeout, "operation-timeout", 30*time.Second, "per-operation timeout")
 	flag.DurationVar(&renewalSettle, "renewal-settle-timeout", 20*time.Minute, "maximum post-workload credential renewal quiescence")
 	flag.StringVar(&controlDir, "control-dir", "", "optional harness coordination directory")
@@ -106,7 +119,7 @@ func run() error {
 	cfg := configuration{
 		monitors: strings.Split(monitors, ","), key: bytes.TrimSpace(key), fsid: fsid,
 		pool: pool, entity: entity, transport: transport, duration: duration,
-		reconnect: reconnect, sampleInterval: sampleInterval,
+		reconnect: reconnect, sampleInterval: sampleInterval, workloadInterval: workloadInterval,
 		operationTimeout: operationTimeout, renewalSettle: renewalSettle, controlDir: controlDir,
 	}
 	if err := validate(cfg); err != nil {
@@ -132,6 +145,9 @@ func validate(cfg configuration) error {
 	if cfg.duration <= 0 || cfg.reconnect <= 0 || cfg.sampleInterval <= 0 || cfg.operationTimeout <= 0 || cfg.renewalSettle <= 0 {
 		return errors.New("duration values must be positive")
 	}
+	if cfg.workloadInterval < 0 {
+		return errors.New("workload interval must be nonnegative")
+	}
 	return nil
 }
 
@@ -143,9 +159,10 @@ func soak(cfg configuration) (report, error) {
 	maxSamples := int(cfg.duration/cfg.sampleInterval) + 2
 	result := report{
 		Transport: cfg.transport, RequestedDurationNS: cfg.duration.Nanoseconds(),
-		InflightMeasurement:          "unavailable through the public API; reported as null",
-		MaximumConfiguredSampleCount: maxSamples,
-		Samples:                      make([]resourceSample, 0, maxSamples),
+		InflightMeasurement:           "unavailable through the public API; reported as null",
+		MaximumConfiguredSampleCount:  maxSamples,
+		CredentialRenewalAbandonments: make([]credentialRenewalAbandonment, 0),
+		Samples:                       make([]resourceSample, 0, maxSamples),
 	}
 	renewals := newRenewalCollector()
 
@@ -203,23 +220,60 @@ func soak(cfg configuration) (report, error) {
 			return result, err
 		}
 
-		operationCtx, cancel := context.WithTimeout(context.Background(), cfg.operationTimeout)
+		operationDeadline := boundedOperationDeadline(now, deadline, cfg.operationTimeout)
+		operationCtx, cancel := context.WithDeadline(context.Background(), operationDeadline)
 		err := verifiedCRUD(operationCtx, pool, cfg.transport, iteration, &result)
+		operationContextErr := operationCtx.Err()
 		cancel()
 		if err != nil {
+			if soakDeadlineReached(time.Now(), deadline, operationContextErr) {
+				result.ElapsedNS = time.Since(start).Nanoseconds()
+				result.MonotonicDurationSatisfied = true
+				break
+			}
 			return result, err
 		}
+		waitForWorkloadInterval(deadline, cfg.workloadInterval)
 	}
 
 	if lifetime := time.Since(connectionStarted); lifetime > time.Duration(result.LongestConnectionNS) {
 		result.LongestConnectionNS = lifetime.Nanoseconds()
 	}
 	var err error
-	result.CredentialRenewals, err = renewals.waitCompleted(cfg.renewalSettle)
+	if _, err = renewals.waitCompleted(cfg.renewalSettle); err != nil {
+		return result, err
+	}
+	if err = client.Close(); err != nil {
+		return result, fmt.Errorf("close client: %w", err)
+	}
+	client = nil
+	result.CredentialRenewals, result.CredentialRenewalAbandonments, err = renewals.finalized()
 	if err != nil {
 		return result, err
 	}
 	return result, nil
+}
+
+func boundedOperationDeadline(now, soakDeadline time.Time, operationTimeout time.Duration) time.Time {
+	operationDeadline := now.Add(operationTimeout)
+	if soakDeadline.Before(operationDeadline) {
+		return soakDeadline
+	}
+	return operationDeadline
+}
+
+func soakDeadlineReached(now, soakDeadline time.Time, operationErr error) bool {
+	return !now.Before(soakDeadline) && errors.Is(operationErr, context.DeadlineExceeded)
+}
+
+func waitForWorkloadInterval(deadline time.Time, interval time.Duration) {
+	remaining := time.Until(deadline)
+	if interval <= 0 || remaining <= 0 {
+		return
+	}
+	timer := time.NewTimer(min(interval, remaining))
+	defer timer.Stop()
+	<-timer.C
 }
 
 type renewalCollector struct {
@@ -227,6 +281,7 @@ type renewalCollector struct {
 	mu            sync.Mutex
 	pending       map[uint64][]rados.P12SessionDiagnostic
 	completedList []credentialRenewal
+	abandonedList []credentialRenewalAbandonment
 	invalid       error
 }
 
@@ -245,6 +300,26 @@ func (collector *renewalCollector) ObserveP12SessionDiagnostic(event rados.P12Se
 	collector.mu.Lock()
 	defer collector.mu.Unlock()
 	if collector.invalid != nil {
+		return
+	}
+	if event.SessionClosed {
+		queue := collector.pending[event.SessionID]
+		if len(queue) == 0 {
+			collector.invalid = fmt.Errorf("session %d closed without pending renewal evidence", event.SessionID)
+			return
+		}
+		for _, due := range queue {
+			if due.Service != event.Service || due.ServiceID != event.ServiceID || event.Generation < due.Generation || event.Timestamp.Before(due.Timestamp) {
+				collector.invalid = fmt.Errorf("inconsistent renewal abandonment for session %d", event.SessionID)
+				return
+			}
+			collector.abandonedList = append(collector.abandonedList, credentialRenewalAbandonment{
+				Service: due.Service, ServiceID: due.ServiceID, SessionID: event.SessionID,
+				DueGeneration: due.Generation, ClosedGeneration: event.Generation,
+				DueAt: due.Timestamp, ClosedAt: event.Timestamp,
+			})
+		}
+		delete(collector.pending, event.SessionID)
 		return
 	}
 	if event.RenewalDue {
@@ -283,6 +358,32 @@ func (collector *renewalCollector) ObserveP12SessionDiagnostic(event rados.P12Se
 		DueGeneration: due.Generation, CompletedGeneration: event.Generation,
 		DueAt: due.Timestamp, CompletedAt: event.Timestamp,
 	})
+}
+
+func (collector *renewalCollector) finalized() ([]credentialRenewal, []credentialRenewalAbandonment, error) {
+	collector.mu.Lock()
+	defer collector.mu.Unlock()
+	if collector.invalid != nil {
+		return nil, nil, collector.invalid
+	}
+	if len(collector.pending) != 0 {
+		return nil, nil, errors.New("pending credential renewals remain after client close")
+	}
+	completed := append([]credentialRenewal{}, collector.completedList...)
+	abandoned := append([]credentialRenewalAbandonment{}, collector.abandonedList...)
+	slices.SortFunc(completed, func(left, right credentialRenewal) int {
+		if order := cmp.Compare(left.SessionID, right.SessionID); order != 0 {
+			return order
+		}
+		return cmp.Compare(left.DueGeneration, right.DueGeneration)
+	})
+	slices.SortFunc(abandoned, func(left, right credentialRenewalAbandonment) int {
+		if order := cmp.Compare(left.SessionID, right.SessionID); order != 0 {
+			return order
+		}
+		return cmp.Compare(left.DueGeneration, right.DueGeneration)
+	})
+	return completed, abandoned, nil
 }
 
 func (collector *renewalCollector) completed() ([]credentialRenewal, error) {
@@ -397,7 +498,6 @@ func verifiedCRUD(ctx context.Context, pool rados.Pool, transport string, iterat
 	if _, err := object.WriteFull(ctx, prefix); err != nil {
 		return fmt.Errorf("write %s: %w", name, err)
 	}
-	result.Writes++
 	if _, err := object.Append(ctx, marker); err != nil {
 		return fmt.Errorf("append %s: %w", name, err)
 	}
@@ -408,20 +508,21 @@ func verifiedCRUD(ctx context.Context, pool rados.Pool, transport string, iterat
 		}
 		return fmt.Errorf("read %s version=%d match=%t: %w", name, readInfo.Version, bytes.Equal(data, payload), err)
 	}
-	result.AppendOnceVerifications++
-	result.Reads++
 	info, err := object.Stat(ctx)
 	if err != nil || info.Size != uint64(len(payload)) || info.Version < readInfo.Version {
 		return fmt.Errorf("stat %s size=%d version=%d: %w", name, info.Size, info.Version, err)
 	}
-	result.Stats++
 	if _, err := object.Remove(ctx); err != nil {
 		return fmt.Errorf("remove %s: %w", name, err)
 	}
-	result.Removes++
 	if _, err := object.Stat(ctx); !errors.Is(err, rados.ErrNotFound) {
 		return fmt.Errorf("removed object %s still present: %v", name, err)
 	}
+	result.Writes++
+	result.AppendOnceVerifications++
+	result.Reads++
+	result.Stats++
+	result.Removes++
 	result.Operations++
 	return nil
 }

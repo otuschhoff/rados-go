@@ -293,6 +293,12 @@ func ApplyOSDMapIncremental(current *OSDMap, incremental *OSDMapIncremental, lim
 			next.osdState[osd] &^= (1 << 2) | (1 << 3)
 		}
 	}
+	if len(incremental.newPrimaryAffinity) > 0 && len(next.primaryAffinity) == 0 {
+		next.primaryAffinity = make([]uint32, next.maxOSD)
+		for osd := range next.primaryAffinity {
+			next.primaryAffinity[osd] = defaultPrimaryAffinity
+		}
+	}
 	for osd, affinity := range incremental.newPrimaryAffinity {
 		if err := next.validateOSD(osd); err != nil {
 			return nil, err
@@ -306,9 +312,11 @@ func ApplyOSDMapIncremental(current *OSDMap, incremental *OSDMapIncremental, lim
 		if state == 0 {
 			state = 1 << 1
 		}
-		if next.osdState[osd]&(1<<0) != 0 && state&(1<<0) != 0 {
+		if next.osdState[osd]&osdStateExists != 0 && state&osdStateExists != 0 {
 			next.osdState[osd] = 0
-			next.primaryAffinity[osd] = defaultPrimaryAffinity
+			if int(osd) < len(next.primaryAffinity) {
+				next.primaryAffinity[osd] = defaultPrimaryAffinity
+			}
 			next.clientAddresses[osd] = nil
 		} else {
 			next.osdState[osd] ^= state
@@ -318,8 +326,8 @@ func ApplyOSDMapIncremental(current *OSDMap, incremental *OSDMapIncremental, lim
 		if err := next.validateOSD(osd); err != nil {
 			return nil, err
 		}
-		next.osdState[osd] |= (1 << 0) | (1 << 1)
-		next.osdState[osd] &^= 1 << 12
+		next.osdState[osd] |= osdStateExists | osdStateUp
+		next.osdState[osd] &^= osdStateStop
 		next.clientAddresses[osd] = cloneAddressVector(addresses)
 	}
 	applyPGVectors(next.pgTemp, incremental.newPGTemp, true)

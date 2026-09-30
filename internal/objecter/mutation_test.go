@@ -154,6 +154,198 @@ func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	}
 }
 
+func TestMutationRemapCancellationSafelyRetriesWithSameRequest(t *testing.T) {
+	oldRoute := testRoute(t, 8, 0, "192.0.2.10:6800")
+	middleRoute := testRoute(t, 9, 1, "192.0.2.11:6800")
+	newRoute := testRoute(t, 10, 2, "192.0.2.12:6800")
+	router := &fakeRouter{route: oldRoute}
+	source := newNotifyingMapSource()
+	oldSubmitted := make(chan struct{})
+	oldCanceled := make(chan struct{})
+	releaseOld := make(chan struct{})
+	var oldOnce sync.Once
+	var requestsMu sync.Mutex
+	var requests []msgr.Message
+	var oldSession *fakeSession
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		active := &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			requestsMu.Lock()
+			requests = append(requests, message)
+			requestsMu.Unlock()
+			if id == oldRoute.Primary {
+				oldOnce.Do(func() { close(oldSubmitted) })
+				<-ctx.Done()
+				close(oldCanceled)
+				<-releaseOld
+				return msgr.Message{}, ctx.Err()
+			}
+			return testReplyRetryFlags(t, newRoute.Epoch, 23, 0, osd.OpAppend, -1, int64(osd.FlagOnDisk), nil), nil
+		}}
+		if id == oldRoute.Primary {
+			oldSession = active
+		}
+		return active, nil
+	})
+	defer client.Close()
+
+	result := make(chan struct {
+		value Result
+		err   error
+	}, 1)
+	go func() {
+		value, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 7, Data: []byte("payload")})
+		result <- struct {
+			value Result
+			err   error
+		}{value: value, err: err}
+	}()
+	<-oldSubmitted
+	router.set(middleRoute)
+	source.publish(commandTestOSDMapEpoch(t, middleRoute.Epoch, nil, nil))
+	router.set(newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+	<-oldCanceled
+	close(releaseOld)
+
+	completed := <-result
+	if completed.err != nil || completed.value.Version != 23 {
+		t.Fatalf("result=%+v error=%v", completed.value, completed.err)
+	}
+	if oldSession.stop {
+		t.Fatal("map rescan closed the old session")
+	}
+	requestsMu.Lock()
+	defer requestsMu.Unlock()
+	assertMutationRetryRequests(t, requests, "payload")
+}
+
+func TestMutationRemapOutcomeUnknownSurvivesLaterTimeout(t *testing.T) {
+	oldRoute := testRoute(t, 8, 0, "192.0.2.10:6800")
+	newRoute := testRoute(t, 9, 1, "192.0.2.11:6800")
+	router := &fakeRouter{route: oldRoute}
+	source := newNotifyingMapSource()
+	oldSubmitted := make(chan struct{})
+	retrySubmitted := make(chan struct{})
+	var requestsMu sync.Mutex
+	var requests []msgr.Message
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			requestsMu.Lock()
+			requests = append(requests, message)
+			requestsMu.Unlock()
+			if id == oldRoute.Primary {
+				close(oldSubmitted)
+				<-ctx.Done()
+				return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, ctx.Err())
+			}
+			close(retrySubmitted)
+			<-ctx.Done()
+			return msgr.Message{}, ctx.Err()
+		}}, nil
+	})
+	defer client.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Mutate(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 7, Data: []byte("payload")})
+		result <- err
+	}()
+	<-oldSubmitted
+	router.set(newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+	<-retrySubmitted
+	err := <-result
+	if !errors.Is(err, msgr.ErrOutcomeUnknown) || !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error=%v, want outcome unknown and deadline exceeded", err)
+	}
+	requestsMu.Lock()
+	defer requestsMu.Unlock()
+	assertMutationRetryRequests(t, requests, "payload")
+}
+
+func TestMutationRemapOutcomeUnknownSurvivesLaterControlPlaneFailure(t *testing.T) {
+	oldRoute := testRoute(t, 8, 0, "192.0.2.10:6800")
+	newRoute := testRoute(t, 9, 1, "192.0.2.11:6800")
+	router := &fakeRouter{route: oldRoute}
+	source := newNotifyingMapSource()
+	oldSubmitted := make(chan struct{})
+	controlPlaneFailure := errors.New("replacement session unavailable")
+	var request msgr.Message
+	client := newTestClient(t, source, router, func(id int32, _ protocol.EntityAddrVec) (session, error) {
+		if id == newRoute.Primary {
+			return nil, controlPlaneFailure
+		}
+		return &fakeSession{submit: func(ctx context.Context, message msgr.Message) (msgr.Message, error) {
+			request = message
+			close(oldSubmitted)
+			<-ctx.Done()
+			return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, ctx.Err())
+		}}, nil
+	})
+	defer client.Close()
+
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 7, Data: []byte("payload")})
+		result <- err
+	}()
+	<-oldSubmitted
+	router.set(newRoute)
+	source.publish(commandTestOSDMapEpoch(t, newRoute.Epoch, nil, nil))
+	err := <-result
+	if !errors.Is(err, msgr.ErrOutcomeUnknown) || !errors.Is(err, controlPlaneFailure) {
+		t.Fatalf("error=%v, want outcome unknown and %v", err, controlPlaneFailure)
+	}
+	if request.Header.TransactionID == 0 || string(request.Data) != "payload" {
+		t.Fatalf("request transaction=%d payload=%q", request.Header.TransactionID, request.Data)
+	}
+}
+
+func TestClosePreservesMutationRemapOutcomeUnknown(t *testing.T) {
+	route := testRoute(t, 8, 0, "192.0.2.10:6800")
+	source := newNotifyingMapSource()
+	submitted := make(chan struct{})
+	client := newTestClient(t, source, &fakeRouter{route: route}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{submit: func(ctx context.Context, _ msgr.Message) (msgr.Message, error) {
+			close(submitted)
+			<-ctx.Done()
+			return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, ctx.Err())
+		}}, nil
+	})
+	result := make(chan error, 1)
+	go func() {
+		_, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 1, Data: []byte("x")})
+		result <- err
+	}()
+	<-submitted
+	client.Close()
+	err := <-result
+	if !errors.Is(err, msgr.ErrOutcomeUnknown) || !errors.Is(err, ErrClosed) {
+		t.Fatalf("error=%v, want outcome unknown and closed", err)
+	}
+}
+
+func assertMutationRetryRequests(t testing.TB, requests []msgr.Message, payload string) {
+	t.Helper()
+	if len(requests) != 2 {
+		t.Fatalf("requests=%d, want 2", len(requests))
+	}
+	if requests[0].Header.TransactionID == 0 || requests[0].Header.TransactionID != requests[1].Header.TransactionID {
+		t.Fatalf("request identities=%d/%d", requests[0].Header.TransactionID, requests[1].Header.TransactionID)
+	}
+	for index, request := range requests {
+		codes, flags, retry := decodeRequestOperationsForTest(t, request)
+		if string(request.Data) != payload || len(codes) != 1 || codes[0] != osd.OpAppend || retry != int32(index) {
+			t.Fatalf("request %d payload=%q codes=%v retry=%d", index, request.Data, codes, retry)
+		}
+		if index == 0 && flags&osd.FlagRetry != 0 || index == 1 && flags&osd.FlagRetry == 0 {
+			t.Fatalf("request %d flags=%#x", index, flags)
+		}
+	}
+}
+
 func TestWriteSameUsesDurableMutationPath(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	var request msgr.Message
@@ -301,6 +493,31 @@ func TestMutationStaleMapRetriesSamePrimaryWithSameIdentity(t *testing.T) {
 			identities = append(identities, message.Header.TransactionID)
 			if attempt == 1 {
 				return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, ErrStaleMap)
+			}
+			return testReplyOperation(t, 11, 22, 0, osd.OpAppend, nil), nil
+		}}, nil
+	})
+	defer client.Close()
+	result, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 1, Data: []byte("x")})
+	if err != nil || result.Version != 22 || len(identities) != 2 || identities[0] != identities[1] {
+		t.Fatalf("result=%+v error=%v identities=%v", result, err, identities)
+	}
+}
+
+func TestMutationFullResetRetriesSamePrimaryWithSameIdentity(t *testing.T) {
+	route0 := testRoute(t, 10, 0, "192.0.2.10:6800")
+	route1 := testRoute(t, 11, 0, "192.0.2.10:6800")
+	router := &fakeRouter{route: route0}
+	source := &fakeMapSource{refresh: func() { router.set(route1) }}
+	var identities []uint64
+	created := 0
+	client := newTestClient(t, source, router, func(int32, protocol.EntityAddrVec) (session, error) {
+		created++
+		attempt := created
+		return &fakeSession{submit: func(_ context.Context, message msgr.Message) (msgr.Message, error) {
+			identities = append(identities, message.Header.TransactionID)
+			if attempt == 1 {
+				return msgr.Message{}, errors.Join(msgr.ErrOutcomeUnknown, msgr.ErrSessionDisconnected)
 			}
 			return testReplyOperation(t, 11, 22, 0, osd.OpAppend, nil), nil
 		}}, nil

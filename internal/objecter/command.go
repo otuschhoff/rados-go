@@ -12,10 +12,9 @@ import (
 	"github.com/otuschhoff/rados-go/internal/protocol"
 )
 
-// ErrUnknownOSD is returned when a caller-supplied OSD id has no client
-// address in the current map. Mirrors the -ENOENT/-ENXIO map-check outcomes
-// used by Objecter::_calc_command_target for absent or downed OSDs.
-var ErrUnknownOSD = errors.New("objecter: OSD does not exist in current map")
+// ErrUnknownOSD is returned when a caller-supplied OSD id does not exist in
+// the current map. It is the Linux -ENOENT value used by Ceph's Objecter.
+var ErrUnknownOSD error = protocol.WireErrno(-2)
 
 // CommandResult is the caller-visible outcome of a generic OSD/PG command.
 // Result carries the server's signed Linux errno exactly as received. Status
@@ -52,7 +51,7 @@ func (client *Client) OSDCommand(ctx context.Context, osdID int32, command []str
 	if !ok {
 		router = commandMapRouter{source: client.config.Maps}
 	}
-	return client.submitCommand(ctx, command, input, func() (Route, error) { return router.RouteOSD(osdID) })
+	return client.submitCommand(ctx, command, input, false, func() (Route, error) { return router.RouteOSD(osdID) })
 }
 
 // PGCommand submits an MCommand to the acting primary of the supplied PG,
@@ -70,7 +69,7 @@ func (client *Client) PGCommand(ctx context.Context, pg maps.PG, command []strin
 	if !ok {
 		router = commandMapRouter{source: client.config.Maps}
 	}
-	return client.submitCommand(ctx, command, input, func() (Route, error) { return router.RoutePG(pg) })
+	return client.submitCommand(ctx, command, input, true, func() (Route, error) { return router.RoutePG(pg) })
 }
 
 // PGCommandString parses text as a canonical "poolID.seed" PG string and
@@ -83,7 +82,7 @@ func (client *Client) PGCommandString(ctx context.Context, pgString string, comm
 	return client.PGCommand(ctx, pg, command, input)
 }
 
-func (client *Client) submitCommand(ctx context.Context, command []string, input []byte, resolve func() (Route, error)) (CommandResult, error) {
+func (client *Client) submitCommand(ctx context.Context, command []string, input []byte, mapRouted bool, resolve func() (Route, error)) (CommandResult, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -97,7 +96,7 @@ func (client *Client) submitCommand(ctx context.Context, command []string, input
 	}
 	var lastErr error
 	_, boundedByContext := ctx.Deadline()
-	for attempt := 0; boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
+	for attempt := 0; client.config.UnlimitedRetries || boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
 		if err := ctx.Err(); err != nil {
 			return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 		}
@@ -118,7 +117,22 @@ func (client *Client) submitCommand(ctx context.Context, command []string, input
 		if err != nil {
 			return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
 		}
-		reply, err := active.Submit(ctx, request)
+		submitCtx := ctx
+		finishSubmit := func() bool { return false }
+		if mapRouted {
+			submitCtx, finishSubmit, err = client.beginRoutedAttempt(ctx, route, resolve)
+			if err != nil {
+				return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
+			}
+		}
+		reply, err := active.Submit(submitCtx, request)
+		remapped := finishSubmit()
+		if remapped && err != nil && ctx.Err() == nil {
+			if errors.Is(err, msgr.ErrOutcomeUnknown) {
+				return CommandResult{}, err
+			}
+			continue
+		}
 		if err != nil {
 			if errors.Is(err, msgr.ErrQueueSaturated) {
 				return CommandResult{}, preserveOutcomeUnknown(lastErr, err)
@@ -169,9 +183,16 @@ func (router commandMapRouter) RouteOSD(osdID int32) (Route, error) {
 	if osdMap == nil {
 		return Route{}, ErrNoPrimary
 	}
+	state, ok := osdMap.OSDState(osdID)
+	if !ok || !state.Exists {
+		return Route{}, fmt.Errorf("%w: osd.%d", ErrUnknownOSD, osdID)
+	}
+	if !state.Up {
+		return Route{}, fmt.Errorf("%w: osd.%d", protocol.WireErrno(-6), osdID)
+	}
 	addresses, ok := osdMap.OSDClientAddresses(osdID)
 	if !ok || len(addresses) == 0 {
-		return Route{}, fmt.Errorf("%w: osd.%d", ErrUnknownOSD, osdID)
+		return Route{}, fmt.Errorf("%w: osd.%d", protocol.WireErrno(-6), osdID)
 	}
 	return Route{Epoch: osdMap.Epoch(), Primary: osdID, Addresses: addresses}, nil
 }

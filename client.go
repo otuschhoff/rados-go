@@ -69,6 +69,7 @@ type Client struct {
 	authority                 atomic.Pointer[cephx.Connector]
 	diagnosticObserver        msgr.SessionDiagnosticObserver
 	diagnosticSessionIDSource func() uint64
+	clusterChanges            *clusterChangeBroker
 	workers                   sync.WaitGroup
 	lifetime                  context.Context
 	cancel                    context.CancelFunc
@@ -85,9 +86,6 @@ func New(config Config) (*Client, error) {
 	if config.HandshakeTimeout == 0 {
 		config.HandshakeTimeout = defaultHandshakeTimeout
 	}
-	if config.OperationTimeout == 0 {
-		config.OperationTimeout = defaultOperationTimeout
-	}
 	credential, err := cephx.ParseKey(config.Entity, string(config.Key), cephx.DefaultMaxKeyBytes)
 	if err != nil {
 		return nil, &OpError{Op: "new", Err: errors.Join(ErrInvalidArgument, err)}
@@ -101,7 +99,7 @@ func New(config Config) (*Client, error) {
 		expected = &fsid
 	}
 	lifetime, cancel := context.WithCancel(context.Background())
-	client := &Client{config: config, credential: credential, expected: expected, connectGate: make(chan struct{}, 1), lifetime: lifetime, cancel: cancel}
+	client := &Client{config: config, credential: credential, expected: expected, connectGate: make(chan struct{}, 1), clusterChanges: newClusterChangeBroker(), lifetime: lifetime, cancel: cancel}
 	client.connectGate <- struct{}{}
 	return client, nil
 }
@@ -144,7 +142,8 @@ func (client *Client) Connect(ctx context.Context) error {
 	messageLimits := msgr.Limits{MaxSegmentBytes: 32 << 20, MaxFrameBytes: 64 << 20, MaxAddresses: 64, MaxAuthBytes: 1 << 20}
 	sessionConfig := msgr.SessionConfig{
 		Limits: messageLimits, MaxQueuedMessages: 128, MaxRetainedBytes: 320 << 20, MaxInFlightTransactions: 64,
-		MaxReconnectAttempts: 2, MaxHandshakeTransitions: 32, EventBuffer: 16,
+		MaxReconnectAttempts: 0, InitialReconnectBackoff: 200 * time.Millisecond, MaxReconnectBackoff: 15 * time.Second,
+		MaxHandshakeTransitions: 32, EventBuffer: 16,
 		ClientIdent:        msgr.ClientIdent{Addresses: protocol.EntityAddrVec{clientAddress}, SupportedFeatures: uint64(protocol.FeatureMonitorClient), RequiredFeatures: uint64(protocol.FeatureMessageAddress2)},
 		DiagnosticObserver: client.diagnosticObserver, DiagnosticSessionIDSource: client.diagnosticSessionIDSource,
 	}
@@ -152,11 +151,14 @@ func (client *Client) Connect(ctx context.Context) error {
 		Credential: client.credential, DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout,
 		MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC,
 	}
-	factory := mon.NewAuthenticatedSessionFactoryWithObserver(connectorConfig, sessionConfig, func(connector *cephx.Connector) { client.authority.Store(connector) })
+	monitorSessionConfig := sessionConfig
+	monitorSessionConfig.MaxReconnectAttempts = 2
+	factory := mon.NewAuthenticatedSessionFactoryWithObserver(connectorConfig, monitorSessionConfig, func(connector *cephx.Connector) { client.authority.Store(connector) })
 	monitorClient, err := mon.NewClient(mon.ClientConfig{
 		Endpoints: endpoints, ExpectedFSID: client.expected, Hostname: "rados-go",
 		MapLimits:     maps.Limits{MaxBytes: 64 << 20, MaxMonitors: 64, MaxAddresses: 64, MaxLocations: 64, MaxPools: 4096, MaxOSDs: 65536, MaxPGMappings: 1 << 20, MaxCollectionEntries: 1 << 20},
 		MessageLimits: mon.MessageLimits{MaxBytes: 64 << 20, MaxMaps: 1024}, CommandItems: 64, SubscribePeriod: 5 * time.Second, RetryDelay: 100 * time.Millisecond,
+		ObserveMonMap: client.observeMONMap, ObserveOSDMap: client.observeOSDMap, ObserveConnection: client.observeMONConnection,
 	}, factory)
 	if err != nil {
 		return client.wrapError("connect", "monitors", err)
@@ -181,7 +183,8 @@ func (client *Client) Connect(ctx context.Context) error {
 	objectClient, err := objecter.New(objecter.Config{
 		Maps: monitorClient, AuthoritySource: func() *cephx.Connector { return client.authority.Load() }, ClientAddresses: protocol.EntityAddrVec{clientAddress},
 		ServiceConnector: cephx.ServiceConnectorConfig{DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout, MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC},
-		Session:          sessionConfig, MessageLimits: osd.Limits{MaxBytes: 32 << 20, MaxOperations: 16}, MaxAttempts: 4, RefreshWait: 2 * time.Second,
+		Session:          sessionConfig, MessageLimits: osd.Limits{MaxBytes: 32 << 20, MaxOperations: 16}, MaxAttempts: 4,
+		UnlimitedRetries: client.config.OperationTimeout == 0, RefreshWait: 2 * time.Second, ObserveSession: client.observeOSDConnection,
 	})
 	if err != nil {
 		monitorClient.Close()
@@ -190,7 +193,8 @@ func (client *Client) Connect(ctx context.Context) error {
 	managerClient, err := mgr.New(mgr.Config{
 		Maps: monitorClient, FSID: monitorClient.OSDMap().FSID(), AuthoritySource: func() *cephx.Connector { return client.authority.Load() }, ClientAddresses: protocol.EntityAddrVec{clientAddress},
 		ServiceConnector: cephx.ServiceConnectorConfig{DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout, MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC},
-		Session:          sessionConfig, MessageLimits: 32 << 20, RetryDelay: 100 * time.Millisecond, MaxAttempts: managerMaxAttempts(client.config.OperationTimeout, 100*time.Millisecond),
+		Session:          sessionConfig, MessageLimits: 32 << 20, RetryDelay: 100 * time.Millisecond,
+		MaxAttempts: managerMaxAttempts(client.config.OperationTimeout, 100*time.Millisecond), UnlimitedRetries: client.config.OperationTimeout == 0,
 	})
 	if err != nil {
 		objectClient.Close()
@@ -361,6 +365,9 @@ func (client *Client) finishClose(closeDone chan struct{}) {
 	if monitorClient != nil {
 		monitorClient.Close()
 	}
+	if client.clusterChanges != nil {
+		client.clusterChanges.close()
+	}
 	client.workers.Wait()
 	close(closeDone)
 }
@@ -427,7 +434,22 @@ func (client *Client) beginAdministrativeOperation() (*mon.Client, *mgr.Client, 
 }
 
 func (client *Client) operationContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	operationCtx, cancel := client.boundedContext(ctx)
+	return client.operationContextWithTimeout(ctx, client.config.OperationTimeout)
+}
+
+func (client *Client) notifyContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	timeout := client.config.OperationTimeout
+	if timeout > 0 {
+		const maxDuration = time.Duration(1<<63 - 1)
+		if timeout <= maxDuration-time.Second {
+			timeout += time.Second
+		}
+	}
+	return client.operationContextWithTimeout(ctx, timeout)
+}
+
+func (client *Client) operationContextWithTimeout(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
+	operationCtx, cancel := boundedContext(ctx, timeout)
 	if client.lifetime == nil {
 		return operationCtx, cancel
 	}
@@ -439,13 +461,17 @@ func (client *Client) operationContext(ctx context.Context) (context.Context, co
 }
 
 func (client *Client) boundedContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	return boundedContext(ctx, client.config.OperationTimeout)
+}
+
+func boundedContext(ctx context.Context, timeout time.Duration) (context.Context, context.CancelFunc) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
-	if _, ok := ctx.Deadline(); ok {
+	if _, ok := ctx.Deadline(); ok || timeout == 0 {
 		return context.WithCancel(ctx)
 	}
-	return context.WithTimeout(ctx, client.config.OperationTimeout)
+	return context.WithTimeout(ctx, timeout)
 }
 
 func (client *Client) wrapError(op, target string, err error) error {

@@ -9,12 +9,13 @@ import (
 )
 
 type P12SessionDiagnostic struct {
-	RenewalDue bool
-	Service    string
-	ServiceID  int32
-	SessionID  uint64
-	Generation uint64
-	Timestamp  time.Time
+	RenewalDue    bool
+	SessionClosed bool
+	Service       string
+	ServiceID     int32
+	SessionID     uint64
+	Generation    uint64
+	Timestamp     time.Time
 }
 
 type P12DiagnosticObserver interface {
@@ -30,12 +31,13 @@ func NewP12DiagnosticClient(config Config, observer P12DiagnosticObserver) (*Cli
 	client.diagnosticSessionIDSource = observer.NextSessionID
 	client.diagnosticObserver = func(event msgr.SessionDiagnostic) {
 		observer.ObserveP12SessionDiagnostic(P12SessionDiagnostic{
-			RenewalDue: event.Kind == msgr.DiagnosticCredentialRenewalDue,
-			Service:    event.Service,
-			ServiceID:  event.ServiceID,
-			SessionID:  event.SessionID,
-			Generation: event.Generation,
-			Timestamp:  event.Timestamp,
+			RenewalDue:    event.Kind == msgr.DiagnosticCredentialRenewalDue,
+			SessionClosed: event.Kind == msgr.DiagnosticSessionClosed,
+			Service:       event.Service,
+			ServiceID:     event.ServiceID,
+			SessionID:     event.SessionID,
+			Generation:    event.Generation,
+			Timestamp:     event.Timestamp,
 		})
 	}
 	return client, nil
