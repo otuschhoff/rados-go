@@ -1,6 +1,8 @@
 package msgr
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -71,6 +73,101 @@ func TestConnTransportFrameOwnership(t *testing.T) {
 				t.Fatalf("ownership=%v want=%v", transport.OwnsReadFrames(), test.owned)
 			}
 		})
+	}
+}
+
+type countedReadConn struct {
+	*recordingConn
+	reader *bytes.Reader
+	reads  int
+}
+
+func (connection *countedReadConn) Read(data []byte) (int, error) {
+	connection.reads++
+	return connection.reader.Read(data)
+}
+
+func TestConnTransportReadAheadPreservesFrames(t *testing.T) {
+	codec := CRCCodec{WithDataCRC: true}
+	frame := Frame{Tag: TagAck, Segments: []Segment{{Alignment: DefaultAlignment, Data: []byte("hello")}}}
+	wire, err := codec.Encode(frame, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connection := &countedReadConn{recordingConn: &recordingConn{}, reader: bytes.NewReader(bytes.Repeat(wire, 3))}
+	transport, err := NewConnTransport(connection, codec, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for index := 0; index < 3; index++ {
+		decoded, err := transport.ReadFrame()
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertFrameEqual(t, decoded, frame)
+		decoded.Segments[0].Data[0] = 'X'
+	}
+	if connection.reads != 1 {
+		t.Fatalf("socket reads=%d want=1", connection.reads)
+	}
+}
+
+func TestConnTransportSecureReadAhead(t *testing.T) {
+	sender, err := NewSecureCodec(testSecureSecret(), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	receiver, err := NewSecureCodec(testSecureSecret(), true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	frame := Frame{Tag: TagAck, Segments: []Segment{{Alignment: DefaultAlignment, Data: []byte("hello")}}}
+	var stream []byte
+	for index := 0; index < 3; index++ {
+		wire, err := sender.Encode(frame, testLimits)
+		if err != nil {
+			t.Fatal(err)
+		}
+		stream = append(stream, wire...)
+	}
+	connection := &countedReadConn{recordingConn: &recordingConn{}, reader: bytes.NewReader(stream)}
+	transport, err := NewConnTransport(connection, receiver, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for index := 0; index < 3; index++ {
+		decoded, err := transport.ReadFrame()
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertFrameEqual(t, decoded, frame)
+		decoded.Segments[0].Data[0] = 'X'
+	}
+	if _, err := transport.ReadFrame(); err == nil || connection.reads != 2 {
+		t.Fatalf("EOF err=%v socket reads=%d want=2", err, connection.reads)
+	}
+}
+
+func TestConnTransportReadAheadBoundsAndCustomReader(t *testing.T) {
+	for _, maxFrame := range []uint64{64 << 10, 16 << 20} {
+		limits := testLimits
+		limits.MaxFrameBytes = maxFrame
+		transport, err := NewConnTransport(&recordingConn{}, CRCCodec{}, limits)
+		if err != nil {
+			t.Fatal(err)
+		}
+		reader := transport.(*connTransport).reader.(*bufio.Reader)
+		if reader.Size() > 512<<10 || uint64(reader.Size()) > maxFrame {
+			t.Fatalf("read-ahead=%d exceeds frame limit=%d", reader.Size(), maxFrame)
+		}
+	}
+	connection := &recordingConn{}
+	transport, err := NewConnTransport(connection, &blockingCodec{}, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if transport.(*connTransport).reader != connection {
+		t.Fatal("custom codec reader identity changed")
 	}
 }
 

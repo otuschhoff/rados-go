@@ -271,6 +271,7 @@ type pumpFrame struct {
 	generation uint64
 	frame      Frame
 	receivedAt time.Time
+	err        error
 }
 
 type pumpWriteResult struct {
@@ -452,7 +453,7 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		connectSeq:        config.ConnectSequence,
 		connectorRequests: make(chan connectRequest),
 		connectorResults:  make(chan connectResult),
-		frames:            make(chan pumpFrame),
+		frames:            make(chan pumpFrame, 1),
 		writes:            make(chan pumpWriteResult),
 		faults:            make(chan pumpFault, 2),
 		renewals:          make(chan renewalDue),
@@ -601,8 +602,12 @@ func (owner *sessionOwner) run() {
 			}
 		case incoming := <-owner.frames:
 			if incoming.generation == owner.generation {
-				owner.frameReceivedAt = incoming.receivedAt
-				owner.handleFrame(incoming.frame)
+				if incoming.err != nil {
+					owner.handleFault(incoming.err)
+				} else {
+					owner.frameReceivedAt = incoming.receivedAt
+					owner.handleFrame(incoming.frame)
+				}
 			}
 		case written := <-owner.writes:
 			if written.generation == owner.generation {
@@ -1314,17 +1319,26 @@ func (owner *sessionOwner) readPump(generation uint64, transport Transport) {
 	defer owner.pumpWG.Done()
 	for {
 		frame, err := transport.ReadFrame()
-		if err != nil {
-			owner.reportFault(pumpFault{generation: generation, err: err})
-			return
+		if err == nil {
+			owned, ok := transport.(interface{ OwnsReadFrames() bool })
+			if !ok || !owned.OwnsReadFrames() {
+				segments := make([]Segment, len(frame.Segments))
+				for index, segment := range frame.Segments {
+					segments[index] = Segment{Alignment: segment.Alignment, Data: append([]byte(nil), segment.Data...)}
+				}
+				frame.Segments = segments
+			}
 		}
 		var receivedAt time.Time
 		if owner.session.timingActive.Load() > 0 {
 			receivedAt = time.Now()
 		}
 		select {
-		case owner.frames <- pumpFrame{generation: generation, frame: frame, receivedAt: receivedAt}:
+		case owner.frames <- pumpFrame{generation: generation, frame: frame, receivedAt: receivedAt, err: err}:
 		case <-owner.session.done:
+			return
+		}
+		if err != nil {
 			return
 		}
 	}

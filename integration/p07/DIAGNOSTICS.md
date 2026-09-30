@@ -189,9 +189,67 @@ and allocation counts are stronger evidence than a single CPU/RSS ratio.
 After these resource fixes, the regenerated source-bound P07 report passed
 functional/schema/source verification and all resource limits. One numerical
 latency pair narrowly missed the unchanged P12 budget: secure 64 KiB reads at
-concurrency 16 had p99 ratio 8.0022 against 8.0. That result remains in the
-repository report; P07 functional status is not P12 performance approval.
+concurrency 16 had p99 ratio 8.0022 against 8.0. That result is retained in the
+report committed in `d851ebe`; P07 functional status is not P12 performance approval.
 An independent repeat in `/tmp/rados-go-p07-resource-repeat.json` had no
 latency/throughput failures, worst p99 ratio 5.11 and minimum throughput ratio
 0.258. Both outcomes must be retained when assessing variability; a passing
 repeat does not erase the threshold miss or establish stable compliance.
+
+## Receive Latency Follow-Up
+
+After the retention fixes, `/tmp/rados-go-p07-latency-current` still showed
+64 KiB/concurrency-16 Go read p99 of 10.46-10.62 ms against native
+1.02-1.08 ms. Go performed 165-166 collections, with 218-227 ms cumulative
+pauses. A separate no-GC probe reached 2.22 ms p99. Instrumented stages located
+most delay between socket write completion and full receive-frame completion,
+not request admission or reply delivery. That interval includes socket wait,
+receive scheduling and decoding; it is not a network-only measurement.
+
+A 256 KiB append-only receive-allocation experiment was rejected. It increased
+total allocation from about 350 MB to 408 MB without reliably meeting the
+latency budget, and would amplify retained caller-slice memory. No receive-block
+allocator or caller-buffer reuse is part of the final fix.
+
+Built-in CRC and secure transports now use bounded socket read-ahead, up to
+512 KiB per connection, capped by the frame-byte limit (subject to the standard
+buffered reader's 16-byte minimum). Construction occurs only after authentication
+and codec negotiation. Custom codecs retain the original connection reader.
+The buffer amortizes small preamble/body reads and burst traffic, and its bounded
+live storage also affects GC pacing. Returned replies never reference this
+buffer. It adds persistent memory per active built-in connection; deployments
+with many OSD connections must include that cost in their memory budget.
+
+The receive pump has one queued frame of overlap with owner processing, rather
+than an unbuffered handoff. Queue growth remains bounded, though a queued frame
+and a reader-held frame can add frame-sized memory. Read faults use the same
+ordered stream so EOF cannot overtake previously decoded receive frames.
+Independent write faults still use the existing fault path. Non-owned custom
+transport frames are detached before the next read, protecting reusable buffers.
+No OSD admission lock, write ordering, protocol authentication or global runtime
+setting was changed.
+
+Three independent matched-secure ABBA runs with the 512 KiB receive window
+passed the unchanged p99 threshold in all six Go legs. Each leg measured 4,096
+reads after 128 warmups. Comparing every Go leg conservatively against its run's
+faster native p99:
+
+| Artifact Directory | Go p99 | Worst Ratio |
+| --- | --- | ---: |
+| `/tmp/rados-go-p07-latency-window512` | 7.90-8.25 ms | 6.58 |
+| `/tmp/rados-go-p07-latency-confirm-1` | 7.46-8.62 ms | 7.40 |
+| `/tmp/rados-go-p07-latency-confirm-2` | 7.34-8.43 ms | 4.84 |
+
+Collection counts were 87-97 rather than 165-166, while measured process RSS
+remained roughly 21-28 MB in these runs. Tail latency remains GC/VM-sensitive;
+the repeat results support measured compliance here, not a guarantee on other
+hosts or workloads, native-equivalent latency or P12 release certification.
+
+Two subsequent full normal benchmark runs also passed the unchanged latency,
+throughput and resource budgets in all 72 pairs each. The refreshed source-bound
+`docs/p07/integration-report.json` had worst p99 ratio 4.25 and minimum throughput
+ratio 0.368. The independent `/tmp/rados-go-p07-latency-matrix-repeat.json` run
+had worst p99 ratio 7.02 and minimum throughput ratio 0.221. P07 source/schema
+verification and the full repository race suite passed. Normal-row sample counts
+and requested-CRC negotiation caveats still apply; the longer matched-secure
+diagnostics provide the stronger evidence for the targeted read-latency fix.

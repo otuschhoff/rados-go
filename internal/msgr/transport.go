@@ -1,6 +1,7 @@
 package msgr
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"io"
@@ -18,6 +19,7 @@ type Codec interface {
 
 type connTransport struct {
 	conn      net.Conn
+	reader    io.Reader
 	codec     Codec
 	limits    Limits
 	readMu    sync.Mutex
@@ -33,13 +35,22 @@ func NewConnTransport(conn net.Conn, codec Codec, limits Limits) (Transport, err
 	if codec == nil {
 		return nil, ErrNilCodec
 	}
-	return &connTransport{conn: conn, codec: codec, limits: limits}, nil
+	reader := io.Reader(conn)
+	switch codec.(type) {
+	case CRCCodec, *SecureCodec:
+		bufferSize := uint64(512 << 10)
+		if limits.MaxFrameBytes < bufferSize {
+			bufferSize = limits.MaxFrameBytes
+		}
+		reader = bufio.NewReaderSize(conn, int(bufferSize))
+	}
+	return &connTransport{conn: conn, reader: reader, codec: codec, limits: limits}, nil
 }
 
 func (transport *connTransport) ReadFrame() (Frame, error) {
 	transport.readMu.Lock()
 	defer transport.readMu.Unlock()
-	return transport.codec.Read(transport.conn, transport.limits)
+	return transport.codec.Read(transport.reader, transport.limits)
 }
 
 func (transport *connTransport) OwnsReadFrames() bool {
