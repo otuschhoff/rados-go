@@ -1,0 +1,15 @@
+/tmp/rados-go-phase4-secure-before-20260930T191150Z/benchmark: go1.27.1
+	path	github.com/otuschhoff/rados-go/integration/p07/benchmark
+	mod	github.com/otuschhoff/rados-go	(devel)	
+	dep	github.com/jcmturner/aescts/v2	v2.0.0	h1:9YKLH6ey7H4eDBXW8khjYslgyqG2xZikXP0EQFKrle8=
+	dep	github.com/jcmturner/gofork	v1.7.6	h1:QH0l3hzAU1tfT3rZCnW5zXl+orbkNMMRGJfdJjHVETg=
+	dep	github.com/otuschhoff/gokrb5/v8	v8.5.3	h1:L3L81YmukI8Fjv2mXeF0pFXTvoBdVDsty9FQG6uC3nA=
+	dep	golang.org/x/crypto	v0.56.0	h1:GUh5Ii4J5jtcseSMiRqr1jXCNHoxjeV9Fmekc2oLy6Y=
+	build	-buildmode=exe
+	build	-compiler=gc
+	build	-trimpath=true
+	build	DefaultGODEBUG=tracebacklabels=0,x509sslcertoverrideplatform=0
+	build	CGO_ENABLED=0
+	build	GOARCH=arm64
+	build	GOOS=linux
+	build	GOARM64=v8.0

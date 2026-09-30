@@ -240,7 +240,17 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 		return Frame{}, ErrLimitExceeded
 	}
 
-	firstCiphertext := make([]byte, securePreamble)
+	if err := reserveReceivePrelude(reader); err != nil {
+		return Frame{}, err
+	}
+	var firstCiphertext []byte
+	if source, ok := reader.(interface{ receivePreludeBuffer() []byte }); ok {
+		firstCiphertext = source.receivePreludeBuffer()
+	}
+	preludeBackedByLease := firstCiphertext != nil
+	if !preludeBackedByLease {
+		firstCiphertext = make([]byte, securePreamble)
+	}
 	if _, err := io.ReadFull(reader, firstCiphertext); err != nil {
 		return Frame{}, fmt.Errorf("%w: secure preamble: %v", ErrMalformed, err)
 	}
@@ -264,6 +274,31 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 
 	segments := make([]Segment, len(descriptors))
 	firstPadded := paddedSecureLength(uint64(descriptors[0].length))
+	retained := uint64(securePreamble)
+	peak := retained
+	if firstPadded > secureInlineSize {
+		retained = firstPadded
+		if preludeBackedByLease {
+			retained += securePreamble
+		}
+		peak += firstPadded + firstPadded - secureInlineSize + secureTagSize
+	}
+	remainingSize := wireSize - uint64(securePreamble)
+	if firstPadded > secureInlineSize {
+		remainingSize -= firstPadded - secureInlineSize + secureTagSize
+	}
+	peak += remainingSize
+	retained += remainingSize
+	inlineControl := tag != TagMessage && firstPadded <= secureInlineSize && len(descriptors) == 1
+	if inlineControl {
+		peak, retained = 0, 0
+	}
+	if err := reserveReceiveBytes(reader, peak); err != nil {
+		return Frame{}, err
+	}
+	if !inlineControl {
+		releaseReceivePrelude(reader)
+	}
 	var firstPaddedData []byte
 	if firstPadded > secureInlineSize {
 		ciphertext := make([]byte, int(firstPadded-secureInlineSize+secureTagSize))
@@ -285,6 +320,9 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 	}
 	segments[0] = Segment{Alignment: descriptors[0].alignment, Data: firstPaddedData[:descriptors[0].length:descriptors[0].length]}
 	if len(descriptors) == 1 {
+		if err := reserveReceiveBytes(reader, retained); err != nil {
+			return Frame{}, err
+		}
 		return Frame{Tag: tag, Segments: segments}, nil
 	}
 
@@ -316,6 +354,9 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 	}
 	switch epilogue[0] & 0x0f {
 	case LateStatusComplete:
+		if err := reserveReceiveBytes(reader, retained); err != nil {
+			return Frame{}, err
+		}
 		return Frame{Tag: tag, Segments: segments}, nil
 	case LateStatusAborted:
 		return Frame{}, ErrAborted

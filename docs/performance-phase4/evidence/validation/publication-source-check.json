@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "checked_at": "2026-09-30T19:52:30.302Z",
+  "source_manifest_sha256": "4ae57555aae7613ef6fab64f11b2e6a7069f0dc5bf10c4483f66122a56bb4cee",
+  "checked_go_files": 239,
+  "mismatches": [],
+  "scope": "Current implementation and tests match frozen measured Go source. Subsequent documentation/evidence edits are not implementation changes. Does not retroactively bind intermediate live binaries."
+}

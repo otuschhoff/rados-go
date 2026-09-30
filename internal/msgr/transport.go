@@ -23,6 +23,7 @@ type connTransport struct {
 	codec     Codec
 	limits    Limits
 	readMu    sync.Mutex
+	closed    bool
 	writeMu   sync.Mutex
 	closeOnce sync.Once
 }
@@ -50,7 +51,50 @@ func NewConnTransport(conn net.Conn, codec Codec, limits Limits) (Transport, err
 func (transport *connTransport) ReadFrame() (Frame, error) {
 	transport.readMu.Lock()
 	defer transport.readMu.Unlock()
+	if transport.closed {
+		return Frame{}, ErrSessionClosed
+	}
 	return transport.codec.Read(transport.reader, transport.limits)
+}
+
+func (transport *connTransport) ReadFrameWithBudget(budget *ReceiveBudget, limits Limits) (Frame, error) {
+	transport.readMu.Lock()
+	defer transport.readMu.Unlock()
+	if transport.closed {
+		return Frame{}, ErrSessionClosed
+	}
+	limits.MaxFrameBytes = min(limits.MaxFrameBytes, transport.limits.MaxFrameBytes)
+	limits.MaxSegmentBytes = min(limits.MaxSegmentBytes, transport.limits.MaxSegmentBytes)
+	if budget == nil {
+		return transport.codec.Read(transport.reader, limits)
+	}
+	if !transport.OwnsReadFrames() {
+		frame, err := transport.codec.Read(transport.reader, limits)
+		if err != nil {
+			return Frame{}, err
+		}
+		return detachReceiveFrame(frame, budget, limits)
+	}
+	var reservation *budgetReceiveReservation
+	if _, secure := transport.codec.(*SecureCodec); secure {
+		packet := &budgetSecureReservation{}
+		reservation = &packet.budgetReceiveReservation
+		reservation.reader.prelude = packet.prelude[:]
+	} else {
+		reservation = &budgetReceiveReservation{}
+	}
+	lease := &reservation.lease
+	lease.budget = budget
+	reservation.reader.Reader = transport.reader
+	reservation.reader.lease = lease
+	frame, err := transport.codec.Read(&reservation.reader, limits)
+	reservation.reader.Reader = nil
+	if err != nil {
+		lease.release()
+		return Frame{}, err
+	}
+	frame.receiveLease = lease
+	return frame, nil
 }
 
 func (transport *connTransport) OwnsReadFrames() bool {
@@ -88,6 +132,10 @@ func (transport *connTransport) Close() error {
 	var err error
 	transport.closeOnce.Do(func() {
 		err = transport.conn.Close()
+		transport.readMu.Lock()
+		defer transport.readMu.Unlock()
+		transport.closed = true
+		transport.reader = nil
 	})
 	return err
 }

@@ -1,0 +1,5813 @@
+{
+  "publication": {
+    "scope": "compact selected evidence, not a complete reproducibility bundle",
+    "private_manifest_sha256": "986f243ca5dd97389aa5a97f8269a7aeb716fdaa0c04aaed1bff62898fed467e",
+    "omitted_artifact_count": 546,
+    "omissions": "Only artifacts listed here are included. source/ archives, binaries, binary patches, controller state, native source copies, stderr and unselected stdout remain private and are omitted. source_files and metadata may reference that private archive; they are provenance, not required local artifact paths. Empty command file paths denote omitted private files; original hashes are retained.",
+    "review": "Allowlisted, not sanitized or approved for publication. Review paths, command arguments, metadata and stdout for private identifiers before copying to docs."
+  },
+  "historical_revision": "dde29cde727dc963238acc4fa13a5a277a9f5c80",
+  "historical_source_revision": "dde29cde727dc963238acc4fa13a5a277a9f5c80",
+  "schema_version": 1,
+  "status": "passed",
+  "started_at": "2026-09-30T19:44:47.293217Z",
+  "finished_at": "2026-09-30T19:45:16.228117Z",
+  "repository": "/Users/oli/proj/rados-go",
+  "git_head": "c3dc3d36a4d899802b3e164404a455a76e2c2610",
+  "dirty": true,
+  "source_files": [
+    {
+      "path": ".github/workflows/p00.yml",
+      "sha256": "5ebfc9c0b3ce4953408ad2c4aaae32aa90f88c9943a79cbb6c4c2122c10e291a"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "4a210d79f18c1f6e50ac6da6cc147931f85eeb209fc055137908054481eb4360"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "3e2e68256e6a4595ccce997d0b51d676e7c63430778e0c36c2fbfb468d384295"
+    },
+    {
+      "path": "README.md",
+      "sha256": "4dbddfdd57f9a454ec480c6749fb3b17631faab09918397f44cbed934cf09c9c"
+    },
+    {
+      "path": "SECURITY.md",
+      "sha256": "38c8479cd9dc70540c09e38957302a3e0c892d45b8622e4a933eb30a780813d9"
+    },
+    {
+      "path": "SPEC.md",
+      "sha256": "933fb55517ee2aaaa9d7eefb775c561f01638b033fa1f541a2f69b67972cdd67"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES",
+      "sha256": "7c36fce9f9ff6adfbf728b640ebff7c57dffe69c62ef07584cec894c7d35ecb1"
+    },
+    {
+      "path": "admin.go",
+      "sha256": "633e981154cf48ebfb297cc5e617227f50e52a0457786cdabaaa333888211ae5"
+    },
+    {
+      "path": "admin_test.go",
+      "sha256": "ccd2dd8e24ecd05e571acf6aeec4e83e06284a38d772b3975443326103cc578f"
+    },
+    {
+      "path": "changes.go",
+      "sha256": "34106d934b1da23a751d78ef04899fb5edcf80aa73d8c235f0b57e95adc177e9"
+    },
+    {
+      "path": "changes_test.go",
+      "sha256": "ac746f3f841f6d6b2fd1d9a1d492022f65ac18eb33148b46b9a86973e895ffb9"
+    },
+    {
+      "path": "client.go",
+      "sha256": "ab040ba0913a00575fe2888ae04bdbb9cb5956bc23deaa4c42e38e7e7c832c8f"
+    },
+    {
+      "path": "client_test.go",
+      "sha256": "91882da5048f1c5679a52b7a20b455b61ea11a37bf28ec8e931bbfe6d15bc3d7"
+    },
+    {
+      "path": "config.go",
+      "sha256": "d759b53b2cebcc51972b17ed37bad3de0db7718ba53fcdefbb678e8d18a18504"
+    },
+    {
+      "path": "config_fuzz_test.go",
+      "sha256": "33de5ab9fc68a9fdfeb1116c5a844ff9b96cf4ac7bbe5d08cad4907e66e0c7c3"
+    },
+    {
+      "path": "config_test.go",
+      "sha256": "2836f03f1f087f73897c1e77f6c6f98c108bc46e8569352b2f9a67847ba847e6"
+    },
+    {
+      "path": "coordination.go",
+      "sha256": "eaede536b5373251f9b0c1f99f5cde2295afcf8e57c21491a7fbb77d80815430"
+    },
+    {
+      "path": "coordination_test.go",
+      "sha256": "52718d25d9b231fe872a357c9872a1448333357c3f78709c964a00a910fdf834"
+    },
+    {
+      "path": "doc.go",
+      "sha256": "029e90e8a1a61bb7e92db5d30d97c26c6adb73e4afc11ea22e1f7d82c30f3f6e"
+    },
+    {
+      "path": "docs/PERFORMANCE_SCALABILITY_REVIEW.md",
+      "sha256": "2ef601d4abc9d86bb679c7abb476ecea53c7f135a94551786aeffde950ed3ae4"
+    },
+    {
+      "path": "docs/RUST_PORT_SPEC.md",
+      "sha256": "cb3500d5d06a298cfe7d31a512e8d3cb91c5c18a33d9df1fd85901900a7c6c6d"
+    },
+    {
+      "path": "docs/p00/README.md",
+      "sha256": "1728266690d7ac1cbdd72870591d6587b4ede94cdbb8b3493e6c675fe3983fee"
+    },
+    {
+      "path": "docs/p00/api-inventory.csv",
+      "sha256": "fc73c6b8f7cc63699a0e9e135342cf474c679d7577677ad858cb5a72118f623a"
+    },
+    {
+      "path": "docs/p00/compatibility.md",
+      "sha256": "e0cb5d107e576d5f775ecbf2c71b24f31a754cc1294e9b7611d79182ad1da61c"
+    },
+    {
+      "path": "docs/p00/evidence.json",
+      "sha256": "cb99af82fe52eea465b1e6a4f5e81b72a600807b21027f435bf36f2385a7a84f"
+    },
+    {
+      "path": "docs/p00/licensing.md",
+      "sha256": "f67d0067c7ee339d2901a4bc1f15e45571c396b25d9d5352636611b838719cb7"
+    },
+    {
+      "path": "docs/p00/protocol-sources.md",
+      "sha256": "2826b7096405cfaea4eee8d3bad288609c1569890948f2c641d2c25fcc5dc4bd"
+    },
+    {
+      "path": "docs/p00/task-handoff.md",
+      "sha256": "f4a885f5be4e1cee03b3f13115466a32ad6d7802bfdc3cbafc2656d908b3f570"
+    },
+    {
+      "path": "docs/p00/tasks.md",
+      "sha256": "c3dc1cd508c78bd2abef52e4ced7b319071e1b4b6e8df97fe6f3f887ed6db401"
+    },
+    {
+      "path": "docs/p00/threat-model.md",
+      "sha256": "aefd2db97776f846109303d0c89b9ccd418efb8170574e69f5f915c4e37bbd65"
+    },
+    {
+      "path": "docs/p01/README.md",
+      "sha256": "dafc588922ec8607126488995f8762c84fa7632c6195a70779c4aa347e38607b"
+    },
+    {
+      "path": "docs/p01/api-contract.md",
+      "sha256": "58f29141009e0f322b1c94aa6b6cc6486c6d7904656a5248248bb5ecc0402676"
+    },
+    {
+      "path": "docs/p01/evidence.json",
+      "sha256": "ea6f7350cc265dc23027aafbfac4a9a1d6d83a12aac8dfa995fe56dc88e040c9"
+    },
+    {
+      "path": "docs/p01/provenance.md",
+      "sha256": "c2efa9b2472b4b34ef451b5e9d7fa0ac6ef53bbee83303b5c136f6b6f0ad37bc"
+    },
+    {
+      "path": "docs/p01/public-api.md",
+      "sha256": "99fb6a557d608c805a4d656242ea3052d21348351ea1d5695ae59df7d339e24a"
+    },
+    {
+      "path": "docs/p01/task-handoff.md",
+      "sha256": "a1d1a97589df6401c77e2df884972806970e8eae04c55ed63b1434ad95e6fa60"
+    },
+    {
+      "path": "docs/p01/tasks.md",
+      "sha256": "b557f786d2d5fd8e00568e75c8b92e47d968df349e92baa89e42d45e01845cc1"
+    },
+    {
+      "path": "docs/p02/README.md",
+      "sha256": "339e02b7a0f0dd4008a1cd853e7d3ad0b1573b79a58dcfa8b7c53e121ff6a251"
+    },
+    {
+      "path": "docs/p02/architecture.md",
+      "sha256": "f35e001cf62b584ed57a1473b64a3d03062a79da328763fd66e24190429fa420"
+    },
+    {
+      "path": "docs/p02/evidence.json",
+      "sha256": "9bed9432b6efe409a9a66189e22e76b1a24fbfd35a4353137c5831c27c6b4588"
+    },
+    {
+      "path": "docs/p02/provenance.md",
+      "sha256": "6c1799f966fe7a1945891a0f964b43953847a4fce5bd11f22fd3461d06602f0a"
+    },
+    {
+      "path": "docs/p02/security.md",
+      "sha256": "8eaa7bb4b7887e99376c3965675272df38d5f2cf4b4d859ad9fb7d88d025778e"
+    },
+    {
+      "path": "docs/p02/task-handoff.md",
+      "sha256": "60ce2a28ada0e39cea8d0310198bd9d18ef6122610fff3b99efd015a85ef5f70"
+    },
+    {
+      "path": "docs/p02/tasks.md",
+      "sha256": "a438972f75f8e9c7e6ab83fb386d1fccb3370f9c5d5a7f6afce81b631aa5ad3e"
+    },
+    {
+      "path": "docs/p03/README.md",
+      "sha256": "05fae4acbd8c607aca9b0f424db62a3f9850c7bf9abf0dfa08eca22f81430a83"
+    },
+    {
+      "path": "docs/p03/evidence.json",
+      "sha256": "f46f33a0dfff1afa1bf9bd5132fc873ad4ba91129192c3653eec82736f73cae8"
+    },
+    {
+      "path": "docs/p03/integration-report.json",
+      "sha256": "9f899824d1d99de681d14dba345c9c4f1e9f46ff86f534c2ffd131a6b06a48f4"
+    },
+    {
+      "path": "docs/p03/modules.txt",
+      "sha256": "58474bab6a17048075e8cdfc07b2006906620eba332acc4fcf72eb60c04183ae"
+    },
+    {
+      "path": "docs/p03/provenance.md",
+      "sha256": "b2dc1c6c5f2345bdb5e185ecf4a32557f0494b9bb30dbb55c72cc961a4ffb493"
+    },
+    {
+      "path": "docs/p03/security.md",
+      "sha256": "218b9eabeab18f130c0e4a4f746b5eadcdafee2d9da705f241537b63f24276cf"
+    },
+    {
+      "path": "docs/p03/tasks.md",
+      "sha256": "56d276199d42982ccf90dfcd25367c935810bca998f77b67ccb36e2ba48d3147"
+    },
+    {
+      "path": "docs/p04/configuration.md",
+      "sha256": "5725c43a3974c19c534e28c5e5eb82e3cf23e9e89d69c518e84ab336abc57328"
+    },
+    {
+      "path": "docs/p04/integration-report.json",
+      "sha256": "a38fbfcca3c164af4645caece38b1fb5be404459cd5a9c6815591ad6b1321cea"
+    },
+    {
+      "path": "docs/p04/provenance.md",
+      "sha256": "51389d19c4d5a60c5cdf69d2c1c3c94cd68ab0181acc044b4a27678af67482bf"
+    },
+    {
+      "path": "docs/p04/tasks.md",
+      "sha256": "699db74543e65bbfe0c983f7318e013698b1cc5477bd9efe5f088ac4e33dc737"
+    },
+    {
+      "path": "docs/p05/provenance.md",
+      "sha256": "16e6e866c7c99f3cb1af712d583029a46889ed909c5ab0e4c6bf9ca3de0b40f8"
+    },
+    {
+      "path": "docs/p05/tasks.md",
+      "sha256": "5017ef5440f12bea59306f54012e6f92cc4f838d576d5115991f2b4630bbbc5b"
+    },
+    {
+      "path": "docs/p06/integration-report.json",
+      "sha256": "f1f846f065ea227363b6c156ade1995166b34c432d3fc335da7dbee4e9747156"
+    },
+    {
+      "path": "docs/p06/provenance.md",
+      "sha256": "f2552c6f4d0be72d289bed41acebb5111bd9d0ba1c92ee65c5f775500cc18307"
+    },
+    {
+      "path": "docs/p06/tasks.md",
+      "sha256": "a121e52e6b6b7692a4e019fb86a47a4dfd1b8ca4cde000c1761c027476f8c23e"
+    },
+    {
+      "path": "docs/p07/integration-report.json",
+      "sha256": "d90c464963c374784c6550ac8de6da1d60158a626a0d451616e9eac515c7787b"
+    },
+    {
+      "path": "docs/p07/provenance.md",
+      "sha256": "446d842547cb93438ff50d3bcd90c30a200478b779f122f802979472cee7c164"
+    },
+    {
+      "path": "docs/p07/tasks.md",
+      "sha256": "0ed1f9917cefe0799387fe983fae75b1032d26bdaad77b8ccf2bec84f5b8676d"
+    },
+    {
+      "path": "docs/p08/integration-report.json",
+      "sha256": "1ee687eabd81b3ebdb4b39a80b86b7af31ff1103846c8e43f694350c10ea46cb"
+    },
+    {
+      "path": "docs/p08/provenance.md",
+      "sha256": "9183ff0e77c3c5b00702f060b40f88a589eda14e4a623db89057a0061c9ea35b"
+    },
+    {
+      "path": "docs/p08/tasks.md",
+      "sha256": "b7ffb6a83d62cfbc973812d8a5dd1d91b95ec1295895edd10c7d4c1f9a070c46"
+    },
+    {
+      "path": "docs/p09/integration-report.json",
+      "sha256": "42ff614ac7e1781f7fffab679cb55a3e1ec6977503c9578cbd7dbec1415f35ee"
+    },
+    {
+      "path": "docs/p09/provenance.md",
+      "sha256": "d928e23024df6ef36a7bbad594fad7133a83e4d828da707d99aeea5bc2083ab9"
+    },
+    {
+      "path": "docs/p09/tasks.md",
+      "sha256": "d0c2e0ec62cb0c6f2deff0dd5f6fc415e61eb407bba7f2736f404f3bd20b9489"
+    },
+    {
+      "path": "docs/p10/integration-report.json",
+      "sha256": "6626f08e1d44092bb6bd38ae95e12481d9675aaf8f3f9ad9ba07e011fbf9a5ef"
+    },
+    {
+      "path": "docs/p10/provenance.md",
+      "sha256": "104d2fae853014f049371c6d5851eba382e4a59d2423256b0549a7e4f43e69f5"
+    },
+    {
+      "path": "docs/p10/tasks.md",
+      "sha256": "f15b6c170e53ea8c4346e729eacd52b472aa939ba102114b00a68f63d02ecb0d"
+    },
+    {
+      "path": "docs/p11/integration-report.json",
+      "sha256": "8b4154426336859e24d4a8671663eb816c37f99a3f5701bed55e3854f3ae2ad5"
+    },
+    {
+      "path": "docs/p11/provenance.md",
+      "sha256": "3bde3fcd952d714e5450ef7642082ecd3c739780fb0449b5cf750911b8981c0d"
+    },
+    {
+      "path": "docs/p11/tasks.md",
+      "sha256": "dfa0aade3a54b4e8bdf6aab78ba6473bebdda0009a2973e0e510db2eb3db4ea0"
+    },
+    {
+      "path": "docs/p12/README.md",
+      "sha256": "b223dc4434750e1c30552130ae9242eda4d26735b43b2acd5bd5a7eed41b5786"
+    },
+    {
+      "path": "docs/p12/api-coverage.md",
+      "sha256": "b50450fc2eeeb6da4a023607b2ea09bc70129d10cf28f906068049015b4c2c6f"
+    },
+    {
+      "path": "docs/p12/automated-review.md",
+      "sha256": "9dd71612c07f768dbe94123bb440a8afc18b21cd863c0a88cad618b3a5e1d483"
+    },
+    {
+      "path": "docs/p12/cgo-migration.md",
+      "sha256": "4910cc32b4fe8ad957ba97f889ffcac83a3aaf0437e9ceb8ebe327ff972566a8"
+    },
+    {
+      "path": "docs/p12/compatibility.md",
+      "sha256": "ce9d22a7226a4a350b5fb521ce9034fb94246178f520ec10df92a6b5a1f2bf95"
+    },
+    {
+      "path": "docs/p12/dependencies.md",
+      "sha256": "2422d446964119fc30abe3cf09ad4764055ac2dd5fdafb1ad99def83eb817762"
+    },
+    {
+      "path": "docs/p12/fuzz-report.json",
+      "sha256": "e0b0c24e225874536c95bb280efd164b5e6c2a987fa9c2343582319eba69e983"
+    },
+    {
+      "path": "docs/p12/human-review.json",
+      "sha256": "97cdadb295c765ff2f8720125c77605e4b4c7f12020714a27f0d68539924c1de"
+    },
+    {
+      "path": "docs/p12/human-review.md",
+      "sha256": "1ad11e952be490cf51ba56dd23a32cd3d0c19463368c7e6dffad7418f0bd9837"
+    },
+    {
+      "path": "docs/p12/performance.md",
+      "sha256": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf"
+    },
+    {
+      "path": "docs/p12/qualification-report.json",
+      "sha256": "fea3a20d68b18d8bbbfb7f302849e40fc3b41c3e7176b04494bcb8c7f62c03dc"
+    },
+    {
+      "path": "docs/p12/release.md",
+      "sha256": "4895fccd3c958a25dfc1f07e0e6190ae7c0ddda0f99e8b05d24c6f7e5082c62b"
+    },
+    {
+      "path": "docs/p12/review-template.md",
+      "sha256": "7f89486c65bc75b7b17e39b83d75e4a535fccda89efd33256af3b55d7b3224ca"
+    },
+    {
+      "path": "docs/p12/reviewer-trust.json",
+      "sha256": "9e2d9eaa0a8b30ebdc6226ae3c959bb2e89c7e2f48559b3af744b954dd6365e1"
+    },
+    {
+      "path": "docs/p12/troubleshooting.md",
+      "sha256": "e40957defc66437ebbeca650092307bcc1daf3b3cc1f439ea650aa2c60e59c73"
+    },
+    {
+      "path": "docs/p13/README.md",
+      "sha256": "a340926b4d887ab711460470c9bc38b3488af290d79ecb49c2869f045d143833"
+    },
+    {
+      "path": "docs/p13/compatibility.md",
+      "sha256": "eb74c3391cce11cb3304f9be00ac76b5206fa9de5f9668d0efda701a7555e158"
+    },
+    {
+      "path": "docs/p13/integration-report.json",
+      "sha256": "58d7c6136a9384adef46d2ea757bfb196aca989fe485b5e8be2d205bcc56f8f7"
+    },
+    {
+      "path": "docs/p13/provenance.md",
+      "sha256": "1bf5ff41c9b7c4d6b96d6116cd88ab7cdc2edbdcd3c2f051238ce951b3f57e75"
+    },
+    {
+      "path": "docs/p13/task-handoff.md",
+      "sha256": "f1874bb338077347a971ccb57565e6f99e2776fa463ab476413162c5b02421e4"
+    },
+    {
+      "path": "docs/p13/tasks.md",
+      "sha256": "a8f7ab70d8b887ffc4d1555deed4c91b2382b569cb4f1e1eb2b518f27272cc6d"
+    },
+    {
+      "path": "docs/performance-phase0/AUDIT.md",
+      "sha256": "78b8820e8288b8b9a0a353d797e1034f3cf9d61052783ce483508a5528499dd6"
+    },
+    {
+      "path": "docs/performance-phase0/QUALIFICATION.md",
+      "sha256": "3744df5b1e88e22b6096500947184e18876666e4a5a7cc361236e1f6cc0723f6"
+    },
+    {
+      "path": "docs/performance-phase0/README.md",
+      "sha256": "eaa24b855b37a3c1d7ba6e0022c588de18d967ffbd136a94ee71bc71c4b253ec"
+    },
+    {
+      "path": "docs/performance-phase0/RESULTS.md",
+      "sha256": "5c9a8f5ea01b22a67dfd6f6728bc89505a563856af5ddd034620bcdd7b78b6a9"
+    },
+    {
+      "path": "docs/performance-phase1/AUDIT.md",
+      "sha256": "532f503dd638d8156e49e8edfc0e6705c2c98630f1ba0c3ce557b4edc1c92abb"
+    },
+    {
+      "path": "docs/performance-phase1/README.md",
+      "sha256": "77df74c0a5ae957f1226e827ac4a582f7c2d4e82731a10140578b5ec6a859150"
+    },
+    {
+      "path": "docs/performance-phase1/RESULTS.md",
+      "sha256": "5a27de58cb6ca160022ff53579a01b465dbdd127b0110fd8e7e9c6dc35c9c25c"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/SHA256SUMS",
+      "sha256": "b359c36fd251de2bf2796b48a5fa2459822238d8d5f025f76820c20e84775fe8"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/commands/011.stdout",
+      "sha256": "c528ba02b39880f1357f51dee70e41c1ef03e3a70c7a03055c080532b9635f58"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/commands/012.stdout",
+      "sha256": "06ff9461693b606c757bf1780791622437872df645a8af8f48f1d66537b64d8e"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/commands/014.stdout",
+      "sha256": "e51de2a2665a89eb7d3831cb5aa48fe706aa8e37ee68f0526d2da9432ee25171"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/commands/015.stdout",
+      "sha256": "0987ec01915a00e5ad941f829dba12d0d44a3e22c5f1adf1a5b55ee0fc5da33a"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/historical/docs/p07/integration-report.json",
+      "sha256": "d90c464963c374784c6550ac8de6da1d60158a626a0d451616e9eac515c7787b"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/historical/docs/p12/performance.md",
+      "sha256": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/historical/integration/p07/DIAGNOSTICS.md",
+      "sha256": "a19818d4a40d4369810ce9c24eee1f0f049982c9fbba96a2648f4b2d9891ca38"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/manifest.json",
+      "sha256": "76ba6b2dd43b111c88245ceb7f38b36f1dfa278b6158bfd6c5752d6e821015b0"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/baseline/source-manifest.json",
+      "sha256": "e3bedf4040ccb41bf61fbfaa1a7c854b3e6f7b50a6534048fb0de24e12976c3c"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/comparison/before-performance.stdout",
+      "sha256": "8b1c58e1217463b0e8739c38c4d977db44b93232069de5152b1790bdb8a54111"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/comparison/comparison.json",
+      "sha256": "a0bd37371964723627670b1aff0745f36b2dea7c308698f1b67a04b9bc781de1"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/comparison/dispatch-selection.stdout",
+      "sha256": "afca7433b7cffadea3e9cd1460e2edb3a259617fd115e77be802a6e6c38d0535"
+    },
+    {
+      "path": "docs/performance-phase1/evidence/comparison/focused-controls.stdout",
+      "sha256": "3277fd77d4b3dc726cdf38c711c91747bb2b79e9279cc7ded32d43a10badc7b8"
+    },
+    {
+      "path": "docs/performance-phase2/AUDIT.md",
+      "sha256": "7aed795ee5c71a3e828dd5527685946607662e4d7f665d9dc795224db91676f6"
+    },
+    {
+      "path": "docs/performance-phase2/README.md",
+      "sha256": "7082fcb1e159b8fa590ad14fc185e4ddc9dd73ff8cf97a1d0ce8be8d63b72ef8"
+    },
+    {
+      "path": "docs/performance-phase2/RESULTS.md",
+      "sha256": "3aa0ec7919cd5e51d1db8458df5ddb38e6a02e64d328e148658e52660c7095fb"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/SHA256SUMS",
+      "sha256": "5047bf6c583abbf977b9d11b17d90546c631e1f40a123116e15009f17970be34"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/commands/011.stdout",
+      "sha256": "c528ba02b39880f1357f51dee70e41c1ef03e3a70c7a03055c080532b9635f58"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/commands/012.stdout",
+      "sha256": "06ff9461693b606c757bf1780791622437872df645a8af8f48f1d66537b64d8e"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/commands/014.stdout",
+      "sha256": "f81b02fc50edbdf04c1460b3674738118b20c76b778d78ab7ab7b8e9e7aa5ff6"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/commands/015.stdout",
+      "sha256": "7fecefdf686747b5bc3636a4f118fc89fb66cb9e737d92dc622dc0e3ae72e00d"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/historical/docs/p07/integration-report.json",
+      "sha256": "d90c464963c374784c6550ac8de6da1d60158a626a0d451616e9eac515c7787b"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/historical/docs/p12/performance.md",
+      "sha256": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/historical/integration/p07/DIAGNOSTICS.md",
+      "sha256": "a19818d4a40d4369810ce9c24eee1f0f049982c9fbba96a2648f4b2d9891ca38"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/manifest.json",
+      "sha256": "eb3702faee7bbfb92111ba90072b2b325cb758ddb3e37116190ab61a5f6c7581"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/baseline/source-manifest.json",
+      "sha256": "6b88f7cce79870911a15a335773a94a5b7589504933462d9efb5b5a7bac5f210"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/comparison/before-performance.stdout",
+      "sha256": "5f7f0d024fc4cc3736dcafa2b6a2ccf5979864095bb33587b3d3a0dc904605e7"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/comparison/comparison.json",
+      "sha256": "ee7d4fe6e40186fcb082f5a2368465769e687e6bef3ab885581cb6cd801737cf"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/comparison/focused-placement.stdout",
+      "sha256": "56a1d418a87cd7ce45d14cf0e7fcb651ea0d631140d8725754201cec3d89c5d8"
+    },
+    {
+      "path": "docs/performance-phase2/evidence/comparison/placement-cold-warm.stdout",
+      "sha256": "54ebeba5a02dff421cb7449b3e9f5d4996fedeed487fc8c2386962f50155c8ca"
+    },
+    {
+      "path": "docs/performance-phase3/AUDIT.md",
+      "sha256": "53fd7f0bebab7f26bcd7472f80c8014c0fec6315f05d8ab8c39c52e78960bac2"
+    },
+    {
+      "path": "docs/performance-phase3/README.md",
+      "sha256": "7dfff4adfb216c66135828fc7ab3b0a127f99a5c73c8e4598f175f511cafa0fb"
+    },
+    {
+      "path": "docs/performance-phase3/RESULTS.md",
+      "sha256": "db71d1603392a90b1d31755c986cb785312f2b599e26f1b4d376073579bf2978"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/SHA256SUMS",
+      "sha256": "28fd5e4a82423ca78e8c977c5ac1066ae4268d1378a26584612a5da48d1a27cd"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/commands/011.stdout",
+      "sha256": "c528ba02b39880f1357f51dee70e41c1ef03e3a70c7a03055c080532b9635f58"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/commands/012.stdout",
+      "sha256": "06ff9461693b606c757bf1780791622437872df645a8af8f48f1d66537b64d8e"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/commands/014.stdout",
+      "sha256": "78134188cbd104f319790ebb61f5a56a8f3d7a18fb07e070d4703f5498ea43c5"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/commands/015.stdout",
+      "sha256": "3a1c7bc830595e477c3ffca3aaa9d8bf9440893faaeb847fc0d8e875144a3994"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/historical/docs/p07/integration-report.json",
+      "sha256": "d90c464963c374784c6550ac8de6da1d60158a626a0d451616e9eac515c7787b"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/historical/docs/p12/performance.md",
+      "sha256": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/historical/integration/p07/DIAGNOSTICS.md",
+      "sha256": "a19818d4a40d4369810ce9c24eee1f0f049982c9fbba96a2648f4b2d9891ca38"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/manifest.json",
+      "sha256": "b408d156af24ee61c40db72024e401f6107539dc17843bfbec023031442b059f"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/baseline/source-manifest.json",
+      "sha256": "619a2df02be7c5b26e70f392537dd913f06def5093c1913b5e45ab5f709e3dea"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/before-performance.stdout",
+      "sha256": "1e27e008446772037df1ddaf325ec61a1b91c0955286709114337cbb2b07fb3e"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/comparison.json",
+      "sha256": "014efced626e32f485cb636d64e3b3f92abbf690edefae04f159470aef251617"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/diagnostics.stdout",
+      "sha256": "a3e36cdf95e9f804d9d52b79690d4bff59163a0157e3573cd073d2d48cc2df45"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/focused-lifecycle.stdout",
+      "sha256": "d60239c972725c028f2c7b9ad15bf48e6cc0300a4d79fbec85a43fa77446ee87"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/full-race.stdout",
+      "sha256": "e147c59f3bb23180ba0f2034e7ced1a5fff68e427348b40db91c144222cff343"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/linux-build.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/performance-phase3/evidence/comparison/vet.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "enumeration_test.go",
+      "sha256": "1c601263d1ddb9d0834ab453d496ca6efafddafc918ba5c714f42d7f3c9db1dd"
+    },
+    {
+      "path": "errors.go",
+      "sha256": "907595385103cfb141d794ef3f8688d436ac13804858e48d0faec82b2855694b"
+    },
+    {
+      "path": "errors_test.go",
+      "sha256": "e27cf823a294ac5475384960d833e175e10ebda66f4b2aeb595765a9334b4bf7"
+    },
+    {
+      "path": "examples/atomic/main.go",
+      "sha256": "3ac43d85dc843c0a2eb5ee463fef256040ffb6cfa26f3d4fe9b9e7272bba0638"
+    },
+    {
+      "path": "examples/basic/main.go",
+      "sha256": "76497f3686d945b9b5e309d105e5c23c293866a86b1dad9de0d0f888f0aa997e"
+    },
+    {
+      "path": "go.mod",
+      "sha256": "82c5d6809f3e77a2b68f41462004584d9399946795a90c97654439bff5ab5cdb"
+    },
+    {
+      "path": "go.sum",
+      "sha256": "aada9d87cdf1fc9761055ae34522bdc35421d952dcc19d6f5323dd2dc087333c"
+    },
+    {
+      "path": "integration/README.md",
+      "sha256": "e6d640ca6572d4516acaac89b0d4af5eb08d09e51b866dedd91646c0e9e44d6f"
+    },
+    {
+      "path": "integration/manifest.schema.json",
+      "sha256": "e0204c3367ed57e5f152e4f2b97a5d0f3c2fcc2f6d6814d1b17efb16271f5038"
+    },
+    {
+      "path": "integration/p00/oracle/Dockerfile",
+      "sha256": "8771c2758a7d994db357b96d0a845bb1e919d3acaf846908e425565c31dc186d"
+    },
+    {
+      "path": "integration/p00/oracle/centos-stream.repo",
+      "sha256": "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b"
+    },
+    {
+      "path": "integration/p00/oracle/main.cc",
+      "sha256": "bbcf6207628545d859546eb92d50e13027ab2d78154b0c54053b4befecc029ca"
+    },
+    {
+      "path": "integration/p00/preflight.sh",
+      "sha256": "bd03469fad4c311d7324087a076f102597954434584529d007c047406f486616"
+    },
+    {
+      "path": "integration/p00/run.sh",
+      "sha256": "095ada4b3ad2391d2a410437b20f5e5574a0c0bb123f2814994c3a5a1935c150"
+    },
+    {
+      "path": "integration/p01/entity-addr-ipv6-seed.bin",
+      "sha256": "a5b18e8166e8aa1d0c3285a6c1a3470851ae2bd229b28da857328c3bd2217986"
+    },
+    {
+      "path": "integration/p01/ipv6-fixture.c",
+      "sha256": "6dd4fb90dcf8f3e5b2e1380a5b3999a4d4a7ddd81f51c45f2ada5640179abdb4"
+    },
+    {
+      "path": "integration/p01/reproduce.sh",
+      "sha256": "e7f23e66a19321227877b3722a7f59a542682f4a5c42b6dbdffe405bed99f8d4"
+    },
+    {
+      "path": "integration/p02/Dockerfile",
+      "sha256": "bfaa51f4f49af164a94e82156c745e2ea21c620dac561658a37b230f3fd579a8"
+    },
+    {
+      "path": "integration/p02/Dockerfile.upstream",
+      "sha256": "56c8b8d8f461c41c35991cf46781eb556e6267940e32a92a9c5fc3b67ca505e5"
+    },
+    {
+      "path": "integration/p02/centos-stream.repo",
+      "sha256": "83240f736d211998dd5bbb89773696b9e11463d24dac6eeb8eb93125d4540d3b"
+    },
+    {
+      "path": "integration/p02/oracle.cc",
+      "sha256": "7a14c655f4e93e7f350ebdc9e74ef233733ef19611ab9b7ebfe7b16c5cd9a8b7"
+    },
+    {
+      "path": "integration/p02/reproduce-upstream.sh",
+      "sha256": "070d1ab50c79bee673965f22c148c15b884aef38902b6cae92a47cb841a1a04b"
+    },
+    {
+      "path": "integration/p02/reproduce.sh",
+      "sha256": "987347390f1ca5be1e1e3902ad834c75effd5741ecf51285ed12f23605aba85a"
+    },
+    {
+      "path": "integration/p02/upstream_oracle.cc",
+      "sha256": "043d94bfb9f590e9987e7ae15509d3a75813c1765e43a99ba4d7fbe06d49ee34"
+    },
+    {
+      "path": "integration/p03/legacy-crush.txt",
+      "sha256": "5b07d221477e01a50ad37ab113cb8511ada2895bd3e848504518d0ef634f13ea"
+    },
+    {
+      "path": "integration/p03/probe/main.go",
+      "sha256": "898b974ee575d1d1a51ecdac5c8abd51dd6ad3f9506c418371d15b1aeb1c842e"
+    },
+    {
+      "path": "integration/p03/probe/main_test.go",
+      "sha256": "a4ec9a4d87d9ea9ca96c41486f11119664e43367f8110afa238f93b7fcddeb27"
+    },
+    {
+      "path": "integration/p03/report.schema.json",
+      "sha256": "a402b69c0522220ad8f32aa7ea6c19e3e285106f20451e674574b2ef796fd9be"
+    },
+    {
+      "path": "integration/p03/reproduce-fixtures.sh",
+      "sha256": "7fde6e6631885b908cf4ae31ef658f9f0b2be66ec546937948399a4c5db98794"
+    },
+    {
+      "path": "integration/p03/reproduce.sh",
+      "sha256": "afc999ecc5b195ec93ba8c75487b16f5dc217ae9767df64fff35cb4771fced57"
+    },
+    {
+      "path": "integration/p03/rfc8009-oracle/main.go",
+      "sha256": "acd8b9a14e8bfb7b43b9fcdbbf1ed6331f4df1b32bc64acf9b6ffa17823fdda8"
+    },
+    {
+      "path": "integration/p03/rfc8009-oracle/main_test.go",
+      "sha256": "84f4e120788b9546d9def423f6986cdb7a095e93d327d2be2145537bec98c467"
+    },
+    {
+      "path": "integration/p04/probe/main.go",
+      "sha256": "cd224092de706fdee1ded68dc66e2f5c650fb18308c452877f3ad4265d46894b"
+    },
+    {
+      "path": "integration/p04/report.schema.json",
+      "sha256": "6bf75dab039d32000723bb832f9938a24ca1e3efef680203751a7a8f88de736d"
+    },
+    {
+      "path": "integration/p04/reproduce-fixtures.sh",
+      "sha256": "becbdee94f963234a8a02f094bbd4d4551b4483e755990e16b32bab8cd553fa7"
+    },
+    {
+      "path": "integration/p04/reproduce.sh",
+      "sha256": "f763fb7be3dfadd38dd4fd4cef29968e8c861f82d57d971cf8e957f614cf6466"
+    },
+    {
+      "path": "integration/p05/crushmap.txt",
+      "sha256": "3720a2586790e8dd5cfdfc1a55256d908cd3197f980bf703b7f3035e52ec036e"
+    },
+    {
+      "path": "integration/p05/reproduce.sh",
+      "sha256": "0cc4bf09f618d32c57fe42d8ee3a773865cc5b1d1715c1f8fb98b4c0cdd1c81c"
+    },
+    {
+      "path": "integration/p06/probe/main.go",
+      "sha256": "e276d935a3c4777db4c5708b563585ba4e963c709a43347cddf1c14272000fab"
+    },
+    {
+      "path": "integration/p06/report.schema.json",
+      "sha256": "e70a6c2339fa56c954fc06e22b9f0608bf88f096822c7db9767be44437880719"
+    },
+    {
+      "path": "integration/p06/reproduce.sh",
+      "sha256": "c59c45ebef0545d45e0f22f8a7a193a2d6e0cc870947159adfbc26567a917081"
+    },
+    {
+      "path": "integration/p07/DIAGNOSTICS.md",
+      "sha256": "217ad04ec082b714dfe44813f08467d2635d87e13d0694fd850f0d2f80c9452d"
+    },
+    {
+      "path": "integration/p07/MODE_EVIDENCE.md",
+      "sha256": "7aaa6b8f82e8af0478f06119ba0222141b7910d23a37ad8ee190e5ad05688671"
+    },
+    {
+      "path": "integration/p07/benchmark/main.go",
+      "sha256": "670b5ecb5ef7eb06ce395fd973bc3cd2da04a58a1348b47d74314ed3561b3b1e"
+    },
+    {
+      "path": "integration/p07/benchmark/main_unsupported.go",
+      "sha256": "a44582b32ee261f2897b99c926cd23554053fe3d9b21ed7a18b0135dcb8ee1e2"
+    },
+    {
+      "path": "integration/p07/mode_capture_test.sh",
+      "sha256": "86bb2648eb9f2793cd3473dcb573388c1e0282ab1d0974140885e9f6e68cc12f"
+    },
+    {
+      "path": "integration/p07/native_benchmark.c",
+      "sha256": "49c2e364beb78b490afa8f001ad52b3ce7cd7522765f677518140ade91bac45d"
+    },
+    {
+      "path": "integration/p07/native_driver.c",
+      "sha256": "f3d870f60dc6276117591641046ea40514a4be2226d193c7a58760dba8e5074c"
+    },
+    {
+      "path": "integration/p07/probe/main.go",
+      "sha256": "38b9454bcd47c1134a5359c9fd4e82a23859523aa4cb9d999985b44e16ab635c"
+    },
+    {
+      "path": "integration/p07/report.schema.json",
+      "sha256": "ce206427d5f0ea99f808347552bdfb900888ae9b5017fd63e59e0040f06f1a39"
+    },
+    {
+      "path": "integration/p07/reproduce.sh",
+      "sha256": "d608af91946ef84dfff7e0938b1c1a9112997b7135580db9bad092c717c1f7c1"
+    },
+    {
+      "path": "integration/p07/timing-summary/main.go",
+      "sha256": "585849dfd9b52356c1eee56814ebb316676b2dc9bfeec87a4a933519851b3ed4"
+    },
+    {
+      "path": "integration/p07/timing-summary/main_test.go",
+      "sha256": "0a62ad7f45c670f5c664572ac222d9011df848f92793d99a70300a081e46fbfa"
+    },
+    {
+      "path": "integration/p08/native_driver.c",
+      "sha256": "21c82fcf6560b0ceb2a2442104007b0931efc4a3699fb301ed77d2f332fc0a5e"
+    },
+    {
+      "path": "integration/p08/probe/main.go",
+      "sha256": "1766966c8568b472197854a5710f490356cb9c56ce3537fbc62f355c228eae77"
+    },
+    {
+      "path": "integration/p08/report.schema.json",
+      "sha256": "b36c3e9fc974711db4094ccc25335373c7cfa94017658b7c08303f58ecb625dd"
+    },
+    {
+      "path": "integration/p08/reproduce.sh",
+      "sha256": "7f38cb57c144ff599e62ad87f5d7912aeba109028091e8a9648e33f37e377a50"
+    },
+    {
+      "path": "integration/p09/native_driver.c",
+      "sha256": "8e6a3816b64f507444284e8896b04334719f31d1c3ffb3e2b35530edd96ad020"
+    },
+    {
+      "path": "integration/p09/probe/main.go",
+      "sha256": "3f83b8a601c17044af8c3c0c2210d23e73f137f4f129a48eb090fdc3d53d02a4"
+    },
+    {
+      "path": "integration/p09/report.schema.json",
+      "sha256": "d3153203d77089fd1cff973724df5c11060fd22f7a9bb29b298d700758120fff"
+    },
+    {
+      "path": "integration/p09/reproduce.sh",
+      "sha256": "29e4c88ae3ead3dae31abcaa0e56a317a594df34578e132adc6c1c08560d74b9"
+    },
+    {
+      "path": "integration/p10/native_driver.c",
+      "sha256": "2b324e51591226c4cba33d74581266ffca0155efb5c25946962bad07c7f3bad1"
+    },
+    {
+      "path": "integration/p10/probe/main.go",
+      "sha256": "c477c4de3b0697bf1bcd78ce00e33042ab12a27a3586ae868f28da549db64fb9"
+    },
+    {
+      "path": "integration/p10/report.schema.json",
+      "sha256": "28dda3a5e1ecf76a2f7691a96cc0e0804a867f831dfaff122018d2e00cd80060"
+    },
+    {
+      "path": "integration/p10/reproduce.sh",
+      "sha256": "ff9e518933012a274e1f228ec2c0c548036f018d9bb9d464e2d4b6865910b6d3"
+    },
+    {
+      "path": "integration/p11/native_driver.c",
+      "sha256": "815798ad34c1c0f93f7638944fd2a60f4076d3cc9c10b73d911e323de42a492a"
+    },
+    {
+      "path": "integration/p11/probe/main.go",
+      "sha256": "5112874c335b5f3851348b4f6b9f313c171511ea12a9f1362f03dca1aa1bd965"
+    },
+    {
+      "path": "integration/p11/report.schema.json",
+      "sha256": "b749f9201436a592ffc775d9cd1cf4c6a34dbf4d1f4f552e038f2fb6cae1666b"
+    },
+    {
+      "path": "integration/p11/reproduce.sh",
+      "sha256": "eaa8f0ae2d520961fcc0d91fd936f6ad7d2a3d1433e14a676eefe507efd6ad65"
+    },
+    {
+      "path": "integration/p12/fuzz-report.schema.json",
+      "sha256": "47177df1907ef4b8fe4e4e63d9ce24affb27b45ade5032ef22b8a42aa5ff78f4"
+    },
+    {
+      "path": "integration/p12/human-review.schema.json",
+      "sha256": "19c4deebcfbd86f3a81d23f29f71ddc48777211cde83a47a4af84d77efc06310"
+    },
+    {
+      "path": "integration/p12/platform-probe/main.go",
+      "sha256": "7b5aa985d128aec1f64bc7464b06300d7f1e058586303efd103ad370636f72c9"
+    },
+    {
+      "path": "integration/p12/probe/main.go",
+      "sha256": "d088e2d151bdbf8f3fa57d1b28af550ed7df15afca1165be60452ac9feabb905"
+    },
+    {
+      "path": "integration/p12/probe/main_test.go",
+      "sha256": "f9365105caf82c5d7424412074e0a32e4a4f0570f313db6bbdf3946cc01d09cd"
+    },
+    {
+      "path": "integration/p12/qualification-report.schema.json",
+      "sha256": "b84ac9934b4d6cd777bc7f13afbd9bf9f7a039445c7f2f102e64392e4dd1aeca"
+    },
+    {
+      "path": "integration/p12/qualify.sh",
+      "sha256": "a09248167c60b49779d18b949a3c22bcb6180312a99bad062941497d88c44642"
+    },
+    {
+      "path": "integration/p12/report.json",
+      "sha256": "1822f73e21ea81b812bae102ef4275e342065e3d5473d798a976b23c18a82b6b"
+    },
+    {
+      "path": "integration/p12/report.schema.json",
+      "sha256": "3cc71ae86868a6df8455be832f7ec4be7bd37af516226526a105d3c2845a3234"
+    },
+    {
+      "path": "integration/p12/reproduce.sh",
+      "sha256": "205e9fe4a8d5e05441d0a4c7c3089c17d6e2309e9bfda5bcbcd5db8880f72b07"
+    },
+    {
+      "path": "integration/p12/reviewer-trust.schema.json",
+      "sha256": "39330228b468e61936711dcf9a84d98208cb7d9ae157ad40787ed8a9448b4ad2"
+    },
+    {
+      "path": "integration/p13/native_driver.c",
+      "sha256": "5aba62bf8e1c9107b7b848ade3b7ad16ddd9a749e163660bd774d874106329b1"
+    },
+    {
+      "path": "integration/p13/probe/main.go",
+      "sha256": "d9686964d77983f9ae210454137404181f23368c8895ba53de0161d83ed8b041"
+    },
+    {
+      "path": "integration/p13/report.schema.json",
+      "sha256": "1bc96160e3101ea9258d6cb9809763d6a0e2d2d32a5abb7868d73cbddf54f88a"
+    },
+    {
+      "path": "integration/p13/reproduce.sh",
+      "sha256": "3e3c8f4ebd3b21791613ffa698649368766d9390135ef4d81f54ca001e8d8627"
+    },
+    {
+      "path": "integration/reports/p00-aea2e269-39df-4476-9e55-b6b3de3b67c0.json",
+      "sha256": "43cea08c14f2aa5f7d645b4fcf65da12cec0c8abde72bcd1d205fc867b8fd7b9"
+    },
+    {
+      "path": "internal/cephx/connector.go",
+      "sha256": "e00882524be29ab0933fc8d34e3371b7a218fce368f8e0a51e6399930e36bae4"
+    },
+    {
+      "path": "internal/cephx/connector_test.go",
+      "sha256": "ce945cc21842a2445e900ed0e88f41700735ce16e9c247b0771ac9b76168003a"
+    },
+    {
+      "path": "internal/cephx/core.go",
+      "sha256": "ad393c2a60c0067acb68afa68bfd09d876b11d968a58ab80840c0bb556af1d7b"
+    },
+    {
+      "path": "internal/cephx/core_test.go",
+      "sha256": "c0349e6dd460b15c86ea32e100c7908fe3461708027fccfe4cba35feb0bff2f5"
+    },
+    {
+      "path": "internal/cephx/credentials.go",
+      "sha256": "50e51d3d0db50dc9a979f4a3c95747fdf4777b79c0e619e1b6d8702253488255"
+    },
+    {
+      "path": "internal/cephx/credentials_test.go",
+      "sha256": "f44c53c9253881f630c98345219516f61dd33a501aff74a5039827ccec9dce53"
+    },
+    {
+      "path": "internal/cephx/fixture_test.go",
+      "sha256": "a59892b95c406ca6bb9ed77f0c4f428b5901330604b3c38e08f670a540f0e0d5"
+    },
+    {
+      "path": "internal/cephx/fuzz_test.go",
+      "sha256": "987b6da5615ac292e35d14b5d30e02b9711c1870f8ab58d0480da09046825b65"
+    },
+    {
+      "path": "internal/cephx/receive_budget_test.go",
+      "sha256": "793311990d2e766ae918f453c997288d29c6a5c32214c2290c9418a66152f362"
+    },
+    {
+      "path": "internal/cephx/service_connector.go",
+      "sha256": "ec6169db8f38420f6770f21012ba2d1420045984185d85c67f125b32ec422884"
+    },
+    {
+      "path": "internal/cephx/service_connector_test.go",
+      "sha256": "c963139bc2e8cd7c85290c729e526a5119cb02cd57e152d4f65f59edec54f4db"
+    },
+    {
+      "path": "internal/crush/hash.go",
+      "sha256": "21fb469ca5af7d8008c278d534a949732155ff8b2546f5db3ba94bd2c21f973f"
+    },
+    {
+      "path": "internal/crush/hash_test.go",
+      "sha256": "31fc74bfe4c1df7077a21b12397c7e978f5c7d290513738c18948bd1ec79eaca"
+    },
+    {
+      "path": "internal/crush/ln.go",
+      "sha256": "c06d4879ed78ea648a89cd8763bbd6b0a8bb773572d6359d78c54701b8c104b7"
+    },
+    {
+      "path": "internal/crush/map.go",
+      "sha256": "46e988e5bbfeda41ef924dea88228a35646cce38b9a6c88e56c9be7134d4afca"
+    },
+    {
+      "path": "internal/crush/map_test.go",
+      "sha256": "cdfe82ecf3bf51e846c5d61686da2784035281282ea6eb6517a103b137fa1aad"
+    },
+    {
+      "path": "internal/crush/p05_fixture_test.go",
+      "sha256": "089e93c6716e2e3df1ff5a96beefaa3697270f12b2fb09a48818ac1a236b1de5"
+    },
+    {
+      "path": "internal/crush/p10_fixture_test.go",
+      "sha256": "dc94467418fafd41c5fb2e916039684c18d8f45bfbdc8e23f23c634282f3ea82"
+    },
+    {
+      "path": "internal/crush/place.go",
+      "sha256": "d169f2e541b89bfbfe3775fc5afbeb104eee60f259addcf070bf48cfbe8909c7"
+    },
+    {
+      "path": "internal/crush/place_test.go",
+      "sha256": "b9ca6f2877732c2280bf05afda56ede67b4e430cf58ef5b55f666db898ead699"
+    },
+    {
+      "path": "internal/crush/placement.go",
+      "sha256": "1778a1748687b882c71bf8f32843adb3e63e57fc07a62afb42fbd6138d2721d7"
+    },
+    {
+      "path": "internal/crush/placement_test.go",
+      "sha256": "9febcde68a16e05a27d0d187eedc15af74a7df45943fa048b2f1e4f3407d8287"
+    },
+    {
+      "path": "internal/encoding/codec.go",
+      "sha256": "6352b11ed23db97a34bd63f33b272caf162b69cad2da7b9accd51e05f3c6068d"
+    },
+    {
+      "path": "internal/encoding/codec_test.go",
+      "sha256": "ac3316834d1f0bb1bb2633f5c777c70b082f55bd3a14057f5e14772039cbcfc5"
+    },
+    {
+      "path": "internal/encoding/crc.go",
+      "sha256": "9dce38e0846c80679a7182baeca6d4bd44a853b0a7841a507caa0a46675e9938"
+    },
+    {
+      "path": "internal/maps/incremental.go",
+      "sha256": "76b547028c7f5fab9fb234d64b863493d188cde95cc9b74a912db9ef32cfc48e"
+    },
+    {
+      "path": "internal/maps/incremental_test.go",
+      "sha256": "6128818955e8e133c384b52645c98a6b38219e328fb986d7affe97ac03f6c05c"
+    },
+    {
+      "path": "internal/maps/mgrmap.go",
+      "sha256": "32cad6af44c53081e24e417ce4de180fbc3fd72ddd270f12afe99b06b5d26b86"
+    },
+    {
+      "path": "internal/maps/mgrmap_test.go",
+      "sha256": "c5a092832cbbf117ffdafa333c7da553f2747b0a183806a15fdbeb9428797081"
+    },
+    {
+      "path": "internal/maps/monmap.go",
+      "sha256": "78bdda912e05c548ce55e827214dbedd0fe87e1e25cc0d5eb05edcf95c6979fb"
+    },
+    {
+      "path": "internal/maps/monmap_test.go",
+      "sha256": "a40babf7628a12698984a674e6eecf83b5fafcde65ebd9201953d80ae0d194b7"
+    },
+    {
+      "path": "internal/maps/osdmap.go",
+      "sha256": "dcaed452c70e907a2f7f7e851ed02a343488e0dba77eb7228407e4e4ca0c766e"
+    },
+    {
+      "path": "internal/maps/osdmap_test.go",
+      "sha256": "d19d42a04b0e226ea80e01f2c4bf02b65f338c5b9921484a2f93eb88d6588243"
+    },
+    {
+      "path": "internal/maps/p04_fixture_test.go",
+      "sha256": "98953880e9e9d7633d0ad10206491523f223125698fffa788616035245ac7088"
+    },
+    {
+      "path": "internal/maps/performance_baseline_test.go",
+      "sha256": "c892b16ed97d4a04561e9a13e5155aa1438607440cf9fd6031fee70b4e07afd6"
+    },
+    {
+      "path": "internal/maps/placement.go",
+      "sha256": "3a66eadafb7fac7cc42b77329326e5ce8b1fbe98aa3e2d2191ba3b9c4f7de0f5"
+    },
+    {
+      "path": "internal/maps/placement_reuse_test.go",
+      "sha256": "9dfd26640045ab30aa01a30b3524653655177df1478d6f00c242c0922ae1affc"
+    },
+    {
+      "path": "internal/maps/placement_test.go",
+      "sha256": "96313b4783e2141560bae963c5f248473504c06358481275c9f245bf2d4b9f0f"
+    },
+    {
+      "path": "internal/maps/pool.go",
+      "sha256": "288ccdd4715dbc4a1ff8bcb936fc84ddd4d0c873138154ec9ec8fcabe0e86aea"
+    },
+    {
+      "path": "internal/maps/pool_test.go",
+      "sha256": "ad8ca192e7c4140fa901a36f4b68a8094fa6db3e7be854a6423e67686517f34c"
+    },
+    {
+      "path": "internal/mgr/client.go",
+      "sha256": "2f2d9eda2a066569ebcfb75ce3f237a917a151f9a8bc9ed57d46a2afc2f26c01"
+    },
+    {
+      "path": "internal/mgr/client_creation_test.go",
+      "sha256": "b01d342b66545794b6208943c4cd659cc17079eb0e29b95ef50e77ae6eb64307"
+    },
+    {
+      "path": "internal/mgr/client_test.go",
+      "sha256": "b8c27274ea87c90bb1405523fd0d7d42cbb1086d3ee122de983b174648a30941"
+    },
+    {
+      "path": "internal/mgr/messages.go",
+      "sha256": "219f3f716e0235620411f89d63a176f07755f09d3b0f62367c61248e0bffa45f"
+    },
+    {
+      "path": "internal/mgr/messages_test.go",
+      "sha256": "e222b249ed30f19a8c2cbc6dc724e2e8bb7d9aa034ff9a471a9d3f1c69201f0a"
+    },
+    {
+      "path": "internal/mon/client.go",
+      "sha256": "395115b3f507e1800ded0e1cceba59c13a9329848ace875efb1843b261ba8511"
+    },
+    {
+      "path": "internal/mon/client_test.go",
+      "sha256": "aac5cf7e88bd19cb938a943f4f97191e812dff49d75aa7ba364cbcd4f9b21c8b"
+    },
+    {
+      "path": "internal/mon/config.go",
+      "sha256": "0eeb3a41c49cf8738a394a2123bc986b90d14a061557732f9b26dfe652d6f412"
+    },
+    {
+      "path": "internal/mon/config_test.go",
+      "sha256": "336f697524ff14280570dbfd2bfb5ea367d78b9c72137977be7d4bc841178c02"
+    },
+    {
+      "path": "internal/mon/messages.go",
+      "sha256": "7e8d9b718ee96afc49a91153fadcf52efc33969a44025122faae5dbf4f9d9191"
+    },
+    {
+      "path": "internal/mon/messages_test.go",
+      "sha256": "2c4d97a81a9f3501ba35a480e8041531f8eb8cb8d151664d9bbc7009a75fb4d0"
+    },
+    {
+      "path": "internal/mon/seeds.go",
+      "sha256": "2174e1a673959466deb2b40348075656a58edad124b440b4d4b382039ce69eb2"
+    },
+    {
+      "path": "internal/mon/statfs_test.go",
+      "sha256": "60710977883279cb6744b8fbc1c67e002153f87a42a0037d7d5305fd0c3e7d11"
+    },
+    {
+      "path": "internal/msgr/banner.go",
+      "sha256": "46a374d27b4e24422d830c848541d56baad74dd13417653a02c1a6c0e1010527"
+    },
+    {
+      "path": "internal/msgr/banner_test.go",
+      "sha256": "0a956f1034ae80002a691504404dbc938356741ba7f182f502f34f47227af859"
+    },
+    {
+      "path": "internal/msgr/control.go",
+      "sha256": "2d205b3fb5ddb4df7f856592b528fa4932ffc1b122ff65ea4da52a1390ea24df"
+    },
+    {
+      "path": "internal/msgr/control_test.go",
+      "sha256": "212a88dbf2d14333bd722783c517d3d3b62554ba703555aa9cedbc5d49383b88"
+    },
+    {
+      "path": "internal/msgr/fixture_test.go",
+      "sha256": "1b1b0c9514c2aa4546eef1533180f7d19a8274af4c3594f34c0b36c33864f844"
+    },
+    {
+      "path": "internal/msgr/frame.go",
+      "sha256": "c5ffed4fe2cab158bb6fe71ccfe4c4e39fe113246bfd31c9598faea62774f2eb"
+    },
+    {
+      "path": "internal/msgr/frame_test.go",
+      "sha256": "82cb5c5e6d1304856c8458dd2fb5d7dd2e5bb5590b1e589a7e538aaa993350d2"
+    },
+    {
+      "path": "internal/msgr/fuzz_test.go",
+      "sha256": "58bdbf6f7ed49e514b7985c2d29533872942699e149a654a1ad7411c2b8a4a96"
+    },
+    {
+      "path": "internal/msgr/message.go",
+      "sha256": "278d8a3a90659a5ebb1a6b248905198c324cce8a391e0c3a9a91c0fde0226115"
+    },
+    {
+      "path": "internal/msgr/message_test.go",
+      "sha256": "936947d88de8d521058342557eae29c55d90568fa5db71795c3965da57b3c3d7"
+    },
+    {
+      "path": "internal/msgr/mode_diagnostic.go",
+      "sha256": "73721764e277d66b38a7c876e8f3962a6a3e9a1169b88b3cd1ba7ac990bc6aec"
+    },
+    {
+      "path": "internal/msgr/mode_diagnostic_test.go",
+      "sha256": "687eb3bbdca2529e7c7800a03945550513c87aca562daae3231c374a58b08026"
+    },
+    {
+      "path": "internal/msgr/performance_baseline_test.go",
+      "sha256": "bed58c62e5c82f5075af004cd19dfe115a73ee786f8a996510e0ab67b415e926"
+    },
+    {
+      "path": "internal/msgr/phase4_budgeted_capture_test.go",
+      "sha256": "7a304f7e35aab050810df60b0c4aa03fb108bbd22d1b6d5e97aa6d3e358e6743"
+    },
+    {
+      "path": "internal/msgr/phase4_resource_test.go",
+      "sha256": "dd53030dbd8dc8db40ba34cde178afbdb10611c26957fc24b54de01f8b8ef0a2"
+    },
+    {
+      "path": "internal/msgr/phase4_stalled_test.go",
+      "sha256": "d33b5953e5f218c9074eb0207eb57d395f70017fc1662a2a8696d03cf584d148"
+    },
+    {
+      "path": "internal/msgr/reader_retirement_test.go",
+      "sha256": "58d83510d1f47f7cb405436a5f6d1cb826744c28d271aa80f46ee77387023bec"
+    },
+    {
+      "path": "internal/msgr/receive_budget.go",
+      "sha256": "1619f8be05cf0553b23f181cc0aeece74ba81536a7f49aa6dbe7bf8681f7f9b7"
+    },
+    {
+      "path": "internal/msgr/receive_budget_benchmark_test.go",
+      "sha256": "35eec2babdc2db1800883c9be2dfdeef62b38d14ae36adf848ba249b65732d48"
+    },
+    {
+      "path": "internal/msgr/receive_budget_codec_test.go",
+      "sha256": "6799c9ddd1b50391afb74dec38fafe0b5729d6e73787438ca60551be9e3fe641"
+    },
+    {
+      "path": "internal/msgr/receive_budget_lifecycle_test.go",
+      "sha256": "1503b65254f5bb6a40beefa4729e7601ee441018c03b53d3f09ceacdff59b9de"
+    },
+    {
+      "path": "internal/msgr/receive_budget_stress_test.go",
+      "sha256": "12a91c113460bdf9309bd4e55eed2e33f067190970a51729f6b4e951fdd18e41"
+    },
+    {
+      "path": "internal/msgr/receive_budget_test.go",
+      "sha256": "535deea3dfaef45c553ef8beacca8242e22ac34ea182bddcea58c73fbef57517"
+    },
+    {
+      "path": "internal/msgr/request_timing.go",
+      "sha256": "07f8635e5d12e1639d5c0a5cb336e424ab22219d79bf9cc3fedb247e7a6e4fa1"
+    },
+    {
+      "path": "internal/msgr/request_timing_test.go",
+      "sha256": "46e23455f8500382576b50c429bbb0afff6f868d6a99224bef6dde7dd3b20406"
+    },
+    {
+      "path": "internal/msgr/secure.go",
+      "sha256": "8c9d1bd2c339513cac13f6f68fcf9141a7cfcbac5552158ff551b4d713df156d"
+    },
+    {
+      "path": "internal/msgr/secure_benchmark_test.go",
+      "sha256": "ab497e20cf2c64a9ac27c9834740b23e022ec6fca2b2eb9296cebcce12c15db0"
+    },
+    {
+      "path": "internal/msgr/secure_test.go",
+      "sha256": "93a31b1cb788a9d848d311e740ecb20cbf23295c8f37ada0d7562737f69c2afc"
+    },
+    {
+      "path": "internal/msgr/session.go",
+      "sha256": "050293425875647e838a60cbe37d97fa361b91fd04672104866a56956c775ca0"
+    },
+    {
+      "path": "internal/msgr/session_control.go",
+      "sha256": "78128942773d0692487ab0a0b3115d749f5388c93d36b1425793ec38f95a45b1"
+    },
+    {
+      "path": "internal/msgr/session_control_test.go",
+      "sha256": "37d34671d32332f25daeb0d50f22049deb39841d8b40db5734791baa65610e8a"
+    },
+    {
+      "path": "internal/msgr/session_receive_test.go",
+      "sha256": "b03ed2d56aab19bff15264f41f3fc60abb904f85ae6c5060b597e11b4d94d4cf"
+    },
+    {
+      "path": "internal/msgr/session_renewal_test.go",
+      "sha256": "09351cea1f3c548dd269ee9d080f26feda253e0c1b825f6a265b960dcd86bec9"
+    },
+    {
+      "path": "internal/msgr/session_retention_test.go",
+      "sha256": "0d321ec267f5e9cf29c3c2b61ada83271861f3db23811d38f1c4309572552747"
+    },
+    {
+      "path": "internal/msgr/session_test.go",
+      "sha256": "acba0daf81c190630ddeb2a3bf2fdcffa2839aa1ef6e08f82744e76f62490698"
+    },
+    {
+      "path": "internal/msgr/testdata/fuzz/FuzzSessionScript/938f779fb2101a93",
+      "sha256": "938f779fb2101a931328ed6fb6810d6454ee91ebcad1c79cbbbceb27f156bb14"
+    },
+    {
+      "path": "internal/msgr/transport.go",
+      "sha256": "f3907ecdedfd82cd0d3655ab9eab2ead78dc76fdebab162c4a08c5f495d436e2"
+    },
+    {
+      "path": "internal/msgr/transport_test.go",
+      "sha256": "9fcf362b2833df70d55553d61481cb5aa1fe79fbd8c3d4de49a165262d016464"
+    },
+    {
+      "path": "internal/objecter/backoff_control_test.go",
+      "sha256": "22282785ea5943696b6023cefc2e6a73f9c2290cf310f5b38c5c261344bb7884"
+    },
+    {
+      "path": "internal/objecter/client.go",
+      "sha256": "72ce734e04dba9d0559d48e0f90f288bef9c0edb9635e4a792db5ff6abbd6731"
+    },
+    {
+      "path": "internal/objecter/client_test.go",
+      "sha256": "04bffa704b8b4d4c8d9f913c14a2770dfdfad8f01d26032e0155d35cc036a072"
+    },
+    {
+      "path": "internal/objecter/command.go",
+      "sha256": "b903701eefab72b5423d2f02bc6fa3e21101aa86b1eb5fb7f391c5e970eee12a"
+    },
+    {
+      "path": "internal/objecter/command_test.go",
+      "sha256": "d25057f9a936e7e08629b9c1f72abd8dbbc4fc7e6cf49a18568d5c9d0396a051"
+    },
+    {
+      "path": "internal/objecter/enumeration_test.go",
+      "sha256": "c9ebd319250f34d47bbdf2a4961394c02380f3671af5768494081ce0715b4be4"
+    },
+    {
+      "path": "internal/objecter/inconsistent.go",
+      "sha256": "653be7a65a48ca4921bc42e76fd9f04e3f48a2ab36220bf6a0a9defc100384a4"
+    },
+    {
+      "path": "internal/objecter/mutation.go",
+      "sha256": "572a35b5caa886efbd78aeeed3e8bfe11f554a77949153826823b80cf44719e2"
+    },
+    {
+      "path": "internal/objecter/mutation_test.go",
+      "sha256": "435f97c5b8996aaea6990e84999e8f145412f533715e9e5cfd0639def519e561"
+    },
+    {
+      "path": "internal/objecter/osd_session.go",
+      "sha256": "bf80ba545a1dafa9f869611edc893d1a5a92153a9839e30da0d4b027d1b4e635"
+    },
+    {
+      "path": "internal/objecter/osd_session_test.go",
+      "sha256": "e5254b8151a6daca228c96ad45af32c8c8738284fcdfc078f913a0b80ec81d57"
+    },
+    {
+      "path": "internal/objecter/read_ownership_test.go",
+      "sha256": "84751657895b9f7cc6920a5cf95a0637854249fb260520e3c36ce229eacf1ee7"
+    },
+    {
+      "path": "internal/objecter/session_creation_test.go",
+      "sha256": "14851dcd003cd782750452e457802fa588ca0269ee3afc5e1bfaca0a5a35b7f9"
+    },
+    {
+      "path": "internal/objecter/session_lifecycle_test.go",
+      "sha256": "b25022f8a4c4f8b64646905f38c30d61b063fc73189542107bbffcb279609522"
+    },
+    {
+      "path": "internal/objecter/watch.go",
+      "sha256": "d44d0ade256a74fbde78d91e251b9c8520419a85eea218b84dd011890990f2cd"
+    },
+    {
+      "path": "internal/objecter/watch_test.go",
+      "sha256": "913957f47cee2e898e5debde6211e4d458fe86853734326adfe0a7fb7c9fbc55"
+    },
+    {
+      "path": "internal/osd/backoff.go",
+      "sha256": "d1680258d65be03b1274775f79050f46602db3b9f947643460b48a83b7ed7255"
+    },
+    {
+      "path": "internal/osd/backoff_test.go",
+      "sha256": "17ae2cf89f4a0c2f26cf0f77f75b3acf84c53d671b159b188d6be0c6f7cc2184"
+    },
+    {
+      "path": "internal/osd/checksum.go",
+      "sha256": "6a69191fe84993c7890f628cee1b80764370eeb9ca300b57034b7c0fbd886eac"
+    },
+    {
+      "path": "internal/osd/checksum_test.go",
+      "sha256": "fe81835356512544e5eee3b3f6936095c4e219e0f9f53d733c9b1da1068036bd"
+    },
+    {
+      "path": "internal/osd/command.go",
+      "sha256": "618fc109bf585513486b2d87d99b9077d61743763b1a2e077aca7e7d6772235e"
+    },
+    {
+      "path": "internal/osd/command_test.go",
+      "sha256": "8b9f23562e54a05bd2a071e51539c927f6696f98b112c59159a30e57f63e85bc"
+    },
+    {
+      "path": "internal/osd/enumeration.go",
+      "sha256": "265f141c9f61a984279c7b0cbea86a09535e06bfcf13b544c253206e4235e086"
+    },
+    {
+      "path": "internal/osd/enumeration_test.go",
+      "sha256": "820019051633ea5f82d3432585b50502e57f9310d8cd75b83f27b6fde524e2fb"
+    },
+    {
+      "path": "internal/osd/inconsistent.go",
+      "sha256": "8e8ad9e80680f75d09da560edc7acee7faa1b11a4f1a7b411c905502b23c3e7c"
+    },
+    {
+      "path": "internal/osd/inconsistent_test.go",
+      "sha256": "148f317aa69a53a20c904d9ec74248bc4d2e5dc47888acc1e3389c490736c9df"
+    },
+    {
+      "path": "internal/osd/lock.go",
+      "sha256": "bfdeb9bc9a5285dddd44d82ffa65eedb95cccb601996ca34851ac361b6f6d7f5"
+    },
+    {
+      "path": "internal/osd/lock_test.go",
+      "sha256": "589e16d31eafd31974bb299040df12211077eb71c22fb275d33ae7d5caed6a18"
+    },
+    {
+      "path": "internal/osd/messages.go",
+      "sha256": "d70cfe58bf82ebd84004c4baadaf985d773a6b75773fab161d4a2decaf9e5c1c"
+    },
+    {
+      "path": "internal/osd/messages_test.go",
+      "sha256": "cc7e67f3bed18ef05170fb5c71d3fd9d8af1e8413e80934356a21c0787bccd9b"
+    },
+    {
+      "path": "internal/osd/metadata.go",
+      "sha256": "7ea4eae91a47bc32dde896927c24b4ae5996bd4b258ba8da574ac2ea0b7854c7"
+    },
+    {
+      "path": "internal/osd/metadata_test.go",
+      "sha256": "4421879d22d3543071cf3a5e29fa14a77ff482270220de2b57b201b640fa512c"
+    },
+    {
+      "path": "internal/osd/sparse.go",
+      "sha256": "e0eb31cc118754243633ea9b817ee4396759a6722a0a38a78505a62c4f434610"
+    },
+    {
+      "path": "internal/osd/sparse_test.go",
+      "sha256": "01ba7f17d2af91e7eba85786f3890788828479221d89dc2447af62ac00adf3d5"
+    },
+    {
+      "path": "internal/osd/watch.go",
+      "sha256": "db74670ec4810a0b189c459b608d5161e5f0423aa0bb091f72af664a9f2c8ff6"
+    },
+    {
+      "path": "internal/osd/watch_test.go",
+      "sha256": "2b88365eb4360f07cda270196ce09654d4e0f280e0a99af15cb3018804ee1943"
+    },
+    {
+      "path": "internal/p12fuzzcontract/contract.go",
+      "sha256": "acf9dd3d47a26c1698b6686145458996a63fe36774dffb72303e291b30ad6810"
+    },
+    {
+      "path": "internal/p12fuzzcontract/contract_test.go",
+      "sha256": "46b5d1cca0e595c357211348b63e106b51d5750bceb54eb5da295856a028ff79"
+    },
+    {
+      "path": "internal/p12fuzzevidence/evidence.go",
+      "sha256": "e1b810387882cbc898bd1f3b9d2f1f6fdb078bfe87f9644098d2a4c9120f1622"
+    },
+    {
+      "path": "internal/p12fuzzevidence/evidence_test.go",
+      "sha256": "5181097e1be05dfc384e4cffde2d4723f74271341e016c4b33c847d312aaf064"
+    },
+    {
+      "path": "internal/p12qualcontract/contract.go",
+      "sha256": "69ddb92ff94de1110bedf68989e6d1f84212797cfc9ea9aa742aa720bb2fe15b"
+    },
+    {
+      "path": "internal/p12qualcontract/contract_test.go",
+      "sha256": "f09417df8613fb71394db00814e2565e2037d4fe6701daa63e579ae6bf0295bb"
+    },
+    {
+      "path": "internal/perfbaseline/collector.go",
+      "sha256": "08cbf4fcb45584d61fa049801b83db1d85577aca3357698d22592c0915a8758a"
+    },
+    {
+      "path": "internal/perfbaseline/collector_test.go",
+      "sha256": "5513cb9f333a3bbcb7ef989fd0d9d48cedbc173c52c2bfd1c0ca039cbcc85155"
+    },
+    {
+      "path": "internal/perfbaseline/modes.go",
+      "sha256": "fc727a9a4145bca64487c254be50f298c54afccb8602168602182d11fe59c7d7"
+    },
+    {
+      "path": "internal/perfbaseline/modes_test.go",
+      "sha256": "a54975b68cb3cb82e7309e7ce0c98032bde46d5751b63423d967fe2d5de44f1d"
+    },
+    {
+      "path": "internal/perfbaseline/native.go",
+      "sha256": "7ff329940ad2e4b1d44c0c4580e90aaa54d8ad3ceb7479a5f301e246493e8c0d"
+    },
+    {
+      "path": "internal/perfbaseline/native_test.go",
+      "sha256": "eb883e31f4eca424fd4cf8ef54662ff4c19a285de6315755566f021dbdb02c3c"
+    },
+    {
+      "path": "internal/protocol/address.go",
+      "sha256": "802b49d86bda957c9f243ef9b619a57f49441b108b0e69cf8c814cbb4eb5c686"
+    },
+    {
+      "path": "internal/protocol/entity.go",
+      "sha256": "bae43654cc37194c84ce1be63ef071aa1dac6050c68c012b969ef797b6f48b01"
+    },
+    {
+      "path": "internal/protocol/errno.go",
+      "sha256": "853b8360670a28e8462d6e2eeb3c7d427e9dacf98fe9752b5da2bfad71baafcd"
+    },
+    {
+      "path": "internal/protocol/features.go",
+      "sha256": "1031cd9b04982627ed180d948c4f0961f0afeff01d3dfc6aa1ed1b6c951b415e"
+    },
+    {
+      "path": "internal/protocol/message_types.go",
+      "sha256": "57f3a95b49e8e4002a91ec99206f703cedd38aa86d12911c52ad1a8ea2169fe6"
+    },
+    {
+      "path": "internal/protocol/message_types_test.go",
+      "sha256": "2d4397612a4ac944ee1442e719718ecf387b84ceed5a68290e96f49289bb89b1"
+    },
+    {
+      "path": "internal/protocol/protocol_test.go",
+      "sha256": "2fd9418c3c3f6324ca9b65350b1857c990d89c9a184c0e91f0072d26f956ce68"
+    },
+    {
+      "path": "metadata.go",
+      "sha256": "0d05c62980408ce2659965c4c56e01fea0da98039c1bde1f9d8928df930f65e5"
+    },
+    {
+      "path": "metadata_test.go",
+      "sha256": "6146819994fe384c311042e062a20ca6043c5ae865357feb32fe9cbebe366322"
+    },
+    {
+      "path": "object.go",
+      "sha256": "dfb2ee91396778d49541938f81641d999a6298b1f37155a836bef02b2e72a80f"
+    },
+    {
+      "path": "p12_diagnostics.go",
+      "sha256": "23c99ad97433dcf13598ff3949b825fde1ac79edddc680aaa7d5c09f8b21667f"
+    },
+    {
+      "path": "receive_budget_integration_test.go",
+      "sha256": "109019a4e151613d1d9cabce23651910df7473a79e1279b4c0332157a0de1e24"
+    },
+    {
+      "path": "snapshot.go",
+      "sha256": "17657e979c8e9f5214d6cfddcc6025c075d353b5a38d87121c85151664cc2271"
+    },
+    {
+      "path": "testdata/README.md",
+      "sha256": "589d1ba5b2e046f7f414fbc62632fbec4148a2102553bc35273c95b86129cec1"
+    },
+    {
+      "path": "testdata/manifest.schema.json",
+      "sha256": "5db9a77a13bf998728fec98ab58410a387ba46041129c768b32848bc5a3d0a24"
+    },
+    {
+      "path": "testdata/p01/entity-addr-ipv4-legacy.bin",
+      "sha256": "3e0124654f5817281cfaa1b056f14b4128b546ef38994d765b6bb09c00868fbf"
+    },
+    {
+      "path": "testdata/p01/entity-addr-ipv4-legacy.bin.json",
+      "sha256": "0005ecb888beba6b13833e1edb32fc5851e59b1fd1f73b3e9b48ff956a14e00b"
+    },
+    {
+      "path": "testdata/p01/entity-addr-ipv4-modern.bin",
+      "sha256": "43c8ed879a7fd14a2d86ac42f0d78d9ae6d5a785f5e60b6658bcba3b3eb2d7e7"
+    },
+    {
+      "path": "testdata/p01/entity-addr-ipv4-modern.bin.json",
+      "sha256": "6085d858d521847cadf63c24e0c31aaf9f07b3d68fde5b43004838ab29890538"
+    },
+    {
+      "path": "testdata/p01/entity-addr-ipv6-modern.bin",
+      "sha256": "a5b18e8166e8aa1d0c3285a6c1a3470851ae2bd229b28da857328c3bd2217986"
+    },
+    {
+      "path": "testdata/p01/entity-addr-ipv6-modern.bin.json",
+      "sha256": "a822dda3fe0cfdb90c4b140c29c2f5a0c7c6bcf2ae00c3a3171d93c94bbfb43d"
+    },
+    {
+      "path": "testdata/p01/entity-addrvec-modern.bin",
+      "sha256": "f26c6ce30fe8892264a14b6cd5042549d1eee314f921cf8019faf6be9d5c4345"
+    },
+    {
+      "path": "testdata/p01/entity-addrvec-modern.bin.json",
+      "sha256": "7e368d4af8a02c2a417670d0ff8e2813c2d95ae5fe05750e8d61e0fd45cfc7d8"
+    },
+    {
+      "path": "testdata/p01/entity-name-client-1.bin",
+      "sha256": "0ea9e19802a23c4674e289fabeaa6e600262fb9ad25ae64fd4fb927651b6abe9"
+    },
+    {
+      "path": "testdata/p01/entity-name-client-1.bin.json",
+      "sha256": "910701f79ad25552ebdb61e3c4abac8103f3eee2a09a4f5b195d73120da98631"
+    },
+    {
+      "path": "testdata/p01/entity-name-mon-new.bin",
+      "sha256": "1272f520cf7ca5cf117a0b5a3116518371bf20fb7fac043ac1be568b8c55b96c"
+    },
+    {
+      "path": "testdata/p01/entity-name-mon-new.bin.json",
+      "sha256": "d2dad2e8d97cfcd80d880895300b6ef4c22f21e1aa10917556608044a1e61870"
+    },
+    {
+      "path": "testdata/p02/banner-rev1.bin",
+      "sha256": "6819c56d3d3d3ccaa0545a80d55aaa8088d88e9f849113cdafa58feb298cfcca"
+    },
+    {
+      "path": "testdata/p02/banner-rev1.bin.json",
+      "sha256": "51ed9ffdc49b36cfc9a64725cea2a500d2127701e0b7b2e83379e7a73eaeb646"
+    },
+    {
+      "path": "testdata/p02/crc-four-segment.bin",
+      "sha256": "0fa63a785151214c426f128141faf3969eb0be008b9229505ab7146401dd8c42"
+    },
+    {
+      "path": "testdata/p02/crc-four-segment.bin.json",
+      "sha256": "7c3a5ae9fe85315ceceda6fcfaa2111e82532443a87decb5ac3689ce38a581ea"
+    },
+    {
+      "path": "testdata/p02/crc-one-segment.bin",
+      "sha256": "cc92c26d26b0ad4635944e3d2ac05a6cc87463162cd66a9f2884303fd95d37d4"
+    },
+    {
+      "path": "testdata/p02/crc-one-segment.bin.json",
+      "sha256": "3af195bd7f5801f56745120f320391b4d3bf2bfcce0285ef4ab190e69c7050fb"
+    },
+    {
+      "path": "testdata/p02/secure-multi-record.bin",
+      "sha256": "f0c516007c9473215ababf72c8ab9058e8a5936cab97e2ca59fdde28849d37a1"
+    },
+    {
+      "path": "testdata/p02/secure-multi-record.bin.json",
+      "sha256": "95602cc7b5e4c7a01cc607b3a2baf6884dc56a26eec0d528f08c8bdb9e005aaf"
+    },
+    {
+      "path": "testdata/p02/secure-one-segment.bin",
+      "sha256": "592152e22495cecb210cf5a7bfefac49f6cdd8bbbb14e223db3538bef0b3926d"
+    },
+    {
+      "path": "testdata/p02/secure-one-segment.bin.json",
+      "sha256": "afc0479551c9643f793f79f31ca4baa0f2e33dd34d7ba3491d30ea397eaf0b0c"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-ack-control.bin",
+      "sha256": "2496a22ad0abda5947019dcdbd5dfe482eab124a649d302cba119df923a6ce70"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-ack-control.bin.json",
+      "sha256": "6a812bfe04deef21815008b058b8c574e6ca89457ab795d90becd3aae73764c3"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-crc-disabled-one-segment.bin",
+      "sha256": "68cef6e79159b37891d93457c98a1748a311a6becc12cf2a67a7da90234e7569"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-crc-disabled-one-segment.bin.json",
+      "sha256": "7dee67e33a2394487da12e23d06bf75894e5380375d4bcdcdf0b8a4889f6fde4"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-crc-four-segment.bin",
+      "sha256": "0fa63a785151214c426f128141faf3969eb0be008b9229505ab7146401dd8c42"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-crc-four-segment.bin.json",
+      "sha256": "6950e9fae5cebdeadd703f5139eba1a30b47b742f9392ce6485adda98d7d190d"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-crc-one-segment.bin",
+      "sha256": "cc92c26d26b0ad4635944e3d2ac05a6cc87463162cd66a9f2884303fd95d37d4"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-crc-one-segment.bin.json",
+      "sha256": "4724b28c4b5c8dafbdb2a636e2d1ee91634abc241ad57df7e632d0f9f05ab4cd"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-message-frame.bin",
+      "sha256": "00a22987b019e085cf811b10852000116e3c63adc33bf86729485a2ecb81ff26"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-message-frame.bin.json",
+      "sha256": "11f1e70a7d041c35f8ff886f40d8a31c461f87a7ec779b58432be9d1d3ffbd3e"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-secure-multi-record.bin",
+      "sha256": "f0c516007c9473215ababf72c8ab9058e8a5936cab97e2ca59fdde28849d37a1"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-secure-multi-record.bin.json",
+      "sha256": "8138588eff256d268a652ff4b0bb4b0586d24fc8dca87b3316de79079b17b8ed"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-secure-one-segment.bin",
+      "sha256": "592152e22495cecb210cf5a7bfefac49f6cdd8bbbb14e223db3538bef0b3926d"
+    },
+    {
+      "path": "testdata/p02/upstream/upstream-secure-one-segment.bin.json",
+      "sha256": "111db2e468acdb54c10854db0c25d97c09363ef611f50d4b006157d7b3ca241b"
+    },
+    {
+      "path": "testdata/p03/cephx-encoding-vectors.json",
+      "sha256": "6b7c66e654f2f11a2effa2c51119b4cdcf19eba642952d8eaa292de3182f1cc4"
+    },
+    {
+      "path": "testdata/p03/cephx-encoding-vectors.json.manifest.json",
+      "sha256": "fa72e75e9780ea2d63533d561acac35a57ce44e58dbee30e4466cdfc2d43586e"
+    },
+    {
+      "path": "testdata/p03/crypto-vectors.json",
+      "sha256": "9baad25768d0d32c238cb1c98bc2d6c08f66f84dde724b92b5d518dce50b4591"
+    },
+    {
+      "path": "testdata/p03/crypto-vectors.json.manifest.json",
+      "sha256": "87e796f2079d36430deb5602b41ee9a366c29f1c3374277440e0525005016e1d"
+    },
+    {
+      "path": "testdata/p04/monmap-v9.bin",
+      "sha256": "d575f2f1267aaad35803d0c7fbd61bd0d1ab00ac7837bb6210a835a0d4c3e3da"
+    },
+    {
+      "path": "testdata/p04/monmap-v9.bin.manifest.json",
+      "sha256": "6b01090488b2ad494327466fdc9b20fc3a21f88c42c8d21591b8927d3bb5d4f5"
+    },
+    {
+      "path": "testdata/p04/osdmap-incremental-v8.bin",
+      "sha256": "57ee8c961bac016deb512b6f741b66231a9c337bc1bdfce0b54ef9697c0b9763"
+    },
+    {
+      "path": "testdata/p04/osdmap-incremental-v8.bin.manifest.json",
+      "sha256": "8436e4948965ea6e43432e6b31d64d20b191584d9523f9464a84a3622381d41c"
+    },
+    {
+      "path": "testdata/p04/osdmap-v8.bin",
+      "sha256": "7131ba24e481dd198a90b6121d6fc2a16b32dc61928dfcd9f5df9efc730acda8"
+    },
+    {
+      "path": "testdata/p04/osdmap-v8.bin.manifest.json",
+      "sha256": "6aa5632a72d0f78385d12ec28b2933f88243cb682f6942ef2de02ed9f331c517"
+    },
+    {
+      "path": "testdata/p05/crushmap.bin",
+      "sha256": "9679682ba0a62113d699006a09f96142536de2ae699dc92e9ffd39999792157f"
+    },
+    {
+      "path": "testdata/p05/crushmap.bin.manifest.json",
+      "sha256": "b18232950ce37df5726eaab6cc6d23e77e7eb53ff2b93f4ca588d6ab5d3bc140"
+    },
+    {
+      "path": "testdata/p05/mappings-osd1-out.txt",
+      "sha256": "2e77d33e59b2132df9c23320e2b76faf186b5164c10ca2f467e78cad08f5e494"
+    },
+    {
+      "path": "testdata/p05/mappings-osd1-out.txt.manifest.json",
+      "sha256": "35ff21532fcbf712f670c4c68e34e191b62fb275ac31f593f999064c6890b205"
+    },
+    {
+      "path": "testdata/p05/mappings.txt",
+      "sha256": "d110f6526ad142b627e16da860017b3ab848034af74cc292e36c03f89a8f2a30"
+    },
+    {
+      "path": "testdata/p05/mappings.txt.manifest.json",
+      "sha256": "8f03749b6684b709656eafa1fae0ffb892181a638718c3e1d15d4212be14f411"
+    },
+    {
+      "path": "testdata/p05/object-mappings-osd1-out.txt",
+      "sha256": "94528cd7b5fc23299e32badd8e58141c9996139c54d157b373d0f28b4f43e10b"
+    },
+    {
+      "path": "testdata/p05/object-mappings-osd1-out.txt.manifest.json",
+      "sha256": "4c77d5254673b2522d2d91a8eda49f718ee9adeb6404d2cfeefa4c2a00ae63c2"
+    },
+    {
+      "path": "testdata/p05/object-mappings-pg32.txt",
+      "sha256": "3008174c429e43fbc108027691ba77a1f371cf48b384df7a0cb62757af48bbe2"
+    },
+    {
+      "path": "testdata/p05/object-mappings-pg32.txt.manifest.json",
+      "sha256": "aca7d681661b583effa205f83dd30b2e9c19133b0a4d24650722cfc94c803250"
+    },
+    {
+      "path": "testdata/p05/object-mappings-upmap.txt",
+      "sha256": "6fada3798ac7be3a688dce4008716a7fea5471cceb056a24b845abc106b88789"
+    },
+    {
+      "path": "testdata/p05/object-mappings-upmap.txt.manifest.json",
+      "sha256": "6d7e4a20da8ef0c80d61e261538c123285d08e22a28a0a0ebe03b53e189a5c15"
+    },
+    {
+      "path": "testdata/p05/object-mappings.txt",
+      "sha256": "9efdb41a32bdbf955ff4b15b3901f19d50f845b2d46ac205c90010c9703da1b7"
+    },
+    {
+      "path": "testdata/p05/object-mappings.txt.manifest.json",
+      "sha256": "bdff0f27be65e553b41aca943caf129b8167dc2103241668e74dc56057987911"
+    },
+    {
+      "path": "testdata/p05/upmap-commands.txt",
+      "sha256": "d12e266eee65d2d822f711e5d14bd66c379db9eb078645feeb96ea2554b2d30b"
+    },
+    {
+      "path": "testdata/p05/upmap-commands.txt.manifest.json",
+      "sha256": "285859aca86913af31056d74b2ec8b96dd519ea3dd693dc30ee1bfddccfe3f66"
+    },
+    {
+      "path": "testdata/p10/crushmap.bin",
+      "sha256": "d2fcae471a000699a3ddd30ccb48b38a0f99a303e92332e52e134e71ea6b4a12"
+    },
+    {
+      "path": "testdata/p10/mappings-osd1-out.txt",
+      "sha256": "696a2c45c271bb9d304029b8787d3997d151cc7abcb69abfabde4b574727c2c9"
+    },
+    {
+      "path": "testdata/p10/mappings.txt",
+      "sha256": "9eec5c1a02050535d04e595b5d0340d4d8ba678277a7d4c0cb683b9f309c72cc"
+    },
+    {
+      "path": "tools/api-inventory/main.go",
+      "sha256": "79f4f2be6abd36f655960a2b61637feee7a9f47e4f4a8c264a39b2d099dbf6a5"
+    },
+    {
+      "path": "tools/api-inventory/main_test.go",
+      "sha256": "ee38fb24f1345df0a8643dec0fa0d17a138c337bc928b2c34889f146c80a14b3"
+    },
+    {
+      "path": "tools/p00-verify/main.go",
+      "sha256": "d716e192481e089053533e1acfdec520ff42defce7679229260a36ebbf024d26"
+    },
+    {
+      "path": "tools/p00-verify/main_test.go",
+      "sha256": "4c752473563a893516ec1978a625e8a8997aa058ae529aaa5528975905b9103a"
+    },
+    {
+      "path": "tools/p01-verify/main.go",
+      "sha256": "55e1958684c712d47a3b686aed5e653ae6801fcd9f685bd04d38eeeb266065ed"
+    },
+    {
+      "path": "tools/p01-verify/main_test.go",
+      "sha256": "487f009b0f904a889e962b91addca0d2dd67c398bb2786fa277766a144d9c510"
+    },
+    {
+      "path": "tools/p02-verify/main.go",
+      "sha256": "af297b2a9602031d444865b2011271fbbfe33c83b4b8e6184ba50b4ad8e98515"
+    },
+    {
+      "path": "tools/p02-verify/main_test.go",
+      "sha256": "826d6d3fe69ab4c44d5928ad586f4344c71bdb706cd64479b2ea8d5a2ea47365"
+    },
+    {
+      "path": "tools/p03-verify/main.go",
+      "sha256": "9de45226395b1fbcda2ac9d9b9b8f1b65bdd92c05c531b3e87e77d69cf4a09bc"
+    },
+    {
+      "path": "tools/p03-verify/main_test.go",
+      "sha256": "1678ff0f79d2a79b5c01394748652cab0e14f25743fdc93db1c3c17cb5b63892"
+    },
+    {
+      "path": "tools/p04-verify/main.go",
+      "sha256": "0eab2f7df9facfb6b8f932232353fcbfa5705447ad6105893c45be26e4c53407"
+    },
+    {
+      "path": "tools/p05-verify/main.go",
+      "sha256": "7a1b5d303213f5409a0482d8061acf58a9af12704c2d6d52f1f1c6df58da6cba"
+    },
+    {
+      "path": "tools/p06-verify/main.go",
+      "sha256": "2cfc7028a47617916b64facaa27fa4f241c2ccd007b18e01493ff4c34c2a3347"
+    },
+    {
+      "path": "tools/p07-verify/main.go",
+      "sha256": "817d2650f59119c26c2b83906cfa1fd844294a8ea31ed33cd56c9a6f441948d5"
+    },
+    {
+      "path": "tools/p07-verify/main_test.go",
+      "sha256": "9d07dffe0313bbdfcee230d0e4b50ddb41fe09a4a151aff64aa370f431580665"
+    },
+    {
+      "path": "tools/p08-verify/main.go",
+      "sha256": "fb170016231a2364995e4cce2b828616f3da04a01cec0c15f09d4d7951c8186d"
+    },
+    {
+      "path": "tools/p08-verify/main_test.go",
+      "sha256": "697c0990b433db1675839c850ae52f2969638fc7802ac24d9e131446d22056ac"
+    },
+    {
+      "path": "tools/p09-verify/main.go",
+      "sha256": "b589222979dc5c0b7891e38e5897368f7b69b3c9530152427adf5f91978b95af"
+    },
+    {
+      "path": "tools/p09-verify/main_test.go",
+      "sha256": "45a569a70a069b531ed93ae051827ba3727d51016e872d3e95a773d3fe3d21d4"
+    },
+    {
+      "path": "tools/p10-verify/main.go",
+      "sha256": "c1a2626509b1fa3f4eb2a7ee9483b7ff9023594d6f0fd3c899e1a06318fa6af1"
+    },
+    {
+      "path": "tools/p10-verify/main_test.go",
+      "sha256": "128d07bf2800214beaec2fce56e6fdcf6b52b9347f224540da63defd8124fa0e"
+    },
+    {
+      "path": "tools/p11-verify/main.go",
+      "sha256": "0a0e884d553cc0f32e6608fdb65b025bcccc96b2c6bd5b396c79936f42f4e7b1"
+    },
+    {
+      "path": "tools/p11-verify/main_test.go",
+      "sha256": "c1e40d78b74d9e66909c7574e066d5a71b449eeeabab591afd9e26962929c2f0"
+    },
+    {
+      "path": "tools/p12-fuzz/main.go",
+      "sha256": "8b94c2829cdb1725c043acfb6d2a48e1f9c04ca0d7bfcf3739a3496989818090"
+    },
+    {
+      "path": "tools/p12-fuzz/main_test.go",
+      "sha256": "c4ead541bc27e57604a867698aa338e95ed0da40095970c2bdde8f7191ac7f2c"
+    },
+    {
+      "path": "tools/p12-qualify/main.go",
+      "sha256": "305ab5eadf3a75e60ca6c1c5530b8ce44a8d56ec5d7c2e250f37f4009c45b6fa"
+    },
+    {
+      "path": "tools/p12-qualify/main_test.go",
+      "sha256": "98e24258740c341fca7c249940e98ff728513a5d493620e5f9cd1a0f3ab62ba9"
+    },
+    {
+      "path": "tools/p12-release/main.go",
+      "sha256": "7fd3a4436089b3a4105b8b02b5a8b08ed85005275d37b69c77798a5e9e425200"
+    },
+    {
+      "path": "tools/p12-release/main_test.go",
+      "sha256": "6dadc8b91de5433c197ddda78614475eab20991842beb6f23d67164ecb8068c7"
+    },
+    {
+      "path": "tools/p12-verify/budget.go",
+      "sha256": "4ee39f5e2d9350f839f12ace9801da5340847e126bb65bb7e9618119f51b3ffc"
+    },
+    {
+      "path": "tools/p12-verify/budget_test.go",
+      "sha256": "f7bf15307d2e8ddeeb536379a808171113ea505296b4fb873f1b76a8e68dc9fd"
+    },
+    {
+      "path": "tools/p12-verify/main.go",
+      "sha256": "9ac6cd02023b20883c3c92db633d1167f651501f14d3c729dd56b6f3a9e81997"
+    },
+    {
+      "path": "tools/p12-verify/main_test.go",
+      "sha256": "de5fe2bf963b32565b42f814ab0ece7cf2ba07751da70340f7758a6c7694af9d"
+    },
+    {
+      "path": "tools/p12-verify/qualification.go",
+      "sha256": "5b1f2083936c761f1f93aa37519d653ee0e0e8f028081089e60815e7e5f36445"
+    },
+    {
+      "path": "tools/p12-verify/release.go",
+      "sha256": "21704da9aef374ecbd4519c9f0a0fa3373b4a304f01ad4ae8216bfc3e42b9ae1"
+    },
+    {
+      "path": "tools/p12-verify/release_test.go",
+      "sha256": "366f6f23edd5ca25740249e3446e63766ad774dabef521ae5a8907cfadc205ac"
+    },
+    {
+      "path": "tools/p12-verify/review.go",
+      "sha256": "aa0c5be0b7e1f35d716e9abb3aedbb5cfa6df5ced90ddf616d262a436e13cdb7"
+    },
+    {
+      "path": "tools/p12-verify/review_signature_test.go",
+      "sha256": "615dfac4143df945a85b942d0d8e1741492d4cc20ef0f8e6df0b0c033ad99d74"
+    },
+    {
+      "path": "tools/p12-verify/review_test.go",
+      "sha256": "c32c58b4d2d90f3a58bd140e9c0ec2fd8dcc783d6590b43f726af10d6f33e6e3"
+    },
+    {
+      "path": "tools/p13-verify/main.go",
+      "sha256": "1e3ff039c8f16ef4e41774445f41d829cf8110ac86c9355e507d22b7e32e2bc0"
+    },
+    {
+      "path": "tools/p13-verify/main_test.go",
+      "sha256": "afb7e6f8b0cbd7e39f2112a8d5d75f690e61c79394daf0fd655bed627d8f39a5"
+    },
+    {
+      "path": "tools/perf-baseline/audit.go",
+      "sha256": "b212b91b32076b16d32501b48285335a21aeb720d9d0e8f3cc4ff417c274c258"
+    },
+    {
+      "path": "tools/perf-baseline/audit_test.go",
+      "sha256": "47642e391173fb31aaf17a03d7f19e0439d1077d7180faea7aaf2154c33b2a67"
+    },
+    {
+      "path": "tools/perf-baseline/export.go",
+      "sha256": "2597a6b267eb2d3ef6ce72e4461658f9f298d96c335555db291791091de61236"
+    },
+    {
+      "path": "tools/perf-baseline/export_test.go",
+      "sha256": "8e765258e7057ae0db67873b56337dc41836cccdace61399887d0053b2ecf619"
+    },
+    {
+      "path": "tools/perf-baseline/historical_test.go",
+      "sha256": "f54116297d15271d53ab8dd2d52e3c90b779cba53ce72f5bd0bbb4082c08ffc8"
+    },
+    {
+      "path": "tools/perf-baseline/main.go",
+      "sha256": "b221971e2ffc4b0c83b57bba9fdd172d4d10ac074547ecca9367eed8351f560b"
+    },
+    {
+      "path": "tools/perf-baseline/main_test.go",
+      "sha256": "6cf224490c509d7b0f751043956e2c3624d0922b899c631e64e73058b477bf65"
+    },
+    {
+      "path": "tools/perf-mode-check/main.go",
+      "sha256": "ddfdfbbc9d77f01a30d772364ddbe85caeffef8779aa523cf8b8578c1f5b9684"
+    },
+    {
+      "path": "tools/perf-mode-check/main_test.go",
+      "sha256": "312ee850fac04babdd7f15e6290a8bb384557d52b5ce18701b3d1b35c616bf9c"
+    }
+  ],
+  "source_manifest_sha256": "4ae57555aae7613ef6fab64f11b2e6a7069f0dc5bf10c4483f66122a56bb4cee",
+  "source_verified_after_commands": true,
+  "artifacts": [
+    {
+      "path": "source-manifest.json",
+      "sha256": "4ae57555aae7613ef6fab64f11b2e6a7069f0dc5bf10c4483f66122a56bb4cee"
+    },
+    {
+      "path": "historical/docs/p07/integration-report.json",
+      "sha256": "d90c464963c374784c6550ac8de6da1d60158a626a0d451616e9eac515c7787b"
+    },
+    {
+      "path": "historical/integration/p07/DIAGNOSTICS.md",
+      "sha256": "a19818d4a40d4369810ce9c24eee1f0f049982c9fbba96a2648f4b2d9891ca38"
+    },
+    {
+      "path": "historical/docs/p12/performance.md",
+      "sha256": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf"
+    },
+    {
+      "path": "commands/011.stdout",
+      "sha256": "c528ba02b39880f1357f51dee70e41c1ef03e3a70c7a03055c080532b9635f58"
+    },
+    {
+      "path": "commands/012.stdout",
+      "sha256": "06ff9461693b606c757bf1780791622437872df645a8af8f48f1d66537b64d8e"
+    },
+    {
+      "path": "commands/014.stdout",
+      "sha256": "bffc3df21ae15a25908a07dae8837a452b26229df2420a2b463cc59b56fe470a"
+    },
+    {
+      "path": "commands/015.stdout",
+      "sha256": "c4134d4141df19410bb2e8351ee9b8073a29a35e7a2da912db72f2f5c4c3e107"
+    }
+  ],
+  "commands": [
+    {
+      "args": [
+        "/usr/bin/git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.297602Z",
+      "duration_ns": 20352333,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "72229956e88dfe5341c2c5ed4d33fa17b0d2b7b28d8dfb745bbce877f657006b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "status",
+        "--porcelain=v1",
+        "-z",
+        "--untracked-files=all"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.318332Z",
+      "duration_ns": 23557750,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "82e2846087d05a4542d488fc46b3892bbeb366c508b040da2152ec22a2a6268d",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "ls-files",
+        "-z",
+        "--cached"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.34217Z",
+      "duration_ns": 16127667,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "18e72c34c60607b73e30c42a916caa32f4cba23e1f9c88d8765a86da88b74f1b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "ls-files",
+        "-z",
+        "--others",
+        "--exclude-standard"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.3587Z",
+      "duration_ns": 19228250,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "74568a14839ed5c2bef8a140e56b015689bb1ed4e40c648d9317b61e9581c509",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "diff",
+        "HEAD",
+        "--binary",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--",
+        ".github/workflows/p00.yml",
+        ".gitignore",
+        "LICENSE",
+        "Makefile",
+        "README.md",
+        "SECURITY.md",
+        "SPEC.md",
+        "THIRD_PARTY_NOTICES",
+        "admin.go",
+        "admin_test.go",
+        "changes.go",
+        "changes_test.go",
+        "client.go",
+        "client_test.go",
+        "config.go",
+        "config_fuzz_test.go",
+        "config_test.go",
+        "coordination.go",
+        "coordination_test.go",
+        "doc.go",
+        "docs/PERFORMANCE_SCALABILITY_REVIEW.md",
+        "docs/RUST_PORT_SPEC.md",
+        "docs/p00/README.md",
+        "docs/p00/api-inventory.csv",
+        "docs/p00/compatibility.md",
+        "docs/p00/evidence.json",
+        "docs/p00/licensing.md",
+        "docs/p00/protocol-sources.md",
+        "docs/p00/task-handoff.md",
+        "docs/p00/tasks.md",
+        "docs/p00/threat-model.md",
+        "docs/p01/README.md",
+        "docs/p01/api-contract.md",
+        "docs/p01/evidence.json",
+        "docs/p01/provenance.md",
+        "docs/p01/public-api.md",
+        "docs/p01/task-handoff.md",
+        "docs/p01/tasks.md",
+        "docs/p02/README.md",
+        "docs/p02/architecture.md",
+        "docs/p02/evidence.json",
+        "docs/p02/provenance.md",
+        "docs/p02/security.md",
+        "docs/p02/task-handoff.md",
+        "docs/p02/tasks.md",
+        "docs/p03/README.md",
+        "docs/p03/evidence.json",
+        "docs/p03/integration-report.json",
+        "docs/p03/modules.txt",
+        "docs/p03/provenance.md",
+        "docs/p03/security.md",
+        "docs/p03/tasks.md",
+        "docs/p04/configuration.md",
+        "docs/p04/integration-report.json",
+        "docs/p04/provenance.md",
+        "docs/p04/tasks.md",
+        "docs/p05/provenance.md",
+        "docs/p05/tasks.md",
+        "docs/p06/integration-report.json",
+        "docs/p06/provenance.md",
+        "docs/p06/tasks.md",
+        "docs/p07/integration-report.json",
+        "docs/p07/provenance.md",
+        "docs/p07/tasks.md",
+        "docs/p08/integration-report.json",
+        "docs/p08/provenance.md",
+        "docs/p08/tasks.md",
+        "docs/p09/integration-report.json",
+        "docs/p09/provenance.md",
+        "docs/p09/tasks.md",
+        "docs/p10/integration-report.json",
+        "docs/p10/provenance.md",
+        "docs/p10/tasks.md",
+        "docs/p11/integration-report.json",
+        "docs/p11/provenance.md",
+        "docs/p11/tasks.md",
+        "docs/p12/README.md",
+        "docs/p12/api-coverage.md",
+        "docs/p12/automated-review.md",
+        "docs/p12/cgo-migration.md",
+        "docs/p12/compatibility.md",
+        "docs/p12/dependencies.md",
+        "docs/p12/fuzz-report.json",
+        "docs/p12/human-review.json",
+        "docs/p12/human-review.md",
+        "docs/p12/performance.md",
+        "docs/p12/qualification-report.json",
+        "docs/p12/release.md",
+        "docs/p12/review-template.md",
+        "docs/p12/reviewer-trust.json",
+        "docs/p12/troubleshooting.md",
+        "docs/p13/README.md",
+        "docs/p13/compatibility.md",
+        "docs/p13/integration-report.json",
+        "docs/p13/provenance.md",
+        "docs/p13/task-handoff.md",
+        "docs/p13/tasks.md",
+        "docs/performance-phase0/AUDIT.md",
+        "docs/performance-phase0/QUALIFICATION.md",
+        "docs/performance-phase0/README.md",
+        "docs/performance-phase0/RESULTS.md",
+        "docs/performance-phase1/AUDIT.md",
+        "docs/performance-phase1/README.md",
+        "docs/performance-phase1/RESULTS.md",
+        "docs/performance-phase1/evidence/SHA256SUMS",
+        "docs/performance-phase1/evidence/baseline/commands/011.stdout",
+        "docs/performance-phase1/evidence/baseline/commands/012.stdout",
+        "docs/performance-phase1/evidence/baseline/commands/014.stdout",
+        "docs/performance-phase1/evidence/baseline/commands/015.stdout",
+        "docs/performance-phase1/evidence/baseline/historical/docs/p07/integration-report.json",
+        "docs/performance-phase1/evidence/baseline/historical/docs/p12/performance.md",
+        "docs/performance-phase1/evidence/baseline/historical/integration/p07/DIAGNOSTICS.md",
+        "docs/performance-phase1/evidence/baseline/manifest.json",
+        "docs/performance-phase1/evidence/baseline/source-manifest.json",
+        "docs/performance-phase1/evidence/comparison/before-performance.stdout",
+        "docs/performance-phase1/evidence/comparison/comparison.json",
+        "docs/performance-phase1/evidence/comparison/dispatch-selection.stdout",
+        "docs/performance-phase1/evidence/comparison/focused-controls.stdout",
+        "docs/performance-phase2/AUDIT.md",
+        "docs/performance-phase2/README.md",
+        "docs/performance-phase2/RESULTS.md",
+        "docs/performance-phase2/evidence/SHA256SUMS",
+        "docs/performance-phase2/evidence/baseline/commands/011.stdout",
+        "docs/performance-phase2/evidence/baseline/commands/012.stdout",
+        "docs/performance-phase2/evidence/baseline/commands/014.stdout",
+        "docs/performance-phase2/evidence/baseline/commands/015.stdout",
+        "docs/performance-phase2/evidence/baseline/historical/docs/p07/integration-report.json",
+        "docs/performance-phase2/evidence/baseline/historical/docs/p12/performance.md",
+        "docs/performance-phase2/evidence/baseline/historical/integration/p07/DIAGNOSTICS.md",
+        "docs/performance-phase2/evidence/baseline/manifest.json",
+        "docs/performance-phase2/evidence/baseline/source-manifest.json",
+        "docs/performance-phase2/evidence/comparison/before-performance.stdout",
+        "docs/performance-phase2/evidence/comparison/comparison.json",
+        "docs/performance-phase2/evidence/comparison/focused-placement.stdout",
+        "docs/performance-phase2/evidence/comparison/placement-cold-warm.stdout",
+        "docs/performance-phase3/AUDIT.md",
+        "docs/performance-phase3/README.md",
+        "docs/performance-phase3/RESULTS.md",
+        "docs/performance-phase3/evidence/SHA256SUMS",
+        "docs/performance-phase3/evidence/baseline/commands/011.stdout",
+        "docs/performance-phase3/evidence/baseline/commands/012.stdout",
+        "docs/performance-phase3/evidence/baseline/commands/014.stdout",
+        "docs/performance-phase3/evidence/baseline/commands/015.stdout",
+        "docs/performance-phase3/evidence/baseline/historical/docs/p07/integration-report.json",
+        "docs/performance-phase3/evidence/baseline/historical/docs/p12/performance.md",
+        "docs/performance-phase3/evidence/baseline/historical/integration/p07/DIAGNOSTICS.md",
+        "docs/performance-phase3/evidence/baseline/manifest.json",
+        "docs/performance-phase3/evidence/baseline/source-manifest.json",
+        "docs/performance-phase3/evidence/comparison/before-performance.stdout",
+        "docs/performance-phase3/evidence/comparison/comparison.json",
+        "docs/performance-phase3/evidence/comparison/diagnostics.stdout",
+        "docs/performance-phase3/evidence/comparison/focused-lifecycle.stdout",
+        "docs/performance-phase3/evidence/comparison/full-race.stdout",
+        "docs/performance-phase3/evidence/comparison/linux-build.stdout",
+        "docs/performance-phase3/evidence/comparison/vet.stdout",
+        "enumeration_test.go",
+        "errors.go",
+        "errors_test.go",
+        "examples/atomic/main.go",
+        "examples/basic/main.go",
+        "go.mod",
+        "go.sum",
+        "integration/README.md",
+        "integration/manifest.schema.json",
+        "integration/p00/oracle/Dockerfile",
+        "integration/p00/oracle/centos-stream.repo",
+        "integration/p00/oracle/main.cc",
+        "integration/p00/preflight.sh",
+        "integration/p00/run.sh",
+        "integration/p01/entity-addr-ipv6-seed.bin",
+        "integration/p01/ipv6-fixture.c",
+        "integration/p01/reproduce.sh",
+        "integration/p02/Dockerfile",
+        "integration/p02/Dockerfile.upstream",
+        "integration/p02/centos-stream.repo",
+        "integration/p02/oracle.cc",
+        "integration/p02/reproduce-upstream.sh",
+        "integration/p02/reproduce.sh",
+        "integration/p02/upstream_oracle.cc",
+        "integration/p03/legacy-crush.txt",
+        "integration/p03/probe/main.go",
+        "integration/p03/probe/main_test.go",
+        "integration/p03/report.schema.json",
+        "integration/p03/reproduce-fixtures.sh",
+        "integration/p03/reproduce.sh",
+        "integration/p03/rfc8009-oracle/main.go",
+        "integration/p03/rfc8009-oracle/main_test.go",
+        "integration/p04/probe/main.go",
+        "integration/p04/report.schema.json",
+        "integration/p04/reproduce-fixtures.sh",
+        "integration/p04/reproduce.sh",
+        "integration/p05/crushmap.txt",
+        "integration/p05/reproduce.sh",
+        "integration/p06/probe/main.go",
+        "integration/p06/report.schema.json",
+        "integration/p06/reproduce.sh",
+        "integration/p07/DIAGNOSTICS.md",
+        "integration/p07/MODE_EVIDENCE.md",
+        "integration/p07/benchmark/main.go",
+        "integration/p07/benchmark/main_unsupported.go",
+        "integration/p07/mode_capture_test.sh",
+        "integration/p07/native_benchmark.c",
+        "integration/p07/native_driver.c",
+        "integration/p07/probe/main.go",
+        "integration/p07/report.schema.json",
+        "integration/p07/reproduce.sh",
+        "integration/p07/timing-summary/main.go",
+        "integration/p07/timing-summary/main_test.go",
+        "integration/p08/native_driver.c",
+        "integration/p08/probe/main.go",
+        "integration/p08/report.schema.json",
+        "integration/p08/reproduce.sh",
+        "integration/p09/native_driver.c",
+        "integration/p09/probe/main.go",
+        "integration/p09/report.schema.json",
+        "integration/p09/reproduce.sh",
+        "integration/p10/native_driver.c",
+        "integration/p10/probe/main.go",
+        "integration/p10/report.schema.json",
+        "integration/p10/reproduce.sh",
+        "integration/p11/native_driver.c",
+        "integration/p11/probe/main.go",
+        "integration/p11/report.schema.json",
+        "integration/p11/reproduce.sh",
+        "integration/p12/fuzz-report.schema.json",
+        "integration/p12/human-review.schema.json",
+        "integration/p12/platform-probe/main.go",
+        "integration/p12/probe/main.go",
+        "integration/p12/probe/main_test.go",
+        "integration/p12/qualification-report.schema.json",
+        "integration/p12/qualify.sh",
+        "integration/p12/report.json",
+        "integration/p12/report.schema.json",
+        "integration/p12/reproduce.sh",
+        "integration/p12/reviewer-trust.schema.json",
+        "integration/p13/native_driver.c",
+        "integration/p13/probe/main.go",
+        "integration/p13/report.schema.json",
+        "integration/p13/reproduce.sh",
+        "integration/reports/p00-aea2e269-39df-4476-9e55-b6b3de3b67c0.json",
+        "internal/cephx/connector.go",
+        "internal/cephx/connector_test.go",
+        "internal/cephx/core.go",
+        "internal/cephx/core_test.go",
+        "internal/cephx/credentials.go",
+        "internal/cephx/credentials_test.go",
+        "internal/cephx/fixture_test.go",
+        "internal/cephx/fuzz_test.go",
+        "internal/cephx/receive_budget_test.go",
+        "internal/cephx/service_connector.go",
+        "internal/cephx/service_connector_test.go",
+        "internal/crush/hash.go",
+        "internal/crush/hash_test.go",
+        "internal/crush/ln.go",
+        "internal/crush/map.go",
+        "internal/crush/map_test.go",
+        "internal/crush/p05_fixture_test.go",
+        "internal/crush/p10_fixture_test.go",
+        "internal/crush/place.go",
+        "internal/crush/place_test.go",
+        "internal/crush/placement.go",
+        "internal/crush/placement_test.go",
+        "internal/encoding/codec.go",
+        "internal/encoding/codec_test.go",
+        "internal/encoding/crc.go",
+        "internal/maps/incremental.go",
+        "internal/maps/incremental_test.go",
+        "internal/maps/mgrmap.go",
+        "internal/maps/mgrmap_test.go",
+        "internal/maps/monmap.go",
+        "internal/maps/monmap_test.go",
+        "internal/maps/osdmap.go",
+        "internal/maps/osdmap_test.go",
+        "internal/maps/p04_fixture_test.go",
+        "internal/maps/performance_baseline_test.go",
+        "internal/maps/placement.go",
+        "internal/maps/placement_reuse_test.go",
+        "internal/maps/placement_test.go",
+        "internal/maps/pool.go",
+        "internal/maps/pool_test.go",
+        "internal/mgr/client.go",
+        "internal/mgr/client_creation_test.go",
+        "internal/mgr/client_test.go",
+        "internal/mgr/messages.go",
+        "internal/mgr/messages_test.go",
+        "internal/mon/client.go",
+        "internal/mon/client_test.go",
+        "internal/mon/config.go",
+        "internal/mon/config_test.go",
+        "internal/mon/messages.go",
+        "internal/mon/messages_test.go",
+        "internal/mon/seeds.go",
+        "internal/mon/statfs_test.go",
+        "internal/msgr/banner.go",
+        "internal/msgr/banner_test.go",
+        "internal/msgr/control.go",
+        "internal/msgr/control_test.go",
+        "internal/msgr/fixture_test.go",
+        "internal/msgr/frame.go",
+        "internal/msgr/frame_test.go",
+        "internal/msgr/fuzz_test.go",
+        "internal/msgr/message.go",
+        "internal/msgr/message_test.go",
+        "internal/msgr/mode_diagnostic.go",
+        "internal/msgr/mode_diagnostic_test.go",
+        "internal/msgr/performance_baseline_test.go",
+        "internal/msgr/phase4_budgeted_capture_test.go",
+        "internal/msgr/phase4_resource_test.go",
+        "internal/msgr/phase4_stalled_test.go",
+        "internal/msgr/reader_retirement_test.go",
+        "internal/msgr/receive_budget.go",
+        "internal/msgr/receive_budget_benchmark_test.go",
+        "internal/msgr/receive_budget_codec_test.go",
+        "internal/msgr/receive_budget_lifecycle_test.go",
+        "internal/msgr/receive_budget_stress_test.go",
+        "internal/msgr/receive_budget_test.go",
+        "internal/msgr/request_timing.go",
+        "internal/msgr/request_timing_test.go",
+        "internal/msgr/secure.go",
+        "internal/msgr/secure_benchmark_test.go",
+        "internal/msgr/secure_test.go",
+        "internal/msgr/session.go",
+        "internal/msgr/session_control.go",
+        "internal/msgr/session_control_test.go",
+        "internal/msgr/session_receive_test.go",
+        "internal/msgr/session_renewal_test.go",
+        "internal/msgr/session_retention_test.go",
+        "internal/msgr/session_test.go",
+        "internal/msgr/testdata/fuzz/FuzzSessionScript/938f779fb2101a93",
+        "internal/msgr/transport.go",
+        "internal/msgr/transport_test.go",
+        "internal/objecter/backoff_control_test.go",
+        "internal/objecter/client.go",
+        "internal/objecter/client_test.go",
+        "internal/objecter/command.go",
+        "internal/objecter/command_test.go",
+        "internal/objecter/enumeration_test.go",
+        "internal/objecter/inconsistent.go",
+        "internal/objecter/mutation.go",
+        "internal/objecter/mutation_test.go",
+        "internal/objecter/osd_session.go",
+        "internal/objecter/osd_session_test.go",
+        "internal/objecter/read_ownership_test.go",
+        "internal/objecter/session_creation_test.go",
+        "internal/objecter/session_lifecycle_test.go",
+        "internal/objecter/watch.go",
+        "internal/objecter/watch_test.go",
+        "internal/osd/backoff.go",
+        "internal/osd/backoff_test.go",
+        "internal/osd/checksum.go",
+        "internal/osd/checksum_test.go",
+        "internal/osd/command.go",
+        "internal/osd/command_test.go",
+        "internal/osd/enumeration.go",
+        "internal/osd/enumeration_test.go",
+        "internal/osd/inconsistent.go",
+        "internal/osd/inconsistent_test.go",
+        "internal/osd/lock.go",
+        "internal/osd/lock_test.go",
+        "internal/osd/messages.go",
+        "internal/osd/messages_test.go",
+        "internal/osd/metadata.go",
+        "internal/osd/metadata_test.go",
+        "internal/osd/sparse.go",
+        "internal/osd/sparse_test.go",
+        "internal/osd/watch.go",
+        "internal/osd/watch_test.go",
+        "internal/p12fuzzcontract/contract.go",
+        "internal/p12fuzzcontract/contract_test.go",
+        "internal/p12fuzzevidence/evidence.go",
+        "internal/p12fuzzevidence/evidence_test.go",
+        "internal/p12qualcontract/contract.go",
+        "internal/p12qualcontract/contract_test.go",
+        "internal/perfbaseline/collector.go",
+        "internal/perfbaseline/collector_test.go",
+        "internal/perfbaseline/modes.go",
+        "internal/perfbaseline/modes_test.go",
+        "internal/perfbaseline/native.go",
+        "internal/perfbaseline/native_test.go",
+        "internal/protocol/address.go",
+        "internal/protocol/entity.go",
+        "internal/protocol/errno.go",
+        "internal/protocol/features.go",
+        "internal/protocol/message_types.go",
+        "internal/protocol/message_types_test.go",
+        "internal/protocol/protocol_test.go",
+        "metadata.go",
+        "metadata_test.go",
+        "object.go",
+        "p12_diagnostics.go",
+        "receive_budget_integration_test.go",
+        "snapshot.go",
+        "testdata/README.md",
+        "testdata/manifest.schema.json",
+        "testdata/p01/entity-addr-ipv4-legacy.bin",
+        "testdata/p01/entity-addr-ipv4-legacy.bin.json",
+        "testdata/p01/entity-addr-ipv4-modern.bin",
+        "testdata/p01/entity-addr-ipv4-modern.bin.json",
+        "testdata/p01/entity-addr-ipv6-modern.bin",
+        "testdata/p01/entity-addr-ipv6-modern.bin.json",
+        "testdata/p01/entity-addrvec-modern.bin",
+        "testdata/p01/entity-addrvec-modern.bin.json",
+        "testdata/p01/entity-name-client-1.bin",
+        "testdata/p01/entity-name-client-1.bin.json",
+        "testdata/p01/entity-name-mon-new.bin",
+        "testdata/p01/entity-name-mon-new.bin.json",
+        "testdata/p02/banner-rev1.bin",
+        "testdata/p02/banner-rev1.bin.json",
+        "testdata/p02/crc-four-segment.bin",
+        "testdata/p02/crc-four-segment.bin.json",
+        "testdata/p02/crc-one-segment.bin",
+        "testdata/p02/crc-one-segment.bin.json",
+        "testdata/p02/secure-multi-record.bin",
+        "testdata/p02/secure-multi-record.bin.json",
+        "testdata/p02/secure-one-segment.bin",
+        "testdata/p02/secure-one-segment.bin.json",
+        "testdata/p02/upstream/upstream-ack-control.bin",
+        "testdata/p02/upstream/upstream-ack-control.bin.json",
+        "testdata/p02/upstream/upstream-crc-disabled-one-segment.bin",
+        "testdata/p02/upstream/upstream-crc-disabled-one-segment.bin.json",
+        "testdata/p02/upstream/upstream-crc-four-segment.bin",
+        "testdata/p02/upstream/upstream-crc-four-segment.bin.json",
+        "testdata/p02/upstream/upstream-crc-one-segment.bin",
+        "testdata/p02/upstream/upstream-crc-one-segment.bin.json",
+        "testdata/p02/upstream/upstream-message-frame.bin",
+        "testdata/p02/upstream/upstream-message-frame.bin.json",
+        "testdata/p02/upstream/upstream-secure-multi-record.bin",
+        "testdata/p02/upstream/upstream-secure-multi-record.bin.json",
+        "testdata/p02/upstream/upstream-secure-one-segment.bin",
+        "testdata/p02/upstream/upstream-secure-one-segment.bin.json",
+        "testdata/p03/cephx-encoding-vectors.json",
+        "testdata/p03/cephx-encoding-vectors.json.manifest.json",
+        "testdata/p03/crypto-vectors.json",
+        "testdata/p03/crypto-vectors.json.manifest.json",
+        "testdata/p04/monmap-v9.bin",
+        "testdata/p04/monmap-v9.bin.manifest.json",
+        "testdata/p04/osdmap-incremental-v8.bin",
+        "testdata/p04/osdmap-incremental-v8.bin.manifest.json",
+        "testdata/p04/osdmap-v8.bin",
+        "testdata/p04/osdmap-v8.bin.manifest.json",
+        "testdata/p05/crushmap.bin",
+        "testdata/p05/crushmap.bin.manifest.json",
+        "testdata/p05/mappings-osd1-out.txt",
+        "testdata/p05/mappings-osd1-out.txt.manifest.json",
+        "testdata/p05/mappings.txt",
+        "testdata/p05/mappings.txt.manifest.json",
+        "testdata/p05/object-mappings-osd1-out.txt",
+        "testdata/p05/object-mappings-osd1-out.txt.manifest.json",
+        "testdata/p05/object-mappings-pg32.txt",
+        "testdata/p05/object-mappings-pg32.txt.manifest.json",
+        "testdata/p05/object-mappings-upmap.txt",
+        "testdata/p05/object-mappings-upmap.txt.manifest.json",
+        "testdata/p05/object-mappings.txt",
+        "testdata/p05/object-mappings.txt.manifest.json",
+        "testdata/p05/upmap-commands.txt",
+        "testdata/p05/upmap-commands.txt.manifest.json",
+        "testdata/p10/crushmap.bin",
+        "testdata/p10/mappings-osd1-out.txt",
+        "testdata/p10/mappings.txt",
+        "tools/api-inventory/main.go",
+        "tools/api-inventory/main_test.go",
+        "tools/p00-verify/main.go",
+        "tools/p00-verify/main_test.go",
+        "tools/p01-verify/main.go",
+        "tools/p01-verify/main_test.go",
+        "tools/p02-verify/main.go",
+        "tools/p02-verify/main_test.go",
+        "tools/p03-verify/main.go",
+        "tools/p03-verify/main_test.go",
+        "tools/p04-verify/main.go",
+        "tools/p05-verify/main.go",
+        "tools/p06-verify/main.go",
+        "tools/p07-verify/main.go",
+        "tools/p07-verify/main_test.go",
+        "tools/p08-verify/main.go",
+        "tools/p08-verify/main_test.go",
+        "tools/p09-verify/main.go",
+        "tools/p09-verify/main_test.go",
+        "tools/p10-verify/main.go",
+        "tools/p10-verify/main_test.go",
+        "tools/p11-verify/main.go",
+        "tools/p11-verify/main_test.go",
+        "tools/p12-fuzz/main.go",
+        "tools/p12-fuzz/main_test.go",
+        "tools/p12-qualify/main.go",
+        "tools/p12-qualify/main_test.go",
+        "tools/p12-release/main.go",
+        "tools/p12-release/main_test.go",
+        "tools/p12-verify/budget.go",
+        "tools/p12-verify/budget_test.go",
+        "tools/p12-verify/main.go",
+        "tools/p12-verify/main_test.go",
+        "tools/p12-verify/qualification.go",
+        "tools/p12-verify/release.go",
+        "tools/p12-verify/release_test.go",
+        "tools/p12-verify/review.go",
+        "tools/p12-verify/review_signature_test.go",
+        "tools/p12-verify/review_test.go",
+        "tools/p13-verify/main.go",
+        "tools/p13-verify/main_test.go",
+        "tools/perf-baseline/audit.go",
+        "tools/perf-baseline/audit_test.go",
+        "tools/perf-baseline/export.go",
+        "tools/perf-baseline/export_test.go",
+        "tools/perf-baseline/historical_test.go",
+        "tools/perf-baseline/main.go",
+        "tools/perf-baseline/main_test.go",
+        "tools/perf-mode-check/main.go",
+        "tools/perf-mode-check/main_test.go"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.553892Z",
+      "duration_ns": 25868292,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "e646f5f6059c8d368c0aeb87024091d6f1bb038675718fc5157b7d8bd0aaf6fb",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "show",
+        "dde29cde727dc963238acc4fa13a5a277a9f5c80:docs/p07/integration-report.json"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.580171Z",
+      "duration_ns": 18622000,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "d90c464963c374784c6550ac8de6da1d60158a626a0d451616e9eac515c7787b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "show",
+        "dde29cde727dc963238acc4fa13a5a277a9f5c80:integration/p07/DIAGNOSTICS.md"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.59942Z",
+      "duration_ns": 17598375,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "a19818d4a40d4369810ce9c24eee1f0f049982c9fbba96a2648f4b2d9891ca38",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "show",
+        "dde29cde727dc963238acc4fa13a5a277a9f5c80:docs/p12/performance.md"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:47.617519Z",
+      "duration_ns": 18519917,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+        "build",
+        "-mod=readonly",
+        "-trimpath",
+        "-buildvcs=false",
+        "-o",
+        "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/frozen-runner",
+        "./tools/perf-baseline"
+      ],
+      "environment": {
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GODEBUG": "",
+        "GOENV": "off",
+        "GOEXPERIMENT": "",
+        "GOFLAGS": "",
+        "GOGC": "100",
+        "GOMAXPROCS": "10",
+        "GOMEMLIMIT": "off",
+        "GOOS": "darwin",
+        "GOTOOLCHAIN": "go1.27.1",
+        "GOWORK": "off"
+      },
+      "directory": "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/source",
+      "started_at": "2026-09-30T19:44:47.636491Z",
+      "duration_ns": 573776416,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "uname",
+        "-a"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:48.807487Z",
+      "duration_ns": 4867000,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "1e74419249bf1d9ba42141d73fd8c4c216c460d6265e69774ce1e19a75facb06",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "hostname"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:48.81264Z",
+      "duration_ns": 3783084,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "3ea9886a2cc9b9525b45cd5d6812dcddaab40d6e83c89c42c09a3060a3b32883",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+        "version"
+      ],
+      "environment": {
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GODEBUG": "",
+        "GOENV": "off",
+        "GOEXPERIMENT": "",
+        "GOFLAGS": "",
+        "GOGC": "100",
+        "GOMAXPROCS": "10",
+        "GOMEMLIMIT": "off",
+        "GOOS": "darwin",
+        "GOTOOLCHAIN": "go1.27.1",
+        "GOWORK": "off"
+      },
+      "directory": "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/source",
+      "started_at": "2026-09-30T19:44:48.816676Z",
+      "duration_ns": 10233083,
+      "exit_code": 0,
+      "stdout_file": "commands/011.stdout",
+      "stderr_file": "",
+      "stdout_sha256": "c528ba02b39880f1357f51dee70e41c1ef03e3a70c7a03055c080532b9635f58",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+        "env",
+        "-json",
+        "GOOS",
+        "GOARCH",
+        "GOVERSION",
+        "GOTOOLCHAIN",
+        "CGO_ENABLED",
+        "GOAMD64",
+        "GOARM64"
+      ],
+      "environment": {
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GODEBUG": "",
+        "GOENV": "off",
+        "GOEXPERIMENT": "",
+        "GOFLAGS": "",
+        "GOGC": "100",
+        "GOMAXPROCS": "10",
+        "GOMEMLIMIT": "off",
+        "GOOS": "darwin",
+        "GOTOOLCHAIN": "go1.27.1",
+        "GOWORK": "off"
+      },
+      "directory": "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/source",
+      "started_at": "2026-09-30T19:44:48.82719Z",
+      "duration_ns": 10211875,
+      "exit_code": 0,
+      "stdout_file": "commands/012.stdout",
+      "stderr_file": "",
+      "stdout_sha256": "06ff9461693b606c757bf1780791622437872df645a8af8f48f1d66537b64d8e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "sysctl",
+        "hw.model",
+        "machdep.cpu.brand_string",
+        "hw.ncpu",
+        "hw.physicalcpu",
+        "hw.logicalcpu",
+        "hw.memsize"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:44:48.83761Z",
+      "duration_ns": 3842458,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "5ecf189880ab2f5ff8c5c271f9d63b641ef1d7f60026724ab981ea90c0705f38",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+        "test",
+        "-mod=readonly",
+        "-json",
+        "-count=1",
+        "-run",
+        "^TestPerformance",
+        "./internal/maps",
+        "./internal/msgr"
+      ],
+      "environment": {
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GODEBUG": "",
+        "GOENV": "off",
+        "GOEXPERIMENT": "",
+        "GOFLAGS": "",
+        "GOGC": "100",
+        "GOMAXPROCS": "10",
+        "GOMEMLIMIT": "off",
+        "GOOS": "darwin",
+        "GOTOOLCHAIN": "go1.27.1",
+        "GOWORK": "off"
+      },
+      "directory": "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/source",
+      "started_at": "2026-09-30T19:44:48.841769Z",
+      "duration_ns": 1591818500,
+      "exit_code": 0,
+      "stdout_file": "commands/014.stdout",
+      "stderr_file": "",
+      "stdout_sha256": "bffc3df21ae15a25908a07dae8837a452b26229df2420a2b463cc59b56fe470a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+        "test",
+        "-mod=readonly",
+        "-json",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkPerformance",
+        "-benchmem",
+        "-count",
+        "5",
+        "-benchtime",
+        "100ms",
+        "./internal/maps",
+        "./internal/msgr"
+      ],
+      "environment": {
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GODEBUG": "",
+        "GOENV": "off",
+        "GOEXPERIMENT": "",
+        "GOFLAGS": "",
+        "GOGC": "100",
+        "GOMAXPROCS": "10",
+        "GOMEMLIMIT": "off",
+        "GOOS": "darwin",
+        "GOTOOLCHAIN": "go1.27.1",
+        "GOWORK": "off"
+      },
+      "directory": "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/source",
+      "started_at": "2026-09-30T19:44:50.434443Z",
+      "duration_ns": 24324641958,
+      "exit_code": 0,
+      "stdout_file": "commands/015.stdout",
+      "stderr_file": "",
+      "stdout_sha256": "c4134d4141df19410bb2e8351ee9b8073a29a35e7a2da912db72f2f5c4c3e107",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "ls-files",
+        "-z",
+        "--cached"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:45:16.070772Z",
+      "duration_ns": 31426500,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "18e72c34c60607b73e30c42a916caa32f4cba23e1f9c88d8765a86da88b74f1b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "ls-files",
+        "-z",
+        "--others",
+        "--exclude-standard"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:45:16.102499Z",
+      "duration_ns": 23599000,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "74568a14839ed5c2bef8a140e56b015689bb1ed4e40c648d9317b61e9581c509",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "args": [
+        "/usr/bin/git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "directory": "/Users/oli/proj/rados-go",
+      "started_at": "2026-09-30T19:45:16.210772Z",
+      "duration_ns": 17025000,
+      "exit_code": 0,
+      "stdout_file": "",
+      "stderr_file": "",
+      "stdout_sha256": "72229956e88dfe5341c2c5ed4d33fa17b0d2b7b28d8dfb745bbce877f657006b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "failure_count": 0,
+  "errors": null,
+  "benchmarks": [
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=1024/OverridePGs=0",
+      "iterations": 2995,
+      "metrics": {
+        "B/op": 108272,
+        "allocs/op": 2074,
+        "ns/op": 39187,
+        "osd-scalar-B": 12288,
+        "osds": 1024,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 16384,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=1024/OverridePGs=0",
+      "iterations": 3026,
+      "metrics": {
+        "B/op": 108272,
+        "allocs/op": 2074,
+        "ns/op": 38449,
+        "osd-scalar-B": 12288,
+        "osds": 1024,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 16384,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=1024/OverridePGs=0",
+      "iterations": 3015,
+      "metrics": {
+        "B/op": 108272,
+        "allocs/op": 2074,
+        "ns/op": 38249,
+        "osd-scalar-B": 12288,
+        "osds": 1024,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 16384,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=1024/OverridePGs=0",
+      "iterations": 3399,
+      "metrics": {
+        "B/op": 108272,
+        "allocs/op": 2074,
+        "ns/op": 37907,
+        "osd-scalar-B": 12288,
+        "osds": 1024,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 16384,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=1024/OverridePGs=0",
+      "iterations": 3084,
+      "metrics": {
+        "B/op": 108272,
+        "allocs/op": 2074,
+        "ns/op": 38704,
+        "osd-scalar-B": 12288,
+        "osds": 1024,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 16384,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=0",
+      "iterations": 79962,
+      "metrics": {
+        "B/op": 3584,
+        "allocs/op": 34,
+        "ns/op": 1445,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=0",
+      "iterations": 75776,
+      "metrics": {
+        "B/op": 3584,
+        "allocs/op": 34,
+        "ns/op": 1477,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=0",
+      "iterations": 85342,
+      "metrics": {
+        "B/op": 3584,
+        "allocs/op": 34,
+        "ns/op": 1469,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=0",
+      "iterations": 85935,
+      "metrics": {
+        "B/op": 3584,
+        "allocs/op": 34,
+        "ns/op": 1439,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=0",
+      "iterations": 84278,
+      "metrics": {
+        "B/op": 3584,
+        "allocs/op": 34,
+        "ns/op": 1439,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=1024",
+      "iterations": 616,
+      "metrics": {
+        "B/op": 432531,
+        "allocs/op": 3131,
+        "ns/op": 195031,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 5120,
+        "override-pgs": 1024,
+        "override-value-B": 32768,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=1024",
+      "iterations": 613,
+      "metrics": {
+        "B/op": 432532,
+        "allocs/op": 3131,
+        "ns/op": 198066,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 5120,
+        "override-pgs": 1024,
+        "override-value-B": 32768,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=1024",
+      "iterations": 603,
+      "metrics": {
+        "B/op": 432533,
+        "allocs/op": 3131,
+        "ns/op": 195025,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 5120,
+        "override-pgs": 1024,
+        "override-value-B": 32768,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=1024",
+      "iterations": 612,
+      "metrics": {
+        "B/op": 432532,
+        "allocs/op": 3131,
+        "ns/op": 195882,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 5120,
+        "override-pgs": 1024,
+        "override-value-B": 32768,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=1024",
+      "iterations": 601,
+      "metrics": {
+        "B/op": 432533,
+        "allocs/op": 3131,
+        "ns/op": 195269,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 5120,
+        "override-pgs": 1024,
+        "override-value-B": 32768,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=4096",
+      "iterations": 140,
+      "metrics": {
+        "B/op": 1719372,
+        "allocs/op": 12407,
+        "ns/op": 870462,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 20480,
+        "override-pgs": 4096,
+        "override-value-B": 131072,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=4096",
+      "iterations": 135,
+      "metrics": {
+        "B/op": 1719372,
+        "allocs/op": 12407,
+        "ns/op": 852487,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 20480,
+        "override-pgs": 4096,
+        "override-value-B": 131072,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=4096",
+      "iterations": 140,
+      "metrics": {
+        "B/op": 1719369,
+        "allocs/op": 12407,
+        "ns/op": 861393,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 20480,
+        "override-pgs": 4096,
+        "override-value-B": 131072,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=4096",
+      "iterations": 141,
+      "metrics": {
+        "B/op": 1719373,
+        "allocs/op": 12407,
+        "ns/op": 850647,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 20480,
+        "override-pgs": 4096,
+        "override-value-B": 131072,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=4096",
+      "iterations": 140,
+      "metrics": {
+        "B/op": 1719376,
+        "allocs/op": 12407,
+        "ns/op": 843153,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 20480,
+        "override-pgs": 4096,
+        "override-value-B": 131072,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=64",
+      "iterations": 9038,
+      "metrics": {
+        "B/op": 27848,
+        "allocs/op": 241,
+        "ns/op": 13657,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 320,
+        "override-pgs": 64,
+        "override-value-B": 2048,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=64",
+      "iterations": 10000,
+      "metrics": {
+        "B/op": 27848,
+        "allocs/op": 241,
+        "ns/op": 13620,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 320,
+        "override-pgs": 64,
+        "override-value-B": 2048,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=64",
+      "iterations": 8722,
+      "metrics": {
+        "B/op": 27848,
+        "allocs/op": 241,
+        "ns/op": 13606,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 320,
+        "override-pgs": 64,
+        "override-value-B": 2048,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=64",
+      "iterations": 9838,
+      "metrics": {
+        "B/op": 27848,
+        "allocs/op": 241,
+        "ns/op": 13510,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 320,
+        "override-pgs": 64,
+        "override-value-B": 2048,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4/OverridePGs=64",
+      "iterations": 8799,
+      "metrics": {
+        "B/op": 27848,
+        "allocs/op": 241,
+        "ns/op": 13394,
+        "osd-scalar-B": 48,
+        "osds": 4,
+        "override-entries": 320,
+        "override-pgs": 64,
+        "override-value-B": 2048,
+        "socket-B": 64,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4096/OverridePGs=0",
+      "iterations": 792,
+      "metrics": {
+        "B/op": 412786,
+        "allocs/op": 8218,
+        "ns/op": 160751,
+        "osd-scalar-B": 49152,
+        "osds": 4096,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 65536,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4096/OverridePGs=0",
+      "iterations": 757,
+      "metrics": {
+        "B/op": 412786,
+        "allocs/op": 8218,
+        "ns/op": 156918,
+        "osd-scalar-B": 49152,
+        "osds": 4096,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 65536,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4096/OverridePGs=0",
+      "iterations": 771,
+      "metrics": {
+        "B/op": 412785,
+        "allocs/op": 8218,
+        "ns/op": 157077,
+        "osd-scalar-B": 49152,
+        "osds": 4096,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 65536,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4096/OverridePGs=0",
+      "iterations": 746,
+      "metrics": {
+        "B/op": 412785,
+        "allocs/op": 8218,
+        "ns/op": 155597,
+        "osd-scalar-B": 49152,
+        "osds": 4096,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 65536,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=4096/OverridePGs=0",
+      "iterations": 745,
+      "metrics": {
+        "B/op": 412785,
+        "allocs/op": 8218,
+        "ns/op": 155457,
+        "osd-scalar-B": 49152,
+        "osds": 4096,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 65536,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=64/OverridePGs=0",
+      "iterations": 33483,
+      "metrics": {
+        "B/op": 9840,
+        "allocs/op": 154,
+        "ns/op": 3579,
+        "osd-scalar-B": 768,
+        "osds": 64,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 1024,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=64/OverridePGs=0",
+      "iterations": 33525,
+      "metrics": {
+        "B/op": 9840,
+        "allocs/op": 154,
+        "ns/op": 3647,
+        "osd-scalar-B": 768,
+        "osds": 64,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 1024,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=64/OverridePGs=0",
+      "iterations": 32192,
+      "metrics": {
+        "B/op": 9840,
+        "allocs/op": 154,
+        "ns/op": 3594,
+        "osd-scalar-B": 768,
+        "osds": 64,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 1024,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=64/OverridePGs=0",
+      "iterations": 32491,
+      "metrics": {
+        "B/op": 9840,
+        "allocs/op": 154,
+        "ns/op": 3675,
+        "osd-scalar-B": 768,
+        "osds": 64,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 1024,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformanceIncremental/OSDs=64/OverridePGs=0",
+      "iterations": 32508,
+      "metrics": {
+        "B/op": 9840,
+        "allocs/op": 154,
+        "ns/op": 3651,
+        "osd-scalar-B": 768,
+        "osds": 64,
+        "override-entries": 0,
+        "override-pgs": 0,
+        "override-value-B": 0,
+        "socket-B": 1024,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=0",
+      "iterations": 141156,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 3,
+        "ns/op": 730.7,
+        "osds": 4100,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=0",
+      "iterations": 163417,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 3,
+        "ns/op": 738,
+        "osds": 4100,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=0",
+      "iterations": 161068,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 3,
+        "ns/op": 731.8,
+        "osds": 4100,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=0",
+      "iterations": 166276,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 3,
+        "ns/op": 734.4,
+        "osds": 4100,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=0",
+      "iterations": 166292,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 3,
+        "ns/op": 732,
+        "osds": 4100,
+        "topology-B": 231
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=1024",
+      "iterations": 147267,
+      "metrics": {
+        "B/op": 42,
+        "allocs/op": 5,
+        "buckets": 1027,
+        "ns/op": 811.9,
+        "osds": 4100,
+        "topology-B": 28903
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=1024",
+      "iterations": 147175,
+      "metrics": {
+        "B/op": 42,
+        "allocs/op": 5,
+        "buckets": 1027,
+        "ns/op": 820.2,
+        "osds": 4100,
+        "topology-B": 28903
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=1024",
+      "iterations": 145592,
+      "metrics": {
+        "B/op": 42,
+        "allocs/op": 5,
+        "buckets": 1027,
+        "ns/op": 822.4,
+        "osds": 4100,
+        "topology-B": 28903
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=1024",
+      "iterations": 144194,
+      "metrics": {
+        "B/op": 42,
+        "allocs/op": 5,
+        "buckets": 1027,
+        "ns/op": 813.8,
+        "osds": 4100,
+        "topology-B": 28903
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=1024",
+      "iterations": 147536,
+      "metrics": {
+        "B/op": 42,
+        "allocs/op": 5,
+        "buckets": 1027,
+        "ns/op": 818.1,
+        "osds": 4100,
+        "topology-B": 28903
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=4096",
+      "iterations": 140763,
+      "metrics": {
+        "B/op": 51,
+        "allocs/op": 5,
+        "buckets": 4099,
+        "ns/op": 815,
+        "osds": 4100,
+        "topology-B": 114919
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=4096",
+      "iterations": 137739,
+      "metrics": {
+        "B/op": 51,
+        "allocs/op": 5,
+        "buckets": 4099,
+        "ns/op": 820.8,
+        "osds": 4100,
+        "topology-B": 114919
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=4096",
+      "iterations": 139476,
+      "metrics": {
+        "B/op": 51,
+        "allocs/op": 5,
+        "buckets": 4099,
+        "ns/op": 815.9,
+        "osds": 4100,
+        "topology-B": 114919
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=4096",
+      "iterations": 138534,
+      "metrics": {
+        "B/op": 51,
+        "allocs/op": 5,
+        "buckets": 4099,
+        "ns/op": 818.3,
+        "osds": 4100,
+        "topology-B": 114919
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=4096",
+      "iterations": 138610,
+      "metrics": {
+        "B/op": 51,
+        "allocs/op": 5,
+        "buckets": 4099,
+        "ns/op": 822.7,
+        "osds": 4100,
+        "topology-B": 114919
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=64",
+      "iterations": 151830,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 67,
+        "ns/op": 808.9,
+        "osds": 4100,
+        "topology-B": 2023
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=64",
+      "iterations": 152706,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 67,
+        "ns/op": 795.1,
+        "osds": 4100,
+        "topology-B": 2023
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=64",
+      "iterations": 150399,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 67,
+        "ns/op": 800.1,
+        "osds": 4100,
+        "topology-B": 2023
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=64",
+      "iterations": 152485,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 67,
+        "ns/op": 794.1,
+        "osds": 4100,
+        "topology-B": 2023
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/maps",
+      "name": "BenchmarkPerformancePlacement/UnrelatedBuckets=64",
+      "iterations": 151824,
+      "metrics": {
+        "B/op": 40,
+        "allocs/op": 5,
+        "buckets": 67,
+        "ns/op": 798.5,
+        "osds": 4100,
+        "topology-B": 2023
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=1",
+      "iterations": 1464,
+      "metrics": {
+        "B/op": 544744,
+        "allocs/op": 53,
+        "connections/op": 1,
+        "ns/op": 80817,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 541144
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=1",
+      "iterations": 1484,
+      "metrics": {
+        "B/op": 544741,
+        "allocs/op": 53,
+        "connections/op": 1,
+        "ns/op": 84016,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 541144
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=1",
+      "iterations": 1435,
+      "metrics": {
+        "B/op": 544741,
+        "allocs/op": 53,
+        "connections/op": 1,
+        "ns/op": 84318,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 541128
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=1",
+      "iterations": 1452,
+      "metrics": {
+        "B/op": 544744,
+        "allocs/op": 53,
+        "connections/op": 1,
+        "ns/op": 87023,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 541144
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=1",
+      "iterations": 1498,
+      "metrics": {
+        "B/op": 544742,
+        "allocs/op": 53,
+        "connections/op": 1,
+        "ns/op": 85473,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 541128
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=128",
+      "iterations": 40,
+      "metrics": {
+        "B/op": 69674193,
+        "allocs/op": 6118,
+        "connections/op": 128,
+        "ns/op": 4208721,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69794168
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=128",
+      "iterations": 25,
+      "metrics": {
+        "B/op": 69688673,
+        "allocs/op": 6252,
+        "connections/op": 128,
+        "ns/op": 4560052,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69666488
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=128",
+      "iterations": 25,
+      "metrics": {
+        "B/op": 69692326,
+        "allocs/op": 6285,
+        "connections/op": 128,
+        "ns/op": 4463813,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69654056
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=128",
+      "iterations": 30,
+      "metrics": {
+        "B/op": 69695400,
+        "allocs/op": 6311,
+        "connections/op": 128,
+        "ns/op": 4132892,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69649208
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=128",
+      "iterations": 27,
+      "metrics": {
+        "B/op": 69676482,
+        "allocs/op": 6143,
+        "connections/op": 128,
+        "ns/op": 4210955,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69645096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=16",
+      "iterations": 147,
+      "metrics": {
+        "B/op": 8707269,
+        "allocs/op": 744,
+        "connections/op": 16,
+        "ns/op": 831123,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8690200
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=16",
+      "iterations": 157,
+      "metrics": {
+        "B/op": 8707530,
+        "allocs/op": 747,
+        "connections/op": 16,
+        "ns/op": 801465,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8690408
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=16",
+      "iterations": 148,
+      "metrics": {
+        "B/op": 8707248,
+        "allocs/op": 745,
+        "connections/op": 16,
+        "ns/op": 770049,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8691640
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=16",
+      "iterations": 148,
+      "metrics": {
+        "B/op": 8707698,
+        "allocs/op": 748,
+        "connections/op": 16,
+        "ns/op": 854692,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8693560
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/crc/connections=16",
+      "iterations": 130,
+      "metrics": {
+        "B/op": 8707982,
+        "allocs/op": 751,
+        "connections/op": 16,
+        "ns/op": 864476,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8702136
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=1",
+      "iterations": 1078,
+      "metrics": {
+        "B/op": 547489,
+        "allocs/op": 60,
+        "connections/op": 1,
+        "ns/op": 102034,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 542856
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=1",
+      "iterations": 1212,
+      "metrics": {
+        "B/op": 547498,
+        "allocs/op": 60,
+        "connections/op": 1,
+        "ns/op": 101309,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 542840
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=1",
+      "iterations": 1186,
+      "metrics": {
+        "B/op": 547484,
+        "allocs/op": 60,
+        "connections/op": 1,
+        "ns/op": 100818,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 542856
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=1",
+      "iterations": 1269,
+      "metrics": {
+        "B/op": 547496,
+        "allocs/op": 60,
+        "connections/op": 1,
+        "ns/op": 99678,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 542488
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=1",
+      "iterations": 1198,
+      "metrics": {
+        "B/op": 547494,
+        "allocs/op": 60,
+        "connections/op": 1,
+        "ns/op": 98960,
+        "reader-B/batch": 524288,
+        "retained-heap-B/batch": 542840
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=128",
+      "iterations": 27,
+      "metrics": {
+        "B/op": 70035835,
+        "allocs/op": 7120,
+        "connections/op": 128,
+        "ns/op": 4402409,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69870312
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=128",
+      "iterations": 27,
+      "metrics": {
+        "B/op": 70028537,
+        "allocs/op": 7056,
+        "connections/op": 128,
+        "ns/op": 4174093,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69855784
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=128",
+      "iterations": 26,
+      "metrics": {
+        "B/op": 70034145,
+        "allocs/op": 7105,
+        "connections/op": 128,
+        "ns/op": 4223101,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69862584
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=128",
+      "iterations": 26,
+      "metrics": {
+        "B/op": 70055894,
+        "allocs/op": 7300,
+        "connections/op": 128,
+        "ns/op": 4511184,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69880520
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=128",
+      "iterations": 28,
+      "metrics": {
+        "B/op": 70037911,
+        "allocs/op": 7140,
+        "connections/op": 128,
+        "ns/op": 4233381,
+        "reader-B/batch": 67108864,
+        "retained-heap-B/batch": 69884296
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=16",
+      "iterations": 134,
+      "metrics": {
+        "B/op": 8751957,
+        "allocs/op": 865,
+        "connections/op": 16,
+        "ns/op": 882555,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8722936
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=16",
+      "iterations": 140,
+      "metrics": {
+        "B/op": 8751790,
+        "allocs/op": 864,
+        "connections/op": 16,
+        "ns/op": 849592,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8717128
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=16",
+      "iterations": 133,
+      "metrics": {
+        "B/op": 8751435,
+        "allocs/op": 861,
+        "connections/op": 16,
+        "ns/op": 872403,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8719016
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=16",
+      "iterations": 136,
+      "metrics": {
+        "B/op": 8751800,
+        "allocs/op": 864,
+        "connections/op": 16,
+        "ns/op": 876306,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8720088
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceIdleConnections/secure/connections=16",
+      "iterations": 132,
+      "metrics": {
+        "B/op": 8751379,
+        "allocs/op": 860,
+        "connections/op": 16,
+        "ns/op": 907481,
+        "reader-B/batch": 8388608,
+        "retained-heap-B/batch": 8717224
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/complete",
+      "iterations": 337186,
+      "metrics": {
+        "B/op": 312,
+        "allocs/op": 7,
+        "depth": 1,
+        "ns/op": 331.3,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/complete",
+      "iterations": 434854,
+      "metrics": {
+        "B/op": 311,
+        "allocs/op": 7,
+        "depth": 1,
+        "ns/op": 291.8,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/complete",
+      "iterations": 438849,
+      "metrics": {
+        "B/op": 311,
+        "allocs/op": 7,
+        "depth": 1,
+        "ns/op": 291.4,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/complete",
+      "iterations": 403202,
+      "metrics": {
+        "B/op": 311,
+        "allocs/op": 7,
+        "depth": 1,
+        "ns/op": 292.9,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/complete",
+      "iterations": 436125,
+      "metrics": {
+        "B/op": 311,
+        "allocs/op": 7,
+        "depth": 1,
+        "ns/op": 292,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/drain",
+      "iterations": 315384,
+      "metrics": {
+        "B/op": 384,
+        "allocs/op": 9,
+        "depth": 1,
+        "ns/op": 380.6,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/drain",
+      "iterations": 324118,
+      "metrics": {
+        "B/op": 384,
+        "allocs/op": 9,
+        "depth": 1,
+        "ns/op": 389,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/drain",
+      "iterations": 318601,
+      "metrics": {
+        "B/op": 384,
+        "allocs/op": 9,
+        "depth": 1,
+        "ns/op": 390.2,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/drain",
+      "iterations": 295917,
+      "metrics": {
+        "B/op": 384,
+        "allocs/op": 9,
+        "depth": 1,
+        "ns/op": 389.9,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1/drain",
+      "iterations": 324382,
+      "metrics": {
+        "B/op": 384,
+        "allocs/op": 9,
+        "depth": 1,
+        "ns/op": 381.8,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/complete",
+      "iterations": 100,
+      "metrics": {
+        "B/op": 360077,
+        "allocs/op": 7176,
+        "depth": 1024,
+        "ns/op": 1099166,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/complete",
+      "iterations": 100,
+      "metrics": {
+        "B/op": 360081,
+        "allocs/op": 7176,
+        "depth": 1024,
+        "ns/op": 1121855,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/complete",
+      "iterations": 100,
+      "metrics": {
+        "B/op": 360080,
+        "allocs/op": 7176,
+        "depth": 1024,
+        "ns/op": 1090382,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/complete",
+      "iterations": 100,
+      "metrics": {
+        "B/op": 360077,
+        "allocs/op": 7176,
+        "depth": 1024,
+        "ns/op": 1117458,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/complete",
+      "iterations": 100,
+      "metrics": {
+        "B/op": 360076,
+        "allocs/op": 7176,
+        "depth": 1024,
+        "ns/op": 1095500,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/drain",
+      "iterations": 321,
+      "metrics": {
+        "B/op": 436519,
+        "allocs/op": 7192,
+        "depth": 1024,
+        "ns/op": 373920,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/drain",
+      "iterations": 321,
+      "metrics": {
+        "B/op": 436520,
+        "allocs/op": 7192,
+        "depth": 1024,
+        "ns/op": 370068,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/drain",
+      "iterations": 322,
+      "metrics": {
+        "B/op": 436574,
+        "allocs/op": 7192,
+        "depth": 1024,
+        "ns/op": 372204,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/drain",
+      "iterations": 321,
+      "metrics": {
+        "B/op": 436537,
+        "allocs/op": 7192,
+        "depth": 1024,
+        "ns/op": 372391,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=1024/drain",
+      "iterations": 325,
+      "metrics": {
+        "B/op": 436557,
+        "allocs/op": 7192,
+        "depth": 1024,
+        "ns/op": 372321,
+        "requests/op": 1024
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/complete",
+      "iterations": 7,
+      "metrics": {
+        "B/op": 1613197,
+        "allocs/op": 28650,
+        "depth": 4096,
+        "ns/op": 15590970,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/complete",
+      "iterations": 7,
+      "metrics": {
+        "B/op": 1613184,
+        "allocs/op": 28650,
+        "depth": 4096,
+        "ns/op": 15509030,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/complete",
+      "iterations": 7,
+      "metrics": {
+        "B/op": 1613213,
+        "allocs/op": 28650,
+        "depth": 4096,
+        "ns/op": 15335661,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/complete",
+      "iterations": 7,
+      "metrics": {
+        "B/op": 1613184,
+        "allocs/op": 28650,
+        "depth": 4096,
+        "ns/op": 15340054,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/complete",
+      "iterations": 7,
+      "metrics": {
+        "B/op": 1613200,
+        "allocs/op": 28650,
+        "depth": 4096,
+        "ns/op": 15547500,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/drain",
+      "iterations": 67,
+      "metrics": {
+        "B/op": 1812919,
+        "allocs/op": 28705,
+        "depth": 4096,
+        "ns/op": 1590897,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/drain",
+      "iterations": 68,
+      "metrics": {
+        "B/op": 1813090,
+        "allocs/op": 28706,
+        "depth": 4096,
+        "ns/op": 1589300,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/drain",
+      "iterations": 64,
+      "metrics": {
+        "B/op": 1812765,
+        "allocs/op": 28706,
+        "depth": 4096,
+        "ns/op": 1573776,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/drain",
+      "iterations": 66,
+      "metrics": {
+        "B/op": 1812845,
+        "allocs/op": 28705,
+        "depth": 4096,
+        "ns/op": 1586210,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=4096/drain",
+      "iterations": 70,
+      "metrics": {
+        "B/op": 1813135,
+        "allocs/op": 28706,
+        "depth": 4096,
+        "ns/op": 1548177,
+        "requests/op": 4096
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/complete",
+      "iterations": 5208,
+      "metrics": {
+        "B/op": 22687,
+        "allocs/op": 454,
+        "depth": 64,
+        "ns/op": 26979,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/complete",
+      "iterations": 4821,
+      "metrics": {
+        "B/op": 22687,
+        "allocs/op": 454,
+        "depth": 64,
+        "ns/op": 25272,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/complete",
+      "iterations": 4663,
+      "metrics": {
+        "B/op": 22687,
+        "allocs/op": 454,
+        "depth": 64,
+        "ns/op": 26621,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/complete",
+      "iterations": 5024,
+      "metrics": {
+        "B/op": 22687,
+        "allocs/op": 454,
+        "depth": 64,
+        "ns/op": 24955,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/complete",
+      "iterations": 5085,
+      "metrics": {
+        "B/op": 22687,
+        "allocs/op": 454,
+        "depth": 64,
+        "ns/op": 25179,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/drain",
+      "iterations": 5860,
+      "metrics": {
+        "B/op": 25595,
+        "allocs/op": 462,
+        "depth": 64,
+        "ns/op": 22283,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/drain",
+      "iterations": 6177,
+      "metrics": {
+        "B/op": 25595,
+        "allocs/op": 462,
+        "depth": 64,
+        "ns/op": 22352,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/drain",
+      "iterations": 5569,
+      "metrics": {
+        "B/op": 25595,
+        "allocs/op": 462,
+        "depth": 64,
+        "ns/op": 22405,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/drain",
+      "iterations": 5454,
+      "metrics": {
+        "B/op": 25595,
+        "allocs/op": 462,
+        "depth": 64,
+        "ns/op": 22405,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceQueue/depth=64/drain",
+      "iterations": 5859,
+      "metrics": {
+        "B/op": 25595,
+        "allocs/op": 462,
+        "depth": 64,
+        "ns/op": 22365,
+        "requests/op": 64
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial",
+      "iterations": 4448,
+      "metrics": {
+        "B/op": 35361,
+        "MB/s": 149.84,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 27336,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial",
+      "iterations": 4162,
+      "metrics": {
+        "B/op": 35338,
+        "MB/s": 145.12,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 28224,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial",
+      "iterations": 4718,
+      "metrics": {
+        "B/op": 35331,
+        "MB/s": 152.13,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 26924,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial",
+      "iterations": 4040,
+      "metrics": {
+        "B/op": 35331,
+        "MB/s": 149.35,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 27426,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial",
+      "iterations": 4290,
+      "metrics": {
+        "B/op": 35334,
+        "MB/s": 150.55,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 27208,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial+replay",
+      "iterations": 3040,
+      "metrics": {
+        "B/op": 55109,
+        "MB/s": 184.39,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 44427,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial+replay",
+      "iterations": 3069,
+      "metrics": {
+        "B/op": 55100,
+        "MB/s": 188.09,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 43554,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial+replay",
+      "iterations": 2923,
+      "metrics": {
+        "B/op": 55105,
+        "MB/s": 190.69,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 42961,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial+replay",
+      "iterations": 2808,
+      "metrics": {
+        "B/op": 55103,
+        "MB/s": 186.39,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 43950,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4096/initial+replay",
+      "iterations": 2787,
+      "metrics": {
+        "B/op": 55097,
+        "MB/s": 186.87,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 43838,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial",
+      "iterations": 51,
+      "metrics": {
+        "B/op": 20993815,
+        "MB/s": 1869.74,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 2243259,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial",
+      "iterations": 51,
+      "metrics": {
+        "B/op": 20993878,
+        "MB/s": 1893,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 2215690,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial",
+      "iterations": 51,
+      "metrics": {
+        "B/op": 20993813,
+        "MB/s": 1914.1,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 2191266,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial",
+      "iterations": 48,
+      "metrics": {
+        "B/op": 20993869,
+        "MB/s": 1908.87,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 2197270,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial",
+      "iterations": 49,
+      "metrics": {
+        "B/op": 20993864,
+        "MB/s": 1936.35,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 2166092,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial+replay",
+      "iterations": 27,
+      "metrics": {
+        "B/op": 37781898,
+        "MB/s": 1857.81,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 4515321,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial+replay",
+      "iterations": 27,
+      "metrics": {
+        "B/op": 37781833,
+        "MB/s": 1920.87,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 4367094,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial+replay",
+      "iterations": 26,
+      "metrics": {
+        "B/op": 37781946,
+        "MB/s": 1865.23,
+        "allocs/op": 165,
+        "message-sends/op": 2,
+        "ns/op": 4497353,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial+replay",
+      "iterations": 25,
+      "metrics": {
+        "B/op": 37782014,
+        "MB/s": 1796.45,
+        "allocs/op": 165,
+        "message-sends/op": 2,
+        "ns/op": 4669537,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=4194304/initial+replay",
+      "iterations": 25,
+      "metrics": {
+        "B/op": 37782071,
+        "MB/s": 1895.68,
+        "allocs/op": 166,
+        "message-sends/op": 2,
+        "ns/op": 4425125,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial",
+      "iterations": 1363,
+      "metrics": {
+        "B/op": 349986,
+        "MB/s": 737.52,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 88860,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial",
+      "iterations": 1405,
+      "metrics": {
+        "B/op": 349986,
+        "MB/s": 730.75,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 89683,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial",
+      "iterations": 1278,
+      "metrics": {
+        "B/op": 350015,
+        "MB/s": 723.79,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 90546,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial",
+      "iterations": 1381,
+      "metrics": {
+        "B/op": 350001,
+        "MB/s": 727.76,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 90052,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial",
+      "iterations": 1281,
+      "metrics": {
+        "B/op": 350017,
+        "MB/s": 727.96,
+        "allocs/op": 107,
+        "message-sends/op": 1,
+        "ns/op": 90027,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial+replay",
+      "iterations": 757,
+      "metrics": {
+        "B/op": 622980,
+        "MB/s": 821.05,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 159640,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial+replay",
+      "iterations": 732,
+      "metrics": {
+        "B/op": 622958,
+        "MB/s": 818.05,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 160225,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial+replay",
+      "iterations": 766,
+      "metrics": {
+        "B/op": 622989,
+        "MB/s": 774.93,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 169141,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial+replay",
+      "iterations": 795,
+      "metrics": {
+        "B/op": 622964,
+        "MB/s": 826.4,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 158606,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/crc/bytes=65536/initial+replay",
+      "iterations": 762,
+      "metrics": {
+        "B/op": 622959,
+        "MB/s": 822.42,
+        "allocs/op": 164,
+        "message-sends/op": 2,
+        "ns/op": 159373,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial",
+      "iterations": 2794,
+      "metrics": {
+        "B/op": 37361,
+        "MB/s": 112.38,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 36448,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial",
+      "iterations": 3354,
+      "metrics": {
+        "B/op": 37351,
+        "MB/s": 114.88,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 35656,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial",
+      "iterations": 3060,
+      "metrics": {
+        "B/op": 37353,
+        "MB/s": 114.32,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 35830,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial",
+      "iterations": 3697,
+      "metrics": {
+        "B/op": 37364,
+        "MB/s": 118.86,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 34459,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial",
+      "iterations": 4204,
+      "metrics": {
+        "B/op": 37356,
+        "MB/s": 114.52,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 35767,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial+replay",
+      "iterations": 1836,
+      "metrics": {
+        "B/op": 59024,
+        "MB/s": 145.31,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 56375,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial+replay",
+      "iterations": 2061,
+      "metrics": {
+        "B/op": 59023,
+        "MB/s": 143,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 57286,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial+replay",
+      "iterations": 2001,
+      "metrics": {
+        "B/op": 59022,
+        "MB/s": 142.98,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 57293,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial+replay",
+      "iterations": 2224,
+      "metrics": {
+        "B/op": 59017,
+        "MB/s": 145.44,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 56325,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4096/initial+replay",
+      "iterations": 1960,
+      "metrics": {
+        "B/op": 59026,
+        "MB/s": 147.11,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 55686,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial",
+      "iterations": 51,
+      "metrics": {
+        "B/op": 16813072,
+        "MB/s": 1831.53,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 2290052,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial",
+      "iterations": 50,
+      "metrics": {
+        "B/op": 16813072,
+        "MB/s": 1800.63,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 2329357,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial",
+      "iterations": 51,
+      "metrics": {
+        "B/op": 16813092,
+        "MB/s": 1889.61,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 2219664,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial",
+      "iterations": 55,
+      "metrics": {
+        "B/op": 16813084,
+        "MB/s": 1785.51,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 2349073,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial",
+      "iterations": 52,
+      "metrics": {
+        "B/op": 16813043,
+        "MB/s": 1873.24,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 2239066,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial+replay",
+      "iterations": 24,
+      "metrics": {
+        "B/op": 29420267,
+        "MB/s": 1899.36,
+        "allocs/op": 189,
+        "message-sends/op": 2,
+        "ns/op": 4416536,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial+replay",
+      "iterations": 28,
+      "metrics": {
+        "B/op": 29420285,
+        "MB/s": 1911.64,
+        "allocs/op": 189,
+        "message-sends/op": 2,
+        "ns/op": 4388170,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial+replay",
+      "iterations": 28,
+      "metrics": {
+        "B/op": 29420374,
+        "MB/s": 1885.35,
+        "allocs/op": 190,
+        "message-sends/op": 2,
+        "ns/op": 4449360,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial+replay",
+      "iterations": 27,
+      "metrics": {
+        "B/op": 29420306,
+        "MB/s": 1921.49,
+        "allocs/op": 189,
+        "message-sends/op": 2,
+        "ns/op": 4365687,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=4194304/initial+replay",
+      "iterations": 28,
+      "metrics": {
+        "B/op": 29420405,
+        "MB/s": 1883.63,
+        "allocs/op": 190,
+        "message-sends/op": 2,
+        "ns/op": 4453427,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial",
+      "iterations": 1286,
+      "metrics": {
+        "B/op": 298003,
+        "MB/s": 655.19,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 100026,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial",
+      "iterations": 1266,
+      "metrics": {
+        "B/op": 298004,
+        "MB/s": 622.09,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 105349,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial",
+      "iterations": 1209,
+      "metrics": {
+        "B/op": 298001,
+        "MB/s": 635,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 103206,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial",
+      "iterations": 1210,
+      "metrics": {
+        "B/op": 298010,
+        "MB/s": 630.29,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 103977,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial",
+      "iterations": 1171,
+      "metrics": {
+        "B/op": 298011,
+        "MB/s": 638.18,
+        "allocs/op": 119,
+        "message-sends/op": 1,
+        "ns/op": 102691,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial+replay",
+      "iterations": 654,
+      "metrics": {
+        "B/op": 518858,
+        "MB/s": 707.25,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 185326,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial+replay",
+      "iterations": 638,
+      "metrics": {
+        "B/op": 518876,
+        "MB/s": 707.32,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 185308,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial+replay",
+      "iterations": 645,
+      "metrics": {
+        "B/op": 518859,
+        "MB/s": 708.72,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 184943,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial+replay",
+      "iterations": 702,
+      "metrics": {
+        "B/op": 518873,
+        "MB/s": 713.16,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 183789,
+        "requests/op": 1
+      }
+    },
+    {
+      "package": "github.com/otuschhoff/rados-go/internal/msgr",
+      "name": "BenchmarkPerformanceSubmissionReplay/secure/bytes=65536/initial+replay",
+      "iterations": 661,
+      "metrics": {
+        "B/op": 518873,
+        "MB/s": 727.3,
+        "allocs/op": 188,
+        "message-sends/op": 2,
+        "ns/op": 180218,
+        "requests/op": 1
+      }
+    }
+  ],
+  "native_sources": [
+    {
+      "path": "src/osdc/Objecter.cc",
+      "url": "https://raw.githubusercontent.com/ceph/ceph/7f793731f1b39eb4f465e960113d2363c311b964/src/osdc/Objecter.cc",
+      "commit": "7f793731f1b39eb4f465e960113d2363c311b964",
+      "sha256": "ef60c3e95571be0dfb7ff83e7cbc6ae7d7f1119f4f2ee26443bfbd44475f057d",
+      "http_status": 200,
+      "symbol_lines": {
+        "_calc_target": [
+          915,
+          1147,
+          1351,
+          2500,
+          2528,
+          2945,
+          3194,
+          3303,
+          5149
+        ],
+        "_send_op": [
+          740,
+          1393,
+          2149,
+          2584,
+          3429,
+          3469,
+          3911
+        ],
+        "handle_osd_backoff": [
+          1033,
+          3835
+        ],
+        "lookup_pg_mapping": [
+          3026
+        ],
+        "update_pg_mapping": [
+          3032
+        ]
+      },
+      "statements": [
+        "Objecter.cc contains target calculation, PG mapping lookup/update, operation send and OSD backoff handling symbols; references do not measure runtime costs."
+      ]
+    },
+    {
+      "path": "src/osd/OSDMap.cc",
+      "url": "https://raw.githubusercontent.com/ceph/ceph/7f793731f1b39eb4f465e960113d2363c311b964/src/osd/OSDMap.cc",
+      "commit": "7f793731f1b39eb4f465e960113d2363c311b964",
+      "sha256": "36b74d8c998da9c93b7b0c9ba3ecac5d3e9df26bfb99c2f22095b37da44e0dc8",
+      "http_status": 200,
+      "symbol_lines": {
+        "_pg_to_raw_osds": [
+          2773,
+          3103,
+          3115,
+          3130,
+          3163
+        ],
+        "apply_incremental": [
+          2371
+        ],
+        "crush-\u003edo_rule": [
+          2785
+        ]
+      },
+      "statements": [
+        "OSDMap.cc contains raw PG placement, a CRUSH do_rule call and incremental map application symbols."
+      ]
+    },
+    {
+      "path": "src/msg/async/ProtocolV2.cc",
+      "url": "https://raw.githubusercontent.com/ceph/ceph/7f793731f1b39eb4f465e960113d2363c311b964/src/msg/async/ProtocolV2.cc",
+      "commit": "7f793731f1b39eb4f465e960113d2363c311b964",
+      "sha256": "8bb2323e4dc3d1415798e7952dc74dcc49386aa6bb334bbe7bd13fcd0894a4d4",
+      "http_status": 200,
+      "symbol_lines": {
+        "auth_meta-\u003econ_mode": [
+          23,
+          784,
+          1906,
+          2277,
+          2280,
+          2330
+        ],
+        "ceph_con_mode_name": [
+          23,
+          784
+        ],
+        "handle_auth_done": [
+          1300,
+          1875,
+          1890
+        ],
+        "ready": [
+          1176,
+          1337,
+          1697,
+          1730,
+          1747,
+          2144,
+          2150,
+          2199,
+          2205,
+          3042,
+          3045
+        ]
+      },
+      "statements": [
+        "ProtocolV2.cc references authentication completion, readiness, connection mode metadata and connection mode naming; benchmark labels alone do not establish negotiated mode."
+      ]
+    }
+  ],
+  "metadata": {
+    "benchmark_environment": {
+      "CGO_ENABLED": "0",
+      "GOARCH": "arm64",
+      "GODEBUG": "",
+      "GOENV": "off",
+      "GOEXPERIMENT": "",
+      "GOFLAGS": "",
+      "GOGC": "100",
+      "GOMAXPROCS": "10",
+      "GOMEMLIMIT": "off",
+      "GOOS": "darwin",
+      "GOTOOLCHAIN": "go1.27.1",
+      "GOWORK": "off"
+    },
+    "benchtime": "100ms",
+    "controller_identity": {
+      "build_info": {
+        "GoVersion": "go1.27.1",
+        "Main": {
+          "Path": "github.com/otuschhoff/rados-go",
+          "Version": "(devel)"
+        },
+        "Path": "github.com/otuschhoff/rados-go/tools/perf-baseline",
+        "Settings": [
+          {
+            "Key": "-buildmode",
+            "Value": "exe"
+          },
+          {
+            "Key": "-compiler",
+            "Value": "gc"
+          },
+          {
+            "Key": "DefaultGODEBUG",
+            "Value": "tracebacklabels=0,x509sslcertoverrideplatform=0"
+          },
+          {
+            "Key": "CGO_ENABLED",
+            "Value": "1"
+          },
+          {
+            "Key": "CGO_CFLAGS"
+          },
+          {
+            "Key": "CGO_CPPFLAGS"
+          },
+          {
+            "Key": "CGO_CXXFLAGS"
+          },
+          {
+            "Key": "CGO_LDFLAGS"
+          },
+          {
+            "Key": "GOARCH",
+            "Value": "arm64"
+          },
+          {
+            "Key": "GOOS",
+            "Value": "darwin"
+          },
+          {
+            "Key": "GOARM64",
+            "Value": "v8.0"
+          }
+        ]
+      },
+      "executable": "/Users/oli/Library/Caches/go-build/7b/7b42ab1dfe8480842de62ae289cfa909ec3c2d26e3b5a9debc075b3c46a1a5b0-d/perf-baseline",
+      "sha256": "7b42ab1dfe8480842de62ae289cfa909ec3c2d26e3b5a9debc075b3c46a1a5b0"
+    },
+    "count": 5,
+    "frozen_runner_sha256": "ec7d8847267c7e5a6fc668def16deab81d2dc189e8b43c9460075907753d2233",
+    "frozen_worker_gomaxprocs": 10,
+    "frozen_worker_identity": {
+      "build_info": {
+        "GoVersion": "go1.27.1",
+        "Main": {
+          "Path": "github.com/otuschhoff/rados-go",
+          "Version": "(devel)"
+        },
+        "Path": "github.com/otuschhoff/rados-go/tools/perf-baseline",
+        "Settings": [
+          {
+            "Key": "-buildmode",
+            "Value": "exe"
+          },
+          {
+            "Key": "-compiler",
+            "Value": "gc"
+          },
+          {
+            "Key": "-trimpath",
+            "Value": "true"
+          },
+          {
+            "Key": "DefaultGODEBUG",
+            "Value": "tracebacklabels=0,x509sslcertoverrideplatform=0"
+          },
+          {
+            "Key": "CGO_ENABLED",
+            "Value": "0"
+          },
+          {
+            "Key": "GOARCH",
+            "Value": "arm64"
+          },
+          {
+            "Key": "GOOS",
+            "Value": "darwin"
+          },
+          {
+            "Key": "GOARM64",
+            "Value": "v8.0"
+          }
+        ]
+      },
+      "executable": "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/frozen-runner",
+      "sha256": "ec7d8847267c7e5a6fc668def16deab81d2dc189e8b43c9460075907753d2233"
+    },
+    "git_tool": "/usr/bin/git",
+    "go_tool": "/opt/homebrew/Cellar/go/1.27.1/libexec/bin/go",
+    "goarch": "arm64",
+    "goos": "darwin",
+    "identity_scope": "Controller hash/build info identifies bootstrap only; fixture commands are issued by the checked worker rebuilt from source/. No exact archived-source claim for controller.",
+    "logical_cpus": 10,
+    "runner_go_version": "go1.27.1",
+    "runner_gomaxprocs": 10,
+    "worker_args": [
+      "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z/frozen-runner",
+      "-frozen-worker",
+      "-out",
+      "/private/tmp/rados-go-phase4-baseline-final-20260930T194447Z",
+      "-count",
+      "5",
+      "-benchtime",
+      "100ms"
+    ]
+  },
+  "scopes": {
+    "Historical": "Frozen P07/P12 evidence is historical, not regenerated or certified. P07 throughput/latency and whole-process CPU/RSS have different scopes from these fixture benchmarks; CRC labels do not prove matched negotiated modes.",
+    "IdleConnections": "CRC/secure batches=1/16/128: creation/readiness/snapshot/Stop, 512KiB reader per connection, queue/in-flight=64/events=64. B/op is lifecycle allocation; retained-heap-B/batch is separate noisy post-GC live heap, not RSS, stacks or harness-subtracted memory.",
+    "Incremental": "Pool rename with independent cloned state; OSDs=4/64/1024/4096 or override PGs=64/1024/4096 (five tables); not a live cluster update.",
+    "Native": "Pinned native source symbol references only, no native runtime measurement, parity, lock-free or allocation-free claim.",
+    "Placement": "PlaceRawHash on immutable synthetic maps: 4100 OSDs, 3 plus 0/64/1024/4096 unrelated buckets; includes topology decode/validation and placement.",
+    "Queue": "Full depth=1/64/1024/4096 batch, timed refill plus reply completion or failAll and result drain; no pumps, encoding, network or auth.",
+    "SubmissionReplay": "CRC/secure, 4096/65536/4194304 bytes, initial or initial+replay lifecycle including creation, admission, pumps, wire encode, peer validation, ACK and Stop; no sockets/auth, inbound wire decode or OSD processing. MB/s counts outbound application payload across sends, not wire bytes.",
+    "Writes": "Only the fresh output directory is written by the runner; Go may write its normal build/module caches. No parent docs or historical inputs are rewritten."
+  },
+  "limits": {
+    "categories": [
+      "Placement",
+      "Incremental",
+      "Queue",
+      "SubmissionReplay",
+      "IdleConnections"
+    ],
+    "certification": false,
+    "command_timeout": "30m",
+    "cpu_rss_measured": false,
+    "expected_cells": 37,
+    "incremental_fixture": {
+      "max_addresses": 1,
+      "max_bytes": "topology bytes + OSDs*128 + override PGs*256 + 4096",
+      "max_collection_entries": 4096,
+      "max_osds": "fixture OSD count",
+      "max_pg_mappings": "max(override PGs, 1)",
+      "max_pools": 1
+    },
+    "messenger_fixture": {
+      "event_buffer": 64,
+      "max_addresses": 4,
+      "max_auth_bytes": 64,
+      "max_frame_bytes": 16777216,
+      "max_handshake_transitions": 8,
+      "max_in_flight_transactions": "same as max_queued_messages",
+      "max_queued_messages": "depth (queue), 8 (submission), 64 (idle)",
+      "max_reconnect_attempts": 2,
+      "max_retained_bytes": "max_queued_messages * 8MiB",
+      "max_segment_bytes": 8388608,
+      "reconnect_wait": "disabled by fixture",
+      "submission_timeout": "10s"
+    },
+    "native_fetch_timeout": "60s",
+    "native_max_bytes": 8388608,
+    "placement_fixture": {
+      "max_buckets": "3 + unrelated buckets",
+      "max_bytes": "encoded topology length",
+      "max_items": 4100,
+      "max_names": 1,
+      "max_rules": 1
+    },
+    "source_policy": "All Git selected tracked files (including fixtures/configs/LICENSE), plus nonignored untracked .go/.c/.sh/.md, go.mod/go.sum/Makefile and historical report; excludes output prefix and docs/performance-phase0/evidence; no symlinks or secret paths; private checked source/ archive"
+  }
+}

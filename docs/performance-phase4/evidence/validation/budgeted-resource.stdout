@@ -1,0 +1,20 @@
+=== RUN   TestPhase4BudgetedAdmissionBoundary
+=== RUN   TestPhase4BudgetedAdmissionBoundary/crc
+=== RUN   TestPhase4BudgetedAdmissionBoundary/secure
+--- PASS: TestPhase4BudgetedAdmissionBoundary (0.00s)
+    --- PASS: TestPhase4BudgetedAdmissionBoundary/crc (0.00s)
+    --- PASS: TestPhase4BudgetedAdmissionBoundary/secure (0.00s)
+=== RUN   TestPhase4BudgetedStalledCapture
+=== RUN   TestPhase4BudgetedStalledCapture/crc
+    phase4_budgeted_capture_test.go:399: {"mode":"crc","repeat":1,"payload_bytes":4194304,"queue_depth":8,"queue_byte_limit":9437184,"shared_byte_limit":16777216,"queued_messages":2,"queued_bytes":8388690,"before_live":{"heap_alloc_bytes":267632,"heap_inuse_bytes":843776,"stack_inuse_bytes":491520,"rss_bytes":11141120,"goroutines":3},"live_queue":{"heap_alloc_bytes":9200392,"heap_inuse_bytes":9814016,"stack_inuse_bytes":557056,"rss_bytes":31309824,"goroutines":7},"after_terminal":{"heap_alloc_bytes":287776,"heap_inuse_bytes":892928,"stack_inuse_bytes":524288,"rss_bytes":31424512,"goroutines":4},"post_close":{"heap_alloc_bytes":278120,"heap_inuse_bytes":868352,"stack_inuse_bytes":557056,"rss_bytes":31506432,"goroutines":3},"live_ledger":{"Sessions":1,"RetainedBytes":8388690,"ControlBytes":0},"terminal_ledger":{"Sessions":1,"RetainedBytes":0,"ControlBytes":0},"after_ledger":{"Sessions":0,"RetainedBytes":0,"ControlBytes":0},"peak_read_bytes":12583035,"terminal_error":"messenger outbound queue saturated: unsolicited receive queue is full"}
+=== RUN   TestPhase4BudgetedStalledCapture/secure
+    phase4_budgeted_capture_test.go:399: {"mode":"secure","repeat":1,"payload_bytes":4194304,"queue_depth":8,"queue_byte_limit":9437184,"shared_byte_limit":16777216,"queued_messages":2,"queued_bytes":8388864,"before_live":{"heap_alloc_bytes":290760,"heap_inuse_bytes":909312,"stack_inuse_bytes":557056,"rss_bytes":31817728,"goroutines":3},"live_queue":{"heap_alloc_bytes":9236872,"heap_inuse_bytes":9838592,"stack_inuse_bytes":589824,"rss_bytes":40206336,"goroutines":7},"after_terminal":{"heap_alloc_bytes":304320,"heap_inuse_bytes":901120,"stack_inuse_bytes":557056,"rss_bytes":44433408,"goroutines":4},"post_close":{"heap_alloc_bytes":294664,"heap_inuse_bytes":901120,"stack_inuse_bytes":589824,"rss_bytes":44449792,"goroutines":3},"live_ledger":{"Sessions":1,"RetainedBytes":8388864,"ControlBytes":96},"terminal_ledger":{"Sessions":1,"RetainedBytes":0,"ControlBytes":0},"after_ledger":{"Sessions":0,"RetainedBytes":0,"ControlBytes":0},"peak_read_bytes":12583296,"terminal_error":"messenger outbound queue saturated: unsolicited receive queue is full"}
+--- PASS: TestPhase4BudgetedStalledCapture (0.06s)
+    --- PASS: TestPhase4BudgetedStalledCapture/crc (0.03s)
+    --- PASS: TestPhase4BudgetedStalledCapture/secure (0.03s)
+=== RUN   TestPhase4BudgetedCapture
+    phase4_budgeted_capture_test.go:410: exit status 128
+--- FAIL: TestPhase4BudgetedCapture (0.01s)
+FAIL
+FAIL	github.com/otuschhoff/rados-go/internal/msgr	0.338s
+FAIL

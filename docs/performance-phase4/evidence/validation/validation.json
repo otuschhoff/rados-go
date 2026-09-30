@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "source_private_capture": "/tmp/rados-go-phase4-baseline-final-20260930T194447Z",
+  "source_manifest_sha256": "4ae57555aae7613ef6fab64f11b2e6a7069f0dc5bf10c4483f66122a56bb4cee",
+  "baseline_commit": "c3dc3d36a4d899802b3e164404a455a76e2c2610",
+  "environment": {
+    "GOTOOLCHAIN": "go1.27.1",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "GOFLAGS": "",
+    "GOEXPERIMENT": "",
+    "GOOS": "darwin",
+    "GOARCH": "arm64",
+    "CGO_ENABLED": "1",
+    "GOMAXPROCS": "10",
+    "GOGC": "100",
+    "GOMEMLIMIT": "off",
+    "GODEBUG": ""
+  },
+  "commands": [
+    {
+      "label": "budget-race",
+      "exit": 0,
+      "stdout_sha256": "8e4b267184daffb42fe7b094e9eda9f8a6a7015ac398978d39b31760fb3aaefc",
+      "args": [
+        "go",
+        "test",
+        "-race",
+        "./",
+        "./internal/msgr",
+        "./internal/cephx",
+        "-run",
+        "Test.*(Receive|ReadBudget|Renewal|Prelude)",
+        "-count=20",
+        "-timeout=180s",
+        "-v"
+      ],
+      "environment_overrides": {},
+      "timing_note": "Sequential execution immediately before the explicit-metadata rerun; individual timestamps were not saved."
+    },
+    {
+      "label": "full-race",
+      "exit": 0,
+      "stdout_sha256": "202f1a12b5fdef514250c9cc685cbff6aa43e641de27acc274d0e2d824f53587",
+      "args": [
+        "go",
+        "test",
+        "-race",
+        "./..."
+      ],
+      "environment_overrides": {},
+      "timing_note": "Sequential execution immediately before the explicit-metadata rerun; individual timestamps were not saved."
+    },
+    {
+      "label": "diagnostics",
+      "exit": 0,
+      "stdout_sha256": "dbb66fdbf05406473b4fb0fc65b2cef3af49eece4df2df9c0cffdbb7e2a67cb7",
+      "args": [
+        "go",
+        "test",
+        "-tags",
+        "p12diagnostics",
+        "./..."
+      ],
+      "environment_overrides": {},
+      "timing_note": "Sequential execution immediately before the explicit-metadata rerun; individual timestamps were not saved."
+    },
+    {
+      "label": "vet",
+      "exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "args": [
+        "go",
+        "vet",
+        "./..."
+      ],
+      "environment_overrides": {},
+      "timing_note": "Sequential execution immediately before the explicit-metadata rerun; individual timestamps were not saved."
+    },
+    {
+      "label": "linux-build",
+      "exit": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "args": [
+        "go",
+        "build",
+        "-tags",
+        "p12diagnostics",
+        "-o",
+        "<private-validation-directory>/linux-check",
+        "./integration/p07/benchmark"
+      ],
+      "environment_overrides": {
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "CGO_ENABLED": "0"
+      },
+      "timing_note": "Sequential execution immediately before the explicit-metadata rerun; individual timestamps were not saved."
+    },
+    {
+      "label": "budgeted-resource-with-git",
+      "args": [
+        "go",
+        "test",
+        "./internal/msgr",
+        "-run",
+        "^TestPhase4Budgeted",
+        "-count=1",
+        "-parallel=1",
+        "-timeout=180s",
+        "-v"
+      ],
+      "started_at": "2026-09-30T19:47:20.257Z",
+      "finished_at": "2026-09-30T19:47:22.079Z",
+      "exit": 0,
+      "stdout_sha256": "73220051fdb186d276502b513a83e2d357899a0a81506796d809228d35f47ed9",
+      "environment_overrides": {
+        "CGO_ENABLED": "0",
+        "P4_BUDGETED_CAPTURE": "1",
+        "P4_BUDGETED_OUT": "<private-validation-directory>/budgeted.json",
+        "GIT_DIR": "/Users/oli/proj/rados-go/.git",
+        "GIT_WORK_TREE": "/tmp/rados-go-phase4-baseline-final-20260930T194447Z/source"
+      }
+    }
+  ],
+  "initial_capture_failure": "Frozen snapshot lacked git metadata; all earlier checks passed. The fanout capture helper exited with status 128 before fanout measurements; admission and standalone stalled-capture tests had already passed and emitted results, retained in budgeted-resource.stdout. Rerun provided GIT_DIR/GIT_WORK_TREE explicitly. HEAD is baseline metadata, not dirty-source identity.",
+  "scope": "Frozen source validation and budgeted resource capture; 185 inherited samples. Memory implementation passes; live secure latency exit remains unresolved; no completion or release claim.",
+  "artifact_note": "Initial capture helper command failed; retained budgeted-resource.stdout. Publication generation initially treated microbenchmark directory as a file, then copied its benchmark.txt correctly; no measurements rerun or replaced."
+}

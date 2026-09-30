@@ -325,6 +325,13 @@ post-Close session installation; package race tests pass.
 
 Dependencies: Phases 1, 3. Finding: F4.
 
+Implementation status: bounded receive/session policy implemented after explicit
+maintainer approval; repeated memory/ownership/race checks pass. Phase remains
+blocked on secure-read latency: final live confirmation misses the unchanged
+8x native-p99 diagnostic guardrail, and no rigorous no-regression conclusion is
+established. See the [Phase 4 contract, audit and results](performance-phase4/README.md).
+No completion commit or renewed qualification is claimed; Phase 5 is not started.
+
 - First measurements: establish increasing fake/loopback session fanout and
   record live heap, RSS, goroutines, reader storage, and post-close retention.
   Separately feed large unsolicited frames to a stalled consumer.

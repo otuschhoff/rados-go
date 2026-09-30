@@ -1,0 +1,370 @@
+{
+  "schema_version": 1,
+  "status": "blocked",
+  "claim": "No stable secure-tail compliance or rigorous no-regression conclusion; no completion commit or certification.",
+  "baseline_commit": "c3dc3d36a4d899802b3e164404a455a76e2c2610",
+  "source_anchor": "7f793731f1b39eb4f465e960113d2363c311b964",
+  "source_anchor_scope": "P07 harness v20.2.4; not the older P13 v20.2.0 reference",
+  "runs": [
+    {
+      "name": "secure-20260930T190418Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-20260930T190418Z",
+      "source_state": "initial budget implementation",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1100622,
+        1021187
+      ],
+      "go_p99_ns": [
+        8558923,
+        8473737
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        8.38134739278898,
+        8.29792878287718
+      ],
+      "ratios_to_mean_native": [
+        8.067571586320918,
+        7.987275951793965
+      ],
+      "go_binary_build_id": "AW9-R4qE6dkSoX5ozDLn/a3xVtIXtwSXHFJ5pmoKu/vadHPtbhuxxGtt3me03x/Z-mxTdV3HlHcTvLYbO3z",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "1115e8267ace8526d91d20c6085a1807e446b6e84f2c624e05a0cbac5e299763"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "dfc37d2f65a3b676876dd20edd8b0fbfae8d960c74aa97702e6574b620f35bd7"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "011dfc4fccce7c005cae1d97086b4209e3fa11be9e059d782f4568bfc40e129b"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "9abd5ab9256188e5952e1cd27165d5564d67f965f63f51011dde9b6ee3f0c61c",
+        "uncompressed_bytes": 3109111,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-before-20260930T191150Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-before-20260930T191150Z",
+      "source_state": "committed Phase3",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1094031,
+        1056364
+      ],
+      "go_p99_ns": [
+        8732457,
+        9090467
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        8.266522713761544,
+        8.60543051448175
+      ],
+      "ratios_to_mean_native": [
+        8.121723683323296,
+        8.454695067650363
+      ],
+      "go_binary_build_id": "KxzqbTQ8JmXCMJ0uWriw/-gP2vRCpvJP5N_iD0JUs/VXYKL6s4zxJ6tCCQEcpp/ufcRLe038Wv_alBb72ht",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "736a7fbede1c68527048e8faca2fd01a4c359e113b03384bcd261383864d542a"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "47c37ee0a386270c0b0e7d97532c5f3f5e9f93fa3ae4887cea048b6efd20ee25"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "a14bb0c2bd464a5f3b45e3cb7df5d0272c95a3e9742cc59e817f57bfa97dba32"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "c3326d6cd1710c407ede14ecc7d39f8979afd23e5ad02f570e62c428e9e82d97",
+        "uncompressed_bytes": 3109201,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-final-20260930T191525Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-final-20260930T191525Z",
+      "source_state": "reader/renewal repairs",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1064803,
+        1057803
+      ],
+      "go_p99_ns": [
+        9113223,
+        8454841
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        8.615236485432543,
+        7.992831368411698
+      ],
+      "ratios_to_mean_native": [
+        8.586824874705904,
+        7.966472345786265
+      ],
+      "go_binary_build_id": "wgjf_h0o63-TQSIjLZbT/8tVSK0Fdm7Npw0N0_dhy/pfdflBz6tWOVwKNJMZ70/d8rPL0UTgXETNHzxu8ma",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "9bea1d88bf1749d5c03cf3f9493e34b234d224b466072f868e3a6c8a6dff64a7"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "d660d85cddcc713d2cd006cf1e830f92788fbda70ff176a54ff98697dfd91993"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "a610fc9c08b87766620a6169da6da019a409397177c12a5f75dcb2dce2812b6e"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "96be9e12b38d01f27a84e4b2368aea2f707ea7ceb9ee02635b7646142d8a6524",
+        "uncompressed_bytes": 3109255,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-before-repeat-20260930T192100Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-before-repeat-20260930T192100Z",
+      "source_state": "committed Phase3 repeat",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1089054,
+        1344473
+      ],
+      "go_p99_ns": [
+        8613468,
+        8707469
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        7.909128472968282,
+        7.995442833872334
+      ],
+      "ratios_to_mean_native": [
+        7.078999328957517,
+        7.156254276200757
+      ],
+      "go_binary_build_id": "KxzqbTQ8JmXCMJ0uWriw/-gP2vRCpvJP5N_iD0JUs/VXYKL6s4zxJ6tCCQEcpp/ufcRLe038Wv_alBb72ht",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "736a7fbede1c68527048e8faca2fd01a4c359e113b03384bcd261383864d542a"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "a4e51e3b23a967c86b87002b190c80c24051e3b816e6f45efc85f0d3b1c085e7"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "527d46f8274c13c95e81e0a3f9be512450b5d06ed1347b9ab8ad65c13f142f33"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "2a14db6cb45513fd37a57a0cd00b30d4bb8ae9ad9fbadc5cf2db80c246884268",
+        "uncompressed_bytes": 3109083,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-final-repeat-20260930T192138Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-final-repeat-20260930T192138Z",
+      "source_state": "reader/renewal repairs repeat",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1038844,
+        1049719
+      ],
+      "go_p99_ns": [
+        9518728,
+        8797428
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        9.162807890308843,
+        8.468478424094474
+      ],
+      "ratios_to_mean_native": [
+        9.115097796906294,
+        8.424383655173438
+      ],
+      "go_binary_build_id": "wgjf_h0o63-TQSIjLZbT/8tVSK0Fdm7Npw0N0_dhy/pfdflBz6tWOVwKNJMZ70/d8rPL0UTgXETNHzxu8ma",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "9bea1d88bf1749d5c03cf3f9493e34b234d224b466072f868e3a6c8a6dff64a7"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "365025f35853a1f39d411a5c76752135b882c5cb79dd4d82085f2ded25cabf15"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "e1af1712c15aac1ba2e33ce380417555984d138fc31a696c2916802032ab997d"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "daca14d4562e801874918675a9901acb3028ab644ef9f2296ffb09419f85708c",
+        "uncompressed_bytes": 3109153,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-optimized-20260930T192802Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-optimized-20260930T192802Z",
+      "source_state": "release and reader/lease optimization",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1067095,
+        1152012
+      ],
+      "go_p99_ns": [
+        8719969,
+        9393933
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        8.17168949343779,
+        8.803277121530884
+      ],
+      "ratios_to_mean_native": [
+        7.858989224043726,
+        8.466408334523752
+      ],
+      "go_binary_build_id": "nbxf8PUrZlKbIvejatXs/vqUWTiSXuQg_dpS4629c/-7j5-vE75ABnxsr4XoX9/-l_kBOEZiF6XQbIWXsbf",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "728fb7d536e2020f9abac9a549c85dc19ead0698e54d168c06a003599139ec63"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "f918eb749b8edcad7c04ea008901adde29f99bbc07a65533b3cefbd1f3668beb"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "9d839ffadd57b1ae63a11c05c2ef8625673d8bfdab66da5dcafe26fdf16446a3"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "7efc817d0e53b6bbee28970f313a68c66700cb5ab4fe359ef61a5f816286af39",
+        "uncompressed_bytes": 3109273,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-prelude-20260930T193250Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-prelude-20260930T193250Z",
+      "source_state": "final embedded-prelude implementation",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1748643,
+        1171804
+      ],
+      "go_p99_ns": [
+        8777761,
+        8658218
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        7.490809896535598,
+        7.388793689046974
+      ],
+      "ratios_to_mean_native": [
+        6.011244853955576,
+        5.929378619094954
+      ],
+      "go_binary_build_id": "T2V8rI1WVOazjQgN61bh/vUIXVYpjmneWaJlVM01A/t9zKcVVeFSABlSzE25oA/-wpxCAwpNOlD4tNCq0IP",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "f0e6e475189ba10ec4aa2c594704510404ca1b85ef0b02e0212fb6bb59cddb38"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "4541da51d806888aafd3354e5e420fe64a1b6a3aa1a72f614fbb357446900800"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "a9013f503a707784199ee11a218a874e4ef2fc495209746cadd8f272ea74582d"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "be3a6f1344bbc16868c9a9ed3ae085b170744105567c7d5464ee42fa35112633",
+        "uncompressed_bytes": 3109248,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    },
+    {
+      "name": "secure-prelude-confirm-20260930T193618Z",
+      "private_directory": "/tmp/rados-go-phase4-secure-prelude-confirm-20260930T193618Z",
+      "source_state": "same final implementation confirmation",
+      "command": "P07_DIAGNOSTIC_DIR=<fresh-dir> GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+      "native_p99_ns": [
+        1093970,
+        1322879
+      ],
+      "go_p99_ns": [
+        9082480,
+        9056527
+      ],
+      "ratio_denominator": "minimum native p99 in this run; conservative summary, not P12 recertification",
+      "ratios_to_faster_native": [
+        8.302311763576698,
+        8.278588078283683
+      ],
+      "ratios_to_mean_native": [
+        7.515968105578793,
+        7.494491381133037
+      ],
+      "go_binary_build_id": "T2V8rI1WVOazjQgN61bh/vUIXVYpjmneWaJlVM01A/t9zKcVVeFSABlSzE25oA/-wpxCAwpNOlD4tNCq0IP",
+      "private_artifacts": [
+        {
+          "path": "benchmark",
+          "sha256": "f0e6e475189ba10ec4aa2c594704510404ca1b85ef0b02e0212fb6bb59cddb38"
+        },
+        {
+          "path": "cpu.pprof",
+          "sha256": "7c2e9d20b7394ded824e64cb81c2157526a34835ab2e7760879760a176cb111f"
+        },
+        {
+          "path": "allocs.pprof",
+          "sha256": "6b8ef800d78a077174e6067044ea9e307c2ad4f9b23cc1f2644a556b1a5d6559"
+        }
+      ],
+      "provenance_limit": "Build identity pins the measured binary. Before source archived from committed Phase3; intermediate dirty-source labels are chronology, not complete per-run source archives. Final frozen manifest pins final implementation, not retroactive identity of every earlier binary. Diagnostic mode is secure; native runtime package/hash and full server metadata are not captured by this early-return diagnostic branch. No renewed qualification.",
+      "compressed_timing": {
+        "path": "request-timing.json.gz",
+        "uncompressed_sha256": "3a9664bd525ac34a32d69a295c55d2594042742418355832b58c0ffaea895d27",
+        "uncompressed_bytes": 3109249,
+        "scope": "Lossless compression of the complete raw timing result; no samples omitted."
+      }
+    }
+  ]
+}

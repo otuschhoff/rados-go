@@ -1,0 +1,21 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/otuschhoff/rados-go/internal/msgr
+cpu: Apple M1 Max
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7338	     15677 ns/op	4082.31 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    6298	     15909 ns/op	4022.77 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    6472	     15846 ns/op	4038.80 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7036	     15924 ns/op	4019.16 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    6980	     15988 ns/op	4002.90 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    7022	     15953 ns/op	4011.73 MB/s	   74096 B/op	       9 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    7329	     16003 ns/op	3999.36 MB/s	   74096 B/op	       9 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    6547	     16178 ns/op	3955.98 MB/s	   74096 B/op	       9 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    6320	     16329 ns/op	3919.36 MB/s	   74096 B/op	       9 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    6858	     15907 ns/op	4023.40 MB/s	   74096 B/op	       9 allocs/op
+BenchmarkReceiveBudgetLeaseLifecycle-10                	 4381833	        27.26 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReceiveBudgetLeaseLifecycle-10                	 4407828	        27.21 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReceiveBudgetLeaseLifecycle-10                	 4416554	        27.51 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReceiveBudgetLeaseLifecycle-10                	 4403736	        27.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkReceiveBudgetLeaseLifecycle-10                	 4371524	        27.60 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/msgr	2.398s

@@ -63,8 +63,9 @@ type Segment struct {
 }
 
 type Frame struct {
-	Tag      Tag
-	Segments []Segment
+	Tag          Tag
+	Segments     []Segment
+	receiveLease *receiveLease
 }
 
 type CRCCodec struct {
@@ -174,6 +175,19 @@ func (codec CRCCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 		return Frame{}, ErrLimitExceeded
 	}
 
+	var payloadBytes uint64
+	for _, descriptor := range descriptors {
+		payloadBytes += uint64(descriptor.length)
+	}
+	if tag != TagMessage && payloadBytes > 0 && payloadBytes <= securePreamble {
+		if err := reserveReceivePrelude(reader); err != nil {
+			return Frame{}, err
+		}
+		payloadBytes = 0
+	}
+	if err := reserveReceiveBytes(reader, payloadBytes); err != nil {
+		return Frame{}, err
+	}
 	segments := make([]Segment, len(descriptors))
 	for index, descriptor := range descriptors {
 		data := make([]byte, descriptor.length)

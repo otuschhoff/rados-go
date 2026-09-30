@@ -24,12 +24,15 @@ const (
 // command-line flags, or the process environment.
 func DefaultConfig() Config {
 	return Config{
-		Entity:           "client.admin",
-		SecurityMode:     SecurityModeSecure,
-		DialTimeout:      defaultDialTimeout,
-		HandshakeTimeout: defaultHandshakeTimeout,
-		OperationTimeout: defaultOperationTimeout,
-		cluster:          "ceph",
+		Entity:                "client.admin",
+		SecurityMode:          SecurityModeSecure,
+		DialTimeout:           defaultDialTimeout,
+		HandshakeTimeout:      defaultHandshakeTimeout,
+		OperationTimeout:      defaultOperationTimeout,
+		MaxSessions:           defaultMaxSessions,
+		MaxReceiveBytes:       defaultMaxReceiveBytes,
+		MaxQueuedReceiveBytes: defaultMaxQueuedReceiveBytes,
+		cluster:               "ceph",
 	}
 }
 
@@ -102,7 +105,9 @@ func (config Config) withOption(name, value string, loadKeyring bool) (Config, e
 	if name == "" {
 		return Config{}, invalidConfig("option", errors.New("empty option name"))
 	}
-	value = strings.TrimSpace(value)
+	if name != "max_sessions" && name != "max_receive_bytes" && name != "max_queued_receive_bytes" {
+		value = strings.TrimSpace(value)
+	}
 	switch name {
 	case "cluster":
 		if !validSimpleName(value) {
@@ -164,6 +169,22 @@ func (config Config) withOption(name, value string, loadKeyring bool) (Config, e
 			return Config{}, err
 		}
 		config.HandshakeTimeout = duration
+	case "max_sessions", "max_receive_bytes", "max_queued_receive_bytes":
+		limit, err := parsePositiveDecimal(name, value)
+		if err != nil {
+			return Config{}, err
+		}
+		switch name {
+		case "max_sessions":
+			if limit > uint64(^uint(0)>>1) {
+				return Config{}, invalidConfig(name, errors.New("session count exceeds platform int range"))
+			}
+			config.MaxSessions = int(limit)
+		case "max_receive_bytes":
+			config.MaxReceiveBytes = limit
+		case "max_queued_receive_bytes":
+			config.MaxQueuedReceiveBytes = limit
+		}
 	case "operation_timeout", "rados_osd_op_timeout":
 		duration, err := parseOperationDuration(name, value, name == "rados_osd_op_timeout")
 		if err != nil {
@@ -212,6 +233,12 @@ func (config Config) Option(name string) (string, bool) {
 		return durationOption(config.DialTimeout)
 	case "handshake_timeout":
 		return durationOption(config.HandshakeTimeout)
+	case "max_sessions":
+		return strconv.Itoa(config.withReceiveDefaults().MaxSessions), true
+	case "max_receive_bytes":
+		return strconv.FormatUint(config.withReceiveDefaults().MaxReceiveBytes, 10), true
+	case "max_queued_receive_bytes":
+		return strconv.FormatUint(config.withReceiveDefaults().MaxQueuedReceiveBytes, 10), true
 	case "operation_timeout", "rados_osd_op_timeout":
 		return config.OperationTimeout.String(), true
 	default:
@@ -301,6 +328,9 @@ func (config Config) ParseEnv(name string) (Config, error) {
 		{"DIAL_TIMEOUT", "dial_timeout"},
 		{"HANDSHAKE_TIMEOUT", "handshake_timeout"},
 		{"OPERATION_TIMEOUT", "operation_timeout"},
+		{"MAX_SESSIONS", "max_sessions"},
+		{"MAX_RECEIVE_BYTES", "max_receive_bytes"},
+		{"MAX_QUEUED_RECEIVE_BYTES", "max_queued_receive_bytes"},
 	}
 	credentialOption := ""
 	for _, variable := range variables {
@@ -335,7 +365,7 @@ func (config *Config) applySection(values map[string]string) error {
 	if _, exists := values["include_dir"]; exists {
 		return invalidConfig("include_dir", errors.New("includes are not supported"))
 	}
-	ordered := []string{"cluster", "entity", "name", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout"}
+	ordered := []string{"cluster", "entity", "name", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout", "max_sessions", "max_receive_bytes", "max_queued_receive_bytes"}
 	for _, name := range ordered {
 		value, exists := values[name]
 		if !exists {
@@ -349,6 +379,32 @@ func (config *Config) applySection(values map[string]string) error {
 		*config = updated
 	}
 	return nil
+}
+
+func (config Config) withReceiveDefaults() Config {
+	if config.MaxSessions == 0 {
+		config.MaxSessions = defaultMaxSessions
+	}
+	if config.MaxReceiveBytes == 0 {
+		config.MaxReceiveBytes = defaultMaxReceiveBytes
+	}
+	if config.MaxQueuedReceiveBytes == 0 {
+		config.MaxQueuedReceiveBytes = defaultMaxQueuedReceiveBytes
+	}
+	return config
+}
+
+func parsePositiveDecimal(name, value string) (uint64, error) {
+	for _, character := range value {
+		if character < '0' || character > '9' {
+			return 0, invalidConfig(name, errors.New("limit must be a positive decimal integer"))
+		}
+	}
+	limit, err := strconv.ParseUint(value, 10, 64)
+	if err != nil || limit == 0 {
+		return 0, invalidConfig(name, errors.New("limit must be a positive decimal integer within uint64 range"))
+	}
+	return limit, nil
 }
 
 func (config Config) clone() Config {
@@ -425,7 +481,7 @@ func normalizeOptionName(name string) string {
 
 func isArgumentOption(name string) bool {
 	switch name {
-	case "name", "id", "cluster", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout":
+	case "name", "id", "cluster", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout", "max_sessions", "max_receive_bytes", "max_queued_receive_bytes":
 		return true
 	default:
 		return false

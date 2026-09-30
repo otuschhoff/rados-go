@@ -25,9 +25,12 @@ import (
 )
 
 const (
-	defaultDialTimeout      = 10 * time.Second
-	defaultHandshakeTimeout = 15 * time.Second
-	defaultOperationTimeout = 30 * time.Second
+	defaultDialTimeout                  = 10 * time.Second
+	defaultHandshakeTimeout             = 15 * time.Second
+	defaultOperationTimeout             = 30 * time.Second
+	defaultMaxSessions                  = 256
+	defaultMaxReceiveBytes       uint64 = 256 << 20
+	defaultMaxQueuedReceiveBytes uint64 = 64 << 20
 )
 
 type SecurityMode uint8
@@ -46,15 +49,25 @@ type Config struct {
 	DialTimeout      time.Duration
 	HandshakeTimeout time.Duration
 	OperationTimeout time.Duration
-	cluster          string
-	keyring          string
-	options          map[string]string
+	// MaxSessions bounds admitted, creating, and retiring messenger sessions
+	// shared by MON, OSD, and MGR, not cached service resources. Zero selects 256.
+	MaxSessions int
+	// MaxReceiveBytes bounds aggregate retained messenger receive bytes across
+	// this client's sessions, not process RSS. Zero selects 256 MiB.
+	MaxReceiveBytes uint64
+	// MaxQueuedReceiveBytes bounds queued receive bytes per messenger session.
+	// Zero selects 64 MiB; the effective value must not exceed MaxReceiveBytes.
+	MaxQueuedReceiveBytes uint64
+	cluster               string
+	keyring               string
+	options               map[string]string
 }
 
 type Client struct {
-	config     Config
-	credential cephx.Credential
-	expected   *maps.FSID
+	config        Config
+	credential    cephx.Credential
+	expected      *maps.FSID
+	receiveBudget *msgr.ReceiveBudget
 
 	connectGate               chan struct{}
 	mu                        sync.Mutex
@@ -76,10 +89,14 @@ type Client struct {
 }
 
 func New(config Config) (*Client, error) {
-	if len(config.Monitors) == 0 || config.Entity == "" || len(config.Key) == 0 || config.DialTimeout < 0 || config.HandshakeTimeout < 0 || config.OperationTimeout < 0 || config.SecurityMode > SecurityModeCRC {
+	if len(config.Monitors) == 0 || config.Entity == "" || len(config.Key) == 0 || config.DialTimeout < 0 || config.HandshakeTimeout < 0 || config.OperationTimeout < 0 || config.SecurityMode > SecurityModeCRC || config.MaxSessions < 0 {
 		return nil, &OpError{Op: "new", Err: ErrInvalidArgument}
 	}
 	config = config.clone()
+	config = config.withReceiveDefaults()
+	if config.MaxQueuedReceiveBytes > config.MaxReceiveBytes {
+		return nil, &OpError{Op: "new", Err: ErrInvalidArgument}
+	}
 	if config.DialTimeout == 0 {
 		config.DialTimeout = defaultDialTimeout
 	}
@@ -98,8 +115,12 @@ func New(config Config) (*Client, error) {
 		}
 		expected = &fsid
 	}
+	receiveBudget, err := msgr.NewReceiveBudget(config.MaxSessions, config.MaxReceiveBytes)
+	if err != nil {
+		return nil, &OpError{Op: "new", Err: errors.Join(ErrInvalidArgument, err)}
+	}
 	lifetime, cancel := context.WithCancel(context.Background())
-	client := &Client{config: config, credential: credential, expected: expected, connectGate: make(chan struct{}, 1), clusterChanges: newClusterChangeBroker(), lifetime: lifetime, cancel: cancel}
+	client := &Client{config: config, credential: credential, expected: expected, receiveBudget: receiveBudget, connectGate: make(chan struct{}, 1), clusterChanges: newClusterChangeBroker(), lifetime: lifetime, cancel: cancel}
 	client.connectGate <- struct{}{}
 	return client, nil
 }
@@ -142,6 +163,7 @@ func (client *Client) Connect(ctx context.Context) error {
 	messageLimits := msgr.Limits{MaxSegmentBytes: 32 << 20, MaxFrameBytes: 64 << 20, MaxAddresses: 64, MaxAuthBytes: 1 << 20}
 	sessionConfig := msgr.SessionConfig{
 		Limits: messageLimits, MaxQueuedMessages: 128, MaxRetainedBytes: 320 << 20, MaxInFlightTransactions: 64,
+		ReceiveBudget: client.receiveBudget, MaxQueuedReceiveBytes: client.config.MaxQueuedReceiveBytes,
 		MaxReconnectAttempts: 0, InitialReconnectBackoff: 200 * time.Millisecond, MaxReconnectBackoff: 15 * time.Second,
 		MaxHandshakeTransitions: 32, EventBuffer: 16,
 		ClientIdent:        msgr.ClientIdent{Addresses: protocol.EntityAddrVec{clientAddress}, SupportedFeatures: uint64(protocol.FeatureMonitorClient), RequiredFeatures: uint64(protocol.FeatureMessageAddress2)},

@@ -415,6 +415,10 @@ func (transport *authTransport) OwnsReadFrames() bool {
 	return ok && owned.OwnsReadFrames()
 }
 
+func (transport *authTransport) ReadFrameWithBudget(budget *msgr.ReceiveBudget, limits msgr.Limits) (msgr.Frame, error) {
+	return msgr.ReadTransportFrame(transport.Transport, budget, limits)
+}
+
 func newAuthTransport(transport msgr.Transport, metadata AuthMetadata, renewAfter, now time.Time) *authTransport {
 	authenticated := &authTransport{Transport: transport, metadata: copyMetadata(metadata), renewalDue: make(chan struct{})}
 	if !renewAfter.IsZero() {

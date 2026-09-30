@@ -148,6 +148,8 @@ type SessionSnapshot struct {
 	InFlight              int
 	Replay                int
 	RetainedBytes         uint64
+	QueuedReceiveMessages int
+	RetainedReceiveBytes  uint64
 	ControlQueued         int
 	ControlRetainedBytes  uint64
 	ReconnectAttempts     int
@@ -176,6 +178,8 @@ type SessionDiagnosticObserver func(SessionDiagnostic)
 
 type SessionConfig struct {
 	Limits                    Limits
+	ReceiveBudget             *ReceiveBudget
+	MaxQueuedReceiveBytes     uint64
 	MaxQueuedMessages         int
 	MaxRetainedBytes          uint64
 	MaxInFlightTransactions   int
@@ -248,6 +252,7 @@ type Session struct {
 	incoming          chan Message
 	terminal          chan error
 	done              chan struct{}
+	stopped           chan struct{}
 	stopOnce          sync.Once
 }
 
@@ -264,6 +269,12 @@ type submitCommand struct {
 type submitResult struct {
 	message Message
 	err     error
+}
+
+func (result submitResult) take() (Message, error) {
+	result.message.receiveLease.release()
+	result.message.receiveLease = nil
+	return result.message, result.err
 }
 
 type cancelCommand struct {
@@ -328,9 +339,12 @@ type sessionOwner struct {
 	session         *Session
 	config          SessionConfig
 	frameReceivedAt time.Time
+	receiveQueue    []Message
+	receiveBytes    uint64
 
 	state         SessionState
 	transport     Transport
+	transportDone chan struct{}
 	generation    uint64
 	writeTasks    chan writeTask
 	writeBusy     bool
@@ -438,13 +452,21 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		config.CookieSource = randomCookieSource{}
 	}
 
+	if err := config.ReceiveBudget.admit(); err != nil {
+		return nil, err
+	}
+	incomingSize := config.MaxQueuedMessages
+	if config.ReceiveBudget != nil || config.MaxQueuedReceiveBytes != 0 {
+		incomingSize = 0
+	}
 	session := &Session{
 		commands: make(chan any),
 		events:   make(chan SessionEvent, config.EventBuffer),
 		resets:   make(chan struct{}, 1),
-		incoming: make(chan Message, config.MaxQueuedMessages),
+		incoming: make(chan Message, incomingSize),
 		terminal: make(chan error, 1),
 		done:     make(chan struct{}),
+		stopped:  make(chan struct{}),
 	}
 	session.controlGeneration.Store(1)
 	owner := &sessionOwner{
@@ -538,25 +560,26 @@ func (session *Session) submitGeneration(ctx context.Context, message Message, o
 				admitted()
 			}
 			result := <-request.result
-			return result.message, result.err
+			return result.take()
 		default:
 			return Message{}, ErrSessionClosed
 		}
 	}
 	select {
 	case result := <-request.result:
-		return result.message, result.err
+		return result.take()
 	case <-ctx.Done():
 		select {
 		case session.commands <- cancelCommand{request: request, err: ctx.Err()}:
 		case <-session.done:
-			return Message{}, ctx.Err()
+			result := <-request.result
+			return result.take()
 		}
 		result := <-request.result
-		return result.message, result.err
+		return result.take()
 	case <-session.done:
 		result := <-request.result
-		return result.message, result.err
+		return result.take()
 	}
 }
 
@@ -594,6 +617,9 @@ func (session *Session) Stop() {
 		case <-session.done:
 		}
 	})
+	if session.stopped != nil {
+		<-session.stopped
+	}
 }
 
 func (owner *sessionOwner) run() {
@@ -604,7 +630,20 @@ func (owner *sessionOwner) run() {
 	}
 	for {
 		owner.dispatch()
+		var delivery chan Message
+		var message Message
+		if len(owner.receiveQueue) != 0 {
+			delivery = owner.session.incoming
+			message = owner.receiveQueue[0]
+			message.receiveLease = nil
+		}
 		select {
+		case delivery <- message:
+			queued := owner.receiveQueue[0]
+			owner.receiveBytes -= receiveMessageBytes(queued)
+			queued.receiveLease.release()
+			owner.receiveQueue[0] = Message{}
+			owner.receiveQueue = owner.receiveQueue[1:]
 		case command := <-owner.session.commands:
 			switch value := command.(type) {
 			case *submitCommand:
@@ -618,13 +657,19 @@ func (owner *sessionOwner) run() {
 				return
 			}
 		case incoming := <-owner.frames:
-			if incoming.generation == owner.generation {
+			if incoming.generation == owner.generation && owner.terminalErr == nil {
 				if incoming.err != nil {
-					owner.handleFault(incoming.err)
+					if errors.Is(incoming.err, ErrReceiveBudgetExceeded) {
+						owner.failTerminal(incoming.err)
+					} else {
+						owner.handleFault(incoming.err)
+					}
 				} else {
 					owner.frameReceivedAt = incoming.receivedAt
 					owner.handleFrame(incoming.frame)
 				}
+			} else {
+				incoming.frame.receiveLease.release()
 			}
 		case written := <-owner.writes:
 			if written.generation == owner.generation {
@@ -806,13 +851,14 @@ func (owner *sessionOwner) sendWrite(task writeTask) {
 }
 
 func (owner *sessionOwner) handleFrame(frame Frame) {
+	defer func() { frame.receiveLease.release() }()
 	if frame.Tag == TagMessage {
 		if owner.state != StateReady {
 			owner.handleFault(fmt.Errorf("%w: message in state %d", ErrMalformed, owner.state))
 			return
 		}
 		decode := DecodeMessage
-		if transport, ok := owner.transport.(interface{ OwnsReadFrames() bool }); ok && transport.OwnsReadFrames() {
+		if transport, ok := owner.transport.(interface{ OwnsReadFrames() bool }); frame.receiveLease != nil || ok && transport.OwnsReadFrames() {
 			decode = decodeOwnedMessage
 		}
 		message, err := decode(frame, owner.config.Limits)
@@ -820,8 +866,23 @@ func (owner *sessionOwner) handleFrame(frame Frame) {
 			owner.handleFault(err)
 			return
 		}
+		message.receiveLease = frame.receiveLease
+		frame.receiveLease = nil
 		owner.handleMessage(message)
 		return
+	}
+	if frame.receiveLease != nil {
+		switch frame.Tag {
+		case TagAuthRequest, TagAuthReplyMore, TagAuthRequestMore, TagAuthDone, TagAuthSignature:
+			var copyBytes uint64
+			for _, segment := range frame.Segments {
+				copyBytes += 2*uint64(len(segment.Data)) + 64
+			}
+			if err := frame.receiveLease.resize(frame.receiveLease.bytes + copyBytes); err != nil {
+				owner.failTerminal(err)
+				return
+			}
+		}
 	}
 	payload, err := DecodeControl(frame, owner.config.Limits)
 	if err != nil {
@@ -832,6 +893,7 @@ func (owner *sessionOwner) handleFrame(frame Frame) {
 }
 
 func (owner *sessionOwner) handleMessage(message Message) {
+	defer func() { message.receiveLease.release() }()
 	transportGeneration := owner.session.ControlGeneration()
 	if !owner.acceptAcknowledgment(message.Header.AckSequence) {
 		return
@@ -853,6 +915,7 @@ func (owner *sessionOwner) handleMessage(message Message) {
 		owner.removePending(pending)
 		recordRequestTiming(pending.request.ctx, "reply_delivered", message.Header.TransactionID)
 		pending.request.result <- submitResult{message: message}
+		message.receiveLease = nil
 		owner.queueControl(Ack{Sequence: sequence})
 		return
 	}
@@ -861,6 +924,18 @@ func (owner *sessionOwner) handleMessage(message Message) {
 		return
 	}
 	message.TransportGeneration = transportGeneration
+	if owner.config.ReceiveBudget != nil || owner.config.MaxQueuedReceiveBytes != 0 {
+		bytes := receiveMessageBytes(message)
+		limit := owner.config.MaxQueuedReceiveBytes
+		if len(owner.receiveQueue) >= owner.config.MaxQueuedMessages || limit != 0 && (owner.receiveBytes > limit || bytes > limit-owner.receiveBytes) {
+			owner.failTerminal(fmt.Errorf("%w: unsolicited receive queue is full", ErrQueueSaturated))
+			return
+		}
+		owner.receiveQueue = append(owner.receiveQueue, message)
+		owner.receiveBytes += bytes
+		message.receiveLease = nil
+		return
+	}
 	select {
 	case owner.session.incoming <- message:
 	default:
@@ -1142,6 +1217,7 @@ func (owner *sessionOwner) handleFault(err error) {
 	owner.invalidateControls()
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})
 	owner.signalReset()
+	owner.stopTransportRenewal()
 	if owner.transport != nil {
 		_ = owner.transport.Close()
 		owner.transport = nil
@@ -1174,6 +1250,11 @@ func (owner *sessionOwner) signalReset() {
 }
 
 func (owner *sessionOwner) failTerminal(err error) {
+	owner.releaseReceiveQueue()
+	owner.generation++
+	if owner.connectorCancel != nil {
+		owner.connectorCancel()
+	}
 	owner.invalidateControls()
 	owner.terminalErr = err
 	select {
@@ -1181,6 +1262,7 @@ func (owner *sessionOwner) failTerminal(err error) {
 	default:
 	}
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})
+	owner.stopTransportRenewal()
 	if owner.transport != nil {
 		_ = owner.transport.Close()
 		owner.transport = nil
@@ -1325,28 +1407,41 @@ func (owner *sessionOwner) failSentUnknown(cause error) {
 }
 
 func (owner *sessionOwner) startTransport(transport Transport, state SessionState) {
+	owner.stopTransportRenewal()
 	owner.transport = transport
 	owner.generation++
 	owner.writeTasks = make(chan writeTask)
+	owner.transportDone = make(chan struct{})
 	generation := owner.generation
 	owner.pumpWG.Add(2)
 	go owner.readPump(generation, transport)
 	go owner.writePump(generation, transport, owner.writeTasks)
-	if renewable, ok := transport.(RenewalTransport); ok && renewable.RenewalDue() != nil {
-		owner.pumpWG.Add(1)
-		go owner.renewalPump(generation, renewable.RenewalDue())
+	if renewable, ok := transport.(RenewalTransport); ok {
+		if due := renewable.RenewalDue(); due != nil {
+			owner.pumpWG.Add(1)
+			go owner.renewalPump(generation, due, owner.transportDone)
+		}
 	}
 	owner.setState(state)
 }
 
-func (owner *sessionOwner) renewalPump(generation uint64, due <-chan struct{}) {
+func (owner *sessionOwner) stopTransportRenewal() {
+	if owner.transportDone != nil {
+		close(owner.transportDone)
+		owner.transportDone = nil
+	}
+}
+
+func (owner *sessionOwner) renewalPump(generation uint64, due, transportDone <-chan struct{}) {
 	defer owner.pumpWG.Done()
 	select {
 	case <-due:
 		select {
 		case owner.renewals <- renewalDue{generation: generation}:
+		case <-transportDone:
 		case <-owner.session.done:
 		}
+	case <-transportDone:
 	case <-owner.session.done:
 	}
 }
@@ -1368,8 +1463,14 @@ func (owner *sessionOwner) emitDiagnostic(kind SessionDiagnosticKind) {
 func (owner *sessionOwner) readPump(generation uint64, transport Transport) {
 	defer owner.pumpWG.Done()
 	for {
-		frame, err := transport.ReadFrame()
-		if err == nil {
+		var frame Frame
+		var err error
+		if owner.config.ReceiveBudget != nil {
+			frame, err = ReadTransportFrame(transport, owner.config.ReceiveBudget, owner.config.Limits)
+		} else {
+			frame, err = transport.ReadFrame()
+		}
+		if err == nil && owner.config.ReceiveBudget == nil {
 			owned, ok := transport.(interface{ OwnsReadFrames() bool })
 			if !ok || !owned.OwnsReadFrames() {
 				segments := make([]Segment, len(frame.Segments))
@@ -1386,6 +1487,7 @@ func (owner *sessionOwner) readPump(generation uint64, transport Transport) {
 		select {
 		case owner.frames <- pumpFrame{generation: generation, frame: frame, receivedAt: receivedAt, err: err}:
 		case <-owner.session.done:
+			frame.receiveLease.release()
 			return
 		}
 		if err != nil {
@@ -1478,14 +1580,45 @@ func (owner *sessionOwner) stop(done chan struct{}) {
 	}
 	owner.failAll(ErrSessionClosed)
 	owner.connectorCancel()
+	owner.stopTransportRenewal()
 	if owner.transport != nil {
 		_ = owner.transport.Close()
 	}
 	close(owner.session.done)
 	owner.pumpWG.Wait()
-	close(owner.session.events)
-	close(owner.session.incoming)
-	close(done)
+	for {
+		select {
+		case incoming := <-owner.frames:
+			incoming.frame.receiveLease.release()
+		default:
+			owner.releaseReceiveQueue()
+			owner.transport = nil
+			close(owner.session.events)
+			close(owner.session.incoming)
+			owner.config.ReceiveBudget.retire()
+			if owner.session.stopped != nil {
+				close(owner.session.stopped)
+			}
+			close(done)
+			return
+		}
+	}
+}
+
+func receiveMessageBytes(message Message) uint64 {
+	if message.receiveLease != nil {
+		return message.receiveLease.bytes
+	}
+	return uint64(cap(message.Front)) + uint64(cap(message.Middle)) + uint64(cap(message.Data))
+}
+
+func (owner *sessionOwner) releaseReceiveQueue() {
+	for index := range owner.receiveQueue {
+		owner.receiveQueue[index].receiveLease.release()
+		owner.receiveQueue[index] = Message{}
+	}
+	owner.receiveQueue = nil
+	owner.receiveBytes = 0
 }
 
 func (owner *sessionOwner) failAll(err error) {
@@ -1633,6 +1766,8 @@ func (owner *sessionOwner) snapshot() SessionSnapshot {
 		InFlight:              owner.inFlightCount(),
 		Replay:                len(owner.replay),
 		RetainedBytes:         owner.retainedBytes,
+		QueuedReceiveMessages: len(owner.receiveQueue),
+		RetainedReceiveBytes:  owner.receiveBytes,
 		ControlQueued:         owner.controlCount,
 		ControlRetainedBytes:  owner.controlBytes,
 		ReconnectAttempts:     owner.reconnectAttempts,
@@ -1679,6 +1814,7 @@ func admissionMessageBytes(message Message, limits Limits) (uint64, error) {
 }
 
 func cloneMessage(message Message) Message {
+	message.receiveLease = nil
 	message.Front = append([]byte(nil), message.Front...)
 	message.Middle = append([]byte(nil), message.Middle...)
 	message.Data = append([]byte(nil), message.Data...)

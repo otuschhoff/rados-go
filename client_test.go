@@ -36,6 +36,94 @@ func TestWrapErrorDistinguishesPeerAndCallerFailures(t *testing.T) {
 	}
 }
 
+func TestWrapErrorClassifiesReceiveSaturation(t *testing.T) {
+	err := (&Client{}).wrapError("read", "object", msgr.ErrQueueSaturated)
+	var operation *OpError
+	if !errors.Is(err, msgr.ErrQueueSaturated) || errors.Is(err, ErrInvalidArgument) || !errors.As(err, &operation) || operation.Op != "read" || operation.Target != "object" {
+		t.Fatalf("receive saturation error = %v", err)
+	}
+}
+
+func TestNewReceiveConfig(t *testing.T) {
+	base := Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey)}
+	client, err := New(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	if client.config.MaxSessions != 256 || client.config.MaxReceiveBytes != 256<<20 || client.config.MaxQueuedReceiveBytes != 64<<20 || client.config.OperationTimeout != 0 {
+		t.Fatal("New did not apply receive defaults or preserve unlimited operation timeout")
+	}
+	if base.MaxSessions != 0 || base.MaxReceiveBytes != 0 || base.MaxQueuedReceiveBytes != 0 {
+		t.Fatal("New mutated its input")
+	}
+	platformMaxSessions := uint64(^uint(0) >> 1)
+	controlBytesPerSession := uint64(3 * 96)
+	maxSessions := min(platformMaxSessions, uint64(math.MaxUint64)/controlBytesPerSession)
+	for _, config := range []Config{
+		{MaxSessions: 3, MaxReceiveBytes: 1024, MaxQueuedReceiveBytes: 512},
+		{MaxSessions: int(maxSessions)},
+		{MaxReceiveBytes: math.MaxUint64, MaxQueuedReceiveBytes: math.MaxUint64},
+	} {
+		config.Monitors, config.Entity, config.Key = base.Monitors, base.Entity, base.Key
+		client, err := New(config)
+		if err != nil {
+			t.Fatal(err)
+		}
+		effective := config.withReceiveDefaults()
+		if client.config.MaxSessions != effective.MaxSessions || client.config.MaxReceiveBytes != effective.MaxReceiveBytes || client.config.MaxQueuedReceiveBytes != effective.MaxQueuedReceiveBytes {
+			t.Fatal("New changed explicit receive byte limits")
+		}
+		_ = client.Close()
+	}
+	invalidConfigs := []Config{
+		{MaxSessions: -1},
+		{MaxReceiveBytes: 1024},
+		{MaxReceiveBytes: 1024, MaxQueuedReceiveBytes: 1025},
+		{MaxQueuedReceiveBytes: 257 << 20},
+	}
+	if maxSessions < platformMaxSessions {
+		invalidConfigs = append(invalidConfigs,
+			Config{MaxSessions: int(maxSessions + 1)},
+			Config{MaxSessions: int(platformMaxSessions)},
+		)
+	}
+	for _, config := range invalidConfigs {
+		config.Monitors, config.Entity, config.Key = base.Monitors, base.Entity, base.Key
+		if _, err := New(config); !errors.Is(err, ErrInvalidArgument) {
+			t.Fatalf("invalid receive config %+v error = %v", config, err)
+		}
+	}
+}
+
+func TestClientReceiveBudgetLifetime(t *testing.T) {
+	config := Config{Monitors: []string{"127.0.0.1:3300"}, Entity: "client.test", Key: []byte(testPublicKey)}
+	first, err := New(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer first.Close()
+	second, err := New(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer second.Close()
+	budget := first.receiveBudget
+	if budget == nil || second.receiveBudget == nil || budget == second.receiveBudget {
+		t.Fatal("clients must have distinct non-nil receive budgets")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	for attempt := 0; attempt < 2; attempt++ {
+		if err := first.Connect(ctx); !errors.Is(err, context.Canceled) {
+			t.Fatalf("canceled connect error = %v", err)
+		}
+		if first.receiveBudget != budget {
+			t.Fatal("failed connect replaced the client's receive budget")
+		}
+	}
+}
+
 func TestWrapErrorPreservesOutcomeUnknownWithTimeout(t *testing.T) {
 	client := &Client{}
 	err := client.wrapError("append", "object", errors.Join(msgr.ErrOutcomeUnknown, context.DeadlineExceeded))

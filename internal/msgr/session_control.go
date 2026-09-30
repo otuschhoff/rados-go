@@ -34,6 +34,7 @@ func (session *Session) SendControlGeneration(ctx context.Context, message Messa
 }
 
 func (owner *sessionOwner) invalidateControls() {
+	owner.releaseReceiveQueue()
 	owner.session.controlGeneration.Add(1)
 	for index := 0; index < len(owner.pending); {
 		pending := owner.pending[index]

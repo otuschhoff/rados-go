@@ -1,0 +1,50 @@
+ok  	github.com/otuschhoff/rados-go	1.521s
+?   	github.com/otuschhoff/rados-go/examples/atomic	[no test files]
+?   	github.com/otuschhoff/rados-go/examples/basic	[no test files]
+ok  	github.com/otuschhoff/rados-go/integration/p03/probe	1.675s
+ok  	github.com/otuschhoff/rados-go/integration/p03/rfc8009-oracle	2.064s
+?   	github.com/otuschhoff/rados-go/integration/p04/probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p06/probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p07/benchmark	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p07/probe	[no test files]
+ok  	github.com/otuschhoff/rados-go/integration/p07/timing-summary	2.450s
+?   	github.com/otuschhoff/rados-go/integration/p08/probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p09/probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p10/probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p11/probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p12/platform-probe	[no test files]
+?   	github.com/otuschhoff/rados-go/integration/p13/probe	[no test files]
+ok  	github.com/otuschhoff/rados-go/internal/cephx	3.041s
+ok  	github.com/otuschhoff/rados-go/internal/crush	3.070s
+ok  	github.com/otuschhoff/rados-go/internal/encoding	3.266s
+ok  	github.com/otuschhoff/rados-go/internal/maps	3.749s
+ok  	github.com/otuschhoff/rados-go/internal/mgr	3.942s
+ok  	github.com/otuschhoff/rados-go/internal/mon	3.863s
+ok  	github.com/otuschhoff/rados-go/internal/msgr	5.320s
+ok  	github.com/otuschhoff/rados-go/internal/objecter	4.776s
+ok  	github.com/otuschhoff/rados-go/internal/osd	3.046s
+ok  	github.com/otuschhoff/rados-go/internal/p12fuzzcontract	3.137s
+ok  	github.com/otuschhoff/rados-go/internal/p12fuzzevidence	2.883s
+ok  	github.com/otuschhoff/rados-go/internal/p12qualcontract	3.131s
+ok  	github.com/otuschhoff/rados-go/internal/perfbaseline	3.122s
+ok  	github.com/otuschhoff/rados-go/internal/protocol	2.727s
+ok  	github.com/otuschhoff/rados-go/tools/api-inventory	2.860s
+ok  	github.com/otuschhoff/rados-go/tools/p00-verify	3.074s
+ok  	github.com/otuschhoff/rados-go/tools/p01-verify	2.632s
+ok  	github.com/otuschhoff/rados-go/tools/p02-verify	2.679s
+ok  	github.com/otuschhoff/rados-go/tools/p03-verify	2.621s
+?   	github.com/otuschhoff/rados-go/tools/p04-verify	[no test files]
+?   	github.com/otuschhoff/rados-go/tools/p05-verify	[no test files]
+?   	github.com/otuschhoff/rados-go/tools/p06-verify	[no test files]
+ok  	github.com/otuschhoff/rados-go/tools/p07-verify	2.535s
+ok  	github.com/otuschhoff/rados-go/tools/p08-verify	2.667s
+ok  	github.com/otuschhoff/rados-go/tools/p09-verify	2.993s
+ok  	github.com/otuschhoff/rados-go/tools/p10-verify	3.155s
+ok  	github.com/otuschhoff/rados-go/tools/p11-verify	3.309s
+ok  	github.com/otuschhoff/rados-go/tools/p12-fuzz	3.267s
+ok  	github.com/otuschhoff/rados-go/tools/p12-qualify	3.202s
+ok  	github.com/otuschhoff/rados-go/tools/p12-release	3.190s
+ok  	github.com/otuschhoff/rados-go/tools/p12-verify	5.528s
+ok  	github.com/otuschhoff/rados-go/tools/p13-verify	3.073s
+ok  	github.com/otuschhoff/rados-go/tools/perf-baseline	5.049s
+ok  	github.com/otuschhoff/rados-go/tools/perf-mode-check	3.401s

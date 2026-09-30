@@ -44,6 +44,7 @@ type Message struct {
 	Middle              []byte
 	Data                []byte
 	TransportGeneration uint64
+	receiveLease        *receiveLease
 }
 
 func EncodeMessageHeader(header MessageHeader) [MessageHeaderSize]byte {

@@ -1,0 +1,16 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/otuschhoff/rados-go/internal/msgr
+cpu: Apple M1 Max
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7507	     15515 ns/op	4124.99 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7634	     15538 ns/op	4119.02 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7165	     15598 ns/op	4103.09 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7629	     15454 ns/op	4141.24 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/Unbudgeted-10         	    7237	     15505 ns/op	4127.72 MB/s	   74048 B/op	       7 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    7048	     15851 ns/op	4037.49 MB/s	   74096 B/op	       8 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    7609	     15902 ns/op	4024.60 MB/s	   74096 B/op	       8 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    6340	     15777 ns/op	4056.56 MB/s	   74096 B/op	       8 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    6902	     15740 ns/op	4066.09 MB/s	   74096 B/op	       8 allocs/op
+BenchmarkReceiveBudgetSecureRead/EnableBudget-10       	    6621	     15761 ns/op	4060.61 MB/s	   74096 B/op	       8 allocs/op
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/msgr	2.009s
