@@ -1,0 +1,168 @@
+=== RUN   TestPlacementMapMatchesMutableMap
+--- PASS: TestPlacementMapMatchesMutableMap (0.00s)
+=== RUN   TestPlacementMapOwnsDecodedData
+--- PASS: TestPlacementMapOwnsDecodedData (0.00s)
+=== RUN   TestPlacementMapRuleErrorsAreIndependent
+--- PASS: TestPlacementMapRuleErrorsAreIndependent (0.00s)
+=== RUN   TestPlacementMapInvalidInputs
+--- PASS: TestPlacementMapInvalidInputs (0.00s)
+=== RUN   TestMutableMapStillRevalidates
+=== RUN   TestMutableMapStillRevalidates/item-shape
+=== RUN   TestMutableMapStillRevalidates/weight-shape
+=== RUN   TestMutableMapStillRevalidates/nil-items
+=== RUN   TestMutableMapStillRevalidates/nil-weights
+=== RUN   TestMutableMapStillRevalidates/nil-buckets
+=== RUN   TestMutableMapStillRevalidates/bucket-id
+=== RUN   TestMutableMapStillRevalidates/bucket-key
+=== RUN   TestMutableMapStillRevalidates/missing-bucket
+=== RUN   TestMutableMapStillRevalidates/graph
+=== RUN   TestMutableMapStillRevalidates/rule
+=== RUN   TestMutableMapStillRevalidates/tunables
+--- PASS: TestMutableMapStillRevalidates (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/item-shape (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/weight-shape (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/nil-items (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/nil-weights (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/nil-buckets (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/bucket-id (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/bucket-key (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/missing-bucket (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/graph (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/rule (0.00s)
+    --- PASS: TestMutableMapStillRevalidates/tunables (0.00s)
+=== RUN   TestPlacementMapGoldenCorpus
+=== RUN   TestPlacementMapGoldenCorpus/p05
+=== RUN   TestPlacementMapGoldenCorpus/p10
+--- PASS: TestPlacementMapGoldenCorpus (0.02s)
+    --- PASS: TestPlacementMapGoldenCorpus/p05 (0.00s)
+    --- PASS: TestPlacementMapGoldenCorpus/p10 (0.02s)
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/crush	0.401s
+=== RUN   TestPerformanceIncrementalFixtures
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=0
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=64/OverridePGs=0
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=1024/OverridePGs=0
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=4096/OverridePGs=0
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=64
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=1024
+=== RUN   TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=4096
+--- PASS: TestPerformanceIncrementalFixtures (0.04s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=0 (0.00s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=64/OverridePGs=0 (0.00s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=1024/OverridePGs=0 (0.00s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=4096/OverridePGs=0 (0.01s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=64 (0.00s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=1024 (0.01s)
+    --- PASS: TestPerformanceIncrementalFixtures/OSDs=4/OverridePGs=4096 (0.02s)
+=== RUN   TestPlacementReuseConcurrentRoutes
+=== RUN   TestPlacementReuseConcurrentRoutes/warm=false
+=== RUN   TestPlacementReuseConcurrentRoutes/warm=true
+--- PASS: TestPlacementReuseConcurrentRoutes (0.00s)
+    --- PASS: TestPlacementReuseConcurrentRoutes/warm=false (0.00s)
+    --- PASS: TestPlacementReuseConcurrentRoutes/warm=true (0.00s)
+=== RUN   TestPlacementReuseColdIncrementalConcurrentRoutes
+--- PASS: TestPlacementReuseColdIncrementalConcurrentRoutes (0.00s)
+=== RUN   TestPlacementReuseMalformedError
+--- PASS: TestPlacementReuseMalformedError (0.00s)
+=== RUN   TestPlacementReuseSlicesAreIndependent
+--- PASS: TestPlacementReuseSlicesAreIndependent (0.00s)
+=== RUN   TestPlacementReuseEquivalentIgnoresCache
+=== RUN   TestPlacementReuseEquivalentIgnoresCache/malformed=false
+=== RUN   TestPlacementReuseEquivalentIgnoresCache/malformed=true
+--- PASS: TestPlacementReuseEquivalentIgnoresCache (0.00s)
+    --- PASS: TestPlacementReuseEquivalentIgnoresCache/malformed=false (0.00s)
+    --- PASS: TestPlacementReuseEquivalentIgnoresCache/malformed=true (0.00s)
+=== RUN   TestPlacementReuseIncremental
+=== RUN   TestPlacementReuseIncremental/warm=false/equalReplacement=false
+=== RUN   TestPlacementReuseIncremental/warm=false/equalReplacement=true
+=== RUN   TestPlacementReuseIncremental/warm=true/equalReplacement=false
+=== RUN   TestPlacementReuseIncremental/warm=true/equalReplacement=true
+--- PASS: TestPlacementReuseIncremental (0.00s)
+    --- PASS: TestPlacementReuseIncremental/warm=false/equalReplacement=false (0.00s)
+    --- PASS: TestPlacementReuseIncremental/warm=false/equalReplacement=true (0.00s)
+    --- PASS: TestPlacementReuseIncremental/warm=true/equalReplacement=false (0.00s)
+    --- PASS: TestPlacementReuseIncremental/warm=true/equalReplacement=true (0.00s)
+=== RUN   TestPlacementReuseChangedPayload
+=== RUN   TestPlacementReuseChangedPayload/warm=false
+=== RUN   TestPlacementReuseChangedPayload/warm=true
+--- PASS: TestPlacementReuseChangedPayload (0.00s)
+    --- PASS: TestPlacementReuseChangedPayload/warm=false (0.00s)
+    --- PASS: TestPlacementReuseChangedPayload/warm=true (0.00s)
+=== RUN   TestPlacementReusePayloadErrorTransitions
+=== RUN   TestPlacementReusePayloadErrorTransitions/malformed-to-valid/warm=false
+=== RUN   TestPlacementReusePayloadErrorTransitions/malformed-to-valid/warm=true
+=== RUN   TestPlacementReusePayloadErrorTransitions/valid-to-malformed/warm=false
+=== RUN   TestPlacementReusePayloadErrorTransitions/valid-to-malformed/warm=true
+=== RUN   TestPlacementReusePayloadErrorTransitions/unchanged-malformed/warm=false
+=== RUN   TestPlacementReusePayloadErrorTransitions/unchanged-malformed/warm=true
+=== RUN   TestPlacementReusePayloadErrorTransitions/equal-malformed/warm=false
+=== RUN   TestPlacementReusePayloadErrorTransitions/equal-malformed/warm=true
+--- PASS: TestPlacementReusePayloadErrorTransitions (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/malformed-to-valid/warm=false (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/malformed-to-valid/warm=true (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/valid-to-malformed/warm=false (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/valid-to-malformed/warm=true (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/unchanged-malformed/warm=false (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/unchanged-malformed/warm=true (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/equal-malformed/warm=false (0.00s)
+    --- PASS: TestPlacementReusePayloadErrorTransitions/equal-malformed/warm=true (0.00s)
+=== RUN   TestPlacementReuseSnapshotMetadata
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/weight
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/affinity
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/down
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/upmap
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/upmap-items
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/upmap-primary
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/pg-temp
+=== RUN   TestPlacementReuseSnapshotMetadata/replicated/primary-temp
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/weight
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/affinity
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/down
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/upmap
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/upmap-items
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/upmap-primary
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/pg-temp
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure/primary-temp
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/weight
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/affinity
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/down
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/upmap
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/upmap-items
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/upmap-primary
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/pg-temp
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/primary-temp
+=== RUN   TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/optimized-pg-temp-primary
+--- PASS: TestPlacementReuseSnapshotMetadata (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/weight (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/affinity (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/down (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/upmap (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/upmap-items (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/upmap-primary (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/pg-temp (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/replicated/primary-temp (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/weight (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/affinity (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/down (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/upmap (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/upmap-items (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/upmap-primary (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/pg-temp (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure/primary-temp (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/weight (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/affinity (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/down (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/upmap (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/upmap-items (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/upmap-primary (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/pg-temp (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/primary-temp (0.00s)
+    --- PASS: TestPlacementReuseSnapshotMetadata/p10-erasure-optimized/optimized-pg-temp-primary (0.00s)
+=== RUN   TestPlacementReuseP05GoldenSnapshots
+--- PASS: TestPlacementReuseP05GoldenSnapshots (0.00s)
+=== RUN   TestPlacementReuseP10GoldenWeights
+--- PASS: TestPlacementReuseP10GoldenWeights (0.01s)
+=== RUN   TestPlacementReuseFullReplacement
+--- PASS: TestPlacementReuseFullReplacement (0.00s)
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/maps	0.655s

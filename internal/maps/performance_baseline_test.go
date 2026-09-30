@@ -207,10 +207,10 @@ func TestPerformanceIncrementalFixtures(test *testing.T) {
 			if next.epoch != 12 || next.pools[2].name != "archive" || next.nameToID["archive"] != 2 || len(next.nameToID) != 1 {
 				test.Fatal("rename did not apply")
 			}
-			unchanged := *next
+			unchanged := cloneOSDMap(next)
 			unchanged.epoch, unchanged.pools, unchanged.nameToID = base.epoch, base.pools, base.nameToID
 			unchanged.appliedIncremental = base.appliedIncremental
-			if !reflect.DeepEqual(&unchanged, base) {
+			if !unchanged.Equivalent(base) {
 				test.Fatal("rename changed unrelated map state")
 			}
 			before := performanceMapFixture(test, fixtureCase.osdCount, fixtureCase.overrideCount, encodePlacementCrushMap(test))
@@ -225,7 +225,7 @@ func TestPerformanceIncrementalFixtures(test *testing.T) {
 				next.pgUpmapItems[pg][0].To = 3
 				next.primaryTemp[pg], next.pgUpmapPrimaries[pg] = 1, 1
 			}
-			if !reflect.DeepEqual(base, before) || incremental.newPoolNames[2] != "archive" {
+			if !base.Equivalent(before) || incremental.newPoolNames[2] != "archive" {
 				test.Fatal("incremental result aliases original fixture")
 			}
 		})

@@ -3,6 +3,7 @@ package maps
 import (
 	"fmt"
 	"reflect"
+	"sync"
 
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
 	"github.com/otuschhoff/rados-go/internal/protocol"
@@ -25,6 +26,8 @@ type OSDMap struct {
 	primaryTemp         map[PG]int32
 	primaryAffinity     []uint32
 	crushData           []byte
+	placementInit       sync.Once
+	placementState      *crushState
 	erasureCodeProfiles map[string]map[string]string
 	pgUpmap             map[PG][]int32
 	pgUpmapItems        map[PG][]OSDRemap
@@ -208,6 +211,7 @@ func decodeOSDMapClient(decoder *wire.Decoder, limits Limits) (*OSDMap, error) {
 		return nil, fmt.Errorf("%w: inconsistent osd vectors for max_osd %d", ErrMalformedMap, result.maxOSD)
 	}
 	result.crushData = decoder.Bytes()
+	result.placementState = &crushState{data: result.crushData}
 	result.erasureCodeProfiles, err = decodeNestedStringMap(decoder, limits.MaxCollectionEntries)
 	if err != nil {
 		return nil, err
@@ -430,6 +434,8 @@ func (osdMap *OSDMap) Equivalent(other *OSDMap) bool {
 	right.crcVerified = false
 	left.appliedIncremental = false
 	right.appliedIncremental = false
+	left.placementState = nil
+	right.placementState = nil
 	return reflect.DeepEqual(left, right)
 }
 
@@ -445,7 +451,13 @@ func clonePool(pool Pool) Pool {
 }
 
 func cloneOSDMap(source *OSDMap) *OSDMap {
-	result := *source
+	result := OSDMap{
+		fsid: source.fsid, epoch: source.epoch, created: source.created, modified: source.modified,
+		poolMax: source.poolMax, flags: source.flags, maxOSD: source.maxOSD,
+		crushVersion: source.crushVersion, lastUpChange: source.lastUpChange, lastInChange: source.lastInChange,
+		crc: source.crc, crcVerified: source.crcVerified, appliedIncremental: source.appliedIncremental,
+		placementState: source.crushPlacementState(),
+	}
 	result.pools = make(map[int64]Pool, len(source.pools))
 	for id, pool := range source.pools {
 		result.pools[id] = clonePool(pool)

@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "before_commit": "b3594226e93a338a875d8edb8fa3fa99438f32c6",
+  "before_archive_sha256": "b1b2fc4e555092492dc5fea66d6781d69cc4a6da3ec1091dfb16ed6e98a0e863",
+  "after_private_capture": "/tmp/rados-go-phase2-baseline-final-20260930T163510Z",
+  "after_source_manifest_sha256": "6b88f7cce79870911a15a335773a94a5b7589504933462d9efb5b5a7bac5f210",
+  "environment": {
+    "GOFLAGS": "",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "CGO_ENABLED": "0",
+    "GOEXPERIMENT": "",
+    "GOOS": "darwin",
+    "GOARCH": "arm64",
+    "GOTOOLCHAIN": "go1.27.1",
+    "GOGC": "100",
+    "GOMEMLIMIT": "off",
+    "GODEBUG": "",
+    "GOMAXPROCS": "10"
+  },
+  "commands": [
+    {
+      "label": "before-performance",
+      "cwd": "/tmp/rados-go-phase2-comparison-Udn4yA/before",
+      "args": [
+        "go",
+        "test",
+        "./internal/maps",
+        "./internal/msgr",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkPerformance",
+        "-benchmem",
+        "-benchtime=100ms",
+        "-count=5"
+      ],
+      "started_at": "2026-09-30T16:36:01.385Z",
+      "finished_at": "2026-09-30T16:36:27.868Z",
+      "exit": 0,
+      "stdout_sha256": "5f7f0d024fc4cc3736dcafa2b6a2ccf5979864095bb33587b3d3a0dc904605e7"
+    },
+    {
+      "label": "placement-cold-warm",
+      "cwd": "/tmp/rados-go-phase2-baseline-final-20260930T163510Z/source",
+      "args": [
+        "go",
+        "test",
+        "./internal/maps",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkPlacementReuse(Warm|ColdDecode)$",
+        "-benchmem",
+        "-benchtime=100ms",
+        "-count=5"
+      ],
+      "started_at": "2026-09-30T16:36:27.869Z",
+      "finished_at": "2026-09-30T16:36:33.900Z",
+      "exit": 0,
+      "stdout_sha256": "54ebeba5a02dff421cb7449b3e9f5d4996fedeed487fc8c2386962f50155c8ca"
+    },
+    {
+      "label": "focused-placement",
+      "cwd": "/tmp/rados-go-phase2-baseline-final-20260930T163510Z/source",
+      "args": [
+        "go",
+        "test",
+        "./internal/crush",
+        "./internal/maps",
+        "-run",
+        "TestPlacementMap|TestMutableMapStillRevalidates|TestPlacementReuse|TestPerformanceIncrementalFixtures",
+        "-count=1",
+        "-v"
+      ],
+      "started_at": "2026-09-30T16:36:33.900Z",
+      "finished_at": "2026-09-30T16:36:34.850Z",
+      "exit": 0,
+      "stdout_sha256": "56a1d418a87cd7ce45d14cf0e7fcb651ea0d631140d8725754201cec3d89c5d8"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "before-performance.stdout",
+      "sha256": "5f7f0d024fc4cc3736dcafa2b6a2ccf5979864095bb33587b3d3a0dc904605e7"
+    },
+    {
+      "path": "placement-cold-warm.stdout",
+      "sha256": "54ebeba5a02dff421cb7449b3e9f5d4996fedeed487fc8c2386962f50155c8ca"
+    },
+    {
+      "path": "focused-placement.stdout",
+      "sha256": "56a1d418a87cd7ce45d14cf0e7fcb651ea0d631140d8725754201cec3d89c5d8"
+    }
+  ],
+  "scope": "37 inherited synthetic cells five samples each before/after; four warm OSDMap routes and four cold CRUSH decode/certification+raw placement cells five each. Cold excludes map construction/wire parse and snapshot metadata transforms. Warm excludes initialization. No sockets/live cluster/native runtime comparison; descriptive only. Private source archives/stderr omitted."
+}

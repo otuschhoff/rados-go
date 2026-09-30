@@ -264,6 +264,13 @@ admission/backoff ordering and lifecycle race tests pass.
 
 Dependencies: Phase 0; execute after Phase 1 for priority. Finding: F2.
 
+Implementation status: complete within the Phase 2 scope after three independent
+audits, repairs, repeated source-bound measurements and full validation. See the
+[Phase 2 contract, audit and results](performance-phase2/README.md). Warm routes
+reuse decoded/certified state without unrelated-topology growth; first-use cost
+and retained graph memory remain disclosed. This is not native runtime parity
+or renewed release qualification. Phase 3 remains the next scoped task.
+
 - First benchmark: repeat `PlaceRawHash` on one immutable OSDMap while adding
   valid unrelated buckets outside the selected rule's subtree. Measure time
   and allocations independently from network IO.

@@ -265,6 +265,14 @@ func consumeNestedIntMap(decoder *wire.Decoder, maximum uint32) (map[int32]struc
 }
 
 func (crushMap *Map) validateGraph() error {
+	for id, bucket := range crushMap.Buckets {
+		if id >= 0 || bucket.ID != id {
+			return fmt.Errorf("%w: invalid bucket identity %d/%d", wire.ErrMalformed, id, bucket.ID)
+		}
+		if len(bucket.Items) != len(bucket.ItemWeights) {
+			return fmt.Errorf("%w: bucket %d item/weight lengths differ", wire.ErrMalformed, id)
+		}
+	}
 	states := make(map[int32]uint8, len(crushMap.Buckets))
 	heights := make(map[int32]int, len(crushMap.Buckets))
 	var visit func(int32, int) (int, error)

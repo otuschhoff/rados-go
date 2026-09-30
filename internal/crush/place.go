@@ -44,6 +44,10 @@ func (crushMap *Map) Place(ruleID, seed uint32, replicas int, osdWeights []uint3
 	if err := crushMap.validateGraph(); err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrPlacement, err)
 	}
+	return crushMap.placeRule(rule, seed, replicas, osdWeights)
+}
+
+func (crushMap *Map) placeRule(rule Rule, seed uint32, replicas int, osdWeights []uint32) ([]int32, error) {
 	executor := placement{crush: crushMap, weights: osdWeights, permutations: make(map[int32]*permutation)}
 	return executor.rule(rule, seed, replicas)
 }

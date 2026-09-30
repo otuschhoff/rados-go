@@ -1,6 +1,7 @@
 package maps
 
 import (
+	"bytes"
 	"fmt"
 
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
@@ -256,7 +257,11 @@ func ApplyOSDMapIncremental(current *OSDMap, incremental *OSDMapIncremental, lim
 		next.resizeOSDs(int(incremental.newMaxOSD))
 	}
 	if len(incremental.crushData) != 0 {
+		changed := !bytes.Equal(next.crushData, incremental.crushData)
 		next.crushData = append([]byte(nil), incremental.crushData...)
+		if changed {
+			next.placementState = &crushState{data: next.crushData}
+		}
 		next.crushVersion++
 	}
 	for id, pool := range incremental.newPools {

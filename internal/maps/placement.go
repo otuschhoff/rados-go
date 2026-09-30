@@ -3,6 +3,7 @@ package maps
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/otuschhoff/rados-go/internal/crush"
 )
@@ -14,6 +15,44 @@ const (
 	poolFlagHashPSPool = 1 << 0
 	crushItemNone      = int32(0x7fffffff)
 )
+
+// crushState belongs to an immutable payload and is shared across snapshots
+// only when their CRUSH bytes are equal. Both successes and failures are cached.
+type crushState struct {
+	data         []byte
+	once         sync.Once
+	placementMap *crush.PlacementMap
+	err          error
+}
+
+func (osdMap *OSDMap) crushPlacementState() *crushState {
+	osdMap.placementInit.Do(func() {
+		if osdMap.placementState == nil {
+			osdMap.placementState = &crushState{data: osdMap.crushData}
+		}
+	})
+	return osdMap.placementState
+}
+
+func (state *crushState) decode() (*crush.PlacementMap, error) {
+	state.once.Do(func() {
+		if uint64(len(state.data)) > uint64(^uint32(0)) {
+			state.err = fmt.Errorf("%w: CRUSH payload exceeds uint32 size", ErrUnsupportedPlacement)
+			return
+		}
+		byteLimit := uint32(len(state.data))
+		structuralLimit := max(byteLimit/4, 1)
+		var err error
+		state.placementMap, err = crush.DecodePlacementMap(state.data, crush.DecodeLimits{
+			MaxBytes: byteLimit, MaxBuckets: structuralLimit,
+			MaxRules: structuralLimit, MaxItems: structuralLimit, MaxNames: structuralLimit,
+		})
+		if err != nil {
+			state.err = fmt.Errorf("%w: %v", ErrUnsupportedPlacement, err)
+		}
+	})
+	return state.placementMap, state.err
+}
 
 type ObjectPlacement struct {
 	RawHash       uint32
@@ -82,13 +121,9 @@ func (osdMap *OSDMap) placeMapped(poolID int64, placement ObjectPlacement) (Obje
 	if pool.size == 0 {
 		return ObjectPlacement{}, fmt.Errorf("%w: pool %d has zero replicas", ErrUnsupportedPlacement, poolID)
 	}
-	structuralLimit := max(uint32(len(osdMap.crushData))/4, 1)
-	crushMap, err := crush.DecodeMap(osdMap.crushData, crush.DecodeLimits{
-		MaxBytes: uint32(len(osdMap.crushData)), MaxBuckets: structuralLimit,
-		MaxRules: structuralLimit, MaxItems: structuralLimit, MaxNames: structuralLimit,
-	})
+	crushMap, err := osdMap.crushPlacementState().decode()
 	if err != nil {
-		return ObjectPlacement{}, fmt.Errorf("%w: %v", ErrUnsupportedPlacement, err)
+		return ObjectPlacement{}, err
 	}
 	raw, err := crushMap.Place(uint32(pool.crushRule), placement.PlacementSeed, int(pool.size), osdMap.osdWeight)
 	if err != nil {

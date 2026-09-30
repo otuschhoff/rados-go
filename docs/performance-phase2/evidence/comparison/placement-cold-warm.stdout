@@ -1,0 +1,46 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/otuschhoff/rados-go/internal/maps
+cpu: Apple M1 Max
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=0-10         	  138837	       744.8 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=0-10         	  165298	       752.9 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=0-10         	  163855	       742.3 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=0-10         	  163543	       740.0 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=0-10         	  162103	       741.3 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=64-10        	  151644	       804.6 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=64-10        	  152383	       804.0 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=64-10        	  150691	       802.3 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=64-10        	  150044	       804.4 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=64-10        	  147399	       801.0 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=1024-10      	  147633	       819.3 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=1024-10      	  146228	       820.3 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=1024-10      	  147152	       818.3 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=1024-10      	  146310	       819.6 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=1024-10      	  147532	       817.9 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=4096-10      	  147974	       817.8 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=4096-10      	  148311	       827.2 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=4096-10      	  147798	       821.0 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=4096-10      	  146097	       822.2 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseWarm/UnrelatedBuckets=4096-10      	  131300	       834.6 ns/op	      40 B/op	       5 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=0-10   	   77774	      1507 ns/op	    1656 B/op	      18 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=0-10   	   79948	      1500 ns/op	    1656 B/op	      18 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=0-10   	   79586	      1477 ns/op	    1656 B/op	      18 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=0-10   	   78747	      1503 ns/op	    1656 B/op	      18 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=0-10   	   79551	      1500 ns/op	    1656 B/op	      18 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=64-10  	   10000	     11526 ns/op	   24144 B/op	     161 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=64-10  	   10000	     11478 ns/op	   24144 B/op	     161 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=64-10  	   10000	     11471 ns/op	   24144 B/op	     161 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=64-10  	   10000	     11486 ns/op	   24144 B/op	     161 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=64-10  	   10000	     11535 ns/op	   24144 B/op	     161 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=1024-10         	     753	    154610 ns/op	  390226 B/op	    2096 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=1024-10         	     793	    155705 ns/op	  390227 B/op	    2096 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=1024-10         	     781	    160198 ns/op	  390227 B/op	    2096 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=1024-10         	     769	    154730 ns/op	  390228 B/op	    2096 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=1024-10         	     768	    155068 ns/op	  390227 B/op	    2096 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=4096-10         	     186	    650400 ns/op	 1566232 B/op	    8290 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=4096-10         	     176	    643939 ns/op	 1566233 B/op	    8290 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=4096-10         	     188	    635645 ns/op	 1566236 B/op	    8290 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=4096-10         	     186	    647310 ns/op	 1566237 B/op	    8290 allocs/op
+BenchmarkPlacementReuseColdDecode/UnrelatedBuckets=4096-10         	     184	    640885 ns/op	 1566236 B/op	    8290 allocs/op
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/maps	5.835s
