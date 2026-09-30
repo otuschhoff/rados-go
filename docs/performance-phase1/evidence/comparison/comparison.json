@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "before_commit": "3b8be0ceaa8a4ba6042df0b26b1ce6f15a640418",
+  "before_archive_sha256": "3d7895d195f6add03399e6e50ce6269c2c9bc6e79bc1b285095e6386aa41310c",
+  "after_private_capture": "/tmp/rados-go-phase1-baseline-final-20260930T143653Z",
+  "after_source_manifest_sha256": "e3bedf4040ccb41bf61fbfaa1a7c854b3e6f7b50a6534048fb0de24e12976c3c",
+  "environment": {
+    "GOFLAGS": "",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "CGO_ENABLED": "0",
+    "GOEXPERIMENT": "",
+    "GOOS": "darwin",
+    "GOARCH": "arm64",
+    "GOTOOLCHAIN": "go1.27.1",
+    "GOGC": "100",
+    "GOMEMLIMIT": "off",
+    "GODEBUG": "",
+    "GOMAXPROCS": "10"
+  },
+  "commands": [
+    {
+      "label": "before-performance",
+      "cwd": "/tmp/rados-go-phase1-comparison-bOA6X2/before",
+      "args": [
+        "go",
+        "test",
+        "./internal/maps",
+        "./internal/msgr",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkPerformance",
+        "-benchmem",
+        "-benchtime=100ms",
+        "-count=5"
+      ],
+      "started_at": "2026-09-30T14:38:25.437Z",
+      "finished_at": "2026-09-30T14:38:51.906Z",
+      "exit": 0,
+      "stdout_sha256": "8b1c58e1217463b0e8739c38c4d977db44b93232069de5152b1790bdb8a54111"
+    },
+    {
+      "label": "dispatch-selection",
+      "cwd": "/tmp/rados-go-phase1-baseline-final-20260930T143653Z/source",
+      "args": [
+        "go",
+        "test",
+        "./internal/msgr",
+        "-run",
+        "^$",
+        "-bench",
+        "^BenchmarkSessionDispatchSelection$",
+        "-benchmem",
+        "-benchtime=100ms",
+        "-count=5"
+      ],
+      "started_at": "2026-09-30T14:38:51.907Z",
+      "finished_at": "2026-09-30T14:38:58.085Z",
+      "exit": 0,
+      "stdout_sha256": "afca7433b7cffadea3e9cd1460e2edb3a259617fd115e77be802a6e6c38d0535"
+    },
+    {
+      "label": "focused-controls",
+      "cwd": "/tmp/rados-go-phase1-baseline-final-20260930T143653Z/source",
+      "args": [
+        "go",
+        "test",
+        "./internal/msgr",
+        "./internal/objecter",
+        "-run",
+        "TestSessionInlineFault|TestSessionControl|TestSessionScopedControl|TestSessionDispatchSelection|TestBackoffControl",
+        "-count=1",
+        "-v"
+      ],
+      "started_at": "2026-09-30T14:38:58.085Z",
+      "finished_at": "2026-09-30T14:39:01.173Z",
+      "exit": 0,
+      "stdout_sha256": "3277fd77d4b3dc726cdf38c711c91747bb2b79e9279cc7ded32d43a10badc7b8"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "before-performance.stdout",
+      "sha256": "8b1c58e1217463b0e8739c38c4d977db44b93232069de5152b1790bdb8a54111"
+    },
+    {
+      "path": "dispatch-selection.stdout",
+      "sha256": "afca7433b7cffadea3e9cd1460e2edb3a259617fd115e77be802a6e6c38d0535"
+    },
+    {
+      "path": "focused-controls.stdout",
+      "sha256": "3277fd77d4b3dc726cdf38c711c91747bb2b79e9279cc7ded32d43a10badc7b8"
+    }
+  ],
+  "scope": "37 inherited microbenchmark cells five samples before and after. Independent frozen-source dispatch selector six cells five samples. Synthetic nonnetwork scopes; descriptive comparisons only; no parity or significance claim; archives/stderr remain private."
+}

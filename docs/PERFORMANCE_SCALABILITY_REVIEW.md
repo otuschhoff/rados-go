@@ -232,6 +232,14 @@ P12 budgets remain mandatory guardrails, not the new parity definition.
 
 Dependencies: Phase 0. Finding: F1. Owners: messenger and OSD session.
 
+Implementation status: complete within the Phase 1 scope after five independent
+audit cycles and deterministic regression repairs. See the
+[Phase 1 contract, audit and results](performance-phase1/README.md). Ordinary
+application saturation no longer rejects required ACKs or stops unrelated work;
+true control exhaustion and stalled-writer deadlines remain bounded fail-stop
+conditions. Native performance parity and renewed P12 certification are not
+claimed.
+
 - First discriminating test: fill a real messenger's count or byte admission
   budget with controlled pending requests, then inject a valid backoff block.
   Assert ACK progress and survival of unrelated requests. Use a fake transport

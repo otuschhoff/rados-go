@@ -1,0 +1,36 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/otuschhoff/rados-go/internal/msgr
+cpu: Apple M1 Max
+BenchmarkSessionDispatchSelection/controls=false/depth=64-10         	58681060	         2.043 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=64-10         	59670588	         2.044 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=64-10         	59381452	         2.075 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=64-10         	45877399	         2.256 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=64-10         	59590316	         2.107 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=1024-10       	51472675	         2.233 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=1024-10       	59526259	         2.151 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=1024-10       	50949096	         2.218 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=1024-10       	56097703	         2.218 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=1024-10       	52239211	         2.241 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=4096-10       	51536229	         2.228 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=4096-10       	53338263	         2.086 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=4096-10       	59132728	         2.181 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=4096-10       	50426332	         2.064 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=false/depth=4096-10       	58948737	         2.174 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=64-10          	 1855646	        61.64 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=64-10          	 1846006	        64.96 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=64-10          	 1793762	        64.90 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=64-10          	 1920693	        67.28 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=64-10          	 1971168	        67.79 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=1024-10        	  134379	       818.0 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=1024-10        	  146606	       825.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=1024-10        	  146575	       879.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=1024-10        	  130021	       883.5 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=1024-10        	  135993	       875.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=4096-10        	   24157	      4948 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=4096-10        	   22864	      5145 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=4096-10        	   22114	      5014 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=4096-10        	   24764	      4908 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSessionDispatchSelection/controls=true/depth=4096-10        	   24028	      5369 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/msgr	5.961s

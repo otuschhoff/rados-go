@@ -23,6 +23,7 @@ var (
 	ErrTransitionLimit     = errors.New("messenger handshake transition limit reached")
 	ErrReconnectExhausted  = errors.New("messenger reconnect attempts exhausted")
 	ErrOutcomeUnknown      = errors.New("messenger request outcome unknown")
+	ErrControlInvalidated  = errors.New("messenger control generation invalidated")
 )
 
 // Transport is an authenticated, framed messenger connection. Close must
@@ -147,6 +148,8 @@ type SessionSnapshot struct {
 	InFlight              int
 	Replay                int
 	RetainedBytes         uint64
+	ControlQueued         int
+	ControlRetainedBytes  uint64
 	ReconnectAttempts     int
 	HandshakeTransitions  int
 	DroppedEvents         uint64
@@ -237,22 +240,25 @@ func nextGlobalSequence(source GlobalSequenceSource, after uint64) (uint64, erro
 }
 
 type Session struct {
-	timingActive atomic.Int64
-	commands     chan any
-	events       chan SessionEvent
-	resets       chan struct{}
-	incoming     chan Message
-	terminal     chan error
-	done         chan struct{}
-	stopOnce     sync.Once
+	controlGeneration atomic.Uint64
+	timingActive      atomic.Int64
+	commands          chan any
+	events            chan SessionEvent
+	resets            chan struct{}
+	incoming          chan Message
+	terminal          chan error
+	done              chan struct{}
+	stopOnce          sync.Once
 }
 
 type submitCommand struct {
-	ctx      context.Context
-	message  Message
-	oneWay   bool
-	admitted chan struct{}
-	result   chan submitResult
+	controlGeneration uint64
+	ctx               context.Context
+	message           Message
+	oneWay            bool
+	control           bool
+	admitted          chan struct{}
+	result            chan submitResult
 }
 
 type submitResult struct {
@@ -335,6 +341,8 @@ type sessionOwner struct {
 	byTID         map[uint64]*pendingRequest
 	replay        []*pendingRequest
 	retainedBytes uint64
+	controlCount  int
+	controlBytes  uint64
 
 	nextOutbound          uint64
 	sequenceExhausted     bool
@@ -438,6 +446,7 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		terminal: make(chan error, 1),
 		done:     make(chan struct{}),
 	}
+	session.controlGeneration.Store(1)
 	owner := &sessionOwner{
 		session:           session,
 		config:            config,
@@ -476,7 +485,7 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 }
 
 func (session *Session) Submit(ctx context.Context, message Message) (Message, error) {
-	return session.submit(ctx, message, false, nil)
+	return session.submit(ctx, message, false, false, nil)
 }
 
 func (session *Session) OwnsReplyMessages() bool { return true }
@@ -484,17 +493,21 @@ func (session *Session) OwnsReplyMessages() bool { return true }
 // SubmitAdmitted invokes admitted after the request is registered by the
 // session owner and before waiting for its reply.
 func (session *Session) SubmitAdmitted(ctx context.Context, message Message, admitted func()) (Message, error) {
-	return session.submit(ctx, message, false, admitted)
+	return session.submit(ctx, message, false, false, admitted)
 }
 
 // Send transmits a one-way message and returns after its frame has been
 // accepted by the transport. Callers must resubmit it after reconnect.
 func (session *Session) Send(ctx context.Context, message Message) error {
-	_, err := session.submit(ctx, message, true, nil)
+	_, err := session.submit(ctx, message, true, false, nil)
 	return err
 }
 
-func (session *Session) submit(ctx context.Context, message Message, oneWay bool, admitted func()) (Message, error) {
+func (session *Session) submit(ctx context.Context, message Message, oneWay, control bool, admitted func()) (Message, error) {
+	return session.submitGeneration(ctx, message, oneWay, control, admitted, 0)
+}
+
+func (session *Session) submitGeneration(ctx context.Context, message Message, oneWay, control bool, admitted func(), generation uint64) (Message, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -505,7 +518,7 @@ func (session *Session) submit(ctx context.Context, message Message, oneWay bool
 		defer recordRequestTiming(ctx, "submit_return", 0)
 	}
 	recordRequestTiming(ctx, "submit_enter", message.Header.TransactionID)
-	request := &submitCommand{ctx: ctx, message: message, oneWay: oneWay, admitted: make(chan struct{}), result: make(chan submitResult, 1)}
+	request := &submitCommand{ctx: ctx, message: message, oneWay: oneWay, control: control, controlGeneration: generation, admitted: make(chan struct{}), result: make(chan submitResult, 1)}
 	select {
 	case session.commands <- request:
 	case <-ctx.Done():
@@ -651,6 +664,10 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 			close(command.admitted)
 		}
 	}()
+	if command.controlGeneration != 0 && command.controlGeneration != owner.session.ControlGeneration() {
+		command.result <- submitResult{err: ErrControlInvalidated}
+		return
+	}
 	if err := command.ctx.Err(); err != nil {
 		command.result <- submitResult{err: err}
 		return
@@ -659,12 +676,19 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 		command.result <- submitResult{err: owner.terminalErr}
 		return
 	}
+	if command.control {
+		if err := validateControlMessage(command.message); err != nil {
+			command.result <- submitResult{err: err}
+			return
+		}
+	}
 	messageBytes, err := admissionMessageBytes(command.message, owner.config.Limits)
 	if err != nil {
 		command.result <- submitResult{err: err}
 		return
 	}
-	if len(owner.pending) >= owner.config.MaxQueuedMessages || owner.retainedBytes > owner.config.MaxRetainedBytes || messageBytes > owner.config.MaxRetainedBytes-owner.retainedBytes {
+	if command.control && (owner.controlCount >= MaxControlMessages || owner.controlBytes > MaxControlRetainedBytes || messageBytes > MaxControlRetainedBytes-owner.controlBytes) ||
+		!command.control && (len(owner.pending)-owner.controlCount >= owner.config.MaxQueuedMessages || owner.retainedBytes > owner.config.MaxRetainedBytes || messageBytes > owner.config.MaxRetainedBytes-owner.retainedBytes) {
 		command.result <- submitResult{err: ErrQueueSaturated}
 		return
 	}
@@ -685,7 +709,12 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 	owner.pending = append(owner.pending, pending)
 	owner.byRequest[command] = pending
 	owner.byTID[message.Header.TransactionID] = pending
-	owner.retainedBytes += messageBytes
+	if command.control {
+		owner.controlCount++
+		owner.controlBytes += messageBytes
+	} else {
+		owner.retainedBytes += messageBytes
+	}
 	if timing := requestTiming(command.ctx); timing != nil {
 		timing.bindTransaction(message.Header.TransactionID)
 	}
@@ -718,21 +747,28 @@ func (owner *sessionOwner) dispatch() {
 	if owner.state != StateReady {
 		return
 	}
-	if owner.renewalPending {
+	pending := owner.nextPendingWrite()
+	if owner.renewalPending && (pending == nil || !pending.request.control) {
 		if owner.inFlightCount() == 0 {
 			owner.renewalPending = false
 			owner.handleFault(ErrSessionRenewal)
 		}
 		return
 	}
-	for _, pending := range owner.pending {
-		if pending.sent {
-			continue
+	if pending != nil {
+		if pending.request.controlGeneration != 0 && pending.request.controlGeneration != owner.session.ControlGeneration() {
+			owner.removePending(pending)
+			pending.request.result <- submitResult{err: ErrControlInvalidated}
+			return
 		}
-		if owner.inFlightCount() >= owner.config.MaxInFlightTransactions {
+		if !pending.request.control && owner.inFlightCount() >= owner.config.MaxInFlightTransactions {
 			return
 		}
 		if err := pending.request.ctx.Err(); err != nil {
+			if pending.request.control {
+				owner.cancel(cancelCommand{request: pending.request, err: err})
+				return
+			}
 			owner.removePending(pending)
 			pending.request.result <- submitResult{err: err}
 			return
@@ -796,6 +832,7 @@ func (owner *sessionOwner) handleFrame(frame Frame) {
 }
 
 func (owner *sessionOwner) handleMessage(message Message) {
+	transportGeneration := owner.session.ControlGeneration()
 	if !owner.acceptAcknowledgment(message.Header.AckSequence) {
 		return
 	}
@@ -809,16 +846,21 @@ func (owner *sessionOwner) handleMessage(message Message) {
 	}
 	owner.lastInbound = sequence
 	owner.trimReplay(message.Header.AckSequence)
-	owner.queueControl(Ack{Sequence: sequence})
-	if pending := owner.byTID[message.Header.TransactionID]; pending != nil {
+	if pending := owner.byTID[message.Header.TransactionID]; pending != nil && !pending.request.control {
 		if timing := requestTiming(pending.request.ctx); timing != nil {
 			timing.Record("frame_received", message.Header.TransactionID, owner.frameReceivedAt)
 		}
 		owner.removePending(pending)
 		recordRequestTiming(pending.request.ctx, "reply_delivered", message.Header.TransactionID)
 		pending.request.result <- submitResult{message: message}
+		owner.queueControl(Ack{Sequence: sequence})
 		return
 	}
+	owner.queueControl(Ack{Sequence: sequence})
+	if owner.session.ControlGeneration() != transportGeneration {
+		return
+	}
+	message.TransportGeneration = transportGeneration
 	select {
 	case owner.session.incoming <- message:
 	default:
@@ -985,6 +1027,7 @@ func (owner *sessionOwner) transitionAllowed(want SessionState) bool {
 }
 
 func (owner *sessionOwner) handleReset(full bool) {
+	owner.invalidateControls()
 	owner.emit(SessionEvent{Kind: EventSessionReset, Full: full})
 	owner.signalReset()
 	owner.serverCookie = 0
@@ -1096,6 +1139,7 @@ func (owner *sessionOwner) handleFault(err error) {
 	if owner.terminalErr != nil || owner.state == StateStopped || owner.state == StateDisconnected && owner.connectPending {
 		return
 	}
+	owner.invalidateControls()
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})
 	owner.signalReset()
 	if owner.transport != nil {
@@ -1130,6 +1174,7 @@ func (owner *sessionOwner) signalReset() {
 }
 
 func (owner *sessionOwner) failTerminal(err error) {
+	owner.invalidateControls()
 	owner.terminalErr = err
 	select {
 	case owner.session.terminal <- err:
@@ -1426,6 +1471,7 @@ func waitReconnectBackoff(ctx context.Context, delay time.Duration) error {
 }
 
 func (owner *sessionOwner) stop(done chan struct{}) {
+	owner.invalidateControls()
 	owner.setState(StateStopped)
 	if owner.renewalInProgress {
 		owner.emitDiagnostic(DiagnosticSessionClosed)
@@ -1455,6 +1501,8 @@ func (owner *sessionOwner) failAll(err error) {
 	clear(owner.byRequest)
 	clear(owner.byTID)
 	owner.retainedBytes = 0
+	owner.controlCount = 0
+	owner.controlBytes = 0
 }
 
 func (owner *sessionOwner) removePending(target *pendingRequest) {
@@ -1476,13 +1524,18 @@ func (owner *sessionOwner) removePending(target *pendingRequest) {
 	}
 	delete(owner.byRequest, target.request)
 	delete(owner.byTID, target.message.Header.TransactionID)
-	owner.retainedBytes -= target.bytes
+	if target.request.control {
+		owner.controlCount--
+		owner.controlBytes -= target.bytes
+	} else {
+		owner.retainedBytes -= target.bytes
+	}
 }
 
 func (owner *sessionOwner) inFlightCount() int {
 	count := 0
 	for _, pending := range owner.pending {
-		if pending.sent {
+		if pending.sent && !pending.request.control {
 			count++
 		}
 	}
@@ -1558,7 +1611,7 @@ func (owner *sessionOwner) emit(event SessionEvent) {
 func (owner *sessionOwner) snapshot() SessionSnapshot {
 	queued := 0
 	for _, pending := range owner.pending {
-		if !pending.sent {
+		if !pending.sent && !pending.request.control {
 			queued++
 		}
 	}
@@ -1580,6 +1633,8 @@ func (owner *sessionOwner) snapshot() SessionSnapshot {
 		InFlight:              owner.inFlightCount(),
 		Replay:                len(owner.replay),
 		RetainedBytes:         owner.retainedBytes,
+		ControlQueued:         owner.controlCount,
+		ControlRetainedBytes:  owner.controlBytes,
 		ReconnectAttempts:     owner.reconnectAttempts,
 		HandshakeTransitions:  owner.transitions,
 		DroppedEvents:         owner.droppedEvents,

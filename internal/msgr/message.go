@@ -38,11 +38,12 @@ type MessageLengths struct {
 }
 
 type Message struct {
-	Header  MessageHeader
-	Lengths MessageLengths
-	Front   []byte
-	Middle  []byte
-	Data    []byte
+	Header              MessageHeader
+	Lengths             MessageLengths
+	Front               []byte
+	Middle              []byte
+	Data                []byte
+	TransportGeneration uint64
 }
 
 func EncodeMessageHeader(header MessageHeader) [MessageHeaderSize]byte {

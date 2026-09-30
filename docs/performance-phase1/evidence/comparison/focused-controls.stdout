@@ -1,0 +1,154 @@
+=== RUN   TestSessionDispatchSelectionNoControls
+=== RUN   TestSessionDispatchSelectionNoControls/empty
+=== RUN   TestSessionDispatchSelectionNoControls/first-unsent
+=== RUN   TestSessionDispatchSelectionNoControls/sent-prefix
+=== RUN   TestSessionDispatchSelectionNoControls/unsequenced-admission-order
+=== RUN   TestSessionDispatchSelectionNoControls/all-sent
+--- PASS: TestSessionDispatchSelectionNoControls (0.00s)
+    --- PASS: TestSessionDispatchSelectionNoControls/empty (0.00s)
+    --- PASS: TestSessionDispatchSelectionNoControls/first-unsent (0.00s)
+    --- PASS: TestSessionDispatchSelectionNoControls/sent-prefix (0.00s)
+    --- PASS: TestSessionDispatchSelectionNoControls/unsequenced-admission-order (0.00s)
+    --- PASS: TestSessionDispatchSelectionNoControls/all-sent (0.00s)
+=== RUN   TestSessionDispatchSelectionControls
+--- PASS: TestSessionDispatchSelectionControls (0.00s)
+=== RUN   TestSessionDispatchSelectionSaturatedReplay
+--- PASS: TestSessionDispatchSelectionSaturatedReplay (0.00s)
+=== RUN   TestSessionControlBypassesApplicationBudgets
+--- PASS: TestSessionControlBypassesApplicationBudgets (0.00s)
+=== RUN   TestSessionInlineFaultDoesNotRestampIncoming
+--- PASS: TestSessionInlineFaultDoesNotRestampIncoming (0.00s)
+=== RUN   TestSessionInlineFaultPreservesMatchedReply
+--- PASS: TestSessionInlineFaultPreservesMatchedReply (0.00s)
+=== RUN   TestSessionControlReserves
+=== RUN   TestSessionControlReserves/count
+=== RUN   TestSessionControlReserves/bytes
+--- PASS: TestSessionControlReserves (0.00s)
+    --- PASS: TestSessionControlReserves/count (0.00s)
+    --- PASS: TestSessionControlReserves/bytes (0.00s)
+=== RUN   TestSessionControlStartedCancellationAndStop
+--- PASS: TestSessionControlStartedCancellationAndStop (0.00s)
+=== RUN   TestSessionControlOwnershipAndPriority
+--- PASS: TestSessionControlOwnershipAndPriority (0.00s)
+=== RUN   TestSessionControlReconnectSequenceOrder
+--- PASS: TestSessionControlReconnectSequenceOrder (0.00s)
+=== RUN   TestSessionControlRequiresWriteCompletionDespiteMatchingTID
+--- PASS: TestSessionControlRequiresWriteCompletionDespiteMatchingTID (0.00s)
+=== RUN   TestSessionControlCompletedWriteIsNotReplayed
+--- PASS: TestSessionControlCompletedWriteIsNotReplayed (0.00s)
+=== RUN   TestSessionControlRejectsUnrestrictedBypass
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/type
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/version
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/compat
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/short
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/op
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/middle
+=== RUN   TestSessionControlRejectsUnrestrictedBypass/data
+--- PASS: TestSessionControlRejectsUnrestrictedBypass (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/type (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/version (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/compat (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/short (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/op (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/middle (0.00s)
+    --- PASS: TestSessionControlRejectsUnrestrictedBypass/data (0.00s)
+=== RUN   TestSessionControlTerminalAndResetRelease
+=== RUN   TestSessionControlTerminalAndResetRelease/terminal
+=== RUN   TestSessionControlTerminalAndResetRelease/full-reset
+=== RUN   TestSessionControlTerminalAndResetRelease/identity-reset
+=== RUN   TestSessionControlTerminalAndResetRelease/stop
+=== RUN   TestSessionControlTerminalAndResetRelease/fail-pending
+--- PASS: TestSessionControlTerminalAndResetRelease (0.00s)
+    --- PASS: TestSessionControlTerminalAndResetRelease/terminal (0.00s)
+    --- PASS: TestSessionControlTerminalAndResetRelease/full-reset (0.00s)
+    --- PASS: TestSessionControlTerminalAndResetRelease/identity-reset (0.00s)
+    --- PASS: TestSessionControlTerminalAndResetRelease/stop (0.00s)
+    --- PASS: TestSessionControlTerminalAndResetRelease/fail-pending (0.00s)
+=== RUN   TestSessionControlSequenceOverflowTerminal
+--- PASS: TestSessionControlSequenceOverflowTerminal (0.00s)
+=== RUN   TestSessionControlReplayCancellationUnknown
+--- PASS: TestSessionControlReplayCancellationUnknown (0.00s)
+=== RUN   TestSessionScopedControlBoundaries
+=== RUN   TestSessionScopedControlBoundaries/fault
+=== RUN   TestSessionScopedControlBoundaries/renewal
+=== RUN   TestSessionScopedControlBoundaries/partial-reset
+=== RUN   TestSessionScopedControlBoundaries/full-reset
+=== RUN   TestSessionScopedControlBoundaries/terminal
+=== RUN   TestSessionScopedControlBoundaries/stop
+--- PASS: TestSessionScopedControlBoundaries (0.00s)
+    --- PASS: TestSessionScopedControlBoundaries/fault (0.00s)
+    --- PASS: TestSessionScopedControlBoundaries/renewal (0.00s)
+    --- PASS: TestSessionScopedControlBoundaries/partial-reset (0.00s)
+    --- PASS: TestSessionScopedControlBoundaries/full-reset (0.00s)
+    --- PASS: TestSessionScopedControlBoundaries/terminal (0.00s)
+    --- PASS: TestSessionScopedControlBoundaries/stop (0.00s)
+=== RUN   TestSessionControlGenerationMetadata
+=== RUN   TestSessionControlGenerationMetadata/false
+=== RUN   TestSessionControlGenerationMetadata/true
+--- PASS: TestSessionControlGenerationMetadata (0.00s)
+    --- PASS: TestSessionControlGenerationMetadata/false (0.00s)
+    --- PASS: TestSessionControlGenerationMetadata/true (0.00s)
+=== RUN   TestSessionScopedControlReconnectSequenceGap
+--- PASS: TestSessionScopedControlReconnectSequenceGap (0.00s)
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/msgr	1.171s
+=== RUN   TestBackoffControlProgressUnderApplicationSaturation
+=== RUN   TestBackoffControlProgressUnderApplicationSaturation/count
+=== RUN   TestBackoffControlProgressUnderApplicationSaturation/bytes
+--- PASS: TestBackoffControlProgressUnderApplicationSaturation (0.00s)
+    --- PASS: TestBackoffControlProgressUnderApplicationSaturation/count (0.00s)
+    --- PASS: TestBackoffControlProgressUnderApplicationSaturation/bytes (0.00s)
+=== RUN   TestBackoffControlStalledWriterProcessesOverlappingUnblocks
+--- PASS: TestBackoffControlStalledWriterProcessesOverlappingUnblocks (0.00s)
+=== RUN   TestBackoffControlReserveIncludesActiveAndQueued
+=== RUN   TestBackoffControlReserveIncludesActiveAndQueued/count
+=== RUN   TestBackoffControlReserveIncludesActiveAndQueued/bytes
+--- PASS: TestBackoffControlReserveIncludesActiveAndQueued (0.00s)
+    --- PASS: TestBackoffControlReserveIncludesActiveAndQueued/count (0.00s)
+    --- PASS: TestBackoffControlReserveIncludesActiveAndQueued/bytes (0.00s)
+=== RUN   TestBackoffControlQueuedDeadlineStartsAtEnqueue
+--- PASS: TestBackoffControlQueuedDeadlineStartsAtEnqueue (0.02s)
+=== RUN   TestBackoffControlStalledWriterTimeoutAndStop
+=== RUN   TestBackoffControlStalledWriterTimeoutAndStop/timeout
+=== RUN   TestBackoffControlStalledWriterTimeoutAndStop/stop
+=== RUN   TestBackoffControlStalledWriterTimeoutAndStop/map
+=== RUN   TestBackoffControlStalledWriterTimeoutAndStop/done
+--- PASS: TestBackoffControlStalledWriterTimeoutAndStop (0.02s)
+    --- PASS: TestBackoffControlStalledWriterTimeoutAndStop/timeout (0.02s)
+    --- PASS: TestBackoffControlStalledWriterTimeoutAndStop/stop (0.00s)
+    --- PASS: TestBackoffControlStalledWriterTimeoutAndStop/map (0.00s)
+    --- PASS: TestBackoffControlStalledWriterTimeoutAndStop/done (0.00s)
+=== RUN   TestBackoffControlResetCancelsOldGeneration
+--- PASS: TestBackoffControlResetCancelsOldGeneration (0.00s)
+=== RUN   TestBackoffControlIntegratedNoACKAcrossOwnerReset
+=== RUN   TestBackoffControlIntegratedNoACKAcrossOwnerReset/unsent
+=== RUN   TestBackoffControlIntegratedNoACKAcrossOwnerReset/started
+--- PASS: TestBackoffControlIntegratedNoACKAcrossOwnerReset (0.00s)
+    --- PASS: TestBackoffControlIntegratedNoACKAcrossOwnerReset/unsent (0.00s)
+    --- PASS: TestBackoffControlIntegratedNoACKAcrossOwnerReset/started (0.00s)
+=== RUN   TestBackoffControlIntegratedStaleDeadlineAheadOfReset
+=== RUN   TestBackoffControlIntegratedStaleDeadlineAheadOfReset/unsent
+=== RUN   TestBackoffControlIntegratedStaleDeadlineAheadOfReset/sent
+--- PASS: TestBackoffControlIntegratedStaleDeadlineAheadOfReset (0.20s)
+    --- PASS: TestBackoffControlIntegratedStaleDeadlineAheadOfReset/unsent (0.10s)
+    --- PASS: TestBackoffControlIntegratedStaleDeadlineAheadOfReset/sent (0.10s)
+=== RUN   TestBackoffControlFallbackPendingResetBeforeError
+--- PASS: TestBackoffControlFallbackPendingResetBeforeError (0.00s)
+=== RUN   TestBackoffControlAuthoritativeInitialGeneration
+--- PASS: TestBackoffControlAuthoritativeInitialGeneration (0.00s)
+=== RUN   TestBackoffControlAuthoritativeDelayedDuplicateReset
+--- PASS: TestBackoffControlAuthoritativeDelayedDuplicateReset (0.00s)
+=== RUN   TestBackoffControlAuthoritativeStaleBlockFullReserve
+=== RUN   TestBackoffControlAuthoritativeStaleBlockFullReserve/0
+=== RUN   TestBackoffControlAuthoritativeStaleBlockFullReserve/1
+--- PASS: TestBackoffControlAuthoritativeStaleBlockFullReserve (0.00s)
+    --- PASS: TestBackoffControlAuthoritativeStaleBlockFullReserve/0 (0.00s)
+    --- PASS: TestBackoffControlAuthoritativeStaleBlockFullReserve/1 (0.00s)
+=== RUN   TestBackoffControlAuthoritativeStaleUnblockReusedID
+--- PASS: TestBackoffControlAuthoritativeStaleUnblockReusedID (0.00s)
+=== RUN   TestBackoffControlAuthoritativeStaleRejectedBeforeDecode
+--- PASS: TestBackoffControlAuthoritativeStaleRejectedBeforeDecode (0.00s)
+=== RUN   TestBackoffControlAuthoritativeAdvanceDuringRegistration
+--- PASS: TestBackoffControlAuthoritativeAdvanceDuringRegistration (0.00s)
+PASS
+ok  	github.com/otuschhoff/rados-go/internal/objecter	2.214s
