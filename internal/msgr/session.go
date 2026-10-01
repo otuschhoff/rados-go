@@ -277,6 +277,17 @@ func (result submitResult) take() (Message, error) {
 	return result.message, result.err
 }
 
+func (result submitResult) borrow() (Message, func(), error) {
+	lease := result.message.receiveLease
+	result.message.receiveLease = nil
+	var once sync.Once
+	release := func() { once.Do(func() { lease.reclaim() }) }
+	if result.err != nil {
+		release()
+	}
+	return result.message, release, result.err
+}
+
 type cancelCommand struct {
 	request *submitCommand
 	err     error
@@ -357,6 +368,7 @@ type sessionOwner struct {
 	retainedBytes uint64
 	controlCount  int
 	controlBytes  uint64
+	inFlight      int
 
 	nextOutbound          uint64
 	sequenceExhausted     bool
@@ -518,6 +530,10 @@ func (session *Session) SubmitAdmitted(ctx context.Context, message Message, adm
 	return session.submit(ctx, message, false, false, admitted)
 }
 
+func (session *Session) SubmitBorrowedAdmitted(ctx context.Context, message Message, admitted func()) (Message, func(), error) {
+	return session.submitResultGeneration(ctx, message, false, false, admitted, 0).borrow()
+}
+
 // Send transmits a one-way message and returns after its frame has been
 // accepted by the transport. Callers must resubmit it after reconnect.
 func (session *Session) Send(ctx context.Context, message Message) error {
@@ -530,6 +546,10 @@ func (session *Session) submit(ctx context.Context, message Message, oneWay, con
 }
 
 func (session *Session) submitGeneration(ctx context.Context, message Message, oneWay, control bool, admitted func(), generation uint64) (Message, error) {
+	return session.submitResultGeneration(ctx, message, oneWay, control, admitted, generation).take()
+}
+
+func (session *Session) submitResultGeneration(ctx context.Context, message Message, oneWay, control bool, admitted func(), generation uint64) submitResult {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -544,9 +564,9 @@ func (session *Session) submitGeneration(ctx context.Context, message Message, o
 	select {
 	case session.commands <- request:
 	case <-ctx.Done():
-		return Message{}, ctx.Err()
+		return submitResult{err: ctx.Err()}
 	case <-session.done:
-		return Message{}, ErrSessionClosed
+		return submitResult{err: ErrSessionClosed}
 	}
 	select {
 	case <-request.admitted:
@@ -560,26 +580,26 @@ func (session *Session) submitGeneration(ctx context.Context, message Message, o
 				admitted()
 			}
 			result := <-request.result
-			return result.take()
+			return result
 		default:
-			return Message{}, ErrSessionClosed
+			return submitResult{err: ErrSessionClosed}
 		}
 	}
 	select {
 	case result := <-request.result:
-		return result.take()
+		return result
 	case <-ctx.Done():
 		select {
 		case session.commands <- cancelCommand{request: request, err: ctx.Err()}:
 		case <-session.done:
 			result := <-request.result
-			return result.take()
+			return result
 		}
 		result := <-request.result
-		return result.take()
+		return result
 	case <-session.done:
 		result := <-request.result
-		return result.take()
+		return result
 	}
 }
 
@@ -832,6 +852,9 @@ func (owner *sessionOwner) dispatch() {
 			owner.removePending(pending)
 			pending.request.result <- submitResult{err: err}
 			return
+		}
+		if !pending.request.control {
+			owner.inFlight++
 		}
 		pending.sent = true
 		pending.mayHaveExecuted = true
@@ -1204,7 +1227,10 @@ func (owner *sessionOwner) trimReplay(sequence uint64) {
 
 func (owner *sessionOwner) prepareReplay() {
 	for _, pending := range owner.replay {
-		if owner.byRequest[pending.request] != nil {
+		if owner.byRequest[pending.request] != nil && pending.sent {
+			if !pending.request.control {
+				owner.inFlight--
+			}
 			pending.sent = false
 		}
 	}
@@ -1636,9 +1662,13 @@ func (owner *sessionOwner) failAll(err error) {
 	owner.retainedBytes = 0
 	owner.controlCount = 0
 	owner.controlBytes = 0
+	owner.inFlight = 0
 }
 
 func (owner *sessionOwner) removePending(target *pendingRequest) {
+	if target.sent && !target.request.control {
+		owner.inFlight--
+	}
 	for index, pending := range owner.pending {
 		if pending == target {
 			copy(owner.pending[index:], owner.pending[index+1:])
@@ -1666,13 +1696,7 @@ func (owner *sessionOwner) removePending(target *pendingRequest) {
 }
 
 func (owner *sessionOwner) inFlightCount() int {
-	count := 0
-	for _, pending := range owner.pending {
-		if pending.sent && !pending.request.control {
-			count++
-		}
-	}
-	return count
+	return owner.inFlight
 }
 
 func (owner *sessionOwner) allocateSequence() (uint64, error) {

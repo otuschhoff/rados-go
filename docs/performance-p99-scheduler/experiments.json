@@ -1,0 +1,2293 @@
+{
+  "schema": "rados-go-experiment-cache-v1",
+  "benchmark_claim": false,
+  "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+  "archive_reference_base": "workspace-root",
+  "archive_state": "verified_local_archive_pack",
+  "storage_refs": {
+    "location": "docs/performance-p99-scheduler/cache-storage.json",
+    "archive_index": "docs/performance-p99-scheduler/archive-index.json"
+  },
+  "identity_policy": "Captured dirty source manifests identify measured inputs. HEAD/source-head is only an anchor, never the measured tree identity. Original source-before manifests may differ across captures and from final validated source; do not substitute the current tree. Published digests bind publication bytes, not a renewed qualification.",
+  "statistics_policy": "Medians of run-level measurements, not pooled p99; descriptive observations without invented significance. Instrumented, invalid and excluded legs remain distinguishable. No stable latency gate closure, matched offered-load native parity, or global runtime tuning claim.",
+  "experiments": [
+    {
+      "id": "scheduler-parallelism",
+      "result_doc": "README.md",
+      "cache_bundle": "evidence",
+      "compact_records": "compact/scheduler-parallelism.json",
+      "hypothesis": "Reducing runtime parallelism reduces GC/scheduling-related tails on this ten-CPU VM.",
+      "baseline": "Ten Ps, GOGC=100, GOMEMLIMIT=off, secure 64-KiB Read, concurrency 16.",
+      "candidate": "Two, four and six Ps with the same workload; five rotated repetitions on each of three clusters.",
+      "changed_by_variant": [
+        "GOMAXPROCS only in the sweep; separate two/ten-P traced executions are not baseline samples"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": null,
+        "limitations": [
+          "A/B inventories began after compilation; C binds selected inputs before build",
+          "Raw execution traces and decoded events omitted; historical trace attribution is only partially reproducible"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "a",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "a/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "a/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "b",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "b/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "b/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "3d05b62c6af90decbe0359527b6d498494fc370f364a17891d522aeacccd4852"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "c",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "c/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3a932d239a2f8fc146d1baf1eec4587bab3efe962041707064716ce6bc3801d1"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "3a932d239a2f8fc146d1baf1eec4587bab3efe962041707064716ce6bc3801d1"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "c/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3a932d239a2f8fc146d1baf1eec4587bab3efe962041707064716ce6bc3801d1"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "3a932d239a2f8fc146d1baf1eec4587bab3efe962041707064716ce6bc3801d1"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          }
+        ],
+        "snapshot_availability": "manifests_available_full_historical_snapshot_not_established",
+        "snapshot_refs": []
+      },
+      "decisions": [
+        {
+          "subject": "two-P deployment probe",
+          "verdict": "diagnostic_only",
+          "reason": "Repeated host-specific tail mitigation, not a library global default"
+        },
+        {
+          "subject": "channel rewrite and latency qualification",
+          "verdict": "inconclusive",
+          "reason": "GC overlap and runnable delay do not establish causality or close qualification"
+        }
+      ],
+      "metrics": {
+        "median_p99_ms_by_cluster": {
+          "two_P": [
+            5.231,
+            4.935,
+            5.151
+          ],
+          "ten_P": [
+            8.422,
+            8.025,
+            8.001
+          ]
+        },
+        "median_iops_by_cluster": {
+          "two_P": [
+            14967,
+            15988,
+            15171
+          ],
+          "ten_P": [
+            8071,
+            8112,
+            8845
+          ]
+        },
+        "two_P_guardrail_passes": 15,
+        "ten_P_guardrail_misses": 3
+      },
+      "reproduction": {
+        "level": "partial_historical_reanalysis",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_DIAGNOSTIC_DIR=/tmp/p99-fresh-sweep GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "(cd \"$ARCHIVE_PARENT/evidence\" && shasum -a 256 -c SHA256SUMS)"
+        ],
+        "conditional_reanalysis_commands": [
+          "node integration/p07/scheduler-summary.mjs \"$ARCHIVE_PARENT/evidence/a\"",
+          "node integration/p07/scheduler-summary.mjs \"$ARCHIVE_PARENT/evidence/b\"",
+          "node integration/p07/scheduler-summary.mjs \"$ARCHIVE_PARENT/evidence/c\""
+        ],
+        "conditional_reanalysis_requires": "Restore omitted raw traces/decoded events; the publication alone is insufficient for original trace analysis.",
+        "reconstruction": "Restore capture-bound sources and harness; change only process count. Current harness/source contains later experiments and is not the historical binary. Trace/event omission prevents full original trace reanalysis."
+      },
+      "compact_binding": {
+        "sha256": "896b12094210019338610d1bf640be6d69d95876046ea8399d2a33d3648e5fae",
+        "bytes": 70016,
+        "report_count": 108,
+        "row_count": 108
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "SHA256SUMS",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "964d3cf35f45e9c0afa05d2764a708b9fb4d3f9d85fff464db24f4026d89917c"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "964d3cf35f45e9c0afa05d2764a708b9fb4d3f9d85fff464db24f4026d89917c"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "a/summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "14b66989050fc223f90ed2e1223f1f67105a6f0de7b6ecb98616d2495232d66d"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "14b66989050fc223f90ed2e1223f1f67105a6f0de7b6ecb98616d2495232d66d"
+            }
+          },
+          {
+            "archive_relative_path": "b/summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "9ffcc81b20cf8ed68ec00b8d219ec24a6fceda5b67a32419e4d5a64343edfe4b"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "9ffcc81b20cf8ed68ec00b8d219ec24a6fceda5b67a32419e4d5a64343edfe4b"
+            }
+          },
+          {
+            "archive_relative_path": "c/summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "8ece9b285ac526cec731ad7867daf75a58a0fd81408cb24e831bd2dea91823ab"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "8ece9b285ac526cec731ad7867daf75a58a0fd81408cb24e831bd2dea91823ab"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/evidence"
+      }
+    },
+    {
+      "id": "command-batching",
+      "result_doc": "BATCHING_RESULTS.md",
+      "cache_bundle": "batching-evidence",
+      "compact_records": "compact/command-batching.json",
+      "hypothesis": "Draining ready commands without waiting reduces dispatch overhead under parallel host load.",
+      "baseline": "Batch limit one with identical diagnostics.",
+      "candidate": "Batch limit eight; idle and eight hashing-worker loads at ten Ps.",
+      "changed_by_variant": [
+        "handleCommandBatch(command, 1) to handleCommandBatch(command, 8); FIFO, one write at a time and frame read-ahead unchanged"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": "1c16871",
+        "base_commit_evidence": "BATCHING_RESULTS.md: private baseline derived from HEAD 1c16871 plus diagnostic additions",
+        "limitations": [
+          "Base commit is not actual dirty capture identity",
+          "Batch prototype removed; later assertion/test repairs were not measured builds",
+          "Raw binaries and traces omitted"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "after-idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "after-idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "after-idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "after-loaded",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "after-loaded/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "after-loaded/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "176590a31cc4d13e14075fb8187f222b5914e866e75265216adc195ff802599e"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "before-idle",
+            "source_head_anchor": "cf2767091a9c010f20409301c76d96db693e702f",
+            "source_before": {
+              "archive_relative_path": "before-idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "before-idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "before-loaded",
+            "source_head_anchor": "cf2767091a9c010f20409301c76d96db693e702f",
+            "source_before": {
+              "archive_relative_path": "before-loaded/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "before-loaded/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "2cbcdc141065506c50500409e71dd2d1b00c80122a99c01e598f31a95bf6a8ba"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          }
+        ],
+        "snapshot_availability": "saved_baseline_session_and_prototype_tests_not_full_capture_tree",
+        "snapshot_refs": [
+          {
+            "archive_relative_path": "baseline-session.go.txt",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "de4f042634e5489a66f158973e83521e36b86ad0bfccfcf424361017263e3f31"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "de4f042634e5489a66f158973e83521e36b86ad0bfccfcf424361017263e3f31"
+            }
+          },
+          {
+            "archive_relative_path": "prototype-tests.go.txt",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "6d81c95344cbc3626cc2778f449436adab40e04d9011ee3d55d5b9645b9690ce"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "6d81c95344cbc3626cc2778f449436adab40e04d9011ee3d55d5b9645b9690ce"
+            }
+          }
+        ]
+      },
+      "decisions": [
+        {
+          "subject": "eight-command batch",
+          "verdict": "rejected",
+          "reason": "No repeatable sufficient latency or allocation benefit; prototype removed"
+        }
+      ],
+      "metrics": {
+        "idle": {
+          "baseline_p99_ms": 8.035228,
+          "candidate_p99_ms": 8.51352,
+          "baseline_iops": 8311,
+          "candidate_iops": 8526
+        },
+        "loaded": {
+          "baseline_p99_ms": 19.809042,
+          "candidate_p99_ms": 19.374333,
+          "baseline_iops": 3034,
+          "candidate_iops": 3110
+        }
+      },
+      "reproduction": {
+        "level": "published_summary_reanalysis_partial_live_reconstruction",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_SWEEP_FIXED_PROCS=10 P07_BACKGROUND_WORKERS=8 P07_DIAGNOSTIC_DIR=/tmp/fresh-absolute-directory GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "node integration/p07/batching-summary.mjs \"$ARCHIVE_PARENT/batching-evidence\""
+        ],
+        "reconstruction": "Restore the saved baseline session source/prototype tests and all manifest-bound inputs; switch helper limit one to eight for candidate, workers eight to zero for idle. Current production source lacks the batch helper; do not claim a current checkout reruns the historical candidate."
+      },
+      "compact_binding": {
+        "sha256": "a7ff0158c781decb159e0d0592595315d24dc43d350209f8d6f9cb5b04c32610",
+        "bytes": 55894,
+        "report_count": 80,
+        "row_count": 80
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "PUBLISHED.sha256",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "351e539f19bf365b4962c6851516de1a6d2d5907a3b9c21ef17a1020f50b3b8d"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "351e539f19bf365b4962c6851516de1a6d2d5907a3b9c21ef17a1020f50b3b8d"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "65f874db67b9281a07fd603da40fb3f6877e3348c56ee44c830b7d920868aeef"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "65f874db67b9281a07fd603da40fb3f6877e3348c56ee44c830b7d920868aeef"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "batching-evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles batching-evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/batching-evidence"
+      }
+    },
+    {
+      "id": "read-into",
+      "result_doc": "READ_INTO_RESULTS.md",
+      "cache_bundle": "read-into-evidence",
+      "compact_records": "compact/read-into.json",
+      "hypothesis": "Caller-owned destinations plus bounded borrowed receive reuse reduce allocated bytes and improve throughput.",
+      "baseline": "Ordinary Read with owned backing.",
+      "candidate": "ReadInto with original one-slot charged secure scratch cache, idle/eight CPU workers.",
+      "changed_by_variant": [
+        "Read API vs ReadInto within the same binary/source and seeded cluster; order alternates"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": null,
+        "limitations": [
+          "Four tests and later formatting/assertions postdate captures",
+          "Current default is four slots, not historical one slot",
+          "Microbench stdout has no inferred contemporaneous source identity; binaries/traces omitted"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "loaded",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "loaded/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "loaded/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c018dc4df73ba5a242b3ba1339af76ff22d25f109d4999503f6966aafcaead7d"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          }
+        ],
+        "snapshot_availability": "manifests_available_full_historical_snapshot_not_established",
+        "snapshot_refs": [
+          {
+            "archive_relative_path": "source-final-validated.sha256",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "f132999d9686b9989c38f3e1e8980e91accc477f32d4820f843b1babfc40d84a"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "f132999d9686b9989c38f3e1e8980e91accc477f32d4820f843b1babfc40d84a"
+            }
+          }
+        ]
+      },
+      "decisions": [
+        {
+          "subject": "ReadInto and ownership-backed reuse",
+          "verdict": "retained",
+          "reason": "Demonstrated byte allocation and throughput benefit"
+        },
+        {
+          "subject": "stable p99 benefit",
+          "verdict": "inconclusive",
+          "reason": "Two of five paired p99 regressions under each load; large reads use copy fallback"
+        }
+      ],
+      "metrics": {
+        "idle": {
+          "baseline_p99_ms": 7.976073,
+          "candidate_p99_ms": 7.734015,
+          "baseline_iops": 8317,
+          "candidate_iops": 11242,
+          "baseline_allocated_MB": 345.135,
+          "candidate_allocated_MB": 213.759
+        },
+        "loaded": {
+          "baseline_p99_ms": 18.777972,
+          "candidate_p99_ms": 18.2804,
+          "baseline_iops": 3210,
+          "candidate_iops": 3839,
+          "baseline_allocated_MB": 345.1,
+          "candidate_allocated_MB": 223.367
+        }
+      },
+      "reproduction": {
+        "level": "published_summary_reanalysis_partial_live_reconstruction",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_SWEEP_FIXED_PROCS=10 P07_READ_INTO_COMPARE=1 P07_BACKGROUND_WORKERS=8 P07_DIAGNOSTIC_DIR=/tmp/fresh-absolute-directory GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "node integration/p07/read-into-summary.mjs \"$ARCHIVE_PARENT/read-into-evidence\""
+        ],
+        "microbench_command": "GOTOOLCHAIN=go1.27.1 go test ./internal/msgr -run '^$' -bench '^BenchmarkSecureReceiveInto$' -benchmem -benchtime=100x -count=3",
+        "reconstruction": "Restore original manifest-bound one-slot implementation/harness; alternate APIs on the same binary. Workers zero selects idle. Current four-slot source is a different experiment."
+      },
+      "compact_binding": {
+        "sha256": "11f8fe38af8e64cde8b075f1589a51d1de5524b0d74f7a68d621e9d385935458",
+        "bytes": 35155,
+        "report_count": 50,
+        "row_count": 50
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "PUBLISHED.sha256",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "bb67b6183d2c1dcaa6353b15d6c235f16d60ea0cfde9d352a4f760ee88777a0a"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "bb67b6183d2c1dcaa6353b15d6c235f16d60ea0cfde9d352a4f760ee88777a0a"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "10a59225a496e44adefded549adea011bb787c0a27a9554fcc224743ce978cd3"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "10a59225a496e44adefded549adea011bb787c0a27a9554fcc224743ce978cd3"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "read-into-evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles read-into-evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/read-into-evidence"
+      }
+    },
+    {
+      "id": "scratch-inventory",
+      "result_doc": "INVENTORY_RESULTS.md",
+      "cache_bundle": "inventory-evidence",
+      "compact_records": "compact/scratch-inventory.json",
+      "hypothesis": "More bounded charged free scratch buffers improve concurrent reuse; admission windows may reduce misses.",
+      "baseline": "One slot, admission window 16.",
+      "candidate": "Two/four slots at window 16; one slot at windows eight/four; separate production-default confirmation.",
+      "changed_by_variant": [
+        "Slots/window 1/16, 2/16, 4/16, 1/8, 1/4 in rotated five-repeat matrix",
+        "Idle, eight CPU workers, eight CPU-plus-allocation workers on separate clusters"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": null,
+        "limitations": [
+          "Production confirmation separately bound from shared variant sources",
+          "failed-idle running capture excluded, not repaired",
+          "Final validation source is not captured binary identity; raw traces/binaries omitted"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "alloc",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "alloc/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "alloc/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "cpu",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "cpu/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "cpu/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "default-confirm",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "default-confirm/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f944b23cfbcc9af8544fb2a0af0c75a1d9e87e9baea78135e9486f1cdb7b7ad6"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f944b23cfbcc9af8544fb2a0af0c75a1d9e87e9baea78135e9486f1cdb7b7ad6"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "default-confirm/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f944b23cfbcc9af8544fb2a0af0c75a1d9e87e9baea78135e9486f1cdb7b7ad6"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f944b23cfbcc9af8544fb2a0af0c75a1d9e87e9baea78135e9486f1cdb7b7ad6"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "failed-idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "failed-idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "54f9d59ab8c2d98eac63abd4ef992d363a633261676fd290e004ab22d6e0d5fd"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "54f9d59ab8c2d98eac63abd4ef992d363a633261676fd290e004ab22d6e0d5fd"
+              }
+            },
+            "source_after": null,
+            "source_unchanged": null,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "ddf98054c365c0c16bc60739c648c35bc596483330ccefe78df9c5c5c790aa93"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          }
+        ],
+        "snapshot_availability": "manifests_available_full_historical_snapshot_not_established",
+        "snapshot_refs": [
+          {
+            "archive_relative_path": "source-final-validated.sha256",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "be703e0f1a6e271337f7c78f3100dd66150cd7c3f3490cf3527ae1f0d7882591"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "be703e0f1a6e271337f7c78f3100dd66150cd7c3f3490cf3527ae1f0d7882591"
+            }
+          }
+        ]
+      },
+      "decisions": [
+        {
+          "subject": "four-slot default",
+          "verdict": "retained",
+          "reason": "15/15 paired p99 and throughput improvements; bounded 512-KiB charged idle backing"
+        },
+        {
+          "subject": "admission windows eight/four",
+          "verdict": "rejected",
+          "reason": "Lower throughput and worse loaded tails; no admission API retained"
+        }
+      ],
+      "metrics": {
+        "idle_p99_ms_one_four": [
+          7.631,
+          5.361
+        ],
+        "cpu_p99_ms_one_four": [
+          18.297,
+          13.699
+        ],
+        "allocation_p99_ms_one_four": [
+          27.701,
+          24.383
+        ],
+        "idle_iops_one_four": [
+          11460,
+          20316
+        ],
+        "cpu_iops_one_four": [
+          4132,
+          6350
+        ],
+        "allocation_iops_one_four": [
+          2810,
+          4397
+        ],
+        "default_confirmation_p99_ms": 23.414,
+        "default_confirmation_iops": 4461,
+        "measured_go_legs": 80
+      },
+      "reproduction": {
+        "level": "published_summary_reanalysis_partial_live_reconstruction",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_INVENTORY_SWEEP=1 P07_SWEEP_FIXED_PROCS=10 P07_BACKGROUND_WORKERS=8 P07_BACKGROUND_ALLOCATIONS=1 P07_DIAGNOSTIC_DIR=/tmp/fresh-inventory-capture GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "node integration/p07/inventory-summary.mjs \"$ARCHIVE_PARENT/inventory-evidence\""
+        ],
+        "reconstruction": "Restore each capture's bound source; workers/allocation 0/0 for idle, 8/0 for CPU, 8/1 for allocation. Replace inventory mode with P07_DEFAULT_SCRATCH_CONFIRM=1 for separately bound untagged confirmation. Preserve failed attempt as running."
+      },
+      "compact_binding": {
+        "sha256": "917059866631f3d0df953abb73844a06dc0dddc49cae886818229e1fd695ce3d",
+        "bytes": 124263,
+        "report_count": 146,
+        "row_count": 146
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "PUBLISHED.sha256",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "adf5168d16ec419af6b3217ae01ed381b99f83617320fc14f61e83e4bff17c17"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "adf5168d16ec419af6b3217ae01ed381b99f83617320fc14f61e83e4bff17c17"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "062dcf96a63832653128e97bf0d7a37f01faa7ef826e64eec9158cf8bfed95a0"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "062dcf96a63832653128e97bf0d7a37f01faa7ef826e64eec9158cf8bfed95a0"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "inventory-evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles inventory-evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/inventory-evidence"
+      }
+    },
+    {
+      "id": "read-scale",
+      "result_doc": "READ_SCALE_RESULTS.md",
+      "cache_bundle": "read-scale-evidence",
+      "compact_records": "compact/read-scale.json",
+      "hypothesis": "Scalar identity access removes sanitization allocations; eight scratch slots may improve reuse at higher concurrency.",
+      "baseline": "Earlier identity profile and four-slot scale rows.",
+      "candidate": "Scalar identity accessor; diagnostic eight-slot scale rows at concurrency 16/32/64.",
+      "changed_by_variant": [
+        "Identity profiles before/final are unpaired separate clusters",
+        "Scale four/eight slots in alternating pairs: 64-KiB idle/allocation load; 4-KiB and 1-MiB idle fallback"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": null,
+        "limitations": [
+          "Initial export-contaminated traces and intermediate identity profile excluded",
+          "Older idle and incomplete running allocation scale attempts excluded",
+          "Analyzer/final validation source postdates capture; raw traces/binaries omitted"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "alloc",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "alloc/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "alloc/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "excluded/alloc",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "excluded/alloc/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "7fed310e66b994d9b4602fdb43c02ffe9e140bc38b650906b72a7e61debae9d3"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "7fed310e66b994d9b4602fdb43c02ffe9e140bc38b650906b72a7e61debae9d3"
+              }
+            },
+            "source_after": null,
+            "source_unchanged": null,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "excluded/idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "excluded/idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "7fed310e66b994d9b4602fdb43c02ffe9e140bc38b650906b72a7e61debae9d3"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "7fed310e66b994d9b4602fdb43c02ffe9e140bc38b650906b72a7e61debae9d3"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "excluded/idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "7fed310e66b994d9b4602fdb43c02ffe9e140bc38b650906b72a7e61debae9d3"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "7fed310e66b994d9b4602fdb43c02ffe9e140bc38b650906b72a7e61debae9d3"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "large",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "large/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "large/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "profiles/alloc",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "profiles/alloc/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "profiles/alloc/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "profiles/alloc-final",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "profiles/alloc-final/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "profiles/alloc-final/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "profiles/idle",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "profiles/idle/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "profiles/idle/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "02933eee0c48375947e38fc836bb20aabb2024ad4713ee36563e14bf6aade985"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "profiles/idle-final",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "profiles/idle-final/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "profiles/idle-final/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "profiles/idle-identity",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "profiles/idle-identity/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "819415f31c321a44c74be565a6a0e8325c3578b0eeefb06721b1b1494c2e9b37"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "819415f31c321a44c74be565a6a0e8325c3578b0eeefb06721b1b1494c2e9b37"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "profiles/idle-identity/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "819415f31c321a44c74be565a6a0e8325c3578b0eeefb06721b1b1494c2e9b37"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "819415f31c321a44c74be565a6a0e8325c3578b0eeefb06721b1b1494c2e9b37"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          },
+          {
+            "capture_id": "small",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "small/source-before.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "small/source-after.sha256",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "21411ca0a4896d136cea86d48abdbfb5fd999a87fe6c1bc677d173a1cd882e68"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": null
+          }
+        ],
+        "snapshot_availability": "manifests_available_full_historical_snapshot_not_established",
+        "snapshot_refs": [
+          {
+            "archive_relative_path": "source-final-validated.sha256",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "a3dd9fe92ac95ea58d482c4650cee3c6161c5e968021698a9db2ed32d1daae7a"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "a3dd9fe92ac95ea58d482c4650cee3c6161c5e968021698a9db2ed32d1daae7a"
+            }
+          }
+        ]
+      },
+      "decisions": [
+        {
+          "subject": "scalar identity accessor",
+          "verdict": "retained",
+          "reason": "Correctness-backed local allocation reduction; no stable tail benefit attributed"
+        },
+        {
+          "subject": "eight-slot inventory",
+          "verdict": "diagnostic_only",
+          "reason": "25/30 eligible p99 and 29/30 IOPS wins, but no promotion; four remains default"
+        },
+        {
+          "subject": "fallback-size scratch benefit",
+          "verdict": "inconclusive",
+          "reason": "Zero hits/misses; variations do not show reuse benefits"
+        }
+      ],
+      "metrics": {
+        "idle_identity_allocated_bytes_before_final": [
+          200738992,
+          184206160
+        ],
+        "idle_identity_p99_ms_before_final": [
+          5.29126,
+          5.455154
+        ],
+        "eligible_p99_pair_wins": 25,
+        "eligible_iops_pair_wins": 29,
+        "eligible_pairs": 30,
+        "final_scale_go_legs": 120,
+        "unmatched_native_context_legs": 40
+      },
+      "reproduction": {
+        "level": "published_summary_reanalysis_partial_live_reconstruction",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_SWEEP_FIXED_PROCS=10 P07_READ_SCALE=1 P07_DIAGNOSTIC_DIR=/tmp/rados-go-read-scale-idle-recapture-v1 GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "node integration/p07/scale-summary.mjs \"$ARCHIVE_PARENT/read-scale-evidence\""
+        ],
+        "reconstruction": "Restore final bound tagged source/binary identity; add P07_BACKGROUND_WORKERS=8 P07_BACKGROUND_ALLOCATIONS=1 for loaded 64-KiB; P07_READ_SIZE=4096 or 1048576 for idle fallback. For separate untagged four-slot profiles replace P07_READ_SCALE=1 with P07_READ_PROFILE=1; do not combine modes or substitute excluded sources."
+      },
+      "compact_binding": {
+        "sha256": "3c2c88d1cece11c17b1596fe47d41a294667d499e76ad3f76e910107c9b98956",
+        "bytes": 272224,
+        "report_count": 329,
+        "row_count": 329
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "PUBLISHED.sha256",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "7a00592f3ddcb1a45068eacb42f257e91f59a246e7e3c0f7869a6c96c914e87e"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "7a00592f3ddcb1a45068eacb42f257e91f59a246e7e3c0f7869a6c96c914e87e"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "08c22879f6b5d63bb1b4d791ea8699d8473249016195c40701c64548a90caee9"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "08c22879f6b5d63bb1b4d791ea8699d8473249016195c40701c64548a90caee9"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "read-scale-evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles read-scale-evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/read-scale-evidence"
+      }
+    },
+    {
+      "id": "request-path",
+      "result_doc": "REQUEST_PATH_RESULTS.md",
+      "cache_bundle": "request-path-evidence",
+      "compact_records": "compact/request-path.json",
+      "hypothesis": "Encoding allocation reduction and O(1) session accounting, initially with ACK coalescing, improve request cost and offered-load tails.",
+      "baseline": "Reconstructed old encoding/OSD/session bytes independently verified against four before captures.",
+      "candidate": "Encoding/accounting plus ACK prototype; final narrower encoding/accounting without ACK.",
+      "changed_by_variant": [
+        "Two serial ABBA matrices before-a/after-a/after-b/before-b",
+        "Fixed 1000/2000/4000 arrivals/s; eight coupled CPU/allocation workers; not factorial independent roles"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": null,
+        "limitations": [
+          "Ten historical source entries/five versions unavailable: ACK session/tests and older profile harness files",
+          "All selected final no-ACK sources available; before comparator independently reconstructed",
+          "Microbench chronology lacks contemporaneous source/binary hashes; omitted executable bytes cannot be reverified"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "noack-after-a",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "noack-after-a/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f301fb5e3a008ef1b1f0185e7bed016c912f7a14ed2ebe357c63aa65e764cc11"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "b4d90b76989d03824ab2c5921ff89af98b6d19fd1ea9c32b3972aa1b7fdc2f51"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "noack-after-a/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f301fb5e3a008ef1b1f0185e7bed016c912f7a14ed2ebe357c63aa65e764cc11"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "b4d90b76989d03824ab2c5921ff89af98b6d19fd1ea9c32b3972aa1b7fdc2f51"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "noack-after-a/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "428ea3ec39ec67150320be6fed571b1f25b3d1427281da88edebbef77f016503"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "428ea3ec39ec67150320be6fed571b1f25b3d1427281da88edebbef77f016503"
+              }
+            }
+          },
+          {
+            "capture_id": "noack-after-b",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "noack-after-b/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f301fb5e3a008ef1b1f0185e7bed016c912f7a14ed2ebe357c63aa65e764cc11"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "b4d90b76989d03824ab2c5921ff89af98b6d19fd1ea9c32b3972aa1b7fdc2f51"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "noack-after-b/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f301fb5e3a008ef1b1f0185e7bed016c912f7a14ed2ebe357c63aa65e764cc11"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "b4d90b76989d03824ab2c5921ff89af98b6d19fd1ea9c32b3972aa1b7fdc2f51"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "noack-after-b/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "dcae152be1febecbcc7418edd4dfd4cbff6687704a7d7c18ceb571a87b388a1a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "dcae152be1febecbcc7418edd4dfd4cbff6687704a7d7c18ceb571a87b388a1a"
+              }
+            }
+          },
+          {
+            "capture_id": "noack-before-a",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "noack-before-a/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "noack-before-a/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "noack-before-a/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "0e93cdfa7a520d3dcbbfdd814766d6327815bd782354c93172336802db29eb01"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "0e93cdfa7a520d3dcbbfdd814766d6327815bd782354c93172336802db29eb01"
+              }
+            }
+          },
+          {
+            "capture_id": "noack-before-b",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "noack-before-b/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "noack-before-b/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "noack-before-b/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "b5f3133fbe396850e05cd7b9708eaeb220fa5b645cf086cbea20d10c4229a569"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "b5f3133fbe396850e05cd7b9708eaeb220fa5b645cf086cbea20d10c4229a569"
+              }
+            }
+          },
+          {
+            "capture_id": "offered-after-a",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "offered-after-a/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ffd628e9bba81f286ce85837dd1842381cfbb9ca55a68c9ad905b5f17328e4ec"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4df7d19ad09bd89c6158ed108e4ffd71e03c4c988dcd3881df74af5fe026777d"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "offered-after-a/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ffd628e9bba81f286ce85837dd1842381cfbb9ca55a68c9ad905b5f17328e4ec"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4df7d19ad09bd89c6158ed108e4ffd71e03c4c988dcd3881df74af5fe026777d"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "offered-after-a/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "0b2dcd910cfaceb9946483711f5170d62530617b8f0d0aa3de6fe5da7cdaa120"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "0b2dcd910cfaceb9946483711f5170d62530617b8f0d0aa3de6fe5da7cdaa120"
+              }
+            }
+          },
+          {
+            "capture_id": "offered-after-b",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "offered-after-b/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ffd628e9bba81f286ce85837dd1842381cfbb9ca55a68c9ad905b5f17328e4ec"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4df7d19ad09bd89c6158ed108e4ffd71e03c4c988dcd3881df74af5fe026777d"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "offered-after-b/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "ffd628e9bba81f286ce85837dd1842381cfbb9ca55a68c9ad905b5f17328e4ec"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4df7d19ad09bd89c6158ed108e4ffd71e03c4c988dcd3881df74af5fe026777d"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "offered-after-b/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "f85c27a5437e530db045564fb5db9374026b8753a3794283876c6a2aa00c308a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f85c27a5437e530db045564fb5db9374026b8753a3794283876c6a2aa00c308a"
+              }
+            }
+          },
+          {
+            "capture_id": "offered-before-a",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "offered-before-a/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "offered-before-a/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "offered-before-a/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "d6de41eb94806489f4c69cbc0ee72a37601a22620ceddaa83e827149b9690570"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "d6de41eb94806489f4c69cbc0ee72a37601a22620ceddaa83e827149b9690570"
+              }
+            }
+          },
+          {
+            "capture_id": "offered-before-b",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "offered-before-b/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "offered-before-b/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "41dfadcfb26b29d3c36c2532fab5ac62eb8e62bd6e5c229f0be4d394b0748338"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "f10411008d93b1836a8545aee8dc9ac92f1f7a337457c4730f327589f1401641"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "offered-before-b/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "eb30706135fa83cdaf3516690dcad5b6be1af86ded5e8b8d1d48558c67f816bc"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "eb30706135fa83cdaf3516690dcad5b6be1af86ded5e8b8d1d48558c67f816bc"
+              }
+            }
+          },
+          {
+            "capture_id": "profile-before-alloc",
+            "source_head_anchor": null,
+            "source_before": {
+              "archive_relative_path": "profile-before-alloc/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "8e8249c729af55de4d0e170487e073c3599dcc819144439a20ee716f0a09a801"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "a3dd9fe92ac95ea58d482c4650cee3c6161c5e968021698a9db2ed32d1daae7a"
+              }
+            },
+            "source_after": null,
+            "source_unchanged": null,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "profile-before-alloc/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "9c2e9284acc20d2e67f2b71c6acde46c1b9ba734f23ec6e5c2b944138c434502"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "9c2e9284acc20d2e67f2b71c6acde46c1b9ba734f23ec6e5c2b944138c434502"
+              }
+            }
+          },
+          {
+            "capture_id": "profile-before-idle",
+            "source_head_anchor": null,
+            "source_before": {
+              "archive_relative_path": "profile-before-idle/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "8e8249c729af55de4d0e170487e073c3599dcc819144439a20ee716f0a09a801"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "a3dd9fe92ac95ea58d482c4650cee3c6161c5e968021698a9db2ed32d1daae7a"
+              }
+            },
+            "source_after": null,
+            "source_unchanged": null,
+            "source_snapshot": null,
+            "availability": {
+              "archive_relative_path": "profile-before-idle/availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "abfc7e2eebf0b005711a666bad2762e5cfe805db41d37f8507d925272b301522"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "abfc7e2eebf0b005711a666bad2762e5cfe805db41d37f8507d925272b301522"
+              }
+            }
+          }
+        ],
+        "snapshot_availability": "content_addressed_sources_with_explicit_historical_gaps",
+        "snapshot_refs": [
+          {
+            "archive_relative_path": "comparator/provenance.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "c9d2fe87a8da5353ff370bef58ecc7876f00c9c8b3a23b4f625bc690eb9340a1"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "c9d2fe87a8da5353ff370bef58ecc7876f00c9c8b3a23b4f625bc690eb9340a1"
+            }
+          },
+          {
+            "archive_relative_path": "source-availability.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "a146c25ba8ae722feec564ed22c548f6bdc02102f6d367ab889525b45f664641"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "a146c25ba8ae722feec564ed22c548f6bdc02102f6d367ab889525b45f664641"
+            }
+          }
+        ]
+      },
+      "decisions": [
+        {
+          "subject": "encoding ownership/allocation and O(1) accounting",
+          "verdict": "retained",
+          "reason": "Bounded local gains, not live p99 attribution"
+        },
+        {
+          "subject": "cumulative messenger ACK coalescing",
+          "verdict": "rejected",
+          "reason": "No stable live benefit; removed, overloads not causally attributed to ACK"
+        },
+        {
+          "subject": "stable offered-load p99 or capacity gain",
+          "verdict": "inconclusive",
+          "reason": "All eight captures diagnostic-failed; invalid rows and rate-capped throughput"
+        }
+      ],
+      "metrics": {
+        "rows": 120,
+        "arrivals": 2240000,
+        "failed_rows": 22,
+        "overloads": 4714,
+        "readfront_ns_per_op_before_final": [
+          669.5,
+          450.1
+        ],
+        "readfront_bytes_per_op_before_final": [
+          1464,
+          616
+        ],
+        "readfront_allocations_per_op_before_final": [
+          23,
+          14
+        ],
+        "depth_4096_dispatch_ns_per_op_before_final": [
+          10165,
+          3.822
+        ]
+      },
+      "reproduction": {
+        "level": "full_published_outcome_reanalysis_partial_historical_source_reconstruction",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_SWEEP_FIXED_PROCS=10 P07_OFFERED_LOAD=1 P07_DIAGNOSTIC_DIR=/tmp/fresh-request-path-capture GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "node integration/p07/publish-request-path.mjs --verify \"$ARCHIVE_PARENT/request-path-evidence\"",
+          "node integration/p07/request-path-summary.mjs \"$ARCHIVE_PARENT/request-path-evidence\" --published"
+        ],
+        "reconstruction": "Use comparator/provenance.json and original-reconstruction.json.gz to reconstruct before bytes; verify all manifest inputs, not HEAD. Restore verified source blobs for final no-ACK. ACK candidate cannot be fully reconstructed from publication because historical session/tests are unavailable. Preserve exit 1 and diagnostic-failed; never rerun into historical directories."
+      },
+      "compact_binding": {
+        "sha256": "6f3cc9d0a9ae57b04341daadfac451b21b604fcbd6dcdb52d1e4f78959482e01",
+        "bytes": 162807,
+        "report_count": 164,
+        "row_count": 164
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "PUBLISHED.sha256",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "c24a38d4c9a627d5c2a46abcecb61666811af5fb1ab56ee28b6f75b246fa36d5"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "c24a38d4c9a627d5c2a46abcecb61666811af5fb1ab56ee28b6f75b246fa36d5"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "b89e46875778e5243102feec69f9001095eb62785d127267e50ed41fd4ae3b71"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "b89e46875778e5243102feec69f9001095eb62785d127267e50ed41fd4ae3b71"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "request-path-evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles request-path-evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/request-path-evidence"
+      }
+    },
+    {
+      "id": "factorial-stalls",
+      "result_doc": "FACTORIAL_STALL_RESULTS.md",
+      "cache_bundle": "factorial-stall-evidence",
+      "compact_records": "compact/factorial-stalls.json",
+      "hypothesis": "Independent CPU/allocation load and arrival-phase timing distinguish workload effects and local scaling candidates without assuming end-to-end latency is client CPU.",
+      "baseline": "None case at each offered rate, four-slot ReadInto, ten Ps.",
+      "candidate": "Eight CPU workers, eight independently paced allocation workers, or both with sixteen total workers; separate observed executions.",
+      "changed_by_variant": [
+        "Two 60-leg primary matrices, none/cpu/alloc/both at 1000/2000/4000 arrivals/s",
+        "Twelve observed rows at 2000/s excluded from primary timing; setup failures have no rows"
+      ],
+      "source_identity": {
+        "kind": "dirty-source-manifest",
+        "base_commit": null,
+        "limitations": [
+          "Six actual frozen source archives retained; three completed captures share manifest 4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33",
+          "Six executable omissions initially verified but cannot be rehashed from publication",
+          "69 synthetic queue/backoff cases lack contemporaneous source/binary binding"
+        ],
+        "per_capture_manifest_refs": [
+          {
+            "capture_id": "rados-go-p99-factorial-observed-v1",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v1/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3fc381ea46c545f6041b34feeabe7593c4185e18b2b54b9caf95a83e529eff6a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5a3e8236794d84536a1be0da6965477f01d002333038d372145aced9eda1fdd"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v1/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3fc381ea46c545f6041b34feeabe7593c4185e18b2b54b9caf95a83e529eff6a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5a3e8236794d84536a1be0da6965477f01d002333038d372145aced9eda1fdd"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v1/workload-sources.tar.gz.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "c23beba871ce74eaddeec39bfe3159bc59d2d704109f7e0d7ce2d43aa4da3c61"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5f3cd3769bb259e47552d030c746c14c7bf1ea892116b244b059dae3110bf5f"
+              }
+            },
+            "availability": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v1/published-availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "93b37c4533455926ddd8a059516d58a7785297b9991d8ecb3e76aca43b8a0142"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "93b37c4533455926ddd8a059516d58a7785297b9991d8ecb3e76aca43b8a0142"
+              }
+            }
+          },
+          {
+            "capture_id": "rados-go-p99-factorial-observed-v2",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v2/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "754f8d7cbeefda2ea1dbcc58fdbb5fc6ab8c460e1d2c9dc646f5e6bd8576b602"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v2/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "754f8d7cbeefda2ea1dbcc58fdbb5fc6ab8c460e1d2c9dc646f5e6bd8576b602"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v2/workload-sources.tar.gz.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "304bf9ed042de6d14a8fb66b08670c35da55d6487fbe6f3086da16ea962108ae"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "bfef9ea97bbba5e6a25d8777a9d6330a4b4b1603fe2e59e9ef8beafab5e9f35e"
+              }
+            },
+            "availability": {
+              "archive_relative_path": "rados-go-p99-factorial-observed-v2/published-availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "e5e343d4b08592e156f65521672e3edecad53ef6562cbc1064589b7efbaf907b"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "e5e343d4b08592e156f65521672e3edecad53ef6562cbc1064589b7efbaf907b"
+              }
+            }
+          },
+          {
+            "capture_id": "rados-go-p99-factorial-primary-v1",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v1/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3fc381ea46c545f6041b34feeabe7593c4185e18b2b54b9caf95a83e529eff6a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5a3e8236794d84536a1be0da6965477f01d002333038d372145aced9eda1fdd"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v1/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3fc381ea46c545f6041b34feeabe7593c4185e18b2b54b9caf95a83e529eff6a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5a3e8236794d84536a1be0da6965477f01d002333038d372145aced9eda1fdd"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v1/workload-sources.tar.gz.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "190fde273c55015a8d3f610b47cca384083c5bc2305b51b43ce9adc5c59b329b"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "47cadd01f9309d2819982ac4d77d94f18e52943a8d32ab31c193b59131ecf4c8"
+              }
+            },
+            "availability": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v1/published-availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "1dccd3cb14d266f0cf142459fc138ec8820fa5861ba8c42aa2215873b930554e"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "1dccd3cb14d266f0cf142459fc138ec8820fa5861ba8c42aa2215873b930554e"
+              }
+            }
+          },
+          {
+            "capture_id": "rados-go-p99-factorial-primary-v2",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v2/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3fc381ea46c545f6041b34feeabe7593c4185e18b2b54b9caf95a83e529eff6a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5a3e8236794d84536a1be0da6965477f01d002333038d372145aced9eda1fdd"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v2/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "3fc381ea46c545f6041b34feeabe7593c4185e18b2b54b9caf95a83e529eff6a"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c5a3e8236794d84536a1be0da6965477f01d002333038d372145aced9eda1fdd"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v2/workload-sources.tar.gz.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "190fde273c55015a8d3f610b47cca384083c5bc2305b51b43ce9adc5c59b329b"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "47cadd01f9309d2819982ac4d77d94f18e52943a8d32ab31c193b59131ecf4c8"
+              }
+            },
+            "availability": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v2/published-availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "44edf3238d198ba16f7b3e4795c3ec3bba0812506b18b4097586367e8701735b"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "44edf3238d198ba16f7b3e4795c3ec3bba0812506b18b4097586367e8701735b"
+              }
+            }
+          },
+          {
+            "capture_id": "rados-go-p99-factorial-primary-v3",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v3/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "754f8d7cbeefda2ea1dbcc58fdbb5fc6ab8c460e1d2c9dc646f5e6bd8576b602"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v3/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "754f8d7cbeefda2ea1dbcc58fdbb5fc6ab8c460e1d2c9dc646f5e6bd8576b602"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v3/workload-sources.tar.gz.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "92be2ba7b225bd9d26c17e22d6d0cddd6b609bd925a28074f96650e5d9fbf23e"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "91bbe8732468db94fe179f962cab0b1589fe1d7ad2c0a7497bee90aa4378a20c"
+              }
+            },
+            "availability": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v3/published-availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "6595a72bb59c6c9e5bb5d1873c9cbc040c26b55af207aa0d5a12a2c257e2cdf2"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "6595a72bb59c6c9e5bb5d1873c9cbc040c26b55af207aa0d5a12a2c257e2cdf2"
+              }
+            }
+          },
+          {
+            "capture_id": "rados-go-p99-factorial-primary-v4",
+            "source_head_anchor": "1c168717a1767aaa242be955740cdf950e5e1a32",
+            "source_before": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v4/source-before.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "754f8d7cbeefda2ea1dbcc58fdbb5fc6ab8c460e1d2c9dc646f5e6bd8576b602"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33"
+              }
+            },
+            "source_after": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v4/source-after.sha256.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "754f8d7cbeefda2ea1dbcc58fdbb5fc6ab8c460e1d2c9dc646f5e6bd8576b602"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "4bc52cc3eb1ed51174bbd2f0c506e41b4d58ee7dade8ba5322de9254d8200a33"
+              }
+            },
+            "source_unchanged": true,
+            "source_snapshot": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v4/workload-sources.tar.gz.gz",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "85056488c2164c9e25892f90d58b426642212c507be81294d766626a387be87f"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "c3f8551f3ce908b797e32da7823b4c655637856863e9e53868d01cdb8c0d8c68"
+              }
+            },
+            "availability": {
+              "archive_relative_path": "rados-go-p99-factorial-primary-v4/published-availability.json",
+              "file_digest": {
+                "algorithm": "sha256",
+                "value": "685f0fbe5859199b2c811353fb7b4f82dabc99c96b43f4e9358a1e5af52528d8"
+              },
+              "decoded_digest": {
+                "algorithm": "sha256",
+                "value": "685f0fbe5859199b2c811353fb7b4f82dabc99c96b43f4e9358a1e5af52528d8"
+              }
+            }
+          }
+        ],
+        "snapshot_availability": "six_actual_frozen_source_archives",
+        "snapshot_refs": [
+          {
+            "archive_relative_path": "coordinator/source-final-validated.sha256.gz",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "799bcc56995bc9475505fc8ccabbcd681d8d1c6f66e8846a2f967adf469110d7"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "f86bb08bf4fd10d289159cbdc4e26cd1b33b350e0a01f5bbe30d14433e503e88"
+            }
+          },
+          {
+            "archive_relative_path": "source-binding.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "3b087b9ca523d249428ac810abee4dab3e688bc3422836cba68b9bc573b35d2e"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "3b087b9ca523d249428ac810abee4dab3e688bc3422836cba68b9bc573b35d2e"
+            }
+          }
+        ]
+      },
+      "decisions": [
+        {
+          "subject": "factorial phase/trace diagnostics",
+          "verdict": "diagnostic_only",
+          "reason": "Retain signed gaps and temporal overlap; no causal primary p99 attribution"
+        },
+        {
+          "subject": "queue-removal/PG indexing and targeted notification",
+          "verdict": "inconclusive",
+          "reason": "Deferred correctness-backed candidates; synthetic large-depth costs do not establish live contribution"
+        },
+        {
+          "subject": "passing factorial qualification",
+          "verdict": "inconclusive",
+          "reason": "94 primary capture failures versus 13 workload-invalid rows; historical omitempty assertion defect not repaired in place"
+        }
+      ],
+      "metrics": {
+        "primary_rows": 120,
+        "primary_arrivals": 2240000,
+        "primary_success": 2235749,
+        "primary_overloads": 4251,
+        "workload_valid_rows": 107,
+        "workload_invalid_rows": 13,
+        "capture_failed_rows": 94,
+        "observed_rows": 12,
+        "observed_overloads": 179,
+        "rate_4000_total_p99_ns": {
+          "none": 5233365.5,
+          "cpu": 21019630.5,
+          "alloc": 5274622.5,
+          "both": 21053837.5
+        },
+        "microbench_cases": 69
+      },
+      "reproduction": {
+        "level": "full_published_outcome_and_raw_trace_reanalysis_source_archives_available_binaries_omitted",
+        "live_command": "P07_SCHEDULER_SWEEP=1 P07_SWEEP_FIXED_PROCS=10 P07_OFFERED_LOAD=1 P07_OFFERED_FACTORIAL=1 P07_DIAGNOSTIC_DIR=/tmp/fresh-factorial-capture GOTOOLCHAIN=go1.27.1 ./integration/p07/reproduce.sh",
+        "published_verification_commands": [
+          "node integration/p07/publish-factorial.mjs --verify \"$ARCHIVE_PARENT/factorial-stall-evidence\""
+        ],
+        "reconstruction": "Restore each frozen workload-sources.tar.gz.gz by removing publication gzip then extracting original tar.gz; verify path set and source-before hashes. Primary mode has no runtime observation; add P07_OFFERED_OBSERVE=1 for separate twelve-row capture. Historical harness omitempty failures remain failures; corrected current harness is not historical capture identity. Container images/credentials require external availability."
+      },
+      "compact_binding": {
+        "sha256": "bf2d8a6c7d7c32dd092583e66918f91bed0082b174632a840c6d80cc22c0f93b",
+        "bytes": 162667,
+        "report_count": 132,
+        "row_count": 132
+      },
+      "measured_source_binding": {
+        "publication_inventory": {
+          "archive_relative_path": "PUBLISHED.sha256",
+          "file_digest": {
+            "algorithm": "sha256",
+            "value": "974ecc9f1cb2eeefb9769e3e21493bc6690e3288c88174754ae404fa0c30160d"
+          },
+          "decoded_digest": {
+            "algorithm": "sha256",
+            "value": "974ecc9f1cb2eeefb9769e3e21493bc6690e3288c88174754ae404fa0c30160d"
+          }
+        },
+        "summary_refs": [
+          {
+            "archive_relative_path": "summary.json",
+            "file_digest": {
+              "algorithm": "sha256",
+              "value": "461ca5bc06f77b7a81cd0a725a8769a6851cd0582e12b6352c0d78a2e3c6643a"
+            },
+            "decoded_digest": {
+              "algorithm": "sha256",
+              "value": "461ca5bc06f77b7a81cd0a725a8769a6851cd0582e12b6352c0d78a2e3c6643a"
+            }
+          }
+        ],
+        "identity": "Per-capture original manifest decoded digests bind measured inputs; source-head and publication hashes are not capture source identity."
+      },
+      "archive_entry": {
+        "cache_bundle": "factorial-stall-evidence",
+        "archives_index": "docs/performance-p99-scheduler/archive-index.json",
+        "status": "verified_local_archive_pack",
+        "restore_commands": [
+          "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent --bundles factorial-stall-evidence"
+        ],
+        "restore_parent": "ARCHIVE_PARENT",
+        "restore_bundle_path": "ARCHIVE_PARENT/factorial-stall-evidence"
+      }
+    }
+  ]
+}

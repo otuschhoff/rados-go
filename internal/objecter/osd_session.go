@@ -115,6 +115,17 @@ func (session *osdSession) OwnsReplyMessages() bool {
 }
 
 func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object osd.HObject, message msgr.Message) (msgr.Message, error) {
+	result, release, err := session.submitTarget(ctx, pg, object, message, false)
+	release()
+	return result, err
+}
+
+func (session *osdSession) SubmitBorrowedTarget(ctx context.Context, pg maps.PG, object osd.HObject, message msgr.Message) (msgr.Message, func(), error) {
+	return session.submitTarget(ctx, pg, object, message, true)
+}
+
+func (session *osdSession) submitTarget(ctx context.Context, pg maps.PG, object osd.HObject, message msgr.Message, borrowed bool) (msgr.Message, func(), error) {
+	noRelease := func() {}
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -123,7 +134,7 @@ func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object 
 		if session.err != nil {
 			err := session.err
 			session.mu.Unlock()
-			return msgr.Message{}, err
+			return msgr.Message{}, noRelease, err
 		}
 		blocked := false
 		for _, backoff := range session.backoffs {
@@ -142,7 +153,17 @@ func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object 
 			submission := &targetSubmission{pg: pg, object: object, cancel: cancel}
 			session.submissions[id] = submission
 			var unlock sync.Once
-			result, err := session.raw.SubmitAdmitted(attemptCtx, message, func() { unlock.Do(session.mu.Unlock) })
+			var result msgr.Message
+			var err error
+			release := noRelease
+			admitted := func() { unlock.Do(session.mu.Unlock) }
+			if source, ok := session.raw.(interface {
+				SubmitBorrowedAdmitted(context.Context, msgr.Message, func()) (msgr.Message, func(), error)
+			}); borrowed && ok {
+				result, release, err = source.SubmitBorrowedAdmitted(attemptCtx, message, admitted)
+			} else {
+				result, err = session.raw.SubmitAdmitted(attemptCtx, message, admitted)
+			}
 			unlock.Do(session.mu.Unlock)
 			session.mu.Lock()
 			delete(session.submissions, id)
@@ -150,20 +171,21 @@ func (session *osdSession) SubmitTarget(ctx context.Context, pg maps.PG, object 
 			session.mu.Unlock()
 			cancel()
 			if resend && ctx.Err() == nil {
+				release()
 				continue
 			}
 			if err != nil {
 				err = errors.Join(err, session.failure(err))
 			}
-			return result, err
+			return result, release, err
 		}
 		changed := session.changed
 		session.mu.Unlock()
 		select {
 		case <-ctx.Done():
-			return msgr.Message{}, ctx.Err()
+			return msgr.Message{}, noRelease, ctx.Err()
 		case <-session.raw.Done():
-			return msgr.Message{}, session.failure(msgr.ErrSessionClosed)
+			return msgr.Message{}, noRelease, session.failure(msgr.ErrSessionClosed)
 		case <-changed:
 		}
 	}

@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "root": "docs/performance-p99-scheduler",
+  "code_dirs": [
+    "tools/experiment-cache"
+  ],
+  "entries": [
+    {
+      "id": "batching-evidence",
+      "bundle": "batching-evidence",
+      "filename": "batching-evidence.tar.gz",
+      "sha256": "57be054e2b865048f5b7153e411ed0bc62df3d963ed9b312ff50bbdff71e8a82",
+      "archive_bytes": 1819427,
+      "files": 700,
+      "unpacked_bytes": 5485639,
+      "content_manifest_sha256": "32e805dee733c3164b2c36f8b2d7240ff0f7bd01d9f56c43b3fd6a4868dfd5ac"
+    },
+    {
+      "id": "evidence",
+      "bundle": "evidence",
+      "filename": "evidence.tar.gz",
+      "sha256": "a1c684392278deba3a94b65ca025eff32819cc3a370dea5421d0f1360fc926f5",
+      "archive_bytes": 1623465,
+      "files": 833,
+      "unpacked_bytes": 1915786,
+      "content_manifest_sha256": "0d2b5fe455deabf660dcf133644b0f5cc239c2d7ad62a3f13edb1d6094c8030b"
+    },
+    {
+      "id": "factorial-stall-evidence",
+      "bundle": "factorial-stall-evidence",
+      "filename": "factorial-stall-evidence.tar.gz",
+      "sha256": "f64c59508ede28b8c23894b3ea3e5b881b323c08af9ee316f5da7dabba3a30ee",
+      "archive_bytes": 437277462,
+      "files": 3247,
+      "unpacked_bytes": 443363777,
+      "content_manifest_sha256": "6c8e820d87f404540d633b7aad2fd3913ffac3f1e974c5799be32fdeb5ba78b8"
+    },
+    {
+      "id": "inventory-evidence",
+      "bundle": "inventory-evidence",
+      "filename": "inventory-evidence.tar.gz",
+      "sha256": "3763ad038beecd51eb2597ba3ed402a64d299911b23e7fbc6fbca3994553b394",
+      "archive_bytes": 2045771,
+      "files": 1233,
+      "unpacked_bytes": 6707278,
+      "content_manifest_sha256": "3603a6fbe175bfde84d262bd2245004049937ce0a67f3c6dc47c393df9de649d"
+    },
+    {
+      "id": "read-into-evidence",
+      "bundle": "read-into-evidence",
+      "filename": "read-into-evidence.tar.gz",
+      "sha256": "e671db76665f22c83bbe82d21a6e21c19b28ef7aeb841f4cbe60920b0d07febd",
+      "archive_bytes": 929054,
+      "files": 432,
+      "unpacked_bytes": 2769709,
+      "content_manifest_sha256": "eff1e82adb80148c0b66dcaae8b0b2ae3d57ab52c38177355e19245282a20dd4"
+    },
+    {
+      "id": "read-scale-evidence",
+      "bundle": "read-scale-evidence",
+      "filename": "read-scale-evidence.tar.gz",
+      "sha256": "db2b0325eacfc46ab38319d5a4dedddf2a98551707a014f3d45ba072e9ee1c79",
+      "archive_bytes": 6883003,
+      "files": 2775,
+      "unpacked_bytes": 12228038,
+      "content_manifest_sha256": "41b127494daf5f30a82740f08879702a7048a94ce58939d4852b04558fecf080"
+    },
+    {
+      "id": "request-path-evidence",
+      "bundle": "request-path-evidence",
+      "filename": "request-path-evidence.tar.gz",
+      "sha256": "76e8f65d2ab5155904341fa243426e8306db0fca2a730f64ff439f3683152652",
+      "archive_bytes": 24800022,
+      "files": 3318,
+      "unpacked_bytes": 28717332,
+      "content_manifest_sha256": "79c27fc5fad38d3cc3c422e8304060aae3d1227285ff69b3b86dee677236cc80"
+    }
+  ]
+}

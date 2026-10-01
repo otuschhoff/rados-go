@@ -197,7 +197,11 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 			return msgr.Message{}, wire.ErrLimitExceeded
 		}
 	}
-	encoder := wire.NewEncoder(limits.MaxBytes)
+	frontSize, err := requestFrontSize(request, uint64(limits.MaxBytes)-dataLength)
+	if err != nil {
+		return msgr.Message{}, err
+	}
+	encoder := wire.NewEncoderWithCapacity(limits.MaxBytes, frontSize)
 	shard := int8(-1)
 	if request.Sharded {
 		shard = request.Shard
@@ -232,7 +236,7 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	}
 	encoder.Int32(request.Retry)
 	encoder.Uint64(request.Features)
-	front, err := encoder.BytesResult()
+	front, err := encoder.TakeBytesResult()
 	if err != nil {
 		return msgr.Message{}, err
 	}
@@ -244,6 +248,31 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 		data = append(data, operation.Data...)
 	}
 	return msgr.Message{Header: msgr.MessageHeader{TransactionID: request.TransactionID, Type: protocol.MessageOSDOp, Version: 8, CompatVersion: 3}, Front: front, Data: data, Lengths: msgr.MessageLengths{Front: uint32(len(front)), Data: uint32(len(data))}}, nil
+}
+
+func requestFrontSize(request Request, maxBytes uint64) (uint64, error) {
+	const fixedSize = uint64(24 + 12 + 27 + 24 + 4 + 8 + 34 + 4 + 2 + 32)
+	size := fixedSize
+	if size > maxBytes {
+		return 0, wire.ErrLimitExceeded
+	}
+	for _, value := range []string{request.Object, request.Locator, request.Namespace} {
+		length := uint64(len(value))
+		if length > math.MaxUint32 || length > maxBytes-size {
+			return 0, wire.ErrLimitExceeded
+		}
+		size += length
+	}
+	operationCount := uint64(len(request.Operations))
+	if operationCount > (maxBytes-size)/operationDescriptorSize {
+		return 0, wire.ErrLimitExceeded
+	}
+	size += operationCount * operationDescriptorSize
+	snapshotCount := uint64(len(request.WriteSnapshots))
+	if snapshotCount > (maxBytes-size)/8 {
+		return 0, wire.ErrLimitExceeded
+	}
+	return size + snapshotCount*8, nil
 }
 
 func validSnapshotContext(sequence uint64, snapshots []uint64) bool {

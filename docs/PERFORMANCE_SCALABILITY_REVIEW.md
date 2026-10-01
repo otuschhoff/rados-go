@@ -22,6 +22,38 @@ Earlier copy reduction, secure encoding, replay-reference cleanup, and bounded
 receive read-ahead improvements remain part of the baseline. Preserve their
 ownership and lifecycle tests throughout remediation.
 
+Follow-up: [caller-buffer reads](performance-p99-scheduler/READ_INTO_RESULTS.md)
+now reduce secure moderate-record allocation volume without global runtime
+tuning. Their measured throughput benefit does not establish stable p99
+compliance, native parity or completion of the open Phase 4 latency gate.
+The later [bounded inventory comparison](performance-p99-scheduler/INVENTORY_RESULTS.md)
+retains four charged secure receive slots, with p99/throughput improvements in
+15/15 rotated comparisons under idle, CPU and allocation-heavy host load.
+Read admission windows were rejected; deployment qualification remains open.
+The [read profiling and scale follow-up](performance-p99-scheduler/READ_SCALE_RESULTS.md)
+verifies 120 Go and 40 unmatched native context legs without throttling. Eight
+slots win 25/30 paired 64-KiB p99 comparisons and 29/30 IOPS comparisons, but
+remain diagnostic-only: four is still the production default, with no automatic
+promotion. Fallback sizes show no reuse benefit; 4-MiB live reads were not
+measured. The [request-path results](performance-p99-scheduler/REQUEST_PATH_RESULTS.md)
+now record completed in-flight-accounting benchmarks and per-request `Encoder`
+allocation work. Encoding allocation reductions and O(1) in-flight accounting
+are retained for local gains only; neither completed offered-load matrix
+establishes a stable causal p99 improvement. Cumulative messenger ACK coalescing
+was rejected and removed. Operation, routed-attempt, OSD submission and control
+ACK contexts remain necessary for their distinct cancellation/retry lifetimes.
+
+Current diagnostic follow-up separates CPU and allocation load in factorial
+cases `none`, `cpu`, `alloc` and `both`, and decomposes arrival latency into
+delivery, queue/read-entry, read/transport and outcome intervals rather than
+treating end-to-end p99 as one client cost. Opt-in observation adds execution
+tracing with per-read and separate CPU/allocation tasks; instrumented samples
+remain separate from primary timing. See the
+[Linux live observation handoff](performance-p99-scheduler/LINUX_LIVE_OBSERVATION_HANDOFF.md).
+Selected source and binaries are frozen while captures run. The user is moving
+the observation to Linux live execution; results and their validation remain
+pending, with no pass, live p99 causal attribution or qualification claim.
+
 ## Evidence and Native Comparison
 
 The checked-in [P07 report](p07/integration-report.json) contains 72 Go/native
@@ -78,6 +110,11 @@ Existing provenance and correctness contracts are recorded in
 [P13 provenance](p13/provenance.md) and [protocol sources](p00/protocol-sources.md).
 
 ## Findings
+
+These findings describe the reviewed baseline, not a fresh assessment of the
+current source. Preserve their historical text and anchors; subsequent phase
+status and results record remediation. In particular, F1's scoped control
+progress fix is complete; see the [Phase 1 results](performance-phase1/RESULTS.md).
 
 ### F1: High - Backoff ACK Progress Under Saturation
 
@@ -330,7 +367,14 @@ maintainer approval; repeated memory/ownership/race checks pass. Phase remains
 blocked on secure-read latency: final live confirmation misses the unchanged
 8x native-p99 diagnostic guardrail, and no rigorous no-regression conclusion is
 established. See the [Phase 4 contract, audit and results](performance-phase4/README.md).
-No completion commit or renewed qualification is claimed; Phase 5 is not started.
+No completion commit or renewed qualification is claimed. Phase 5 benchmarks
+and local in-flight accounting work have since been performed, as recorded
+below; they do not close the Phase 4 latency gate.
+
+Follow-up: the [serial parallelism/GC investigation](performance-p99-scheduler/README.md)
+reproduces lower p99 with application-level `GOMAXPROCS=2` across three fresh
+clusters. No cgroup throttling was observed. This is diagnostic deployment
+evidence, not a library-default fix or closure of the Phase 4 latency gate.
 
 - First measurements: establish increasing fake/loopback session fanout and
   record live heap, RSS, goroutines, reader storage, and post-close retention.
@@ -355,6 +399,21 @@ latency or protocol ordering. Application-retained outputs are reported separate
 ### Phase 5: Scale Backoff and Request Bookkeeping
 
 Dependencies: Phase 1; Phase 3 where shared state is involved. Findings: F5, F6.
+
+Implementation status: benchmarks performed and O(1) in-flight accounting
+retained for local gains, not Phase 5 completion. See the
+[request-path results](performance-p99-scheduler/REQUEST_PATH_RESULTS.md).
+No production PG index, targeted backoff notification scheme or queue-removal
+rewrite has been implemented. The broader bookkeeping exit gate remains open.
+
+New queue/backoff burst measurements are local, unpublished evidence in
+`/tmp/rados-go-queue-backoff-bursts-v1.txt`, not a checked-in results bundle.
+At depth 4096, known completion-burst medians span 17.14-20.90 ms and
+cancellation-burst medians span 3.35-7.38 ms across measured cases. Lookup with
+4096 unrelated PGs has a 58.9 us median; the 4096-waiter case has a 241 ms
+median. These synthetic costs motivate further investigation, not a live p99
+causal attribution, native comparison or production rewrite. Full latest-state
+validation and publication are not claimed by this documentation update.
 
 - Benchmark backoffs at 1/64/1024/4096 ranges across many PGs, with multiple
   waiters and unrelated-PG updates. Test duplicate IDs and overlapping ranges.

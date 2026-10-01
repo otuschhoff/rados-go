@@ -247,7 +247,7 @@ func FuzzSessionScript(f *testing.F) {
 				if owner.inFlightCount() < owner.config.MaxInFlightTransactions {
 					for _, pending := range owner.pending {
 						if !pending.sent {
-							pending.sent = true
+							markSessionPendingSent(owner, pending)
 							pending.seq = owner.takeSequence()
 							pending.message.Header.Sequence = pending.seq
 							if !containsPending(owner.replay, pending) {
@@ -365,6 +365,7 @@ func newFuzzSessionOwner(t *testing.T) *sessionOwner {
 
 func assertFuzzSessionInvariants(t *testing.T, owner *sessionOwner) {
 	t.Helper()
+	assertSessionInFlight(t, owner)
 	if len(owner.pending) > owner.config.MaxQueuedMessages {
 		t.Fatalf("pending count %d exceeds limit %d", len(owner.pending), owner.config.MaxQueuedMessages)
 	}

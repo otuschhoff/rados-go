@@ -15,6 +15,56 @@ import (
 
 var backoffTestLimits = osd.Limits{MaxBytes: 4096, MaxOperations: 4}
 
+type borrowedOSDTransport struct {
+	*fakeOSDTransport
+	borrow func(context.Context, msgr.Message, func()) (msgr.Message, func(), error)
+}
+
+func (transport *borrowedOSDTransport) SubmitBorrowedAdmitted(ctx context.Context, message msgr.Message, admitted func()) (msgr.Message, func(), error) {
+	return transport.borrow(ctx, message, admitted)
+}
+
+func TestOSDSessionBorrowedBackoffResendReleasesDiscardedReply(t *testing.T) {
+	transport := &borrowedOSDTransport{fakeOSDTransport: newFakeOSDTransport()}
+	firstAdmitted := make(chan struct{})
+	attempts, releases := 0, 0
+	transport.borrow = func(ctx context.Context, _ msgr.Message, admitted func()) (msgr.Message, func(), error) {
+		attempts++
+		admitted()
+		if attempts == 1 {
+			close(firstAdmitted)
+			<-ctx.Done()
+		} else if releases != 1 {
+			t.Error("discarded attempt retained its borrow")
+		}
+		return msgr.Message{}, func() { releases++ }, nil
+	}
+	session := newOSDSession(transport, backoffTestLimits, time.Second)
+	defer session.Stop()
+	pg := maps.PG{Pool: 7, Seed: 3, Preferred: -1}
+	object := osd.HObject{Object: "object", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+	finished := make(chan error, 1)
+	go func() {
+		_, release, err := session.SubmitBorrowedTarget(context.Background(), pg, object, msgr.Message{})
+		release()
+		finished <- err
+	}()
+	<-firstAdmitted
+	block := osd.Backoff{PG: pg, Shard: -1, MapEpoch: 9, Operation: osd.BackoffBlock, ID: 42, Begin: object, End: object}
+	transport.incoming <- encodeBackoffMessage(t, block)
+	<-transport.sent
+	block.Operation = osd.BackoffUnblock
+	transport.incoming <- encodeBackoffMessage(t, block)
+	select {
+	case err := <-finished:
+		if err != nil || attempts != 2 || releases != 2 {
+			t.Fatalf("attempts=%d releases=%d err=%v", attempts, releases, err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("borrowed resend did not complete")
+	}
+}
+
 func TestOSDSessionBackoffBlocksUntilUnblock(t *testing.T) {
 	transport := newFakeOSDTransport()
 	session := newOSDSession(transport, backoffTestLimits, time.Second)

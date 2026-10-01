@@ -1,1 +1,11 @@
 integration/reports/*.log
+.DS_Store
+
+# Full performance evidence is preserved in the indexed external cache.
+/docs/performance-p99-scheduler/evidence/
+/docs/performance-p99-scheduler/batching-evidence/
+/docs/performance-p99-scheduler/read-into-evidence/
+/docs/performance-p99-scheduler/inventory-evidence/
+/docs/performance-p99-scheduler/read-scale-evidence/
+/docs/performance-p99-scheduler/request-path-evidence/
+/docs/performance-p99-scheduler/factorial-stall-evidence/

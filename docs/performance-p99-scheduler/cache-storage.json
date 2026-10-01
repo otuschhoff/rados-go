@@ -1,0 +1,18 @@
+{
+  "schema": "rados-go-experiment-cache-storage-v1",
+  "storage": "external",
+  "local_cache_dir": "/Users/oli/proj/rados-go-experiment-cache",
+  "durability": "local_verified_no_remote_backup",
+  "remote_backup": null,
+  "archive_index": "docs/performance-p99-scheduler/archive-index.json",
+  "archive_reference_base": "workspace-root",
+  "verified_restore_path": "/Users/oli/proj/rados-go-experiment-cache-restored-check-v1",
+  "verification_scope": "All seven archives verified and restored locally; no remote backup or renewed historical qualification is established.",
+  "original_evidence": "Retained in place; archive creation and restoration do not delete original evidence.",
+  "portable_commands": {
+    "verify": "go run ./tools/experiment-cache verify --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache",
+    "restore_all": "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/archive-parent",
+    "restore_selected": "go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /path/cache --dest /fresh/selected-archive-parent --bundles factorial-stall-evidence"
+  },
+  "restore_requirements": "Replace /path/cache with the directory containing the indexed archives; use a fresh, nonexistent --dest. Run from the workspace root. --bundles accepts indexed bundle names separated by commas; omit it to restore all bundles."
+}

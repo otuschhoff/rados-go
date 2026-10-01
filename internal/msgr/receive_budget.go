@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"sync"
+	"sync/atomic"
 )
 
 var ErrReceiveBudgetExceeded = errors.Join(errors.New("messenger receive budget exceeded"), ErrQueueSaturated)
@@ -18,31 +19,68 @@ const receiveControlBytesPerSession = 3 * securePreamble
 // Custom transports/codecs can allocate before returning; only built-in codecs
 // guarantee reservation before payload allocation.
 type ReceiveBudget struct {
-	mu           sync.Mutex
-	maxSessions  int
-	maxBytes     uint64
-	sessions     int
-	bytes        uint64
-	controlBytes uint64
+	mu              sync.Mutex
+	maxSessions     int
+	maxBytes        uint64
+	sessions        int
+	bytes           uint64
+	controlBytes    uint64
+	scratchSlots    atomic.Int32
+	scratchMetrics  atomic.Bool
+	scratchHits     atomic.Uint64
+	scratchMisses   atomic.Uint64
+	scratchBypasses atomic.Uint64
 }
 
 type ReceiveBudgetSnapshot struct {
-	Sessions      int
-	RetainedBytes uint64
-	ControlBytes  uint64
+	Sessions        int
+	RetainedBytes   uint64
+	ControlBytes    uint64
+	ScratchHits     uint64
+	ScratchMisses   uint64
+	ScratchBypasses uint64
 }
 
 func NewReceiveBudget(maxSessions int, maxBytes uint64) (*ReceiveBudget, error) {
 	if maxSessions <= 0 || uint64(maxSessions) > ^uint64(0)/receiveControlBytesPerSession || maxBytes == 0 {
 		return nil, fmt.Errorf("%w: limits must be positive", ErrReceiveBudgetExceeded)
 	}
-	return &ReceiveBudget{maxSessions: maxSessions, maxBytes: maxBytes}, nil
+	budget := &ReceiveBudget{maxSessions: maxSessions, maxBytes: maxBytes}
+	budget.scratchSlots.Store(4)
+	return budget, nil
+}
+
+func (budget *ReceiveBudget) ConfigureScratchDiagnostic(slots int) error {
+	if slots < 1 || slots > 8 {
+		return ErrReceiveBudgetExceeded
+	}
+	budget.mu.Lock()
+	defer budget.mu.Unlock()
+	if budget.sessions != 0 || budget.bytes != 0 {
+		return ErrReceiveBudgetExceeded
+	}
+	budget.scratchSlots.Store(int32(slots))
+	budget.scratchMetrics.Store(true)
+	return nil
+}
+
+func (budget *ReceiveBudget) recordScratch(hit, bypass bool) {
+	if !budget.scratchMetrics.Load() {
+		return
+	}
+	if bypass {
+		budget.scratchBypasses.Add(1)
+	} else if hit {
+		budget.scratchHits.Add(1)
+	} else {
+		budget.scratchMisses.Add(1)
+	}
 }
 
 func (budget *ReceiveBudget) Snapshot() ReceiveBudgetSnapshot {
 	budget.mu.Lock()
 	defer budget.mu.Unlock()
-	return ReceiveBudgetSnapshot{Sessions: budget.sessions, RetainedBytes: budget.bytes, ControlBytes: budget.controlBytes}
+	return ReceiveBudgetSnapshot{Sessions: budget.sessions, RetainedBytes: budget.bytes, ControlBytes: budget.controlBytes, ScratchHits: budget.scratchHits.Load(), ScratchMisses: budget.scratchMisses.Load(), ScratchBypasses: budget.scratchBypasses.Load()}
 }
 
 func (budget *ReceiveBudget) admit() error {
@@ -71,12 +109,27 @@ type receiveLease struct {
 	budget       *ReceiveBudget
 	bytes        uint64
 	controlBytes uint64
+	extra        uint64
+	backing      []byte
+	scratch      *receiveScratch
+}
+
+func (lease *receiveLease) reclaim() {
+	if lease != nil && lease.scratch != nil {
+		lease.scratch.put(lease)
+		return
+	}
+	lease.release()
 }
 
 func (lease *receiveLease) resize(bytes uint64) error {
 	if lease == nil {
 		return nil
 	}
+	if bytes > ^uint64(0)-lease.extra {
+		return ErrReceiveBudgetExceeded
+	}
+	bytes += lease.extra
 	budget := lease.budget
 	budget.mu.Lock()
 	defer budget.mu.Unlock()
@@ -107,6 +160,7 @@ func (lease *receiveLease) release() {
 	budget.bytes -= lease.bytes
 	budget.controlBytes -= lease.controlBytes
 	lease.bytes, lease.controlBytes = 0, 0
+	lease.backing, lease.scratch, lease.extra = nil, nil, 0
 	budget.mu.Unlock()
 }
 
@@ -114,6 +168,7 @@ type budgetReader struct {
 	io.Reader
 	lease   *receiveLease
 	prelude []byte
+	scratch *receiveScratch
 }
 
 type budgetReceiveReservation struct {
@@ -128,7 +183,21 @@ type budgetSecureReservation struct {
 
 func (reader *budgetReader) receivePreludeBuffer() []byte { return reader.prelude }
 
-func (reader budgetReader) reserveReceiveBytes(bytes uint64) error { return reader.lease.resize(bytes) }
+func (reader budgetReader) reserveReceiveBytes(bytes uint64) error {
+	err := reader.lease.resize(bytes)
+	if err != nil && reader.scratch != nil {
+		reader.scratch.dropIdle()
+		err = reader.lease.resize(bytes)
+	}
+	return err
+}
+
+func (reader *budgetReader) receiveBacking(size int) ([]byte, error) {
+	if reader.scratch == nil {
+		return make([]byte, size), nil
+	}
+	return reader.scratch.get(reader.lease, size)
+}
 
 func (reader budgetReader) releaseReceivePrelude() { reader.lease.releaseControl() }
 

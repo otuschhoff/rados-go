@@ -57,7 +57,7 @@ func (fixture *performanceQueue) fill() {
 		pending := owner.byRequest[request]
 		pending.seq = owner.takeSequence()
 		pending.message.Header.Sequence = pending.seq
-		pending.sent = true
+		markSessionPendingSent(owner, pending)
 		pending.mayHaveExecuted = true
 		owner.replay = append(owner.replay, pending)
 	}

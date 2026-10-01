@@ -254,6 +254,15 @@ func (client *Client) Read(ctx context.Context, target Target, offset, length ui
 	return client.executeRoutedResult(ctx, target, []osd.Operation{{Code: osd.OpRead, Offset: offset, Length: length}}, 0, false, false, 0, client.config.Router.Route, false)
 }
 
+func (client *Client) ReadInto(ctx context.Context, target Target, offset uint64, destination []byte) (Result, error) {
+	length := uint64(len(destination))
+	minimumReplyBytes := readReplyFrontBytes + uint64(len(target.Object))
+	if length > math.MaxUint64-offset || minimumReplyBytes > uint64(client.config.MessageLimits.MaxBytes) || length > uint64(client.config.MessageLimits.MaxBytes)-minimumReplyBytes {
+		return Result{}, wire.ErrLimitExceeded
+	}
+	return client.executeRoutedResultInto(ctx, target, []osd.Operation{{Code: osd.OpRead, Offset: offset, Length: length}}, 0, false, false, 0, client.config.Router.Route, false, destination, true)
+}
+
 func (client *Client) SparseRead(ctx context.Context, target Target, offset, length uint64) (SparseReadResult, error) {
 	if length > math.MaxInt32 || length > math.MaxUint64-offset {
 		return SparseReadResult{}, wire.ErrLimitExceeded
@@ -344,6 +353,12 @@ func (client *Client) executeRoutedOperations(ctx context.Context, target Target
 }
 
 func (client *Client) executeRoutedResult(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), retainOperations bool) (Result, error) {
+	return client.executeRoutedResultInto(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, retainOperations, nil, false)
+}
+
+func (client *Client) executeRoutedResultInto(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), retainOperations bool, destination []byte, readInto bool) (Result, error) {
+	releaseReply := func() {}
+	defer func() { releaseReply() }()
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -365,6 +380,8 @@ func (client *Client) executeRoutedResult(ctx context.Context, target Target, op
 	var lastErr error
 	_, boundedByContext := ctx.Deadline()
 	for attempt := 0; client.config.UnlimitedRetries || boundedByContext || attempt < client.config.MaxAttempts; attempt++ {
+		releaseReply()
+		releaseReply = func() {}
 		if err := ctx.Err(); err != nil {
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
@@ -385,7 +402,7 @@ func (client *Client) executeRoutedResult(ctx context.Context, target Target, op
 		var clientGlobalID uint64
 		if client.config.AuthoritySource != nil {
 			if authority := client.config.AuthoritySource(); authority != nil {
-				clientGlobalID = authority.AuthMetadata().GlobalID
+				clientGlobalID = authority.InstanceID()
 			}
 		}
 		request, err := osd.EncodeRequest(osd.Request{
@@ -407,7 +424,11 @@ func (client *Client) executeRoutedResult(ctx context.Context, target Target, op
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		var message msgr.Message
-		if submitter, ok := active.(targetSubmitter); ok {
+		if submitter, ok := active.(interface {
+			SubmitBorrowedTarget(context.Context, maps.PG, osd.HObject, msgr.Message) (msgr.Message, func(), error)
+		}); readInto && ok {
+			message, releaseReply, err = submitter.SubmitBorrowedTarget(submitCtx, route.PG, object, request)
+		} else if submitter, ok := active.(targetSubmitter); ok {
 			message, err = submitter.SubmitTarget(submitCtx, route.PG, object, request)
 		} else {
 			if waiter, ok := active.(backoffWaiter); ok {
@@ -559,7 +580,7 @@ func (client *Client) executeRoutedResult(ctx context.Context, target Target, op
 		}
 		if retainOperations {
 			result.Data = append([]byte(nil), result.Operations[0].Data...)
-		} else {
+		} else if !readInto {
 			result.Data = reply.Operations[0].Data
 		}
 		if reply.Result < 0 {
@@ -569,6 +590,17 @@ func (client *Client) executeRoutedResult(ctx context.Context, target Target, op
 			if operationResult.Code < 0 && operations[index].Flags&osd.OpFlagFailOK == 0 {
 				return result, protocol.WireErrno(operationResult.Code)
 			}
+		}
+		if readInto {
+			if err := ctx.Err(); err != nil {
+				return Result{}, err
+			}
+			data := reply.Operations[0].Data
+			if len(data) > len(destination) {
+				return Result{}, osd.ErrMalformedReply
+			}
+			copy(destination, data)
+			result.Data = destination[:len(data)]
 		}
 		return result, nil
 	}

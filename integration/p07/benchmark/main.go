@@ -14,6 +14,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"runtime/trace"
 	"sort"
 	"strings"
 	"sync"
@@ -69,12 +70,20 @@ type report struct {
 	Resources      resources              `json:"resources"`
 	Rows           []row                  `json:"rows"`
 	Diagnostic     *diagnosticMethodology `json:"diagnostic,omitempty"`
+	OfferedLoad    *offeredResult         `json:"offered_load,omitempty"`
 }
 
 type diagnosticMethodology struct {
-	WarmupOperations int    `json:"warmup_operations"`
-	ResourceScope    string `json:"resource_scope"`
-	ObjectSet        string `json:"object_set"`
+	WarmupOperations      int                `json:"warmup_operations"`
+	ResourceScope         string             `json:"resource_scope"`
+	ObjectSet             string             `json:"object_set"`
+	BackgroundCPUWorkers  int                `json:"background_cpu_workers,omitempty"`
+	ReadAPI               string             `json:"read_api,omitempty"`
+	OperationsPerWorker   int                `json:"operations_per_worker,omitempty"`
+	ScratchSlots          int                `json:"scratch_slots,omitempty"`
+	AdmissionWindow       int                `json:"admission_window,omitempty"`
+	BackgroundAllocations bool               `json:"background_allocations,omitempty"`
+	Scratch               *scratchStatistics `json:"scratch,omitempty"`
 }
 
 type benchError struct {
@@ -130,6 +139,29 @@ func main() {
 }
 
 func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr error) {
+	if err := validateOfferedObservationConfig(os.Getenv); err != nil {
+		return err
+	}
+	offered, err := parseOfferedConfig(os.Getenv)
+	if err != nil {
+		return err
+	}
+	offeredReported := false
+	defer func() {
+		if offered != nil && resultErr != nil && !offeredReported {
+			resultErr = errors.Join(resultErr, writeOfferedSetupFailure(*offered, transport, resultErr))
+		}
+	}()
+	diagnostic := os.Getenv("P07_READ_DIAGNOSTIC") == "1"
+	seedOnly := os.Getenv("P07_SEED_ONLY") == "1"
+	shape, err := parseReadShape(os.Getenv("P07_READ_SIZE"), os.Getenv("P07_READ_CONCURRENCY"), diagnostic, seedOnly)
+	if err != nil {
+		return err
+	}
+	experiment, err := parseReadExperiment(os.Getenv("P07_OPERATIONS_PER_WORKER"), os.Getenv("P07_SCRATCH_SLOTS"), os.Getenv("P07_ADMISSION_WINDOW"), os.Getenv("P07_BACKGROUND_ALLOCATIONS"), os.Getenv("P07_READ_DIAGNOSTIC") == "1")
+	if err != nil {
+		return err
+	}
 	monitors := splitMonitors(monitorsArg)
 	if len(monitors) == 0 {
 		return &benchError{message: "invalid -monitors"}
@@ -170,6 +202,14 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Hour)
 	defer cancel()
+	if experiment.slots != 0 {
+		if err := configureScratch(client, experiment.slots); err != nil {
+			return err
+		}
+	}
+	if diagnostic {
+		ctx = readAdmissionContext(ctx, experiment.window, shape.concurrency)
+	}
 	if evidenceFile := os.Getenv("P07_MODE_EVIDENCE_FILE"); evidenceFile != "" {
 		file, err := os.OpenFile(evidenceFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
 		if err != nil {
@@ -194,21 +234,52 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 	if err != nil {
 		return &benchError{message: "open pool", err: err}
 	}
-	if os.Getenv("P07_SEED_ONLY") == "1" {
-		for workerID := 0; workerID < 16; workerID++ {
-			if err := writeSeed(ctx, pool.Object(fmt.Sprintf("p07-shared-read-%d", workerID)), makePayload(65536, 1, uint64(workerID))); err != nil {
+	if seedOnly {
+		for workerID := 0; workerID < shape.concurrency; workerID++ {
+			if err := writeSeed(ctx, pool.Object(shape.objectName(workerID)), makePayload(shape.size, 1, uint64(workerID))); err != nil {
 				return err
 			}
 		}
 		return json.NewEncoder(os.Stdout).Encode(map[string]bool{"seeded": true})
+	}
+	if offered != nil {
+		if transport != "secure" || runtime.GOMAXPROCS(0) != 10 {
+			return fmt.Errorf("offered load requires secure transport and ten active Ps")
+		}
+		offeredReported = true
+		return runOfferedDiagnostic(ctx, client, pool, *offered, transport)
 	}
 	var timings []*msgr.RequestTiming
 	if os.Getenv("P07_TIMING_FILE") != "" {
 		if os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
 			return &benchError{message: "request timing requires diagnostic mode"}
 		}
-		timings = make([]*msgr.RequestTiming, 4096)
+		timings = make([]*msgr.RequestTiming, shape.operationCount(experiment.operations))
 		ctx = context.WithValue(ctx, benchmarkTimingKey{}, timings)
+	}
+	var stopTrace func() error
+	if traceFile := os.Getenv("P07_TRACE_FILE"); traceFile != "" {
+		if os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
+			return &benchError{message: "execution tracing requires diagnostic mode"}
+		}
+		file, err := os.Create(traceFile)
+		if err != nil {
+			return err
+		}
+		output := &traceOutput{writer: file}
+		if err := trace.Start(output); err != nil {
+			_ = file.Close()
+			return err
+		}
+		stopTrace = func() error {
+			trace.Stop()
+			return errors.Join(output.Err(), file.Close())
+		}
+		defer func() {
+			if stopTrace != nil {
+				resultErr = errors.Join(resultErr, stopTrace())
+			}
+		}()
 	}
 	var stopCPUProfile func() error
 	if profileFile := os.Getenv("P07_CPU_PROFILE"); profileFile != "" {
@@ -231,6 +302,18 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 		}()
 	}
 
+	if os.Getenv("P07_BACKGROUND_WORKERS") != "" && os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
+		return &benchError{message: "background CPU workers require read diagnostic mode"}
+	}
+	if os.Getenv("P07_READ_INTO") != "" && os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
+		return &benchError{message: "caller-buffer reads require read diagnostic mode"}
+	}
+	backgroundWorkers, stopBackground, err := startBackgroundWork(os.Getenv("P07_BACKGROUND_WORKERS"), experiment.allocationLoad)
+	if err != nil {
+		return err
+	}
+	defer stopBackground()
+	scratchBefore := scratchCounters(client)
 	before, err := snapshotResources()
 	if err != nil {
 		return err
@@ -242,10 +325,14 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
 		runID = 1
 	}
-	for _, size := range sizes {
-		for _, concurrency := range concurrencies {
+	rowSizes, rowConcurrencies := sizes, concurrencies
+	if diagnostic {
+		rowSizes, rowConcurrencies = []uint64{shape.size}, []int{shape.concurrency}
+	}
+	for _, size := range rowSizes {
+		for _, concurrency := range rowConcurrencies {
 			for _, workload := range workloads {
-				if os.Getenv("P07_READ_DIAGNOSTIC") == "1" && (size != 65536 || concurrency != 16 || workload != "read") {
+				if diagnostic && !shape.matches(size, concurrency, workload) {
 					continue
 				}
 				r, err := runRow(ctx, pool, runID, size, concurrency, workload)
@@ -273,8 +360,17 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 	}
 
 	after, err := snapshotResources()
+	scratchAfter := scratchCounters(client)
+	stopBackground()
 	if err != nil {
 		return err
+	}
+	if stopTrace != nil {
+		stopErr := stopTrace()
+		stopTrace = nil
+		if stopErr != nil {
+			return stopErr
+		}
 	}
 	if stopCPUProfile != nil {
 		stopErr := stopCPUProfile()
@@ -369,7 +465,22 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 	}
 	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
 		output.Environment.GOMAXPROCS = runtime.GOMAXPROCS(0)
-		output.Diagnostic = &diagnosticMethodology{WarmupOperations: 128, ResourceScope: "warmup_and_measured_reads", ObjectSet: "p07-shared-read-0..15"}
+		output.Diagnostic = &diagnosticMethodology{WarmupOperations: shape.operationCount(readWarmupPerWorker), ResourceScope: "warmup_and_measured_reads", ObjectSet: shape.objectSet(), BackgroundCPUWorkers: backgroundWorkers}
+		output.Diagnostic.ReadAPI = "read"
+		output.Diagnostic.OperationsPerWorker = experiment.operations
+		output.Diagnostic.ScratchSlots = experiment.slots
+		output.Diagnostic.AdmissionWindow = experiment.window
+		output.Diagnostic.BackgroundAllocations = experiment.allocationLoad
+		if experiment.slots != 0 {
+			counters := scratchAfter
+			counters.Hits -= scratchBefore.Hits
+			counters.Misses -= scratchBefore.Misses
+			counters.Bypasses -= scratchBefore.Bypasses
+			output.Diagnostic.Scratch = &counters
+		}
+		if os.Getenv("P07_READ_INTO") == "1" {
+			output.Diagnostic.ReadAPI = "read_into"
+		}
 	}
 
 	encoder := json.NewEncoder(os.Stdout)
@@ -384,7 +495,11 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 
 	opPerWorker := 2
 	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
-		opPerWorker = 256
+		experiment, err := parseReadExperiment(os.Getenv("P07_OPERATIONS_PER_WORKER"), "", "", "", true)
+		if err != nil {
+			return row{}, err
+		}
+		opPerWorker = experiment.operations
 	}
 	totalOps, ok := safeMul(uint64(concurrency), uint64(opPerWorker))
 	if !ok {
@@ -396,7 +511,7 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 	}
 	objectName := func(workerID int) string {
 		if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
-			return fmt.Sprintf("p07-shared-read-%d", workerID)
+			return (readShape{size: size, concurrency: concurrency}).objectName(workerID)
 		}
 		return fmt.Sprintf("p07-go-%d-%d-%s-w%d", runID, size, workload, workerID)
 	}
@@ -434,9 +549,26 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 
 			obj := pool.Object(objectName(workerID))
 			payload := makePayload(size, runID, uint64(workerID))
+			var destination []byte
+			if os.Getenv("P07_READ_INTO") == "1" {
+				destination = make([]byte, int(size))
+			}
+			read := func(readCtx context.Context) ([]byte, error) {
+				release, err := acquireRead(readCtx)
+				if err != nil {
+					return nil, err
+				}
+				defer release()
+				if destination != nil {
+					count, _, err := obj.ReadInto(readCtx, 0, destination)
+					return destination[:count], err
+				}
+				data, _, err := obj.Read(readCtx, 0, size)
+				return data, err
+			}
 			if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
-				for warmup := 0; warmup < 8; warmup++ {
-					data, _, err := obj.Read(ctx, 0, size)
+				for warmup := 0; warmup < readWarmupPerWorker; warmup++ {
+					data, err := read(ctx)
 					if err != nil || !bytes.Equal(data, payload) {
 						once.Do(func() { errCh <- &benchError{message: "warmup read", err: err}; cancel() })
 						break
@@ -477,7 +609,7 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 						readCtx, timing = msgr.WithRequestTiming(ctx)
 						timings[index+i] = timing
 					}
-					data, _, err := obj.Read(readCtx, 0, size)
+					data, err := read(readCtx)
 					if timing != nil {
 						timing.Record("read_return", 0, time.Now())
 					}

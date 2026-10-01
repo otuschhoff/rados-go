@@ -38,6 +38,9 @@ func TestSessionDispatchSelectionNoControls(t *testing.T) {
 			owner := &sessionOwner{pending: test.pending}
 			for _, pending := range owner.pending {
 				pending.request = &submitCommand{}
+				if pending.sent {
+					owner.inFlight++
+				}
 			}
 			var want *pendingRequest
 			if test.want >= 0 {
@@ -63,7 +66,7 @@ func TestSessionDispatchSelectionControls(t *testing.T) {
 		if got := owner.nextPendingWrite(); got != want {
 			t.Fatalf("selected %p, want %p", got, want)
 		}
-		want.sent = true
+		markSessionPendingSent(owner, want)
 	}
 	if got := owner.nextPendingWrite(); got != nil {
 		t.Fatalf("selected sent request %p", got)
@@ -78,6 +81,7 @@ func TestSessionDispatchSelectionSaturatedReplay(t *testing.T) {
 	application := &pendingRequest{request: &submitCommand{ctx: context.Background()}, seq: 2}
 	control := &pendingRequest{request: &submitCommand{ctx: context.Background(), control: true}, seq: 3}
 	owner.pending = []*pendingRequest{inFlight, control, application}
+	owner.inFlight = 1
 	owner.controlCount = 1
 	owner.replay = []*pendingRequest{inFlight, application, control}
 	if got := owner.nextPendingWrite(); got != application {
@@ -180,7 +184,7 @@ func TestSessionInlineFaultPreservesMatchedReply(t *testing.T) {
 	owner.submit(request)
 	pending := owner.byRequest[request]
 	pending.seq = owner.takeSequence()
-	pending.sent = true
+	markSessionPendingSent(owner, pending)
 	pending.mayHaveExecuted = true
 	owner.replay = append(owner.replay, pending)
 	reply := testMessage("durable reply")

@@ -419,7 +419,7 @@ func (client *Client) FSID() string {
 
 func (client *Client) InstanceID() uint64 {
 	if authority := client.authority.Load(); authority != nil {
-		return authority.AuthMetadata().GlobalID
+		return authority.InstanceID()
 	}
 	return 0
 }

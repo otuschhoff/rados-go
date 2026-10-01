@@ -330,7 +330,15 @@ func (codec *SecureCodec) Read(reader io.Reader, limits Limits) (Frame, error) {
 	if firstPadded > secureInlineSize {
 		remainingCiphertextSize -= firstPadded - secureInlineSize + secureTagSize
 	}
-	remainingCiphertext := make([]byte, int(remainingCiphertextSize))
+	var remainingCiphertext []byte
+	if source, ok := reader.(interface{ receiveBacking(int) ([]byte, error) }); ok {
+		remainingCiphertext, err = source.receiveBacking(int(remainingCiphertextSize))
+		if err != nil {
+			return Frame{}, err
+		}
+	} else {
+		remainingCiphertext = make([]byte, int(remainingCiphertextSize))
+	}
 	if _, err := io.ReadFull(reader, remainingCiphertext); err != nil {
 		return Frame{}, fmt.Errorf("%w: secure remaining segments: %v", ErrMalformed, err)
 	}

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "benchmark_claim": false,
+  "qualification": "Unchanged; archive integrity and structural checks are not renewed performance qualification.",
+  "archive_index": {
+    "path": "docs/performance-p99-scheduler/archive-index.json",
+    "sha256": "f4777fb09ee95b1c31fe90bb767e6204b3b59f86684986dab0175df168abd3c5",
+    "external_index_byte_identical": true,
+    "bundles": 7,
+    "archive_bytes": 475378204,
+    "restored_files": 12538,
+    "published_checksum_entries": 12531,
+    "inventory_files": 7
+  },
+  "source_receipt": {
+    "path": "/tmp/rados-go-experiment-cache-restored-validation/validation-receipt.json",
+    "sha256": "19b3d44061779ac7f78eaf38424ef59319595a2578ccb93fa5b3d7ec7dad0342",
+    "availability": "Local receipt, not included in the archive index or committed here.",
+    "started_at": "2026-10-01T15:03:21.680Z",
+    "finished_at": "2026-10-01T15:06:49.810Z",
+    "restored_root": "/Users/oli/proj/rados-go-experiment-cache-restored-check-v1",
+    "scope": "v1 published inventory coverage, checksums, owning tools, parsed comparisons and available original bytes; not a full-analysis receipt for v2.",
+    "original_bytes_unchanged": true,
+    "exit_counts": {"zero": 42, "nonzero": 0, "unrecorded": 1, "partial_successes": 3, "successful_statuses": 39, "partial_statuses": 3},
+    "owning_tools": {"distinct": 7, "completed_invocations": 9, "successful_invocations": 9},
+    "original_artifacts": {"manifest_entries": 6571, "available_originals_reverified": 6417, "unavailable_original_bytes": 154, "hash_mismatches": 0},
+    "original_artifact_scope": "Immediate capture artifacts.sha256 inventories only; not complete published-file coverage. Omitted identities are not reverified bytes.",
+    "checksum_commands": ["shasum -a 256 -c PUBLISHED.sha256", "shasum -a 256 -c SHA256SUMS"],
+    "checksum_command_scope": "Executed in each v1 bundle; evidence uses SHA256SUMS, the other six use PUBLISHED.sha256.",
+    "owning_commands": [
+      "node integration/p07/scheduler-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/evidence/a",
+      "node integration/p07/scheduler-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/evidence/b",
+      "node integration/p07/scheduler-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/evidence/c",
+      "node integration/p07/batching-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/batching-evidence",
+      "node integration/p07/read-into-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/read-into-evidence",
+      "node integration/p07/inventory-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/inventory-evidence",
+      "node integration/p07/scale-summary.mjs /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/read-scale-evidence",
+      "node integration/p07/publish-request-path.mjs --verify /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/request-path-evidence",
+      "node integration/p07/publish-factorial.mjs --verify /Users/oli/proj/rados-go-experiment-cache-restored-check-v1/factorial-stall-evidence"
+    ],
+    "factorial_retry": "First attempt has no recorded exit; identical full command passed on the independent second attempt. Neither attempt is erased or counted as an invented first-attempt success."
+  },
+  "bundles": [
+    {"name": "batching-evidence", "archive_files": 700, "published_entries": 699, "compact_reports": 80, "reanalysis_reproducible": true, "original_manifest_entries": 204, "available_originals_reverified": 192, "unavailable_original_bytes": 12},
+    {"name": "evidence", "archive_files": 833, "published_entries": 832, "compact_reports": 108, "reanalysis_reproducible": "partial", "original_manifest_entries": 207, "available_originals_reverified": 117, "unavailable_original_bytes": 90},
+    {"name": "factorial-stall-evidence", "archive_files": 3247, "published_entries": 3246, "compact_reports": 132, "reanalysis_reproducible": true, "original_manifest_entries": 2880, "available_originals_reverified": 2874, "unavailable_original_bytes": 6},
+    {"name": "inventory-evidence", "archive_files": 1233, "published_entries": 1232, "compact_reports": 146, "reanalysis_reproducible": true, "original_manifest_entries": 264, "available_originals_reverified": 252, "unavailable_original_bytes": 12},
+    {"name": "read-into-evidence", "archive_files": 432, "published_entries": 431, "compact_reports": 50, "reanalysis_reproducible": true, "original_manifest_entries": 112, "available_originals_reverified": 106, "unavailable_original_bytes": 6},
+    {"name": "read-scale-evidence", "archive_files": 2775, "published_entries": 2774, "compact_reports": 329, "reanalysis_reproducible": true, "original_manifest_entries": 186, "available_originals_reverified": 178, "unavailable_original_bytes": 8},
+    {"name": "request-path-evidence", "archive_files": 3318, "published_entries": 3317, "compact_reports": 164, "reanalysis_reproducible": true, "original_manifest_entries": 2718, "available_originals_reverified": 2698, "unavailable_original_bytes": 20}
+  ],
+  "reanalysis_limits": [
+    "Initial evidence/a, evidence/b and evidence/c parsed nontrace summaries match; full summaries do not. Raw traces and decoded events were intentionally omitted. Six compressed original timing files were independently verified.",
+    "Factorial verification validates retained trace-analysis binding and source archive bytes, not regeneration of omitted decoded trace text. Six omitted binary identities are not available original bytes.",
+    "Request-path verification distinguishes 2772 available source entries from ten unavailable historical source versions; current source is not a substitute.",
+    "The other four owning analyzers reproduced parsed summaries exactly, with their omitted original artifacts separately counted.",
+    "Historical diagnostic-failed and instrumented statuses remain unchanged. No strict all-full reanalysis, remote backup, stable latency gate closure or native parity claim is established."
+  ],
+  "repaired_tool_v2": {
+    "evidence": "Successful coordinator command observed in the supplied terminal transcript, exit code 0; archive contents validated and freshly restored with the repaired tool, not owning-analyzer reanalysis on v2.",
+    "restored_root": "/Users/oli/proj/rados-go-experiment-cache-restored-check-v2",
+    "coordinator_command": "GOTOOLCHAIN=go1.27.1 go test -race ./tools/experiment-cache && GOTOOLCHAIN=go1.27.1 go run ./tools/experiment-cache verify --index docs/performance-p99-scheduler/archive-index.json --cache-dir /Users/oli/proj/rados-go-experiment-cache && GOTOOLCHAIN=go1.27.1 go run ./tools/experiment-cache restore --index docs/performance-p99-scheduler/archive-index.json --cache-dir /Users/oli/proj/rados-go-experiment-cache --dest /Users/oli/proj/rados-go-experiment-cache-restored-check-v2 && git check-ignore docs/performance-p99-scheduler/factorial-stall-evidence/summary.json docs/performance-p99-scheduler/evidence/manifest.json .DS_Store && git ls-files --others --exclude-standard | wc -l && git diff --check"
+  },
+  "current_checks": {
+    "cache_tool": {
+      "command": "GOTOOLCHAIN=go1.27.1 go test -race -json ./tools/experiment-cache",
+      "status": "passed",
+      "top_level_tests": 17,
+      "tests_including_subtests": 38,
+      "failures": 0,
+      "editor_test_run": {"passed": 38, "failed": 0},
+      "scope": "Existing cache tool suite only; not repository-wide tests."
+    },
+    "catalog": {
+      "command": "node (assert/strict script supplied on stdin)",
+      "status": "passed",
+      "kind": "Five ad hoc mechanical assertion groups, not five committed parsing tests.",
+      "checks": [
+        "Catalog archive reference resolves to the exact indexed file; external index has the same standard SHA-256.",
+        "Catalog bundle set equals the seven indexed bundles.",
+        "Compact experiment and bundle identities, report_count and row_count agree with table rows.",
+        "All 1009 unique per-bundle report paths resolve to archived originals; file and decoded SHA-256 match and decoded JSON parses, including 296 gzip reports.",
+        "All 594 file/decoded source-reference digests in catalog experiments and compact captures match v2 restored bytes using standard SHA-256."
+      ],
+      "reports": 1009,
+      "gzip_reports": 296,
+      "source_reference_digest_checks": 594,
+      "scope": "Path, count, digest and JSON parsing checks only; not full compact numeric projection validation or renewed owning-analyzer qualification."
+    }
+  }
+}

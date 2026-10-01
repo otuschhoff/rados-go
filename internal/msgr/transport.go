@@ -26,6 +26,7 @@ type connTransport struct {
 	closed    bool
 	writeMu   sync.Mutex
 	closeOnce sync.Once
+	scratch   receiveScratch
 }
 
 // NewConnTransport binds a network connection to one messenger codec.
@@ -87,10 +88,13 @@ func (transport *connTransport) ReadFrameWithBudget(budget *ReceiveBudget, limit
 	lease.budget = budget
 	reservation.reader.Reader = transport.reader
 	reservation.reader.lease = lease
+	if _, secure := transport.codec.(*SecureCodec); secure {
+		reservation.reader.scratch = &transport.scratch
+	}
 	frame, err := transport.codec.Read(&reservation.reader, limits)
 	reservation.reader.Reader = nil
 	if err != nil {
-		lease.release()
+		lease.reclaim()
 		return Frame{}, err
 	}
 	frame.receiveLease = lease
@@ -136,6 +140,7 @@ func (transport *connTransport) Close() error {
 		defer transport.readMu.Unlock()
 		transport.closed = true
 		transport.reader = nil
+		transport.scratch.close()
 	})
 	return err
 }

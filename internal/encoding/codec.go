@@ -32,6 +32,13 @@ func NewEncoder(maxBytes uint32) *Encoder {
 	return &Encoder{max: uint64(maxBytes)}
 }
 
+// NewEncoderWithCapacity uses a hint capped by maxBytes and 4 KiB. The hint
+// affects only initial capacity, not the output limit.
+func NewEncoderWithCapacity(maxBytes uint32, capacityHint uint64) *Encoder {
+	capacity := min(capacityHint, uint64(maxBytes), 4096)
+	return &Encoder{buf: make([]byte, 0, int(capacity)), max: uint64(maxBytes)}
+}
+
 func (e *Encoder) reserve(size uint64) bool {
 	if e.err != nil {
 		return false
@@ -94,12 +101,16 @@ func (e *Encoder) Bytes(value []byte) {
 func (e *Encoder) String(value string) { e.Bytes([]byte(value)) }
 
 // Versioned encodes a Ceph struct_v/struct_compat/payload_len envelope.
+// The payload is copied into the parent; the child retains its output and later
+// child writes cannot modify the parent's envelope.
 func (e *Encoder) Versioned(version, compat uint8, encode func(*Encoder)) {
 	payload := NewEncoder(uint32(min(e.max, math.MaxUint32)))
 	encode(payload)
-	data, err := payload.BytesResult()
+	data, err := payload.buf, payload.err
 	if err != nil {
-		e.err = err
+		if e.err == nil {
+			e.err = err
+		}
 		return
 	}
 	e.Uint8(version)
@@ -113,6 +124,22 @@ func (e *Encoder) BytesResult() ([]byte, error) {
 		return nil, e.err
 	}
 	return append([]byte(nil), e.buf...), nil
+}
+
+// TakeBytesResult transfers the output buffer and detaches it from the encoder,
+// even on error. Later encoder use cannot change returned bytes. The output
+// limit and sticky error remain unchanged; successful later writes start a new
+// value. Empty output returns nil. BytesResult continues to return a copy.
+func (e *Encoder) TakeBytesResult() ([]byte, error) {
+	data := e.buf
+	e.buf = nil
+	if e.err != nil {
+		return nil, e.err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+	return data[:len(data):len(data)], nil
 }
 
 // Decoder reads one bounded wire value without retaining caller-owned input.

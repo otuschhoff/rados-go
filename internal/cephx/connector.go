@@ -119,6 +119,15 @@ func (connector *Connector) AuthMetadata() AuthMetadata {
 	return AuthMetadata{GlobalID: connector.state.globalID, Method: AuthMethodCephX, Mode: connector.state.mode, Tickets: sanitizeTickets(connector.state.tickets)}
 }
 
+func (connector *Connector) InstanceID() uint64 {
+	connector.mu.Lock()
+	defer connector.mu.Unlock()
+	if connector.state.mode == 0 {
+		return 0
+	}
+	return connector.state.globalID
+}
+
 // NeedsRenewal reports whether a retained service ticket is absent, expired, or due for renewal.
 func (connector *Connector) NeedsRenewal(serviceID uint32, now time.Time) bool {
 	connector.mu.Lock()

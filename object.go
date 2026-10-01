@@ -296,6 +296,22 @@ func (object ObjectRef) Read(ctx context.Context, offset, length uint64) ([]byte
 	return result.Data, ObjectInfo{Version: result.Version}, nil
 }
 
+// ReadInto reads up to len(destination) bytes at offset. On success, only
+// destination[:n] is changed. On error, destination is unchanged. No writes
+// occur after return; the caller must not access destination during the call.
+func (object ObjectRef) ReadInto(ctx context.Context, offset uint64, destination []byte) (int, ObjectInfo, error) {
+	objects, operationCtx, cancel, err := object.begin(ctx)
+	if err != nil {
+		return 0, ObjectInfo{}, object.wrapBeginError("read into", err)
+	}
+	defer cancel()
+	result, err := objects.ReadInto(operationCtx, object.target(), offset, destination)
+	if err != nil {
+		return 0, ObjectInfo{}, object.pool.client.wrapError("read into", object.safeTarget(), err)
+	}
+	return len(result.Data), ObjectInfo{Version: result.Version}, nil
+}
+
 func (object ObjectRef) SparseRead(ctx context.Context, offset, length uint64) ([]SparseExtent, ObjectInfo, error) {
 	if length > math.MaxInt32 || length > math.MaxUint64-offset {
 		return nil, ObjectInfo{}, object.invalidOperation("sparse read")

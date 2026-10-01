@@ -21,6 +21,17 @@ The current public API includes:
 - bounded subscriptions to authoritative MON/OSD map changes and locally
 	observed monitor/OSD session availability.
 
+`ObjectRef.ReadInto(ctx, offset, destination)` reads into a caller-owned buffer.
+Successful short reads leave the unused tail unchanged; errors leave the whole
+buffer unchanged, and no writes occur after return. Do not access the buffer
+during the call. Built-in secure connections reuse bounded backing for moderate
+record sizes; larger reads, CRC and custom transports use a copy fallback.
+Ordinary `Read` remains preferable when an owned result is suitable. See
+[measurements and limits](docs/performance-p99-scheduler/READ_INTO_RESULTS.md).
+The secure receive inventory retains up to four free buffers per connection,
+within the configured aggregate receive budget. See the
+[inventory and host-load results](docs/performance-p99-scheduler/INVENTORY_RESULTS.md).
+
 Live phase reports through P11 use Ceph 20.2.4 at commit
 `7f793731f1b39eb4f465e960113d2363c311b964`. That evidence does not certify
 other Ceph releases or every cluster topology. See the
