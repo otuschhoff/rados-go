@@ -1,9 +1,13 @@
 package main
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -57,9 +61,55 @@ func TestGenerateIsReproducibleAndModuleIsBounded(t *testing.T) {
 	}
 	defer reader.Close()
 	for _, entry := range reader.File {
+		if entry.Method != zip.Store {
+			t.Fatalf("module entry %q uses toolchain-dependent compression", entry.Name)
+		}
 		if strings.Contains(entry.Name, "integration/") || strings.Contains(entry.Name, "tools/") || strings.Contains(entry.Name, "native.c") {
 			t.Fatalf("module archive contains excluded infrastructure %q", entry.Name)
 		}
+	}
+}
+
+func TestSourceArchiveStoredBlocksRoundTrip(t *testing.T) {
+	for _, size := range []int{0, 1, 65534, 65535, 65536, 131070} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			payload := bytes.Repeat([]byte("a"), size)
+			output := filepath.Join(t.TempDir(), "source.tar.gz")
+			if err := writeSourceArchive(output, "rados-go-v1.2.3", []sourceFile{{path: "payload", data: payload}}); err != nil {
+				t.Fatal(err)
+			}
+			encoded, err := os.ReadFile(output)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(encoded[:10], []byte{0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 255}) || !bytes.Equal(encoded[len(encoded)-13:len(encoded)-8], []byte{1, 0, 0, 255, 255}) {
+				t.Fatal("gzip framing is not canonical")
+			}
+			reader, err := gzip.NewReader(bytes.NewReader(encoded))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer reader.Close()
+			decoded, err := io.ReadAll(reader)
+			if err != nil {
+				t.Fatalf("gzip integrity check failed: %v", err)
+			}
+			archive := tar.NewReader(bytes.NewReader(decoded))
+			header, err := archive.Next()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if header.Name != "rados-go-v1.2.3/payload" || header.Size != int64(size) || header.Mode != 0o644 {
+				t.Fatalf("unexpected tar header: %+v", header)
+			}
+			contents, err := io.ReadAll(archive)
+			if err != nil || !bytes.Equal(contents, payload) {
+				t.Fatalf("tar payload mismatch: %v", err)
+			}
+			if _, err := archive.Next(); err != io.EOF {
+				t.Fatalf("unexpected trailing tar entry: %v", err)
+			}
+		})
 	}
 }
 

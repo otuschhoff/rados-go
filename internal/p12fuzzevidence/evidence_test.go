@@ -35,12 +35,17 @@ func TestValidateRejectsInexactEvidence(t *testing.T) {
 		"duplicate or order":    func(value *Report) { value.Targets[1] = value.Targets[0] },
 		"substituted command":   func(value *Report) { value.Targets[0].Command += " -count=1" },
 		"substituted toolchain": func(value *Report) { value.Targets[0].Toolchain = "go1.27.0" },
-		"substituted platform":  func(value *Report) { value.Targets[0].Platform = "linux/amd64" },
-		"linux host platform":   func(value *Report) { value.Platform = "linux/amd64" },
-		"substituted budget":    func(value *Report) { value.Targets[0].Budget = "60s" },
-		"output hash":           func(value *Report) { value.Targets[0].OutputSHA256 = strings.Repeat("0", 64) },
-		"outside envelope":      func(value *Report) { value.Targets[0].StartedAt = "2026-09-16T09:59:59Z" },
-		"zero target duration":  func(value *Report) { value.Targets[0].FinishedAt = value.Targets[0].StartedAt },
+		"substituted platform": func(value *Report) {
+			value.Targets[0].Platform = "linux/amd64"
+			if value.Platform == "linux/amd64" {
+				value.Targets[0].Platform = "darwin/arm64"
+			}
+		},
+		"unsupported host platform": func(value *Report) { value.Platform = "windows/amd64" },
+		"substituted budget":        func(value *Report) { value.Targets[0].Budget = "60s" },
+		"output hash":               func(value *Report) { value.Targets[0].OutputSHA256 = strings.Repeat("0", 64) },
+		"outside envelope":          func(value *Report) { value.Targets[0].StartedAt = "2026-09-16T09:59:59Z" },
+		"zero target duration":      func(value *Report) { value.Targets[0].FinishedAt = value.Targets[0].StartedAt },
 		"short target duration": func(value *Report) {
 			started, _ := time.Parse(time.RFC3339Nano, value.Targets[0].StartedAt)
 			value.Targets[0].FinishedAt = Timestamp(started.Add(p12fuzzcontract.CertifyingBudget - time.Nanosecond))

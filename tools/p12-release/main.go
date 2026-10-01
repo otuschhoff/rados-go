@@ -4,13 +4,15 @@ package main
 import (
 	"archive/tar"
 	"archive/zip"
-	"compress/gzip"
+	"bytes"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"hash/crc32"
 	"io/fs"
 	"os"
 	"path"
@@ -219,12 +221,8 @@ func writeSourceArchive(output, prefix string, files []sourceFile) (returnErr er
 		return fmt.Errorf("create source archive: %w", err)
 	}
 	defer func() { returnErr = errors.Join(returnErr, file.Close()) }()
-	gzipWriter, err := gzip.NewWriterLevel(file, gzip.BestCompression)
-	if err != nil {
-		return err
-	}
-	gzipWriter.Header = gzip.Header{ModTime: time.Unix(0, 0).UTC(), OS: 255}
-	tarWriter := tar.NewWriter(gzipWriter)
+	var archive bytes.Buffer
+	tarWriter := tar.NewWriter(&archive)
 	for _, item := range files {
 		header := &tar.Header{Name: prefix + "/" + item.path, Mode: 0o644, Size: int64(len(item.data)), ModTime: time.Unix(0, 0).UTC(), Typeflag: tar.TypeReg, Format: tar.FormatPAX}
 		if err := tarWriter.WriteHeader(header); err != nil {
@@ -234,7 +232,32 @@ func writeSourceArchive(output, prefix string, files []sourceFile) (returnErr er
 			return err
 		}
 	}
-	return errors.Join(tarWriter.Close(), gzipWriter.Close())
+	if err := tarWriter.Close(); err != nil {
+		return err
+	}
+	data := archive.Bytes()
+	if _, err := file.Write([]byte{0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 255}); err != nil {
+		return err
+	}
+	for remaining := data; len(remaining) > 0; {
+		blockSize := min(len(remaining), 65535)
+		var header [5]byte
+		binary.LittleEndian.PutUint16(header[1:3], uint16(blockSize))
+		binary.LittleEndian.PutUint16(header[3:5], ^uint16(blockSize))
+		if _, err := file.Write(header[:]); err != nil {
+			return err
+		}
+		if _, err := file.Write(remaining[:blockSize]); err != nil {
+			return err
+		}
+		remaining = remaining[blockSize:]
+	}
+	var trailer [13]byte
+	copy(trailer[:5], []byte{1, 0, 0, 255, 255})
+	binary.LittleEndian.PutUint32(trailer[5:9], crc32.ChecksumIEEE(data))
+	binary.LittleEndian.PutUint32(trailer[9:13], uint32(len(data)))
+	_, err = file.Write(trailer[:])
+	return err
 }
 
 func writeModuleArchive(output, version string, files []sourceFile) (returnErr error) {
@@ -246,7 +269,7 @@ func writeModuleArchive(output, version string, files []sourceFile) (returnErr e
 	writer := zip.NewWriter(file)
 	prefix := modulePath + "@" + version + "/"
 	for _, item := range files {
-		header := &zip.FileHeader{Name: prefix + item.path, Method: zip.Deflate}
+		header := &zip.FileHeader{Name: prefix + item.path, Method: zip.Store}
 		header.SetMode(0o644)
 		header.Modified = time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)
 		entry, err := writer.CreateHeader(header)

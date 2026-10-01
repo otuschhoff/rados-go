@@ -29,6 +29,10 @@ artifacts complete. The candidate binds the passed qualification and release
 bytes, but always records `reviews` as `null`. Quick reports record both
 `qualification` and `reviews` as `null` and remain non-certifying.
 
+Release archives use fixed stored-block gzip framing and stored ZIP entries.
+This avoids compressor changes between Go versions affecting artifact hashes;
+the tradeoff is larger archives. Timestamps, file modes, and ordering remain fixed.
+
 ## Exact-Candidate Fuzz Evidence
 
 P12 fuzz evidence runs every current fuzz target in the immutable shared Go

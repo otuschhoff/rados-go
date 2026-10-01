@@ -10,7 +10,7 @@ const (
 	ImageAMD64  = "quay.io/ceph/ceph@sha256:09ee90f6f3e0c7b9954f71d214ee05e9bbaaaea3716b1dd619603283b829f8b8"
 	ImageARM64  = "quay.io/ceph/ceph@sha256:6e6bc7b28fa1b334108a3646af5533dfb50db508efdf5b358eb7dd0dd37a48aa"
 	Staticcheck = "v0.8.1"
-	Govulncheck = "v1.1.4"
+	Govulncheck = "v1.8.0"
 )
 
 type Pins struct {

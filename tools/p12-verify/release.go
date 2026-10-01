@@ -258,7 +258,7 @@ func validateModuleZip(data []byte, prefix string, sources []releaseSource) erro
 		}
 		entry := reader.File[index]
 		index++
-		if entry.Mode() != 0o644 || entry.Method != zip.Deflate || !entry.Modified.Equal(time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)) || entry.Comment != "" || !slices.Equal(entry.Extra, canonicalExtra) || entry.NonUTF8 {
+		if entry.Mode() != 0o644 || entry.Method != zip.Store || !entry.Modified.Equal(time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC)) || entry.Comment != "" || !slices.Equal(entry.Extra, canonicalExtra) || entry.NonUTF8 {
 			return entry.Name, nil, fmt.Errorf("noncanonical zip metadata: mode=%v method=%d modified=%s comment=%q extra=%x non_utf8=%t", entry.Mode(), entry.Method, entry.Modified.Format(time.RFC3339Nano), entry.Comment, entry.Extra, entry.NonUTF8)
 		}
 		file, err := entry.Open()

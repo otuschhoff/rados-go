@@ -309,7 +309,7 @@ func (worker *runner) measure(opts options) error {
 		return err
 	}
 	if strings.TrimSpace(string(headAfter)) != worker.report.HEAD {
-		return errors.New("Git HEAD changed during evidence run")
+		return errors.New("git HEAD changed during evidence run")
 	}
 	worker.report.SourceVerified = true
 	return nil

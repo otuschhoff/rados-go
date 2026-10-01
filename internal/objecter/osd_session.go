@@ -524,14 +524,6 @@ func (session *osdSession) receive() {
 	}
 }
 
-func (session *osdSession) update(change func()) {
-	session.mu.Lock()
-	change()
-	close(session.changed)
-	session.changed = make(chan struct{})
-	session.mu.Unlock()
-}
-
 func (session *osdSession) fail(err error) {
 	if err == nil {
 		err = errors.New("OSD session failed")

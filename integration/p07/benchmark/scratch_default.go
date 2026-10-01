@@ -7,7 +7,10 @@ import (
 	rados "github.com/otuschhoff/rados-go"
 )
 
-func configureScratch(*rados.Client, int) error {
+func configureScratch(_ *rados.Client, slots int) error {
+	if slots == 0 {
+		return nil
+	}
 	return fmt.Errorf("scratch experiments require p12diagnostics build tag")
 }
 

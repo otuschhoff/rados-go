@@ -1551,13 +1551,6 @@ func (owner *sessionOwner) writePump(generation uint64, transport Transport, tas
 	}
 }
 
-func (owner *sessionOwner) reportFault(fault pumpFault) {
-	select {
-	case owner.faults <- fault:
-	case <-owner.session.done:
-	}
-}
-
 func (owner *sessionOwner) connectorPump(ctx context.Context, connector Connector) {
 	defer owner.pumpWG.Done()
 	for {

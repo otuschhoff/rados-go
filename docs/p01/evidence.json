@@ -2,7 +2,7 @@
   "schema_version": 1,
   "quality_tools": {
     "staticcheck": "v0.8.1",
-    "govulncheck": "v1.1.4"
+    "govulncheck": "v1.8.0"
   },
   "fuzz": {
     "smoke_per_target": "60s",
