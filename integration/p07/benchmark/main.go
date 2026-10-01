@@ -124,21 +124,23 @@ func main() {
 	var fsid string
 	var poolName string
 	var transport string
+	var entity string
 
 	flag.StringVar(&monitorsArg, "monitors", "", "comma-separated monitor endpoints")
-	flag.StringVar(&keyFile, "key-file", "", "path to cephx key for client.p07")
+	flag.StringVar(&keyFile, "key-file", "", "path to cephx key or keyring")
+	flag.StringVar(&entity, "entity", "client.p07", "cephx client entity")
 	flag.StringVar(&fsid, "fsid", "", "cluster fsid")
 	flag.StringVar(&poolName, "pool", "", "pool name")
 	flag.StringVar(&transport, "transport", "", "secure|crc")
 	flag.Parse()
 
-	if err := run(monitorsArg, keyFile, fsid, poolName, transport); err != nil {
+	if err := run(monitorsArg, keyFile, fsid, poolName, transport, entity); err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		os.Exit(1)
 	}
 }
 
-func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr error) {
+func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (resultErr error) {
 	if err := validateOfferedObservationConfig(os.Getenv); err != nil {
 		return err
 	}
@@ -177,6 +179,12 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 	if len(key) == 0 {
 		return &benchError{message: "empty -key-file"}
 	}
+	if key[0] == '[' {
+		key, err = rados.LoadKeyring(keyFile, entity)
+		if err != nil {
+			return &benchError{message: "load -key-file keyring", err: err}
+		}
+	}
 	if poolName == "" {
 		return &benchError{message: "missing -pool"}
 	}
@@ -187,7 +195,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport string) (resultErr erro
 
 	client, err := rados.New(rados.Config{
 		Monitors:         monitors,
-		Entity:           "client.p07",
+		Entity:           entity,
 		ClusterFSID:      fsid,
 		Key:              key,
 		SecurityMode:     securityMode,

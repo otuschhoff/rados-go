@@ -9,7 +9,7 @@ test('wrapper retains failures, validates factorial, is read-only by default and
   const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'p07-live-stub-'));
   const tools = path.join(temporary, 'tools'); fs.mkdirSync(tools);
   const tool = (name, content) => { const file = path.join(tools, name); fs.writeFileSync(file, content, { mode: 0o700 }); return file; };
-  tool('uname', '#!/bin/sh\nprintf "Linux x86_64 stub\\n"\n');
+  tool('uname', '#!/bin/sh\nprintf "Linux 7.0.14-19-pve x86_64\\n"\n');
   tool('getconf', '#!/bin/sh\nprintf "10\\n"\n');
   tool('go', '#!/bin/sh\nif [ "$1" = build ]; then cp "' + path.join(tools, 'benchmark') + '" "$4"; fi\nprintf "go version go1.27.1 linux/amd64\\n"\n');
   const binary = tool('benchmark', `#!/bin/sh
@@ -28,9 +28,11 @@ exit 7
     const build = JSON.parse(fs.readFileSync(path.join(buildCapture, 'build-go.exit.json')));
     assert.ok(!build.args.includes('-tags'));
     const capture = path.join(temporary, 'capture');
-    const result = execute(capture);
+    const result = execute(capture, ['--entity', 'client.amakura']);
     assert.equal(result.status, 1, result.stderr);
     const summary = JSON.parse(result.stdout);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(capture, 'measurement.json'))).entity, 'client.amakura');
+    assert.deepEqual(summary.results.find(entry => entry.name === 'primary-cpu-1').args.slice(-2), ['-entity', 'client.amakura']);
     assert.equal(summary.results.filter(entry => entry.exit_code === 7).length, 2);
     assert.ok(!summary.results.some(entry => entry.name.endsWith('-validation')));
     assert.ok(!fs.existsSync(path.join(capture, 'seed.stdout')));
@@ -321,12 +323,13 @@ for (const report of ['not JSON', '{"environment":{"GOOS":"darwin","GOARCH":"amd
   test(`closed-loop invalid zero-exit report fails capture: ${report}`, context => {
     const setup = fixture(context, report);
     assert.equal(setup.prepare(['--build-native']).status, 0);
-    const result = setup.measure(['--closed-loop', '--native-binary', path.join(setup.buildCapture, 'native-benchmark'), '--native-conf', setup.conf, '--native-keyring', setup.key]);
+    const result = setup.measure(['--closed-loop', '--entity', 'client.amakura', '--native-binary', path.join(setup.buildCapture, 'native-benchmark'), '--native-conf', setup.conf, '--native-keyring', setup.key]);
     assert.equal(result.status, 1, result.stdout + result.stderr);
     assert.equal(result.summary.status, 'failed');
     assert.equal(result.summary.results.find(entry => entry.name === 'closed-go-1').exit_code, 0);
     assert.equal(result.summary.results.find(entry => entry.name === 'closed-go-1-validation').exit_code, 1);
     assert.ok(result.summary.results.some(entry => entry.name === 'closed-native-1'));
+    assert.equal(result.summary.results.find(entry => entry.name === 'closed-native-1').args.at(-1), 'client.amakura');
     const output = JSON.parse(fs.readFileSync(path.join(result.capture, 'closed-go-1.report.json')));
     assert.equal(output.valid, false);
     if (report !== 'not JSON') assert.match(output.error, /report runtime must be Linux amd64 with ten active Ps/);

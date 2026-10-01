@@ -39,6 +39,17 @@ backoff control-progress fix; see the [Phase 1 results](../performance-phase1/RE
 
 ## Current Diagnostic Follow-Up
 
+The [external Linux retest of 2026-10-01](LIVE_RETEST_20261001.md) records
+36 passing primary legs and twelve separate passing observed legs in each of
+readcache and test-3x. Initial test-3x Ceph `EPERM` failures remain historical;
+the authorized rerun passed. This is not native parity or closure of the
+Phase 4 latency gate.
+
+The later matched Ceph v20.2.4 closed-loop comparison in that report completed
+forty valid read legs with Go/native median p99 ratios 0.899 (test-3x) and
+0.957 (readcache). Native offered-load parity is still unmeasured; ancillary
+manager-statistics denials leave the raw capture metadata incomplete.
+
 The factorial follow-up separates CPU and allocation load into `none`, `cpu`,
 `alloc` and `both` cases. Arrival-phase decomposition distinguishes scheduled
 arrival/delivery delay, queue/read-entry delay, read/transport intervals and

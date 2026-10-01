@@ -14,6 +14,7 @@
 typedef void *rados_t;
 typedef void *rados_ioctx_t;
 
+typedef void (*version_fn)(int *, int *, int *);
 typedef int (*create2_fn)(rados_t *, const char *, const char *, uint64_t);
 typedef int (*conf_read_file_fn)(rados_t, const char *);
 typedef int (*conf_set_fn)(rados_t, const char *, const char *);
@@ -27,6 +28,7 @@ typedef int (*remove_fn)(rados_ioctx_t, const char *);
 
 struct api {
 	void *library;
+	version_fn version;
 	create2_fn create2;
 	conf_read_file_fn conf_read_file;
 	conf_set_fn conf_set;
@@ -94,6 +96,21 @@ static int read_diagnostic(void) {
 	return value != NULL && strcmp(value, "1") == 0;
 }
 
+static int read_operations_per_worker(void) {
+	const char *value = getenv("P07_OPERATIONS_PER_WORKER");
+	if (value == NULL || value[0] == '\0') {
+		return read_diagnostic() ? 256 : 2;
+	}
+	char *end = NULL;
+	errno = 0;
+	long count = strtol(value, &end, 10);
+	if (!read_diagnostic() || errno != 0 || end == value || *end != '\0' || count < 256 || count > 4096) {
+		fprintf(stderr, "native benchmark: operations per worker requires diagnostic mode and 256..4096\n");
+		return -1;
+	}
+	return (int)count;
+}
+
 static int format_object_name(char *buffer, size_t buffer_size, uint64_t run_id, uint64_t size_bytes,
 	enum workload_kind workload, int worker_id) {
 	if (read_diagnostic()) {
@@ -124,6 +141,7 @@ static struct api load_api(void) {
 		fprintf(stderr, "native benchmark: load librados.so.2: %s\n", dlerror());
 		exit(2);
 	}
+	BIND(&result, version);
 	BIND(&result, create2);
 	BIND(&result, conf_read_file);
 	BIND(&result, conf_set);
@@ -396,7 +414,10 @@ static int checked_mul_u64(uint64_t left, uint64_t right, uint64_t *out) {
 
 static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64_t size_bytes, int concurrency,
 	enum workload_kind workload, struct row_result *result) {
-	const int op_per_worker = read_diagnostic() ? 256 : 2;
+	const int op_per_worker = read_operations_per_worker();
+	if (op_per_worker < 0) {
+		return -1;
+	}
 	uint64_t operations = 0;
 	uint64_t bytes = 0;
 	if (checked_mul_u64((uint64_t)concurrency, (uint64_t)op_per_worker, &operations) != 0 ||
@@ -548,16 +569,20 @@ static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64
 }
 
 int main(int argc, char **argv) {
-	if (argc != 5) {
-		fprintf(stderr, "usage: %s CONF KEYRING POOL TRANSPORT\n", argv[0]);
+	if (argc != 5 && argc != 6) {
+		fprintf(stderr, "usage: %s CONF KEYRING POOL TRANSPORT [ENTITY]\n", argv[0]);
 		return 2;
 	}
 	const char *conf = argv[1];
 	const char *keyring = argv[2];
 	const char *pool_name = argv[3];
 	const char *transport = argv[4];
+	const char *entity = argc == 6 ? argv[5] : "client.p07";
 	if (strcmp(transport, "secure") != 0 && strcmp(transport, "crc") != 0) {
 		fprintf(stderr, "native benchmark: TRANSPORT must be secure or crc\n");
+		return 2;
+	}
+	if (read_operations_per_worker() < 0) {
 		return 2;
 	}
 
@@ -565,7 +590,7 @@ int main(int argc, char **argv) {
 	rados_t cluster = NULL;
 	rados_ioctx_t ioctx = NULL;
 
-	if (check_result(api.create2(&cluster, "ceph", "client.p07", 0), "create cluster") != 0) {
+	if (check_result(api.create2(&cluster, "ceph", entity, 0), "create cluster") != 0) {
 		dlclose(api.library);
 		return 1;
 	}
@@ -704,9 +729,11 @@ int main(int argc, char **argv) {
 	printf("\"implementation\":\"native\",");
 	printf("\"transport\":\"%s\",", transport);
 	if (read_diagnostic()) {
-		printf("\"diagnostic\":{\"warmup_operations\":128,\"resource_scope\":\"warmup_and_measured_reads\",\"object_set\":\"p07-shared-read-0..15\"},");
+		printf("\"diagnostic\":{\"warmup_operations\":128,\"operations_per_worker\":%d,\"resource_scope\":\"warmup_and_measured_reads\",\"object_set\":\"p07-shared-read-0..15\"},", read_operations_per_worker());
 	}
-	printf("\"environment\":{\"library\":\"librados.so.2\"},");
+	int version_major, version_minor, version_patch;
+	api.version(&version_major, &version_minor, &version_patch);
+	printf("\"environment\":{\"library\":\"librados.so.2\",\"library_api_version\":\"%d.%d.%d\"},", version_major, version_minor, version_patch);
 	printf("\"resources\":{");
 	printf("\"cpu_user_ns\":%" PRIu64 ",", cpu_user_ns);
 	printf("\"cpu_system_ns\":%" PRIu64 ",", cpu_system_ns);

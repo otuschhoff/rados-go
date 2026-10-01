@@ -7,9 +7,9 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
-const options = { repetitions: '3', rate: '1000', cases: 'none,cpu,alloc,both', 'trace-debug-max-buffer-mb': '1024' };
+const options = { entity: 'client.p07', repetitions: '3', rate: '1000', cases: 'none,cpu,alloc,both', 'trace-debug-max-buffer-mb': '1024' };
 const switches = new Set(['prepare', 'seed', 'observe', 'closed-loop', 'build-native']);
-const values = new Set(['capture', 'build-capture', 'binary', 'monitors', 'fsid', 'key-file', 'pool', 'repetitions', 'rate', 'cases', 'native-binary', 'native-conf', 'native-keyring', 'trace-debug-max-buffer-mb']);
+const values = new Set(['entity', 'capture', 'build-capture', 'binary', 'monitors', 'fsid', 'key-file', 'pool', 'repetitions', 'rate', 'cases', 'native-binary', 'native-conf', 'native-keyring', 'trace-debug-max-buffer-mb']);
 let capture, sourceBefore, binaryBefore, nativeBefore;
 const results = [];
 const root = process.cwd();
@@ -121,6 +121,7 @@ try {
   if (!fs.existsSync(path.join(root, 'integration/p07/benchmark/main.go'))) throw new Error('run from repository root');
   if (!options.prepare) {
     for (const name of ['build-capture', 'binary', 'monitors', 'fsid', 'key-file', 'pool']) if (!options[name]) throw new Error(`missing --${name}`);
+    if (!/^client\.[A-Za-z0-9_.-]+$/.test(options.entity)) throw new Error('invalid client entity');
     if (!path.isAbsolute(options['build-capture']) || path.normalize(options['build-capture']) !== options['build-capture']) throw new Error('--build-capture must be a clean absolute path');
     if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(options.fsid)) throw new Error('invalid cluster fsid');
     if (!/^[A-Za-z0-9_.-]+$/.test(options.pool) || options.monitors.split(',').some(value => !value.trim() || /\s/.test(value))) throw new Error('invalid pool or monitors');
@@ -147,7 +148,7 @@ try {
   requireSuccess(run('go-version', 'go', ['version']), 'Go toolchain unavailable');
   writeJSON('host.json', { platform: os.platform(), arch: os.arch(), cpus: os.cpus().map(cpu => ({ model: cpu.model, speed: cpu.speed })), available_parallelism: os.availableParallelism(), total_memory_bytes: os.totalmem(), node_version: process.version });
   if (!options.prepare) {
-    if (!/^Linux\s+x86_64\s+/.test(uname.stdout.trim())) throw new Error('measurements require a Linux amd64 host');
+    if (!/^Linux\s+/.test(uname.stdout.trim()) || !/\bx86_64\b/.test(uname.stdout)) throw new Error('measurements require a Linux amd64 host');
     const processors = run('host-processors', 'getconf', ['_NPROCESSORS_ONLN']);
     requireSuccess(processors, 'cannot identify processor count');
     if (Number(processors.stdout.trim()) < 10 || !Number.isInteger(Number(processors.stdout.trim()))) throw new Error('host needs at least ten processors; verify CPU affinity and quota separately');
@@ -159,7 +160,7 @@ try {
     options.binary = path.join(capture, 'build_linuxamd64');
     requireSuccess(run('build-go', 'go', ['build', '-trimpath', '-o', options.binary, './integration/p07/benchmark'], { GOOS: 'linux', GOARCH: 'amd64', CGO_ENABLED: '0' }), 'Go build failed');
     if (options['build-native']) {
-      if (!/^Linux\s+x86_64\s+/.test(uname.stdout.trim())) throw new Error('native build requires Linux amd64 C toolchain');
+      if (!/^Linux\s+/.test(uname.stdout.trim()) || !/\bx86_64\b/.test(uname.stdout)) throw new Error('native build requires Linux amd64 C toolchain');
       options['native-binary'] = path.join(capture, 'native-benchmark');
       requireSuccess(run('build-native', 'cc', ['-std=c11', '-Wall', '-Wextra', '-Werror', '-O2', '-pthread', 'integration/p07/native_benchmark.c', '-ldl', '-o', options['native-binary']]), 'native build failed');
     }
@@ -170,11 +171,11 @@ try {
   if (!options.prepare) bindPreparation();
   requireSuccess(run('go-buildinfo', 'go', ['version', '-m', options.binary]), 'cannot capture binary build information');
   if (!options.prepare) {
-    writeJSON('measurement.json', { entity: 'client.p07', monitors: options.monitors, fsid: options.fsid, pool: options.pool, credential: '<redacted>', transport: 'secure', label: options.observe ? 'instrumented' : options['closed-loop'] ? 'closed-loop-context-only' : 'primary', repetitions: Number(options.repetitions), cases, rate: Number(options.rate), runtime: runtimeEnv, seed_opt_in: Boolean(options.seed), limitations: 'No native offered-load parity. Separate instrumented legs are not primary latency samples. Verify host affinity/quota, dedicated pool and externally provisioned credentials.' });
-    const args = ['-monitors', options.monitors, '-fsid', options.fsid, '-key-file', options['key-file'], '-pool', options.pool, '-transport', 'secure'];
+    writeJSON('measurement.json', { entity: options.entity, monitors: options.monitors, fsid: options.fsid, pool: options.pool, credential: '<redacted>', transport: 'secure', label: options.observe ? 'instrumented' : options['closed-loop'] ? 'closed-loop-context-only' : 'primary', repetitions: Number(options.repetitions), cases, rate: Number(options.rate), runtime: runtimeEnv, seed_opt_in: Boolean(options.seed), limitations: 'No native offered-load parity. Separate instrumented legs are not primary latency samples. Verify host affinity/quota, dedicated pool and externally provisioned credentials.' });
+    const args = ['-monitors', options.monitors, '-fsid', options.fsid, '-key-file', options['key-file'], '-pool', options.pool, '-transport', 'secure', '-entity', options.entity];
     let seedOK = true;
     if (options.seed) {
-      console.error('WARNING: --seed writes ONLY p07-shared-read-0..15; use an explicitly created dedicated pool and client.p07 credential. No objects are deleted.');
+      console.error('WARNING: --seed writes ONLY p07-shared-read-0..15; use a dedicated pool and an explicitly authorized credential. No objects are deleted.');
       const result = run('seed', options.binary, args, { ...runtimeEnv, P07_SEED_ONLY: '1' });
       seedOK = result.status === 0;
       if (!seedOK) console.error('seed failed; measurements skipped, artifacts retained');
@@ -185,7 +186,7 @@ try {
         const report = readReport(goResult, null, false);
         writeJSON(`closed-go-${repetition}.report.json`, report);
         if (!report.valid) results.push({ name: `closed-go-${repetition}-validation`, exit_code: 1, error: report.error });
-        run(`closed-native-${repetition}`, options['native-binary'], [options['native-conf'], options['native-keyring'], options.pool, 'secure'], { P07_READ_DIAGNOSTIC: '1' });
+        run(`closed-native-${repetition}`, options['native-binary'], [options['native-conf'], options['native-keyring'], options.pool, 'secure', options.entity], { P07_READ_DIAGNOSTIC: '1' });
         continue;
       }
       for (const loadCase of cases) {

@@ -10,10 +10,12 @@ runtime settings and is recorded in the capture.
 ## Status And Scope
 
 The Linux offered-load observation lifecycle is implemented. The live wrapper
-rejects absent observation artifacts and mismatched attempt counts. Current
-primary and observed captures are running: do not change selected source files
-or binaries, prepare another build, or compete for their CPUs while they run.
-Markdown documentation is outside the wrapper's source selectors.
+rejects absent observation artifacts and mismatched attempt counts. The
+[2026-10-01 external Linux retest](LIVE_RETEST_20261001.md) completed primary
+and separate observed captures in readcache and the authorized test-3x rerun.
+During any capture, do not change
+selected source files or binaries, prepare another build, or compete for its
+CPUs. Markdown documentation is outside the wrapper's source selectors.
 
 The commands below are operator instructions, not commands executed by this
 documentation update. External execution requires operator access. This is not
@@ -100,16 +102,22 @@ co-location, competing workloads and limits rather than assuming isolation.
 
 On Linux, add `--build-native` to preparation to compile the existing native
 driver with `cc -std=c11 -Wall -Wextra -Werror -O2 -pthread ... -ldl`. Execution
-requires the externally installed librados runtime. No Docker or cluster setup
-is performed. The native ABI is `native-benchmark CONF KEYRING POOL secure`.
+requires the externally installed librados runtime; pin the intended release
+and library hash before measurement. No Docker or cluster setup is performed.
+The native ABI is `native-benchmark CONF KEYRING POOL secure [ENTITY]`.
+The optional entity defaults to `client.p07`. Native diagnostic mode accepts
+`P07_OPERATIONS_PER_WORKER=256..4096`, default 256. Match the Go count explicitly
+for direct invocation; the live wrapper's closed-loop context uses defaults.
+The reported `library_api_version` is not the Ceph release version.
 
 ## Dedicated Pool And Seeds
 
-The operator must create a dedicated pool and provision a separate `client.p07`
-credential scoped to it, outside this wrapper. Both binaries hardcode that
-entity. Keep credentials and native private configuration **outside the
+The operator must create a dedicated pool and provision a credential scoped to
+it, outside this wrapper. Both drivers default to `client.p07`; use `--entity`
+to select another authorized client for Go and native closed-loop work.
+Keep credentials and native private configuration **outside the
 workspace**; in-workspace paths and external aliases resolving there are rejected.
-Use a key **file** for Go and a Ceph keyring for native; do not send secret
+Use a key **file** or Ceph keyring for Go and a Ceph keyring for native; do not send secret
 values through chat or command arguments. No key content or key digest is
 captured. Native config and keyring paths are redacted too.
 

@@ -1,0 +1,1352 @@
+{
+  "schema": 1,
+  "date": "2026-10-01",
+  "measurement": "closed-loop",
+  "workload_status": "passed",
+  "capture_status": "failed",
+  "metadata_limitations": [
+    {
+      "name": "cluster-before-osd-df-tree",
+      "exit_code": 13,
+      "reason": "manager statistics denied by authorized credential"
+    },
+    {
+      "name": "test-3x-pool-before",
+      "exit_code": 13,
+      "reason": "manager statistics denied by authorized credential"
+    },
+    {
+      "name": "test-3x-pool-after",
+      "exit_code": 13,
+      "reason": "manager statistics denied by authorized credential"
+    },
+    {
+      "name": "readcache-pool-before",
+      "exit_code": 13,
+      "reason": "manager statistics denied by authorized credential"
+    },
+    {
+      "name": "readcache-pool-after",
+      "exit_code": 13,
+      "reason": "manager statistics denied by authorized credential"
+    }
+  ],
+  "methodology": {
+    "pools": [
+      "test-3x",
+      "readcache"
+    ],
+    "entity": "client.amakura",
+    "transport": "secure",
+    "size": 65536,
+    "concurrency": 16,
+    "operations_per_worker": 4096,
+    "warmup_per_worker": 8,
+    "repetitions": 5,
+    "odd_order": [
+      "native",
+      "go",
+      "go",
+      "native"
+    ],
+    "even_order": [
+      "go",
+      "native",
+      "native",
+      "go"
+    ],
+    "timing": "closed-loop read-call interval; payload validation outside latency timer; no offered-arrival scheduling",
+    "go_api": "ReadInto",
+    "native_api": "rados_read",
+    "runtime": {
+      "GOMAXPROCS": "10",
+      "GOGC": "100",
+      "GOMEMLIMIT": "off",
+      "P07_READ_DIAGNOSTIC": "1",
+      "P07_OPERATIONS_PER_WORKER": "4096"
+    },
+    "library_path": "/usr/lib64/librados.so.2.0.0",
+    "source_revision": "54fc7b99f59d68c2ceb2c419f1b612954ff15258",
+    "no_seed_or_delete": true
+  },
+  "binaries": {
+    "go": "b1aab398beebfa9002b96c2358f968f2359f3c02799cca5670166dd3bdca5782",
+    "native": "fe985d583c610429c21c63bd5f8c3d13e2ecd41a3ff825c09f337e5faf6aa6fc",
+    "library": "0e592bc86a68b4f7bb50c1b22f645776f4c3c8e8487d2789a3573acc6ee7e887"
+  },
+  "source_manifest_sha256": "7870575158d4bab5390ac68e77d24567c99030d48029a90400162fc588e83bcb",
+  "native_client": {
+    "release": "ceph version 20.2.4 (7f793731f1b39eb4f465e960113d2363c311b964) tentacle (stable)",
+    "packages": [
+      "librados2-20.2.4-0.el9.x86_64",
+      "ceph-common-20.2.4-0.el9.x86_64"
+    ],
+    "api_version": "3.0.0"
+  },
+  "server_versions": {
+    "ceph version 20.2.4 (4302593b7d5304637a99b628879b32886b798252) tentacle (stable - None)": 29
+  },
+  "cluster": {
+    "health_before": "HEALTH_WARN",
+    "health_after": "HEALTH_WARN",
+    "health_checks": [
+      "POOL_NO_REDUNDANCY"
+    ],
+    "osds_up": 22,
+    "osds_in": 22
+  },
+  "measured_reads": 2621440,
+  "pools": [
+    {
+      "pool": "test-3x",
+      "metrics": {
+        "go": {
+          "legs": 10,
+          "operations": 655360,
+          "median_p50_ns": 591883.5,
+          "median_p95_ns": 865871.5,
+          "median_p99_ns": 1022940.5,
+          "median_iops": 21659.653219787284
+        },
+        "native": {
+          "legs": 10,
+          "operations": 655360,
+          "median_p50_ns": 622676,
+          "median_p95_ns": 952961,
+          "median_p99_ns": 1137657,
+          "median_iops": 20526.751565500002
+        }
+      },
+      "ratio_of_medians": {
+        "p99": 0.8991642472203837,
+        "iops": 1.0551914729747782
+      },
+      "paired_blocks": [
+        {
+          "repetition": 1,
+          "order": [
+            "native",
+            "go",
+            "go",
+            "native"
+          ],
+          "p99_ratio": 0.9751104200622399,
+          "iops_ratio": 1.0159035659425348
+        },
+        {
+          "repetition": 2,
+          "order": [
+            "go",
+            "native",
+            "native",
+            "go"
+          ],
+          "p99_ratio": 1.126869433016285,
+          "iops_ratio": 0.8081352529989458
+        },
+        {
+          "repetition": 3,
+          "order": [
+            "native",
+            "go",
+            "go",
+            "native"
+          ],
+          "p99_ratio": 0.8574472009715012,
+          "iops_ratio": 1.135828967443388
+        },
+        {
+          "repetition": 4,
+          "order": [
+            "go",
+            "native",
+            "native",
+            "go"
+          ],
+          "p99_ratio": 0.781132290530188,
+          "iops_ratio": 1.1754700772100513
+        },
+        {
+          "repetition": 5,
+          "order": [
+            "native",
+            "go",
+            "go",
+            "native"
+          ],
+          "p99_ratio": 0.8671410166988711,
+          "iops_ratio": 1.0832518665181372
+        }
+      ],
+      "median_block_p99_ratio": 0.8671410166988711,
+      "go_lower_p99_blocks": 4
+    },
+    {
+      "pool": "readcache",
+      "metrics": {
+        "go": {
+          "legs": 10,
+          "operations": 655360,
+          "median_p50_ns": 617053,
+          "median_p95_ns": 909952.5,
+          "median_p99_ns": 1091903,
+          "median_iops": 21237.367642660938
+        },
+        "native": {
+          "legs": 10,
+          "operations": 655360,
+          "median_p50_ns": 613628,
+          "median_p95_ns": 949412.5,
+          "median_p99_ns": 1141390.5,
+          "median_iops": 21077.992666
+        }
+      },
+      "ratio_of_medians": {
+        "p99": 0.9566427966589874,
+        "iops": 1.0075612027761078
+      },
+      "paired_blocks": [
+        {
+          "repetition": 1,
+          "order": [
+            "native",
+            "go",
+            "go",
+            "native"
+          ],
+          "p99_ratio": 0.9211723806684269,
+          "iops_ratio": 1.0294010549939818
+        },
+        {
+          "repetition": 2,
+          "order": [
+            "go",
+            "native",
+            "native",
+            "go"
+          ],
+          "p99_ratio": 0.9238276986918365,
+          "iops_ratio": 1.031903104423397
+        },
+        {
+          "repetition": 3,
+          "order": [
+            "native",
+            "go",
+            "go",
+            "native"
+          ],
+          "p99_ratio": 1.0350588197067823,
+          "iops_ratio": 0.9822330272510719
+        },
+        {
+          "repetition": 4,
+          "order": [
+            "go",
+            "native",
+            "native",
+            "go"
+          ],
+          "p99_ratio": 0.9214289232839301,
+          "iops_ratio": 1.023487415697683
+        },
+        {
+          "repetition": 5,
+          "order": [
+            "native",
+            "go",
+            "go",
+            "native"
+          ],
+          "p99_ratio": 1.0273954494164803,
+          "iops_ratio": 0.8974868710996435
+        }
+      ],
+      "median_block_p99_ratio": 0.9238276986918365,
+      "go_lower_p99_blocks": 3
+    }
+  ],
+  "legs": [
+    {
+      "pool": "test-3x",
+      "repetition": 1,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2944703072,
+        "throughput_bytes_per_second": 1458540026.272639,
+        "iops": 22255.5546,
+        "p50_ns": 611849,
+        "p95_ns": 932976,
+        "p99_ns": 1135524
+      },
+      "resources": {
+        "cpu_user_ns": 6437842000,
+        "cpu_system_ns": 3102320000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28127232
+      },
+      "report_sha256": "ee28326481b4437b8af1bc16c536b08cbb2df2a14ea46917e72479a12d95a770"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 1,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3367225800,
+        "throughput_bytes_per_second": 1275521022.6768873,
+        "iops": 19462.906229810902,
+        "p50_ns": 692150,
+        "p95_ns": 1000854,
+        "p99_ns": 1183431
+      },
+      "resources": {
+        "cpu_user_ns": 7732474000,
+        "cpu_system_ns": 4618794000,
+        "allocations": 6176883,
+        "allocated_bytes": 385700376,
+        "max_rss_bytes": 21807104,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7413144
+      },
+      "report_sha256": "836790f5761d18780b386f2fade712774da801f01896d4bed95dd9f72b5b3ccc"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 1,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2712776090,
+        "throughput_bytes_per_second": 1583236932.7613764,
+        "iops": 24158.278392965338,
+        "p50_ns": 579888,
+        "p95_ns": 808202,
+        "p99_ns": 961378
+      },
+      "resources": {
+        "cpu_user_ns": 7651794000,
+        "cpu_system_ns": 4568839000,
+        "allocations": 6176755,
+        "allocated_bytes": 385705136,
+        "max_rss_bytes": 22728704,
+        "gc_cycles": 45,
+        "gc_pause_ns": 8299102
+      },
+      "report_sha256": "9a8b15713fe46780bcdb111c64f62f597378d0251a63901f48d65d94604b5d69"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 1,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3168629678,
+        "throughput_bytes_per_second": 1355465211.293145,
+        "iops": 20682.757741,
+        "p50_ns": 619177,
+        "p95_ns": 892297,
+        "p99_ns": 1064031
+      },
+      "resources": {
+        "cpu_user_ns": 6414869000,
+        "cpu_system_ns": 3239663000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29949952
+      },
+      "report_sha256": "6cd817ac9a0643f4425147eb0b26ab157be2f9b8deb447ff99127b5e2ed4b567"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 2,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3934565893,
+        "throughput_bytes_per_second": 1091598771.70724,
+        "iops": 16656.47539836487,
+        "p50_ns": 749733,
+        "p95_ns": 1169517,
+        "p99_ns": 1356542
+      },
+      "resources": {
+        "cpu_user_ns": 8443483000,
+        "cpu_system_ns": 5005640000,
+        "allocations": 6176899,
+        "allocated_bytes": 385680216,
+        "max_rss_bytes": 21811200,
+        "gc_cycles": 45,
+        "gc_pause_ns": 7914233
+      },
+      "report_sha256": "de526f5127b753da4fe47eae4ad42c12cdcd2100bb3896ba5db5e701036e5bc6"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 2,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2884063250,
+        "throughput_bytes_per_second": 1489207040.102189,
+        "iops": 22723.496095,
+        "p50_ns": 592309,
+        "p95_ns": 928737,
+        "p99_ns": 1131434
+      },
+      "resources": {
+        "cpu_user_ns": 6379197000,
+        "cpu_system_ns": 3068338000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28459008
+      },
+      "report_sha256": "97653e773ea214a200927fc381c68e1619639e8c4435a4019f41e146e4ce2369"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 2,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2943201289,
+        "throughput_bytes_per_second": 1459284253.527656,
+        "iops": 22266.910607,
+        "p50_ns": 597988,
+        "p95_ns": 877924,
+        "p99_ns": 1052985
+      },
+      "resources": {
+        "cpu_user_ns": 6089421000,
+        "cpu_system_ns": 3085493000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29396992
+      },
+      "report_sha256": "4f3847a0af43521c780cb566bf339f6a02bd4a504ec2cad818ecc930568ad36a"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 2,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3326386729,
+        "throughput_bytes_per_second": 1291180985.8293839,
+        "iops": 19701.85830428137,
+        "p50_ns": 708873,
+        "p95_ns": 945644,
+        "p99_ns": 1105013
+      },
+      "resources": {
+        "cpu_user_ns": 7779962000,
+        "cpu_system_ns": 4573262000,
+        "allocations": 6176801,
+        "allocated_bytes": 385697192,
+        "max_rss_bytes": 21745664,
+        "gc_cycles": 46,
+        "gc_pause_ns": 9254561
+      },
+      "report_sha256": "9e7bc6eb89dd561153dfb3d7dac80e1f283d1a0b6a33d3c426f26af16fce5521"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 3,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3528823059,
+        "throughput_bytes_per_second": 1217110414.489615,
+        "iops": 18571.63108,
+        "p50_ns": 657850,
+        "p95_ns": 972946,
+        "p99_ns": 1139790
+      },
+      "resources": {
+        "cpu_user_ns": 6403172000,
+        "cpu_system_ns": 3184858000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28078080
+      },
+      "report_sha256": "ea96e5bd32e1c36ecaab0a25549616e0b44c46bf835febfb356f3f49c36ea776"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 3,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2883651078,
+        "throughput_bytes_per_second": 1489419898.53323,
+        "iops": 22726.74405720871,
+        "p50_ns": 588016,
+        "p95_ns": 813607,
+        "p99_ns": 963241
+      },
+      "resources": {
+        "cpu_user_ns": 7358458000,
+        "cpu_system_ns": 4527458000,
+        "allocations": 6176765,
+        "allocated_bytes": 385699176,
+        "max_rss_bytes": 22269952,
+        "gc_cycles": 45,
+        "gc_pause_ns": 7481933
+      },
+      "report_sha256": "4002f1a24d2f0463ecf1919472c69498dba4faa84d1916acc0aefc6336620a0c"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 3,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2781292405,
+        "throughput_bytes_per_second": 1544234359.6375659,
+        "iops": 23563.14635677438,
+        "p50_ns": 574268,
+        "p95_ns": 808781,
+        "p99_ns": 956591
+      },
+      "resources": {
+        "cpu_user_ns": 6991499000,
+        "cpu_system_ns": 4251629000,
+        "allocations": 6176759,
+        "allocated_bytes": 385693752,
+        "max_rss_bytes": 23629824,
+        "gc_cycles": 45,
+        "gc_pause_ns": 6310259
+      },
+      "report_sha256": "592618e414b500b85a6bb20554146b6cc77cfd2943b97f4d4151f62f2a361d0d"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 3,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2954381317,
+        "throughput_bytes_per_second": 1453762001.298223,
+        "iops": 22182.647725,
+        "p50_ns": 600736,
+        "p95_ns": 890867,
+        "p99_ns": 1099219
+      },
+      "resources": {
+        "cpu_user_ns": 6021949000,
+        "cpu_system_ns": 3188805000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28606464
+      },
+      "report_sha256": "df79f21523ce8b77788f4ecdb68b04a7d45e7fc9d827e6364f03bc54edfd6fd2"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 4,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2713914642,
+        "throughput_bytes_per_second": 1582572727.0607355,
+        "iops": 24148.143418285148,
+        "p50_ns": 568355,
+        "p95_ns": 797636,
+        "p99_ns": 946452
+      },
+      "resources": {
+        "cpu_user_ns": 7266777000,
+        "cpu_system_ns": 4254248000,
+        "allocations": 6176825,
+        "allocated_bytes": 385716664,
+        "max_rss_bytes": 21807104,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7724692
+      },
+      "report_sha256": "a945447cbc71c4b5db52c8cbd97adaecfaa0079fa0d11071de4aaf1d5bac52f6"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 4,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3217162590,
+        "throughput_bytes_per_second": 1335017169.896906,
+        "iops": 20370.74539,
+        "p50_ns": 632685,
+        "p95_ns": 975452,
+        "p99_ns": 1209999
+      },
+      "resources": {
+        "cpu_user_ns": 6103370000,
+        "cpu_system_ns": 3147009000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28135424
+      },
+      "report_sha256": "d43b6f2631012e1cdbeaa65b9cd703d10891e878f91514a7f3d46e9f25b93f2f"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 4,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3246989886,
+        "throughput_bytes_per_second": 1322753518.425958,
+        "iops": 20183.616919,
+        "p50_ns": 686266,
+        "p95_ns": 996937,
+        "p99_ns": 1229004
+      },
+      "resources": {
+        "cpu_user_ns": 6526104000,
+        "cpu_system_ns": 3006270000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 27975680
+      },
+      "report_sha256": "fc6bd5b5b062c355596beb483834b7e6e243ebae264bd9f22927e28021a3ada8"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 4,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2786122582,
+        "throughput_bytes_per_second": 1541557189.101452,
+        "iops": 23522.29597627948,
+        "p50_ns": 561392,
+        "p95_ns": 813316,
+        "p99_ns": 958732
+      },
+      "resources": {
+        "cpu_user_ns": 7431819000,
+        "cpu_system_ns": 4350839000,
+        "allocations": 6176879,
+        "allocated_bytes": 385717656,
+        "max_rss_bytes": 24498176,
+        "gc_cycles": 45,
+        "gc_pause_ns": 7161608
+      },
+      "report_sha256": "de1d62e0d7d5300c6fa8ede4e8b88afc4d9f113ae98f65306f3763770b020264"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 5,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3277457131,
+        "throughput_bytes_per_second": 1310457200.301974,
+        "iops": 19995.989995,
+        "p50_ns": 626175,
+        "p95_ns": 1005713,
+        "p99_ns": 1220183
+      },
+      "resources": {
+        "cpu_user_ns": 6419022000,
+        "cpu_system_ns": 3139689000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 27860992
+      },
+      "report_sha256": "d6e79b0f320be9757d42fdff1df43b91f96054ade4ccd9e7556e448ab156ae83"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 5,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3303853787,
+        "throughput_bytes_per_second": 1299987097.7643843,
+        "iops": 19836.228908758305,
+        "p50_ns": 595751,
+        "p95_ns": 918136,
+        "p99_ns": 1104209
+      },
+      "resources": {
+        "cpu_user_ns": 7877208000,
+        "cpu_system_ns": 4619863000,
+        "allocations": 6176844,
+        "allocated_bytes": 385710984,
+        "max_rss_bytes": 21811200,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7314423
+      },
+      "report_sha256": "33bc0c72ae792d4435fb1dc82695d975867aa98f2174a6df5685bbd20b655a32"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 5,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3182508266,
+        "throughput_bytes_per_second": 1349554168.2907288,
+        "iops": 20592.562382365857,
+        "p50_ns": 647869,
+        "p95_ns": 924298,
+        "p99_ns": 1082640
+      },
+      "resources": {
+        "cpu_user_ns": 7275812000,
+        "cpu_system_ns": 4457806000,
+        "allocations": 6176953,
+        "allocated_bytes": 385701352,
+        "max_rss_bytes": 21811200,
+        "gc_cycles": 46,
+        "gc_pause_ns": 8032241
+      },
+      "report_sha256": "3b0094c04ee076b46e55a4e9b5d23791d23ec87eb47a41c0cdce526e00047bfc"
+    },
+    {
+      "pool": "test-3x",
+      "repetition": 5,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3782588681,
+        "throughput_bytes_per_second": 1135457132.194596,
+        "iops": 17325.70087,
+        "p50_ns": 721959,
+        "p95_ns": 1098818,
+        "p99_ns": 1301724
+      },
+      "resources": {
+        "cpu_user_ns": 6522704000,
+        "cpu_system_ns": 3215825000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28377088
+      },
+      "report_sha256": "b66428a9d310cfadd57d1ce19a6367d8017eaf458f7cf2b77c92e046c2f1bc71"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 1,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3405650773,
+        "throughput_bytes_per_second": 1261129687.767901,
+        "iops": 19243.311886,
+        "p50_ns": 678714,
+        "p95_ns": 1009953,
+        "p99_ns": 1189095
+      },
+      "resources": {
+        "cpu_user_ns": 6255305000,
+        "cpu_system_ns": 3192544000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 27664384
+      },
+      "report_sha256": "c2fb1d223f037e24f9df554ea4fc18058fdfefaeba8810095a9c90febe066e3b"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 1,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3375507971,
+        "throughput_bytes_per_second": 1272391394.9839106,
+        "iops": 19415.151900999612,
+        "p50_ns": 654538,
+        "p95_ns": 935632,
+        "p99_ns": 1125958
+      },
+      "resources": {
+        "cpu_user_ns": 7137640000,
+        "cpu_system_ns": 4492116000,
+        "allocations": 6176859,
+        "allocated_bytes": 382935440,
+        "max_rss_bytes": 24100864,
+        "gc_cycles": 45,
+        "gc_pause_ns": 7508246
+      },
+      "report_sha256": "c0fc04348f0db9166ac8f621a8ac680a3d669fdf3e6b272868b799243b2e7816"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 1,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2929542900,
+        "throughput_bytes_per_second": 1466087865.1068738,
+        "iops": 22370.72548075674,
+        "p50_ns": 594867,
+        "p95_ns": 862103,
+        "p99_ns": 1018231
+      },
+      "resources": {
+        "cpu_user_ns": 6775057000,
+        "cpu_system_ns": 4295356000,
+        "allocations": 6176881,
+        "allocated_bytes": 382938984,
+        "max_rss_bytes": 23158784,
+        "gc_cycles": 45,
+        "gc_pause_ns": 6778416
+      },
+      "report_sha256": "f6378d377c97a834b1d48d61567acd1b0565e54c00be2240b851840aa9cc9bd3"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 1,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3069730472,
+        "throughput_bytes_per_second": 1399134984.382433,
+        "iops": 21349.105597,
+        "p50_ns": 587378,
+        "p95_ns": 935558,
+        "p99_ns": 1138579
+      },
+      "resources": {
+        "cpu_user_ns": 6295801000,
+        "cpu_system_ns": 3080078000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29061120
+      },
+      "report_sha256": "1d0ef6bb96225d60f8cb4a85ff3307fee740220475d22f29be0347ba126679e8"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 2,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3069469195,
+        "throughput_bytes_per_second": 1399254080.4762826,
+        "iops": 21350.922858829996,
+        "p50_ns": 609657,
+        "p95_ns": 908515,
+        "p99_ns": 1080650
+      },
+      "resources": {
+        "cpu_user_ns": 7366850000,
+        "cpu_system_ns": 4522656000,
+        "allocations": 6176793,
+        "allocated_bytes": 382931080,
+        "max_rss_bytes": 23625728,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7483085
+      },
+      "report_sha256": "d94c582eb6c33c5ce249165cabe3af9ab5b80457d8ab69b335c6248e5e9be813"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 2,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3219702726,
+        "throughput_bytes_per_second": 1333963928.196519,
+        "iops": 20354.674197,
+        "p50_ns": 611745,
+        "p95_ns": 979243,
+        "p99_ns": 1193545
+      },
+      "resources": {
+        "cpu_user_ns": 6161594000,
+        "cpu_system_ns": 3000131000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29356032
+      },
+      "report_sha256": "df04545ec2346520806b61f209deb0edf1c37f6223deb6d578c10cd7c6507852"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 2,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3149727438,
+        "throughput_bytes_per_second": 1363599670.302647,
+        "iops": 20806.879735,
+        "p50_ns": 630625,
+        "p95_ns": 953044,
+        "p99_ns": 1143013
+      },
+      "resources": {
+        "cpu_user_ns": 6439333000,
+        "cpu_system_ns": 3185050000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 27664384
+      },
+      "report_sha256": "1bfe7764e5ba55591db861bc20b96f6e3c76012c20b0889b60cbd2fb4707103d"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 2,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3102470268,
+        "throughput_bytes_per_second": 1384370171.1825721,
+        "iops": 21123.812426491884,
+        "p50_ns": 624449,
+        "p95_ns": 911390,
+        "p99_ns": 1077927
+      },
+      "resources": {
+        "cpu_user_ns": 7244782000,
+        "cpu_system_ns": 4544469000,
+        "allocations": 6176829,
+        "allocated_bytes": 382939576,
+        "max_rss_bytes": 21352448,
+        "gc_cycles": 46,
+        "gc_pause_ns": 8043189
+      },
+      "report_sha256": "a3987ab023ae0eacf5a57d900443ba279724c73288be20443a7c7aa53d556e20"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 3,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3336092867,
+        "throughput_bytes_per_second": 1287424381.52277,
+        "iops": 19644.537072,
+        "p50_ns": 697793,
+        "p95_ns": 1009837,
+        "p99_ns": 1208886
+      },
+      "resources": {
+        "cpu_user_ns": 6593359000,
+        "cpu_system_ns": 3175285000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29085696
+      },
+      "report_sha256": "004ea86b2ad0a00b3d33174ec07954dba58a1edf37499bfdb2f28174e8146729"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 3,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3058927211,
+        "throughput_bytes_per_second": 1404076331.2559907,
+        "iops": 21424.50456628404,
+        "p50_ns": 594094,
+        "p95_ns": 929947,
+        "p99_ns": 1108565
+      },
+      "resources": {
+        "cpu_user_ns": 7220232000,
+        "cpu_system_ns": 4608722000,
+        "allocations": 6176845,
+        "allocated_bytes": 382937640,
+        "max_rss_bytes": 21729280,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7956349
+      },
+      "report_sha256": "e7de3c1580d293423ab5165a5a58cd9d20902899ec3e8ac1bf396ae6b15f1436"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 3,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3686896204,
+        "throughput_bytes_per_second": 1164927640.5829623,
+        "iops": 17775.385140731236,
+        "p50_ns": 739061,
+        "p95_ns": 1106096,
+        "p99_ns": 1312450
+      },
+      "resources": {
+        "cpu_user_ns": 7965203000,
+        "cpu_system_ns": 5036527000,
+        "allocations": 6176947,
+        "allocated_bytes": 382945080,
+        "max_rss_bytes": 19517440,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7283153
+      },
+      "report_sha256": "f518fbc041dffecc44bc538751d0836c9e7cec8ac8488e861f59f130ae4023f9"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 3,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3234043698,
+        "throughput_bytes_per_second": 1328048627.993523,
+        "iops": 20264.413879,
+        "p50_ns": 696520,
+        "p95_ns": 953711,
+        "p99_ns": 1130126
+      },
+      "resources": {
+        "cpu_user_ns": 6504851000,
+        "cpu_system_ns": 3230930000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28160000
+      },
+      "report_sha256": "f18ee4b8bcfd65fd36f4f667e79e11709face39deec0c47ee62ff2bb54133bef"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 4,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2922534633,
+        "throughput_bytes_per_second": 1469603558.3301845,
+        "iops": 22424.3707020597,
+        "p50_ns": 564287,
+        "p95_ns": 858982,
+        "p99_ns": 1024413
+      },
+      "resources": {
+        "cpu_user_ns": 6915886000,
+        "cpu_system_ns": 4296626000,
+        "allocations": 6176843,
+        "allocated_bytes": 382935912,
+        "max_rss_bytes": 23580672,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7927223
+      },
+      "report_sha256": "03acdd7b897ea7acbab08ee2565390187c1bc1b687bd295618a34c857441de6f"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 4,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3011303383,
+        "throughput_bytes_per_second": 1426281828.741266,
+        "iops": 21763.333568,
+        "p50_ns": 602674,
+        "p95_ns": 914358,
+        "p99_ns": 1110780
+      },
+      "resources": {
+        "cpu_user_ns": 6077651000,
+        "cpu_system_ns": 3102192000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 27103232
+      },
+      "report_sha256": "0cee14c26224f0926ab68e7f783cdaba381f21afb6835285399ed4cef5c5a778"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 4,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3029422646,
+        "throughput_bytes_per_second": 1417751102.399332,
+        "iops": 21633.165015,
+        "p50_ns": 615511,
+        "p95_ns": 945781,
+        "p99_ns": 1142581
+      },
+      "resources": {
+        "cpu_user_ns": 6230484000,
+        "cpu_system_ns": 3201365000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 28594176
+      },
+      "report_sha256": "afebd3459b4413f47ba13581687ff79f505589db3fe8c10c51d8c9aa0f7ea240"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 4,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2980074099,
+        "throughput_bytes_per_second": 1441228356.516782,
+        "iops": 21991.399482983124,
+        "p50_ns": 578385,
+        "p95_ns": 879769,
+        "p99_ns": 1051899
+      },
+      "resources": {
+        "cpu_user_ns": 7054504000,
+        "cpu_system_ns": 4354655000,
+        "allocations": 6176796,
+        "allocated_bytes": 382934128,
+        "max_rss_bytes": 24563712,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7528808
+      },
+      "report_sha256": "2842128646d9c177f0b813d30ec3d0e75a31150355812e165628ebc386260e15"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 5,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3064262292,
+        "throughput_bytes_per_second": 1401631742.561025,
+        "iops": 21387.203103,
+        "p50_ns": 591542,
+        "p95_ns": 933985,
+        "p99_ns": 1140200
+      },
+      "resources": {
+        "cpu_user_ns": 6079404000,
+        "cpu_system_ns": 3064289000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29491200
+      },
+      "report_sha256": "be5dcd428f0870d2b315530b0d5a6bd4b578f2b9578e95bd22c8a9055a0f0804"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 5,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3382200870,
+        "throughput_bytes_per_second": 1269873511.6817589,
+        "iops": 19376.73205080809,
+        "p50_ns": 668788,
+        "p95_ns": 997352,
+        "p99_ns": 1174028
+      },
+      "resources": {
+        "cpu_user_ns": 7194111000,
+        "cpu_system_ns": 4482514000,
+        "allocations": 6176951,
+        "allocated_bytes": 382945736,
+        "max_rss_bytes": 22204416,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7435622
+      },
+      "report_sha256": "bcf4322e8d34f1d64e4438a957692a6bbcb67c805a284df5301340e99c015934"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 5,
+      "implementation": "go",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 3269459200,
+        "throughput_bytes_per_second": 1313662912.8144495,
+        "iops": 20044.905285865014,
+        "p50_ns": 626486,
+        "p95_ns": 895968,
+        "p99_ns": 1103156
+      },
+      "resources": {
+        "cpu_user_ns": 7268401000,
+        "cpu_system_ns": 4463193000,
+        "allocations": 6176851,
+        "allocated_bytes": 382935360,
+        "max_rss_bytes": 20434944,
+        "gc_cycles": 46,
+        "gc_pause_ns": 7607484
+      },
+      "report_sha256": "a7d28a0989a069009612044c1b9d35865ad5bd2dec5afd4f8bf9bf9d6794d833"
+    },
+    {
+      "pool": "readcache",
+      "repetition": 5,
+      "implementation": "native",
+      "row": {
+        "size_bytes": 65536,
+        "concurrency": 16,
+        "workload": "read",
+        "operations": 65536,
+        "bytes": 4294967296,
+        "elapsed_ns": 2907894431,
+        "throughput_bytes_per_second": 1477002483.382107,
+        "iops": 22537.269339,
+        "p50_ns": 606654,
+        "p95_ns": 897183,
+        "p99_ns": 1076263
+      },
+      "resources": {
+        "cpu_user_ns": 5914052000,
+        "cpu_system_ns": 3074918000,
+        "allocations": null,
+        "allocated_bytes": null,
+        "max_rss_bytes": 29040640
+      },
+      "report_sha256": "d9590099d45feb46d893532a5afad148273b4cffe013c57ccf700f19fc69ecb3"
+    }
+  ],
+  "limitations": "Medians of ten run-level percentiles, not pooled latency. Five alternating ABBA blocks per pool, not randomized simultaneous pool comparisons or significance/equivalence testing. Separate mode probes are instrumented and excluded. No offered-load or loaded native parity. Manager statistics incomplete; raw capture status remains failed. No qualification gate closure."
+}

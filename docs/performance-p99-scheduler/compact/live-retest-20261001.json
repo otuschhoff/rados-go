@@ -1,0 +1,1319 @@
+{
+  "schema": 1,
+  "date": "2026-10-01",
+  "source_revision": "54fc7b99f59d68c2ceb2c419f1b612954ff15258",
+  "binary_sha256": "b1aab398beebfa9002b96c2358f968f2359f3c02799cca5670166dd3bdca5782",
+  "source_manifest_sha256": "0f1a5e25505e2e90dd4337673612eee98f2655f98fa605f383b48ba6c134b7ae",
+  "pool": "readcache",
+  "primary_success": 672000,
+  "observed_success": 192000,
+  "primary": [
+    {
+      "rate": 1000,
+      "case": "none",
+      "repetition": 1,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2172181,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1034093,
+        "queue_delay_ns": 20038,
+        "dispatch_ns": 11142,
+        "service_ns": 1755899
+      },
+      "resources": {
+        "cpu_user_ns": 2680446000,
+        "cpu_system_ns": 1753439000,
+        "allocations": 854619,
+        "allocated_bytes": 61751488,
+        "max_rss_bytes": 22650880,
+        "gc_cycles": 9,
+        "gc_pause_ns": 1795310
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "f36f5073db477f156bf7e836e97455102d9a4770e52603da24d28dad9713a0c3"
+    },
+    {
+      "rate": 1000,
+      "case": "none",
+      "repetition": 2,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2125670,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1035618,
+        "queue_delay_ns": 21106,
+        "dispatch_ns": 13723,
+        "service_ns": 1263239
+      },
+      "resources": {
+        "cpu_user_ns": 2722510000,
+        "cpu_system_ns": 1699731000,
+        "allocations": 854632,
+        "allocated_bytes": 61748368,
+        "max_rss_bytes": 62406656,
+        "gc_cycles": 10,
+        "gc_pause_ns": 1649243
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "95b00e950c61569f86756746d3d8811ae045e6c8e8b8277998cb54bd5261148b"
+    },
+    {
+      "rate": 1000,
+      "case": "none",
+      "repetition": 3,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 3495523,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1039000,
+        "queue_delay_ns": 20192,
+        "dispatch_ns": 11442,
+        "service_ns": 3219134
+      },
+      "resources": {
+        "cpu_user_ns": 2700168000,
+        "cpu_system_ns": 1685200000,
+        "allocations": 854624,
+        "allocated_bytes": 61753456,
+        "max_rss_bytes": 51736576,
+        "gc_cycles": 9,
+        "gc_pause_ns": 1705509
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "daa347d53dd6ebbfbd66ce6d19e96c6014fcb75b32e3a42297c0537a948f50e9"
+    },
+    {
+      "rate": 1000,
+      "case": "cpu",
+      "repetition": 1,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2384578,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1046165,
+        "queue_delay_ns": 23701,
+        "dispatch_ns": 18630,
+        "service_ns": 1801523
+      },
+      "resources": {
+        "cpu_user_ns": 65992223000,
+        "cpu_system_ns": 1386526000,
+        "allocations": 854283,
+        "allocated_bytes": 61735664,
+        "max_rss_bytes": 46002176,
+        "gc_cycles": 8,
+        "gc_pause_ns": 4450459
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "bd03eb11414e7e3c2f5f2c479dfe25f25bc53e497d70fbb38efc7832d63e8873"
+    },
+    {
+      "rate": 1000,
+      "case": "cpu",
+      "repetition": 2,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2438942,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1044005,
+        "queue_delay_ns": 24196,
+        "dispatch_ns": 16849,
+        "service_ns": 1908474
+      },
+      "resources": {
+        "cpu_user_ns": 65875007000,
+        "cpu_system_ns": 1477340000,
+        "allocations": 854384,
+        "allocated_bytes": 61739792,
+        "max_rss_bytes": 75194368,
+        "gc_cycles": 8,
+        "gc_pause_ns": 4563397
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "94eed991e4ca9e5ef71631553b40437d6837514bde8d3575169dcdf0cacf0c93"
+    },
+    {
+      "rate": 1000,
+      "case": "cpu",
+      "repetition": 3,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2224172,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1042517,
+        "queue_delay_ns": 22824,
+        "dispatch_ns": 18328,
+        "service_ns": 1714122
+      },
+      "resources": {
+        "cpu_user_ns": 66299918000,
+        "cpu_system_ns": 1078111000,
+        "allocations": 853475,
+        "allocated_bytes": 61702912,
+        "max_rss_bytes": 65347584,
+        "gc_cycles": 8,
+        "gc_pause_ns": 5864796
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "7d5833f70408cfe5d966a8d2a66031b94b3f48da24fcaffb987ab4dc950e1ed5"
+    },
+    {
+      "rate": 1000,
+      "case": "alloc",
+      "repetition": 1,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2078391,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1006995,
+        "queue_delay_ns": 36562,
+        "dispatch_ns": 9798,
+        "service_ns": 1229299
+      },
+      "resources": {
+        "cpu_user_ns": 3039633000,
+        "cpu_system_ns": 1798604000,
+        "allocations": 878334,
+        "allocated_bytes": 482611304,
+        "max_rss_bytes": 59969536,
+        "gc_cycles": 38,
+        "gc_pause_ns": 6010749
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "35f2465fbae1c89b9b989f8da2c66d45bd046c2acb9d77fa95ee02a65b51f208"
+    },
+    {
+      "rate": 1000,
+      "case": "alloc",
+      "repetition": 2,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2125415,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1039824,
+        "queue_delay_ns": 22317,
+        "dispatch_ns": 8445,
+        "service_ns": 1229966
+      },
+      "resources": {
+        "cpu_user_ns": 2975383000,
+        "cpu_system_ns": 1789148000,
+        "allocations": 878359,
+        "allocated_bytes": 482692840,
+        "max_rss_bytes": 65794048,
+        "gc_cycles": 38,
+        "gc_pause_ns": 6137915
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "7cba8e5c52bf2670f57f3003100aded90ef20c8356e2bcd57048e8bdb865f2b9"
+    },
+    {
+      "rate": 1000,
+      "case": "alloc",
+      "repetition": 3,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 1982044,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1039800,
+        "queue_delay_ns": 24110,
+        "dispatch_ns": 9663,
+        "service_ns": 1113824
+      },
+      "resources": {
+        "cpu_user_ns": 3028692000,
+        "cpu_system_ns": 1812388000,
+        "allocations": 875449,
+        "allocated_bytes": 482548256,
+        "max_rss_bytes": 75706368,
+        "gc_cycles": 37,
+        "gc_pause_ns": 5800441
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "86e5970d4688b9739b83fc97b697c658457623cc1d51a6f4b930e8059e69a3e2"
+    },
+    {
+      "rate": 1000,
+      "case": "both",
+      "repetition": 1,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 3135395,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1014033,
+        "queue_delay_ns": 88705,
+        "dispatch_ns": 9939,
+        "service_ns": 1881666
+      },
+      "resources": {
+        "cpu_user_ns": 66271650000,
+        "cpu_system_ns": 1166493000,
+        "allocations": 880044,
+        "allocated_bytes": 482777912,
+        "max_rss_bytes": 47755264,
+        "gc_cycles": 35,
+        "gc_pause_ns": 11797428
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "5237d885513c4f7b83ab5411459a38717eeddbecf45724d150a9dc0311c85ac9"
+    },
+    {
+      "rate": 1000,
+      "case": "both",
+      "repetition": 2,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 3217108,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1050985,
+        "queue_delay_ns": 85280,
+        "dispatch_ns": 14135,
+        "service_ns": 1930059
+      },
+      "resources": {
+        "cpu_user_ns": 66431846000,
+        "cpu_system_ns": 994396000,
+        "allocations": 880024,
+        "allocated_bytes": 482777104,
+        "max_rss_bytes": 71352320,
+        "gc_cycles": 35,
+        "gc_pause_ns": 10946788
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "6d74b678ce042691f7f8fa9f8b01ee62eb5c6b6639b15ca83d747d0d0d2ce750"
+    },
+    {
+      "rate": 1000,
+      "case": "both",
+      "repetition": 3,
+      "expected": 8000,
+      "success": 8000,
+      "p99_ns": 2331081,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1056972,
+        "queue_delay_ns": 82183,
+        "dispatch_ns": 10774,
+        "service_ns": 1659652
+      },
+      "resources": {
+        "cpu_user_ns": 66090623000,
+        "cpu_system_ns": 1362296000,
+        "allocations": 879820,
+        "allocated_bytes": 482760480,
+        "max_rss_bytes": 65544192,
+        "gc_cycles": 36,
+        "gc_pause_ns": 11744151
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "78bf615677eb0094c9c93a04ce5f43eb9a159936ec87db370664fb5c307e6eb7"
+    },
+    {
+      "rate": 2000,
+      "case": "none",
+      "repetition": 1,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1851081,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 881671,
+        "queue_delay_ns": 34826,
+        "dispatch_ns": 13467,
+        "service_ns": 1053988
+      },
+      "resources": {
+        "cpu_user_ns": 4624238000,
+        "cpu_system_ns": 3047474000,
+        "allocations": 1684049,
+        "allocated_bytes": 115003800,
+        "max_rss_bytes": 25022464,
+        "gc_cycles": 14,
+        "gc_pause_ns": 3312533
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "6110592da0d137d92290f3b91dbc9698ead1485155752370740b70e4b8abae5e"
+    },
+    {
+      "rate": 2000,
+      "case": "none",
+      "repetition": 2,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1757619,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 701657,
+        "queue_delay_ns": 34009,
+        "dispatch_ns": 12551,
+        "service_ns": 1038931
+      },
+      "resources": {
+        "cpu_user_ns": 4656663000,
+        "cpu_system_ns": 3031454000,
+        "allocations": 1684025,
+        "allocated_bytes": 114989224,
+        "max_rss_bytes": 113627136,
+        "gc_cycles": 14,
+        "gc_pause_ns": 2334120
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "bc8ad8b4ee460cac646df780911ae351c4a34d8f1b7ff99c46aa4a976dbd6bfd"
+    },
+    {
+      "rate": 2000,
+      "case": "none",
+      "repetition": 3,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1530425,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 654058,
+        "queue_delay_ns": 30778,
+        "dispatch_ns": 11276,
+        "service_ns": 969552
+      },
+      "resources": {
+        "cpu_user_ns": 4798850000,
+        "cpu_system_ns": 2821068000,
+        "allocations": 1680891,
+        "allocated_bytes": 114862744,
+        "max_rss_bytes": 124846080,
+        "gc_cycles": 14,
+        "gc_pause_ns": 2808414
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "e85358e1a8c0fa9fa1e699f74d5630ea6fdf3d3c3c04836e16283459dd23bf0c"
+    },
+    {
+      "rate": 2000,
+      "case": "cpu",
+      "repetition": 1,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1797392,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1000662,
+        "queue_delay_ns": 83957,
+        "dispatch_ns": 12608,
+        "service_ns": 1021309
+      },
+      "resources": {
+        "cpu_user_ns": 67795293000,
+        "cpu_system_ns": 1801974000,
+        "allocations": 1681312,
+        "allocated_bytes": 114880616,
+        "max_rss_bytes": 80678912,
+        "gc_cycles": 12,
+        "gc_pause_ns": 5254874
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "d55c0eee30fb88eb7ffaf429b32980d56ca2d9af5a0d88b8b4ed60d94e3d3ff0"
+    },
+    {
+      "rate": 2000,
+      "case": "cpu",
+      "repetition": 2,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1867306,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1023413,
+        "queue_delay_ns": 91715,
+        "dispatch_ns": 15563,
+        "service_ns": 1092604
+      },
+      "resources": {
+        "cpu_user_ns": 67211894000,
+        "cpu_system_ns": 2516174000,
+        "allocations": 1677600,
+        "allocated_bytes": 114682240,
+        "max_rss_bytes": 113680384,
+        "gc_cycles": 13,
+        "gc_pause_ns": 6984497
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "8153746231531eb5d5a3233954fbe8406ffab6d01c0ee53b78f9f9f9a265202a"
+    },
+    {
+      "rate": 2000,
+      "case": "cpu",
+      "repetition": 3,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1900629,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1028459,
+        "queue_delay_ns": 85251,
+        "dispatch_ns": 14374,
+        "service_ns": 1095551
+      },
+      "resources": {
+        "cpu_user_ns": 67744210000,
+        "cpu_system_ns": 1907968000,
+        "allocations": 1684476,
+        "allocated_bytes": 115044512,
+        "max_rss_bytes": 124866560,
+        "gc_cycles": 13,
+        "gc_pause_ns": 6478800
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "604ad50b675fbcf1ea0724eac571d176960b6bf6f2d0c43450140cfff875ffbc"
+    },
+    {
+      "rate": 2000,
+      "case": "alloc",
+      "repetition": 1,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1666591,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 658258,
+        "queue_delay_ns": 36365,
+        "dispatch_ns": 10899,
+        "service_ns": 1082088
+      },
+      "resources": {
+        "cpu_user_ns": 5181572000,
+        "cpu_system_ns": 2846475000,
+        "allocations": 1710388,
+        "allocated_bytes": 536082680,
+        "max_rss_bytes": 107700224,
+        "gc_cycles": 40,
+        "gc_pause_ns": 6746298
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "284982881f45f8e8a5307531d5377d8a1a1f3cd742c291eab9f4084a00febca9"
+    },
+    {
+      "rate": 2000,
+      "case": "alloc",
+      "repetition": 2,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1756775,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 674088,
+        "queue_delay_ns": 39883,
+        "dispatch_ns": 13111,
+        "service_ns": 1166946
+      },
+      "resources": {
+        "cpu_user_ns": 5583512000,
+        "cpu_system_ns": 2514215000,
+        "allocations": 1709963,
+        "allocated_bytes": 536055544,
+        "max_rss_bytes": 114696192,
+        "gc_cycles": 38,
+        "gc_pause_ns": 7221289
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "044111b47b0ab5f28788679004bc9acd65d73694215bfe6d2638c5b377424406"
+    },
+    {
+      "rate": 2000,
+      "case": "alloc",
+      "repetition": 3,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1728114,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 658973,
+        "queue_delay_ns": 36741,
+        "dispatch_ns": 11001,
+        "service_ns": 1177512
+      },
+      "resources": {
+        "cpu_user_ns": 5073302000,
+        "cpu_system_ns": 2966667000,
+        "allocations": 1710523,
+        "allocated_bytes": 536087552,
+        "max_rss_bytes": 124882944,
+        "gc_cycles": 39,
+        "gc_pause_ns": 7132007
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "7e4cc681fc28d1b3e96e9b02be04d4c2d856248611c7d323123f616f18c1c2e3"
+    },
+    {
+      "rate": 2000,
+      "case": "both",
+      "repetition": 1,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 2017843,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1018250,
+        "queue_delay_ns": 95394,
+        "dispatch_ns": 10935,
+        "service_ns": 1418976
+      },
+      "resources": {
+        "cpu_user_ns": 67649047000,
+        "cpu_system_ns": 2016435000,
+        "allocations": 1710055,
+        "allocated_bytes": 536090416,
+        "max_rss_bytes": 108511232,
+        "gc_cycles": 37,
+        "gc_pause_ns": 11099719
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "2b4e23e7b3db47d0146799c01092967c5a4784dfd7cfea9fd78ff2ea2b8fe767"
+    },
+    {
+      "rate": 2000,
+      "case": "both",
+      "repetition": 2,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1992758,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1023386,
+        "queue_delay_ns": 92458,
+        "dispatch_ns": 10711,
+        "service_ns": 1433535
+      },
+      "resources": {
+        "cpu_user_ns": 67624829000,
+        "cpu_system_ns": 1988347000,
+        "allocations": 1710138,
+        "allocated_bytes": 536092408,
+        "max_rss_bytes": 119808000,
+        "gc_cycles": 37,
+        "gc_pause_ns": 12467574
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "b4686a52982d3db3d4a892fa5aaaab3060f655ac8c2c0393d9a80491c7ed1014"
+    },
+    {
+      "rate": 2000,
+      "case": "both",
+      "repetition": 3,
+      "expected": 16000,
+      "success": 16000,
+      "p99_ns": 1938536,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 1032807,
+        "queue_delay_ns": 100393,
+        "dispatch_ns": 10759,
+        "service_ns": 1190123
+      },
+      "resources": {
+        "cpu_user_ns": 67308172000,
+        "cpu_system_ns": 2361328000,
+        "allocations": 1705588,
+        "allocated_bytes": 535841928,
+        "max_rss_bytes": 124919808,
+        "gc_cycles": 37,
+        "gc_pause_ns": 11780506
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "e13c0885360425c382b012ba7122905a2460bed423c0d10b112f1064341a19e0"
+    },
+    {
+      "rate": 4000,
+      "case": "none",
+      "repetition": 1,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1313595,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 475328,
+        "queue_delay_ns": 60669,
+        "dispatch_ns": 12935,
+        "service_ns": 981626
+      },
+      "resources": {
+        "cpu_user_ns": 8288448000,
+        "cpu_system_ns": 4981589000,
+        "allocations": 3337201,
+        "allocated_bytes": 221079896,
+        "max_rss_bytes": 29609984,
+        "gc_cycles": 21,
+        "gc_pause_ns": 5441280
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "5492bb44ee265175c52d3be2e0117dbd66e19e30c4883bfcc20d1b189ca8a2ef"
+    },
+    {
+      "rate": 4000,
+      "case": "none",
+      "repetition": 2,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1241747,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 460623,
+        "queue_delay_ns": 55521,
+        "dispatch_ns": 13155,
+        "service_ns": 927663
+      },
+      "resources": {
+        "cpu_user_ns": 8327321000,
+        "cpu_system_ns": 4736471000,
+        "allocations": 3333100,
+        "allocated_bytes": 220906240,
+        "max_rss_bytes": 173699072,
+        "gc_cycles": 21,
+        "gc_pause_ns": 5406958
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "c40810512ae30f1a820c9fa69ed02b4b3259a00a2e777ea5938ed1dd3fecf73c"
+    },
+    {
+      "rate": 4000,
+      "case": "none",
+      "repetition": 3,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1320348,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 477414,
+        "queue_delay_ns": 56779,
+        "dispatch_ns": 13567,
+        "service_ns": 988496
+      },
+      "resources": {
+        "cpu_user_ns": 8228396000,
+        "cpu_system_ns": 4944180000,
+        "allocations": 3337157,
+        "allocated_bytes": 221076800,
+        "max_rss_bytes": 173854720,
+        "gc_cycles": 21,
+        "gc_pause_ns": 5818503
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "4b747420253a1550216c4245f886198a1f22707edbd9594a2f4acdf560299853"
+    },
+    {
+      "rate": 4000,
+      "case": "cpu",
+      "repetition": 1,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1341814,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 442015,
+        "queue_delay_ns": 111784,
+        "dispatch_ns": 10124,
+        "service_ns": 1001068
+      },
+      "resources": {
+        "cpu_user_ns": 69408840000,
+        "cpu_system_ns": 3048780000,
+        "allocations": 3339925,
+        "allocated_bytes": 221328016,
+        "max_rss_bytes": 143585280,
+        "gc_cycles": 20,
+        "gc_pause_ns": 5762062
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "126546e3311ade64a50b049ea447951c29a8cf391de225635c6c4021aecb912b"
+    },
+    {
+      "rate": 4000,
+      "case": "cpu",
+      "repetition": 2,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1358903,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 444806,
+        "queue_delay_ns": 114528,
+        "dispatch_ns": 12565,
+        "service_ns": 1020297
+      },
+      "resources": {
+        "cpu_user_ns": 69521427000,
+        "cpu_system_ns": 3012577000,
+        "allocations": 3341426,
+        "allocated_bytes": 221423792,
+        "max_rss_bytes": 173658112,
+        "gc_cycles": 19,
+        "gc_pause_ns": 5950970
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "1b836c976944848e7c5de5921d9df977fac400719f253fa4cf7ff3869b404f77"
+    },
+    {
+      "rate": 4000,
+      "case": "cpu",
+      "repetition": 3,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1336869,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 444628,
+        "queue_delay_ns": 115604,
+        "dispatch_ns": 10190,
+        "service_ns": 989405
+      },
+      "resources": {
+        "cpu_user_ns": 68737009000,
+        "cpu_system_ns": 3678360000,
+        "allocations": 3340835,
+        "allocated_bytes": 221359384,
+        "max_rss_bytes": 164696064,
+        "gc_cycles": 20,
+        "gc_pause_ns": 6520575
+      },
+      "background_expected": 0,
+      "background_completed": 0,
+      "background_missed": 0,
+      "report_sha256": "15ba1d4f147594e143229440830a98d3ea0eb624a157486b933692448080d60b"
+    },
+    {
+      "rate": 4000,
+      "case": "alloc",
+      "repetition": 1,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1326123,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 477175,
+        "queue_delay_ns": 62571,
+        "dispatch_ns": 11774,
+        "service_ns": 1060085
+      },
+      "resources": {
+        "cpu_user_ns": 8517074000,
+        "cpu_system_ns": 4953722000,
+        "allocations": 3359698,
+        "allocated_bytes": 641977376,
+        "max_rss_bytes": 171806720,
+        "gc_cycles": 43,
+        "gc_pause_ns": 11328658
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "31bfcab931d363fc7cf85d30c5e92c85acd527f47f2185fcabf5f2ac2533d454"
+    },
+    {
+      "rate": 4000,
+      "case": "alloc",
+      "repetition": 2,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1276618,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 466381,
+        "queue_delay_ns": 64052,
+        "dispatch_ns": 14124,
+        "service_ns": 983579
+      },
+      "resources": {
+        "cpu_user_ns": 9176465000,
+        "cpu_system_ns": 4280886000,
+        "allocations": 3356483,
+        "allocated_bytes": 641786536,
+        "max_rss_bytes": 171257856,
+        "gc_cycles": 42,
+        "gc_pause_ns": 10512267
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "6913c806d13d2112e6ab5e49a32a6c763229d60b8f1e4f4bcbbb8c9c53253367"
+    },
+    {
+      "rate": 4000,
+      "case": "alloc",
+      "repetition": 3,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1394666,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 479249,
+        "queue_delay_ns": 63216,
+        "dispatch_ns": 13151,
+        "service_ns": 1137147
+      },
+      "resources": {
+        "cpu_user_ns": 8735932000,
+        "cpu_system_ns": 4988612000,
+        "allocations": 3362203,
+        "allocated_bytes": 642089760,
+        "max_rss_bytes": 173641728,
+        "gc_cycles": 42,
+        "gc_pause_ns": 10526030
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "77db8d0d76a94b824ee14444d4c0d82d8dd5384a64721c5e0054e4934a9e9623"
+    },
+    {
+      "rate": 4000,
+      "case": "both",
+      "repetition": 1,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1374939,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 443266,
+        "queue_delay_ns": 115217,
+        "dispatch_ns": 8606,
+        "service_ns": 1078531
+      },
+      "resources": {
+        "cpu_user_ns": 69599014000,
+        "cpu_system_ns": 2902721000,
+        "allocations": 3368027,
+        "allocated_bytes": 642531224,
+        "max_rss_bytes": 170545152,
+        "gc_cycles": 40,
+        "gc_pause_ns": 11371048
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "4f0fad5d56bc656f6caab279a6d07bf1055e6418ba2abd2c5b96fc47af925d62"
+    },
+    {
+      "rate": 4000,
+      "case": "both",
+      "repetition": 2,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1449045,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 457849,
+        "queue_delay_ns": 129811,
+        "dispatch_ns": 10023,
+        "service_ns": 1108506
+      },
+      "resources": {
+        "cpu_user_ns": 68679900000,
+        "cpu_system_ns": 3734432000,
+        "allocations": 3366215,
+        "allocated_bytes": 643106240,
+        "max_rss_bytes": 172437504,
+        "gc_cycles": 40,
+        "gc_pause_ns": 11506923
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "f25e9c62220e7618fb7a4f3843f86c4b21da1d641d90a0472c3a1a4406b6a726"
+    },
+    {
+      "rate": 4000,
+      "case": "both",
+      "repetition": 3,
+      "expected": 32000,
+      "success": 32000,
+      "p99_ns": 1320594,
+      "phase_p99_ns": {
+        "delivery_delay_ns": 446442,
+        "queue_delay_ns": 118871,
+        "dispatch_ns": 9914,
+        "service_ns": 994321
+      },
+      "resources": {
+        "cpu_user_ns": 69145822000,
+        "cpu_system_ns": 3372076000,
+        "allocations": 3361190,
+        "allocated_bytes": 642174400,
+        "max_rss_bytes": 173797376,
+        "gc_cycles": 40,
+        "gc_pause_ns": 11001041
+      },
+      "background_expected": 6400,
+      "background_completed": 6400,
+      "background_missed": 0,
+      "report_sha256": "3ab808984ddddaa3b4ae3640d9b021a0cadffed9491fb122a4ada2a7dfeff2d3"
+    }
+  ],
+  "aggregates": [
+    {
+      "rate": 1000,
+      "case": "none",
+      "repetitions": 3,
+      "success": 24000,
+      "median_p99_ns": 2172181,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 1035618,
+        "queue_delay_ns": 20192,
+        "dispatch_ns": 11442,
+        "service_ns": 1755899
+      }
+    },
+    {
+      "rate": 1000,
+      "case": "cpu",
+      "repetitions": 3,
+      "success": 24000,
+      "median_p99_ns": 2384578,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 1044005,
+        "queue_delay_ns": 23701,
+        "dispatch_ns": 18328,
+        "service_ns": 1801523
+      }
+    },
+    {
+      "rate": 1000,
+      "case": "alloc",
+      "repetitions": 3,
+      "success": 24000,
+      "median_p99_ns": 2078391,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 1039800,
+        "queue_delay_ns": 24110,
+        "dispatch_ns": 9663,
+        "service_ns": 1229299
+      }
+    },
+    {
+      "rate": 1000,
+      "case": "both",
+      "repetitions": 3,
+      "success": 24000,
+      "median_p99_ns": 3135395,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 1050985,
+        "queue_delay_ns": 85280,
+        "dispatch_ns": 10774,
+        "service_ns": 1881666
+      }
+    },
+    {
+      "rate": 2000,
+      "case": "none",
+      "repetitions": 3,
+      "success": 48000,
+      "median_p99_ns": 1757619,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 701657,
+        "queue_delay_ns": 34009,
+        "dispatch_ns": 12551,
+        "service_ns": 1038931
+      }
+    },
+    {
+      "rate": 2000,
+      "case": "cpu",
+      "repetitions": 3,
+      "success": 48000,
+      "median_p99_ns": 1867306,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 1023413,
+        "queue_delay_ns": 85251,
+        "dispatch_ns": 14374,
+        "service_ns": 1092604
+      }
+    },
+    {
+      "rate": 2000,
+      "case": "alloc",
+      "repetitions": 3,
+      "success": 48000,
+      "median_p99_ns": 1728114,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 658973,
+        "queue_delay_ns": 36741,
+        "dispatch_ns": 11001,
+        "service_ns": 1166946
+      }
+    },
+    {
+      "rate": 2000,
+      "case": "both",
+      "repetitions": 3,
+      "success": 48000,
+      "median_p99_ns": 1992758,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 1023386,
+        "queue_delay_ns": 95394,
+        "dispatch_ns": 10759,
+        "service_ns": 1418976
+      }
+    },
+    {
+      "rate": 4000,
+      "case": "none",
+      "repetitions": 3,
+      "success": 96000,
+      "median_p99_ns": 1313595,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 475328,
+        "queue_delay_ns": 56779,
+        "dispatch_ns": 13155,
+        "service_ns": 981626
+      }
+    },
+    {
+      "rate": 4000,
+      "case": "cpu",
+      "repetitions": 3,
+      "success": 96000,
+      "median_p99_ns": 1341814,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 444628,
+        "queue_delay_ns": 114528,
+        "dispatch_ns": 10190,
+        "service_ns": 1001068
+      }
+    },
+    {
+      "rate": 4000,
+      "case": "alloc",
+      "repetitions": 3,
+      "success": 96000,
+      "median_p99_ns": 1326123,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 477175,
+        "queue_delay_ns": 63216,
+        "dispatch_ns": 13151,
+        "service_ns": 1060085
+      }
+    },
+    {
+      "rate": 4000,
+      "case": "both",
+      "repetitions": 3,
+      "success": 96000,
+      "median_p99_ns": 1374939,
+      "median_phase_p99_ns": {
+        "delivery_delay_ns": 446442,
+        "queue_delay_ns": 118871,
+        "dispatch_ns": 9914,
+        "service_ns": 1078531
+      }
+    }
+  ],
+  "observed": [
+    {
+      "case": "none",
+      "repetition": 1,
+      "success": 16000,
+      "p99_ns": 1512800,
+      "gc_stw_ranges": 20,
+      "alignment_uncertainty_ns": 2860,
+      "read_service_p99_ns": 1026372,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 23,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.04466280107133502,
+      "stalls_sha256": "db786aa5e693b588151cbb70abd7c791ebfce3c3348aabd3660f20f1ccfb542b"
+    },
+    {
+      "case": "none",
+      "repetition": 2,
+      "success": 16000,
+      "p99_ns": 1636499,
+      "gc_stw_ranges": 18,
+      "alignment_uncertainty_ns": 2331,
+      "read_service_p99_ns": 1128036,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 14,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.01795031824923754,
+      "stalls_sha256": "91b3979011588e13a87d25100bc2642fafce2d074dc65d06f977b80ecf79794c"
+    },
+    {
+      "case": "none",
+      "repetition": 3,
+      "success": 16000,
+      "p99_ns": 1518955,
+      "gc_stw_ranges": 20,
+      "alignment_uncertainty_ns": 2915,
+      "read_service_p99_ns": 1026213,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 21,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.04462811959912368,
+      "stalls_sha256": "5e2366557698590a5355c8ccdf7e69b65932f2b86de71760eba3a3c121e6ea9c"
+    },
+    {
+      "case": "cpu",
+      "repetition": 1,
+      "success": 16000,
+      "p99_ns": 1976816,
+      "gc_stw_ranges": 18,
+      "alignment_uncertainty_ns": 4089,
+      "read_service_p99_ns": 1164553,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 35,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.0604213016683185,
+      "stalls_sha256": "b2a3fdf20b926200b5c45ce683f927560d2996143f38ce297d9ceaa4406653f5"
+    },
+    {
+      "case": "cpu",
+      "repetition": 2,
+      "success": 16000,
+      "p99_ns": 1848329,
+      "gc_stw_ranges": 18,
+      "alignment_uncertainty_ns": 1716,
+      "read_service_p99_ns": 1177844,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 43,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.08903463164182349,
+      "stalls_sha256": "c324d6da53ef344ceaea7a1e10ebb37f351d18aaca5284317487cc45935585c1"
+    },
+    {
+      "case": "cpu",
+      "repetition": 3,
+      "success": 16000,
+      "p99_ns": 1842584,
+      "gc_stw_ranges": 18,
+      "alignment_uncertainty_ns": 3322,
+      "read_service_p99_ns": 1036509,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 47,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.10196235336910066,
+      "stalls_sha256": "1908585ae81a8189519bf546130c32f7726b0b1530013113ceeccff5c08a008f"
+    },
+    {
+      "case": "alloc",
+      "repetition": 1,
+      "success": 16000,
+      "p99_ns": 1514842,
+      "gc_stw_ranges": 50,
+      "alignment_uncertainty_ns": 2823,
+      "read_service_p99_ns": 1071283,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 48,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.036381381537279496,
+      "stalls_sha256": "fecb4115edc6483a3301a0d7dff4396858ac726f69b8c971ee215b48e47ac6f7"
+    },
+    {
+      "case": "alloc",
+      "repetition": 2,
+      "success": 16000,
+      "p99_ns": 1622126,
+      "gc_stw_ranges": 53,
+      "alignment_uncertainty_ns": 3577,
+      "read_service_p99_ns": 1164369,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 49,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.024360916660154625,
+      "stalls_sha256": "525ea15d625205edfcbf68d079fb55a2fa0ae811cf994b498416120233c56ed2"
+    },
+    {
+      "case": "alloc",
+      "repetition": 3,
+      "success": 16000,
+      "p99_ns": 1465029,
+      "gc_stw_ranges": 52,
+      "alignment_uncertainty_ns": 2836,
+      "read_service_p99_ns": 983531,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 53,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.07609687498765559,
+      "stalls_sha256": "c8f7d047abc2d5007b74fb98d79fae4abe303e6850a4e91157993135831f7511"
+    },
+    {
+      "case": "both",
+      "repetition": 1,
+      "success": 16000,
+      "p99_ns": 2243452,
+      "gc_stw_ranges": 48,
+      "alignment_uncertainty_ns": 2278,
+      "read_service_p99_ns": 1572503,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 51,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.13754928342527,
+      "stalls_sha256": "9b6070316e1198e9a2fceba36f4098d7573f8f8cde220be4ee0738f2db322a3c"
+    },
+    {
+      "case": "both",
+      "repetition": 2,
+      "success": 16000,
+      "p99_ns": 2783183,
+      "gc_stw_ranges": 50,
+      "alignment_uncertainty_ns": 4155,
+      "read_service_p99_ns": 1784117,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 56,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.07032868859578376,
+      "stalls_sha256": "13b281be888a57efd7896a001af708d10806b97c533f3b657b92869a1bc73e6e"
+    },
+    {
+      "case": "both",
+      "repetition": 3,
+      "success": 16000,
+      "p99_ns": 2081880,
+      "gc_stw_ranges": 50,
+      "alignment_uncertainty_ns": 2109,
+      "read_service_p99_ns": 1278582,
+      "read_service_tail_count": 160,
+      "tail_reads_with_gc_overlap": 73,
+      "median_tail_gc_overlap_fraction": 0,
+      "median_tail_caller_runnable_overlap_fraction": 0.1578205979479168,
+      "stalls_sha256": "0d902da60511ac6d1a06c6dbfc0c5eb247376630d830f1a489f8da36eb3dc99b"
+    }
+  ],
+  "test_3x": {
+    "status": "blocked",
+    "write_errno": -1,
+    "read_errno": -1,
+    "measured_reads": 0
+  },
+  "limitations": "Diagnostic only; fixed case/rate ordering, short legs, no native comparison, cluster health/topology unavailable, observed samples excluded from primary; GC/runnable overlap is temporal correlation, not causation."
+}

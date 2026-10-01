@@ -50,9 +50,21 @@ treating end-to-end p99 as one client cost. Opt-in observation adds execution
 tracing with per-read and separate CPU/allocation tasks; instrumented samples
 remain separate from primary timing. See the
 [Linux live observation handoff](performance-p99-scheduler/LINUX_LIVE_OBSERVATION_HANDOFF.md).
-Selected source and binaries are frozen while captures run. The user is moving
-the observation to Linux live execution; results and their validation remain
-pending, with no pass, live p99 causal attribution or qualification claim.
+Selected source and binaries are frozen while captures run. The
+[external Linux retest of 2026-10-01](performance-p99-scheduler/LIVE_RETEST_20261001.md)
+completed 36 passing primary legs and twelve separate passing observed legs in
+each of readcache and test-3x. Initial test-3x `EPERM` failures are retained;
+the later authorized rerun passed with identical source and binary hashes.
+No matched native parity, live p99 causal attribution or qualification claim
+follows from that retest.
+
+A later matched secure closed-loop comparison against Ceph v20.2.4 librados
+completed forty read legs at 64 KiB/concurrency 16, with Go/native median p99
+ratios 0.899 on test-3x and 0.957 on readcache. All workload/mode/provenance
+checks passed; overall capture metadata remains incomplete because manager
+statistics were denied. See the same live retest report for individual blocks,
+client/server identities and limitations. This narrow idle read result does
+not establish general native parity or close the Phase 4 latency gate.
 
 ## Evidence and Native Comparison
 
