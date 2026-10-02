@@ -79,6 +79,18 @@ legs and 10.18 million successful timed operations, with sustained Go/native
 rows, before/current writes and supplementary metadata semantics. Serial-write
 regressions remain visible; local gains are not phase closure or certification.
 
+The [2026-10-02 native Linux write qualification](LINUX_WRITE_QUALIFICATION_20261002.md)
+investigates those serial-write observations with fixed placement and a
+restore-copy control. The serial slowdown did not reproduce. A separate,
+predeclared 30-block-per-cell sample passed all eight 10% elapsed/p99
+non-regression bounds and correctness/environment checks: 480 legs and 1228800
+timed writes. The [source-bound record](write-qualification-20261002.json)
+qualifies candidate `576ce5e` only for secure 4-MiB WriteFull at concurrency
+1/16 on the measured Linux/amd64 host, runtime and production pools. The
+inconclusive pilot remains separate. Other architectures/environments are
+deferred, not blockers for this scope; global P12/P13, native parity, endurance
+and the read Phase 4 gate are not closed by this workload qualification.
+
 ## Results
 
 Three fresh isolated Ceph clusters on the same Docker Linux ARM64 VM (10 CPUs),
