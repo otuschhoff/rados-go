@@ -66,15 +66,18 @@ for completed captures, all failed legs, exact phase populations and publication
 validation limits. No passing factorial result, stable live p99 gain, matched
 native parity or Phase 4 gate closure is asserted.
 
-Phase 5 queue/backoff burst benchmarks have also been performed, but the phase
-is not complete: production has no PG index, targeted notification scheme or
-queue-removal rewrite. The [factorial results](FACTORIAL_STALL_RESULTS.md)
-publish the raw queue/backoff evidence and its source-binding limits. Known depth-4096 completion-burst
-medians span 17.14-20.90 ms and cancellation-burst medians span 3.35-7.38 ms;
-lookup with 4096 unrelated PGs has a 58.9 us median, and the 4096-waiter case
-has a 241 ms median. These are synthetic costs, not live p99 attribution or
-evidence that a production rewrite passes. Full latest-state validation has
-not been established by this documentation update.
+The [2026-10-01 recommendation execution](RECOMMENDATIONS_20261001.md) implements
+PG-indexed backoffs/submissions, selective notification, indexed FIFO removal,
+ordered replay-prefix ACK trimming, secure owned framing, and immutable
+incremental sharing. Repeated synthetic measurements and local race/quality
+checks pass; the active-backoff overflow policy, Phase 4 latency margin,
+endurance and renewed certification remain open. Earlier
+[factorial results](FACTORIAL_STALL_RESULTS.md) are historical baseline evidence,
+not final-source live p99 attribution or broad parity.
+The [final compact evidence](recommendations-20261001.json) retains 488 timed
+legs and 10.18 million successful timed operations, with sustained Go/native
+rows, before/current writes and supplementary metadata semantics. Serial-write
+regressions remain visible; local gains are not phase closure or certification.
 
 ## Results
 

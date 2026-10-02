@@ -214,19 +214,44 @@ func TestPerformanceIncrementalFixtures(test *testing.T) {
 				test.Fatal("rename changed unrelated map state")
 			}
 			before := performanceMapFixture(test, fixtureCase.osdCount, fixtureCase.overrideCount, encodePlacementCrushMap(test))
-			next.osdState[0], next.osdWeight[0], next.primaryAffinity[0] = 0, 0, 0
-			next.clientAddresses[0][0].SocketData[0] = 1
-			next.crushData[0] ^= 1
-			next.pools[2].applicationMetadata["rados"]["purpose"] = "changed"
-			next.nameToID["extra"] = 2
-			if fixtureCase.overrideCount > 0 {
-				pg := PG{Pool: 2, Seed: 0, Preferred: -1}
-				next.pgTemp[pg][0], next.pgUpmap[pg][0] = 1, 1
-				next.pgUpmapItems[pg][0].To = 3
-				next.primaryTemp[pg], next.pgUpmapPrimaries[pg] = 1, 1
+			retained := cloneOSDMap(next)
+			addresses, _ := next.OSDClientAddresses(0)
+			addresses[0].SocketData[0] = 1
+			next.CrushData()[0] ^= 1
+			pool, _ := next.PoolByID(2)
+			pool.applicationMetadata["rados"]["purpose"] = "changed"
+			if !next.Equivalent(retained) {
+				test.Fatal("public mutable getter aliases published snapshot")
 			}
-			if !base.Equivalent(before) || incremental.newPoolNames[2] != "archive" {
-				test.Fatal("incremental result aliases original fixture")
+			pg := PG{Pool: 2, Seed: 0, Preferred: -1}
+			changes := &OSDMapIncremental{
+				fsid: next.fsid, epoch: next.epoch + 1, newPoolMax: -1, newFlags: -1,
+				newMaxOSD: next.maxOSD + 1,
+				newPools:  map[int64]Pool{2: pool}, newPoolNames: map[int64]string{2: "final"},
+				newState: map[int32]uint32{0: osdStateExists}, newWeight: map[int32]uint32{1: 0},
+				newPrimaryAffinity: map[int32]uint32{2: 0}, newUpClient: map[int32]protocol.EntityAddrVec{3: addresses},
+				newPGTemp: map[PG][]int32{pg: {1, 3}}, newPrimaryTemp: map[PG]int32{pg: 1},
+				newPGUpmap: map[PG][]int32{pg: {1, 3}}, newPGUpmapItems: map[PG][]OSDRemap{pg: {{From: 0, To: 3}}},
+				newPGUpmapPrimaries: map[PG]int32{pg: 1},
+			}
+			advanced, err := ApplyOSDMapIncremental(next, changes, limits)
+			if err != nil {
+				test.Fatal(err)
+			}
+			pool.applicationMetadata["rados"]["purpose"] = "caller mutation"
+			addresses[0].SocketData[0] = 2
+			if advanced.pools[2].applicationMetadata["rados"]["purpose"] != "changed" || advanced.clientAddresses[3][0].SocketData[0] != 1 {
+				test.Fatal("new incremental aliases caller-owned data")
+			}
+			failed := &OSDMapIncremental{
+				fsid: next.fsid, epoch: next.epoch + 1, newPoolMax: -1, newFlags: -1, newMaxOSD: -1,
+				newWeight: map[int32]uint32{0: 0}, newPrimaryAffinity: map[int32]uint32{next.maxOSD: 0},
+			}
+			if _, err := ApplyOSDMapIncremental(next, failed, limits); err == nil {
+				test.Fatal("invalid incremental succeeded")
+			}
+			if !base.Equivalent(before) || !next.Equivalent(retained) || incremental.newPoolNames[2] != "archive" {
+				test.Fatal("later or failed incremental mutated an earlier snapshot")
 			}
 		})
 	}

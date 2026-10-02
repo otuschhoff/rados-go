@@ -338,6 +338,13 @@ type writeTask struct {
 }
 
 type pendingRequest struct {
+	previous        *pendingRequest
+	next            *pendingRequest
+	replayPrevious  *pendingRequest
+	replayNext      *pendingRequest
+	pendingIndex    int
+	replayIndex     int
+	inReplay        bool
 	request         *submitCommand
 	message         Message
 	bytes           uint64
@@ -362,9 +369,13 @@ type sessionOwner struct {
 	nextWriteID   uint64
 	controlQueue  []Frame
 	pending       []*pendingRequest
+	pendingHead   *pendingRequest
+	pendingTail   *pendingRequest
 	byRequest     map[*submitCommand]*pendingRequest
 	byTID         map[uint64]*pendingRequest
 	replay        []*pendingRequest
+	replayHead    *pendingRequest
+	replayTail    *pendingRequest
 	retainedBytes uint64
 	controlCount  int
 	controlBytes  uint64
@@ -771,7 +782,7 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 		return
 	}
 	pending := &pendingRequest{request: command, message: message, bytes: messageBytes}
-	owner.pending = append(owner.pending, pending)
+	owner.addPending(pending)
 	owner.byRequest[command] = pending
 	owner.byTID[message.Header.TransactionID] = pending
 	if command.control {
@@ -847,7 +858,11 @@ func (owner *sessionOwner) dispatch() {
 			pending.seq = sequence
 			pending.message.Header.Sequence = pending.seq
 		}
-		frame, err := EncodeMessage(pending.message, owner.config.Limits)
+		encode := EncodeMessage
+		if transport, ok := owner.transport.(interface{ OwnsWriteFrames() bool }); ok && transport.OwnsWriteFrames() {
+			encode = encodeOwnedMessage
+		}
+		frame, err := encode(pending.message, owner.config.Limits)
 		if err != nil {
 			owner.removePending(pending)
 			pending.request.result <- submitResult{err: err}
@@ -858,9 +873,7 @@ func (owner *sessionOwner) dispatch() {
 		}
 		pending.sent = true
 		pending.mayHaveExecuted = true
-		if !containsPending(owner.replay, pending) {
-			owner.replay = append(owner.replay, pending)
-		}
+		owner.addReplay(pending)
 		owner.sendWrite(writeTask{frame: frame, request: pending.request, seq: pending.seq, transactionID: pending.message.Header.TransactionID})
 		return
 	}
@@ -1215,14 +1228,9 @@ func (owner *sessionOwner) queueControl(payload any) {
 }
 
 func (owner *sessionOwner) trimReplay(sequence uint64) {
-	kept := owner.replay[:0]
-	for _, pending := range owner.replay {
-		if pending.seq > sequence {
-			kept = append(kept, pending)
-		}
+	for owner.replayHead != nil && owner.replayHead.seq <= sequence {
+		owner.removeReplay(owner.replayHead)
 	}
-	clear(owner.replay[len(kept):])
-	owner.replay = kept
 }
 
 func (owner *sessionOwner) prepareReplay() {
@@ -1428,6 +1436,9 @@ func (owner *sessionOwner) failSentUnknown(cause error) {
 		}
 		owner.removePending(pending)
 		pending.request.result <- submitResult{err: fmt.Errorf("%w: %w", ErrOutcomeUnknown, cause)}
+	}
+	for owner.replayHead != nil {
+		owner.removeReplay(owner.replayHead)
 	}
 	owner.replay = nil
 }
@@ -1647,9 +1658,17 @@ func (owner *sessionOwner) failAll(err error) {
 			resultErr = fmt.Errorf("%w: %w", ErrOutcomeUnknown, err)
 		}
 		pending.request.result <- submitResult{err: resultErr}
+		pending.previous, pending.next = nil, nil
+		pending.replayPrevious, pending.replayNext = nil, nil
+		pending.pendingIndex, pending.replayIndex = -1, -1
+		pending.inReplay = false
 	}
+	clear(owner.pending)
+	clear(owner.replay)
 	owner.pending = nil
 	owner.replay = nil
+	owner.pendingHead, owner.pendingTail = nil, nil
+	owner.replayHead, owner.replayTail = nil, nil
 	clear(owner.byRequest)
 	clear(owner.byTID)
 	owner.retainedBytes = 0
@@ -1658,26 +1677,82 @@ func (owner *sessionOwner) failAll(err error) {
 	owner.inFlight = 0
 }
 
+func (owner *sessionOwner) addPending(pending *pendingRequest) {
+	pending.pendingIndex = len(owner.pending)
+	pending.previous, pending.next = owner.pendingTail, nil
+	if owner.pendingTail == nil {
+		owner.pendingHead = pending
+	} else {
+		owner.pendingTail.next = pending
+	}
+	owner.pendingTail = pending
+	owner.pending = append(owner.pending, pending)
+}
+
+func (owner *sessionOwner) addReplay(pending *pendingRequest) {
+	if pending.inReplay {
+		return
+	}
+	pending.inReplay = true
+	pending.replayIndex = len(owner.replay)
+	pending.replayPrevious, pending.replayNext = owner.replayTail, nil
+	if owner.replayTail == nil {
+		owner.replayHead = pending
+	} else {
+		owner.replayTail.replayNext = pending
+	}
+	owner.replayTail = pending
+	owner.replay = append(owner.replay, pending)
+}
+
+func (owner *sessionOwner) removeReplay(target *pendingRequest) {
+	if !target.inReplay {
+		return
+	}
+	last := len(owner.replay) - 1
+	moved := owner.replay[last]
+	owner.replay[target.replayIndex] = moved
+	moved.replayIndex = target.replayIndex
+	owner.replay[last] = nil
+	owner.replay = owner.replay[:last]
+	if target.replayPrevious == nil {
+		owner.replayHead = target.replayNext
+	} else {
+		target.replayPrevious.replayNext = target.replayNext
+	}
+	if target.replayNext == nil {
+		owner.replayTail = target.replayPrevious
+	} else {
+		target.replayNext.replayPrevious = target.replayPrevious
+	}
+	target.replayPrevious, target.replayNext = nil, nil
+	target.inReplay = false
+	target.replayIndex = -1
+}
+
 func (owner *sessionOwner) removePending(target *pendingRequest) {
 	if target.sent && !target.request.control {
 		owner.inFlight--
 	}
-	for index, pending := range owner.pending {
-		if pending == target {
-			copy(owner.pending[index:], owner.pending[index+1:])
-			owner.pending[len(owner.pending)-1] = nil
-			owner.pending = owner.pending[:len(owner.pending)-1]
-			break
-		}
+	last := len(owner.pending) - 1
+	moved := owner.pending[last]
+	owner.pending[target.pendingIndex] = moved
+	moved.pendingIndex = target.pendingIndex
+	owner.pending[last] = nil
+	owner.pending = owner.pending[:last]
+	if target.previous == nil {
+		owner.pendingHead = target.next
+	} else {
+		target.previous.next = target.next
 	}
-	for index, pending := range owner.replay {
-		if pending == target {
-			copy(owner.replay[index:], owner.replay[index+1:])
-			owner.replay[len(owner.replay)-1] = nil
-			owner.replay = owner.replay[:len(owner.replay)-1]
-			break
-		}
+	if target.next == nil {
+		owner.pendingTail = target.previous
+	} else {
+		target.next.previous = target.previous
 	}
+	target.previous, target.next = nil, nil
+	target.pendingIndex = -1
+	owner.removeReplay(target)
 	delete(owner.byRequest, target.request)
 	delete(owner.byTID, target.message.Header.TransactionID)
 	if target.request.control {
@@ -1836,13 +1911,4 @@ func cloneMessage(message Message) Message {
 	message.Middle = append([]byte(nil), message.Middle...)
 	message.Data = append([]byte(nil), message.Data...)
 	return message
-}
-
-func containsPending(items []*pendingRequest, target *pendingRequest) bool {
-	for _, item := range items {
-		if item == target {
-			return true
-		}
-	}
-	return false
 }

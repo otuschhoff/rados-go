@@ -376,9 +376,12 @@ Dependencies: Phases 1, 3. Finding: F4.
 
 Implementation status: bounded receive/session policy implemented after explicit
 maintainer approval; repeated memory/ownership/race checks pass. Phase remains
-blocked on secure-read latency: final live confirmation misses the unchanged
-8x native-p99 diagnostic guardrail, and no rigorous no-regression conclusion is
-established. See the [Phase 4 contract, audit and results](performance-phase4/README.md).
+blocked on secure-read latency: the historical final live confirmation missed
+the unchanged 8x native-p99 diagnostic guardrail. The later
+[2026-10-01 execution record](performance-p99-scheduler/RECOMMENDATIONS_20261001.md)
+contains 80 valid final-source read legs on the supplied external host, but no
+agreed margin or rigorous no-regression closure. See the
+[Phase 4 contract, audit and results](performance-phase4/README.md).
 No completion commit or renewed qualification is claimed. Phase 5 benchmarks
 and local in-flight accounting work have since been performed, as recorded
 below; they do not close the Phase 4 latency gate.
@@ -412,20 +415,22 @@ latency or protocol ordering. Application-retained outputs are reported separate
 
 Dependencies: Phase 1; Phase 3 where shared state is involved. Findings: F5, F6.
 
-Implementation status: benchmarks performed and O(1) in-flight accounting
-retained for local gains, not Phase 5 completion. See the
-[request-path results](performance-p99-scheduler/REQUEST_PATH_RESULTS.md).
-No production PG index, targeted backoff notification scheme or queue-removal
-rewrite has been implemented. The broader bookkeeping exit gate remains open.
+Implementation status: PG-indexed backoffs/admitted targets, targeted waiter
+notification, indexed FIFO request removal and ordered replay-prefix ACK
+trimming are implemented and locally measured. See the
+[2026-10-01 execution record](performance-p99-scheduler/RECOMMENDATIONS_20261001.md).
+The bounded active-backoff overflow policy and renewed certification remain
+open; no production limits or broader phase completion are claimed.
 
-New queue/backoff burst measurements are local, unpublished evidence in
+Earlier pre-index queue/backoff burst measurements are local evidence in
 `/tmp/rados-go-queue-backoff-bursts-v1.txt`, not a checked-in results bundle.
 At depth 4096, known completion-burst medians span 17.14-20.90 ms and
 cancellation-burst medians span 3.35-7.38 ms across measured cases. Lookup with
 4096 unrelated PGs has a 58.9 us median; the 4096-waiter case has a 241 ms
 median. These synthetic costs motivate further investigation, not a live p99
-causal attribution, native comparison or production rewrite. Full latest-state
-validation and publication are not claimed by this documentation update.
+causal attribution or native comparison. They are not measurements of the
+current indexed implementation; its before/after results and validation are
+recorded in the execution record above.
 
 - Benchmark backoffs at 1/64/1024/4096 ranges across many PGs, with multiple
   waiters and unrelated-PG updates. Test duplicate IDs and overlapping ranges.
@@ -449,6 +454,16 @@ approved and justified by load measurements.
 
 Dependencies: Phases 2, 5. Findings: F7, F8. Implement as two separate slices.
 
+Implementation status: secure-only admission-owned framing and component-scoped
+immutable incremental sharing are implemented with ownership/snapshot/race
+coverage, repeated benchmarks and separate post-GC profiles. CRC copying was
+retained after its timing improvement was not established. See the
+[execution record](performance-p99-scheduler/RECOMMENDATIONS_20261001.md) for
+measurement scope and open certification/endurance gates.
+Complete public 4-MiB writes reduce whole-process allocations and improve c16
+elapsed time, but serial elapsed time regresses. The write exit gate remains
+open; these results do not establish a general end-to-end improvement.
+
 - Write slice: benchmark complete Submit/Send and replay for 64 KiB and 4 MiB,
   including OSD encoding, admission, framing, and wire encryption. Preserve
   baseline allocated bytes and allocations per operation.
@@ -471,6 +486,16 @@ post-GC retained heap does not regress. Report write and map outcomes separately
 ### Phase 7: Qualify Sustained and Large-Scale Behavior
 
 Dependencies: Phases 1-6, or explicit recorded deferrals.
+
+Execution status: the final-source matched secure matrix, sustained sample
+counts, concurrency sweep through 256, supplementary before/current public
+writes and metadata semantics are completed. The
+[execution record](performance-p99-scheduler/RECOMMENDATIONS_20261001.md) and
+[compact evidence](performance-p99-scheduler/recommendations-20261001.json)
+retain 488 timed legs, observed regressions and all current qualification
+blockers. Native offered-load saturation, multi-host/fanout, snapshots,
+watch/notify load, disruptive recovery and formal certification remain
+unqualified. No Phase 7 exit-gate completion or broad parity is claimed.
 
 - Rerun the existing matched Go/native matrix and longer secure ABBA diagnostic
   on the final source state. Preserve both passing and failing artifacts.

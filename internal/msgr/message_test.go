@@ -76,6 +76,38 @@ func TestMessageRoundTrip(t *testing.T) {
 	}
 }
 
+func TestMessageEncoderOwnership(t *testing.T) {
+	message := Message{Lengths: MessageLengths{Front: 3, Middle: 3, Data: 3}, Front: []byte("abc"), Middle: []byte("def"), Data: []byte("ghi")}
+	copied, err := EncodeMessage(message, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owned, err := encodeOwnedMessage(message, testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, codec := range []Codec{CRCCodec{WithDataCRC: true}, func() Codec {
+		codec, err := NewSecureCodec(testSecureSecret(), false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return codec
+	}()} {
+		if _, err := codec.Encode(owned, testLimits); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if string(message.Front) != "abc" || string(message.Middle) != "def" || string(message.Data) != "ghi" {
+		t.Fatal("built-in wire encoding mutated replay-owned plaintext")
+	}
+	for index, payload := range [][]byte{message.Front, message.Middle, message.Data} {
+		payload[0] = 'X'
+		if copied.Segments[index+1].Data[0] == 'X' || owned.Segments[index+1].Data[0] != 'X' || cap(owned.Segments[index+1].Data) != len(payload) {
+			t.Fatal("framing ownership or capacity contract violated")
+		}
+	}
+}
+
 func TestMessageDecoderOwnership(t *testing.T) {
 	frame, err := EncodeMessage(Message{Lengths: MessageLengths{Data: 3}, Data: []byte("abc")}, testLimits)
 	if err != nil {

@@ -200,6 +200,7 @@ func FuzzSessionScript(f *testing.F) {
 	f.Add([]byte{0x00, 0x01})
 	f.Add([]byte{0x00, 0x08, 0x16})
 	f.Add([]byte{0x03, 0x05, 0x07})
+	f.Add([]byte("0088&80"))
 	f.Add([]byte{})
 
 	f.Fuzz(func(t *testing.T, script []byte) {
@@ -245,14 +246,14 @@ func FuzzSessionScript(f *testing.F) {
 				owner.handleFrame(Frame{Tag: 0})
 			case 8:
 				if owner.inFlightCount() < owner.config.MaxInFlightTransactions {
-					for _, pending := range owner.pending {
+					for pending := owner.pendingHead; pending != nil; pending = pending.next {
 						if !pending.sent {
 							markSessionPendingSent(owner, pending)
-							pending.seq = owner.takeSequence()
-							pending.message.Header.Sequence = pending.seq
-							if !containsPending(owner.replay, pending) {
-								owner.replay = append(owner.replay, pending)
+							if pending.seq == 0 {
+								pending.seq = owner.takeSequence()
+								pending.message.Header.Sequence = pending.seq
 							}
+							owner.addReplay(pending)
 							break
 						}
 					}
@@ -373,19 +374,45 @@ func assertFuzzSessionInvariants(t *testing.T, owner *sessionOwner) {
 		t.Fatalf("in-flight count %d exceeds limit %d", owner.inFlightCount(), owner.config.MaxInFlightTransactions)
 	}
 	var retained uint64
-	for _, pending := range owner.pending {
+	for index, pending := range owner.pending {
 		retained += pending.bytes
-		if owner.byRequest[pending.request] != pending || owner.byTID[pending.message.Header.TransactionID] != pending {
+		if pending.pendingIndex != index || owner.byRequest[pending.request] != pending || owner.byTID[pending.message.Header.TransactionID] != pending {
 			t.Fatal("pending request indexes are inconsistent")
 		}
+		if pending.inReplay && (pending.replayIndex < 0 || pending.replayIndex >= len(owner.replay) || owner.replay[pending.replayIndex] != pending) {
+			t.Fatal("request has stale replay membership")
+		}
+	}
+	var previous *pendingRequest
+	linked := 0
+	for pending := owner.pendingHead; pending != nil; pending = pending.next {
+		linked++
+		if linked > len(owner.pending) || pending.previous != previous || owner.byRequest[pending.request] != pending {
+			t.Fatal("FIFO links are inconsistent or cyclic")
+		}
+		previous = pending
+	}
+	if linked != len(owner.pending) || previous != owner.pendingTail {
+		t.Fatal("FIFO membership differs from dense request storage")
 	}
 	if retained != owner.retainedBytes || retained > owner.config.MaxRetainedBytes {
 		t.Fatalf("retained bytes = %d, tracked = %d, limit = %d", retained, owner.retainedBytes, owner.config.MaxRetainedBytes)
 	}
-	for _, replay := range owner.replay {
-		if owner.byRequest[replay.request] != replay || replay.seq == 0 {
+	for index, replay := range owner.replay {
+		if !replay.inReplay || replay.replayIndex != index || owner.byRequest[replay.request] != replay || replay.seq == 0 {
 			t.Fatal("replay entry is not an active sequenced request")
 		}
+	}
+	previous, linked = nil, 0
+	for pending := owner.replayHead; pending != nil; pending = pending.replayNext {
+		linked++
+		if linked > len(owner.replay) || pending.replayPrevious != previous || !pending.inReplay || previous != nil && previous.seq > pending.seq {
+			t.Fatal("ordered replay links are inconsistent or cyclic")
+		}
+		previous = pending
+	}
+	if linked != len(owner.replay) || previous != owner.replayTail {
+		t.Fatal("ordered replay membership differs from dense storage")
 	}
 	if owner.state == StateStopped {
 		t.Fatal(errors.New("session stopped before script completed"))

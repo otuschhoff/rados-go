@@ -37,6 +37,7 @@ func BenchmarkSessionSaturatedDispatch(benchmark *testing.B) {
 					request: &submitCommand{ctx: context.Background()}, sent: index != 0,
 				}
 			}
+			indexSessionFixture(owner)
 			benchmark.ReportAllocs()
 			for benchmark.Loop() {
 				owner.dispatch()

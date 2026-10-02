@@ -424,6 +424,11 @@ func (transport *authTransport) OwnsReadFrames() bool {
 	return ok && owned.OwnsReadFrames()
 }
 
+func (transport *authTransport) OwnsWriteFrames() bool {
+	owned, ok := transport.Transport.(interface{ OwnsWriteFrames() bool })
+	return ok && owned.OwnsWriteFrames()
+}
+
 func (transport *authTransport) ReadFrameWithBudget(budget *msgr.ReceiveBudget, limits msgr.Limits) (msgr.Frame, error) {
 	return msgr.ReadTransportFrame(transport.Transport, budget, limits)
 }

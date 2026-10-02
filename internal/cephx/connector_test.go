@@ -42,6 +42,14 @@ func (transport *renewalTestTransport) Close() error {
 	return nil
 }
 
+func TestAuthTransportCustomWriteOwnershipDefault(t *testing.T) {
+	transport := &authTransport{Transport: &renewalTestTransport{closed: make(chan struct{})}}
+	if transport.OwnsWriteFrames() {
+		t.Fatal("custom transport opted into owned writes by default")
+	}
+	transport.Close()
+}
+
 func TestConnectorSecureHandshakeAndTransport(t *testing.T) {
 	credential, target := testConnectorIdentity(t)
 	clientConn, serverConn := net.Pipe()
@@ -72,6 +80,10 @@ func TestConnectorSecureHandshakeAndTransport(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer transport.Close()
+	owned, ok := transport.(interface{ OwnsWriteFrames() bool })
+	if !ok || !owned.OwnsWriteFrames() {
+		t.Fatal("authenticated built-in secure transport lost write ownership capability")
+	}
 	metaTransport, ok := transport.(MetadataTransport)
 	if !ok {
 		t.Fatal("transport does not expose auth metadata")

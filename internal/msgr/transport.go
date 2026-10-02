@@ -110,6 +110,11 @@ func (transport *connTransport) OwnsReadFrames() bool {
 	}
 }
 
+func (transport *connTransport) OwnsWriteFrames() bool {
+	_, secure := transport.codec.(*SecureCodec)
+	return secure
+}
+
 func (transport *connTransport) WriteFrame(frame Frame) error {
 	transport.writeMu.Lock()
 	defer transport.writeMu.Unlock()

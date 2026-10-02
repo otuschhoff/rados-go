@@ -91,15 +91,61 @@ static const uint64_t k_sizes[] = {4096ULL, 65536ULL, 1048576ULL, 4194304ULL};
 static const int k_concurrencies[] = {1, 16, 64};
 static const enum workload_kind k_workloads[] = {WORKLOAD_READ, WORKLOAD_WRITE, WORKLOAD_MIXED};
 
+static struct {
+	int operations;
+	uint64_t size;
+	int concurrency;
+	int workload;
+} matrix = {2, 0, 0, -1};
+
 static int read_diagnostic(void) {
 	const char *value = getenv("P07_READ_DIAGNOSTIC");
 	return value != NULL && strcmp(value, "1") == 0;
 }
 
+static int read_matrix_settings(void) {
+	const char *names[] = {"P07_MATRIX_OPERATIONS_PER_WORKER", "P07_MATRIX_SIZE", "P07_MATRIX_CONCURRENCY", "P07_MATRIX_WORKLOAD"};
+	for (size_t index = 0; index < sizeof(names) / sizeof(names[0]); index++) {
+		const char *value = getenv(names[index]);
+		if (value == NULL || value[0] == '\0') {
+			continue;
+		}
+		if (read_diagnostic()) {
+			fprintf(stderr, "native benchmark: matrix overrides require normal workload mode\n");
+			return -1;
+		}
+		if (index == 3) {
+			if (strcmp(value, "read") == 0) matrix.workload = WORKLOAD_READ;
+			else if (strcmp(value, "write") == 0) matrix.workload = WORKLOAD_WRITE;
+			else if (strcmp(value, "mixed") == 0) matrix.workload = WORKLOAD_MIXED;
+			else return -1;
+			continue;
+		}
+		for (const char *character = value; *character != '\0'; character++) {
+			if (*character < '0' || *character > '9') return -1;
+		}
+		char *end = NULL;
+		errno = 0;
+		long parsed = strtol(value, &end, 10);
+		if (errno != 0 || end == value || *end != '\0') return -1;
+		if (index == 0) {
+			if (parsed < 256 || parsed > 4096) return -1;
+			matrix.operations = (int)parsed;
+		} else if (index == 1) {
+			if (strcmp(value, "4096") != 0 && strcmp(value, "65536") != 0 && strcmp(value, "1048576") != 0 && strcmp(value, "4194304") != 0) return -1;
+			matrix.size = (uint64_t)parsed;
+		} else {
+			if (strcmp(value, "1") != 0 && strcmp(value, "16") != 0 && strcmp(value, "32") != 0 && strcmp(value, "64") != 0 && strcmp(value, "128") != 0 && strcmp(value, "256") != 0) return -1;
+			matrix.concurrency = (int)parsed;
+		}
+	}
+	return 0;
+}
+
 static int read_operations_per_worker(void) {
 	const char *value = getenv("P07_OPERATIONS_PER_WORKER");
 	if (value == NULL || value[0] == '\0') {
-		return read_diagnostic() ? 256 : 2;
+		return read_diagnostic() ? 256 : matrix.operations;
 	}
 	char *end = NULL;
 	errno = 0;
@@ -268,8 +314,16 @@ static void *worker_main(void *arg) {
 		return NULL;
 	}
 	fill_payload(payload, ctx->size_bytes, ctx->run_id, worker->worker_id);
-	if (read_diagnostic()) {
+	if (read_diagnostic() || matrix.operations > 2) {
 		for (int warmup = 0; warmup < 8; warmup++) {
+			if (ctx->workload == WORKLOAD_WRITE || (ctx->workload == WORKLOAD_MIXED && warmup % 2 == 1)) {
+				int write_result = api->write_full(ctx->ioctx, object_name, (const char *)payload, (size_t)ctx->size_bytes);
+				if (write_result < 0) {
+					set_worker_error(ctx, "warmup write failed", write_result);
+					break;
+				}
+				continue;
+			}
 			int read_result = api->read(ctx->ioctx, object_name, (char *)read_buffer, (size_t)ctx->size_bytes, 0);
 			if (read_result != (int)ctx->size_bytes || memcmp(read_buffer, payload, (size_t)ctx->size_bytes) != 0) {
 				set_worker_error(ctx, "warmup read failed", read_result);
@@ -328,39 +382,25 @@ static void *worker_main(void *arg) {
 				ctx->latencies[latency_index + i] = timespec_diff_ns(begin, end);
 			}
 		} else if (ctx->workload == WORKLOAD_MIXED) {
-			struct timespec read_begin;
-			struct timespec read_end;
-			if (clock_gettime(CLOCK_MONOTONIC, &read_begin) != 0) {
-				set_worker_error(ctx, "clock_gettime failed", 0);
-			} else {
-				int read_result = api->read(ctx->ioctx, object_name, (char *)read_buffer, (size_t)ctx->size_bytes, 0);
-				if (clock_gettime(CLOCK_MONOTONIC, &read_end) != 0) {
+			for (int operation = 0; operation < op_per_worker && !is_canceled(ctx); operation++) {
+				struct timespec begin;
+				struct timespec end;
+				if (clock_gettime(CLOCK_MONOTONIC, &begin) != 0) {
 					set_worker_error(ctx, "clock_gettime failed", 0);
-				} else if (read_result < 0) {
-					set_worker_error(ctx, "mixed read failed", read_result);
-				} else if ((uint64_t)read_result != ctx->size_bytes) {
-					set_worker_error(ctx, "mixed short read", 0);
-				} else if (memcmp(read_buffer, payload, (size_t)ctx->size_bytes) != 0) {
-					set_worker_error(ctx, "mixed read payload mismatch", 0);
-				} else {
-					ctx->latencies[latency_index] = timespec_diff_ns(read_begin, read_end);
+					break;
 				}
-			}
-			if (!is_canceled(ctx)) {
-				struct timespec write_begin;
-				struct timespec write_end;
-				if (clock_gettime(CLOCK_MONOTONIC, &write_begin) != 0) {
+				int result = operation % 2 == 0
+					? api->read(ctx->ioctx, object_name, (char *)read_buffer, (size_t)ctx->size_bytes, 0)
+					: api->write_full(ctx->ioctx, object_name, (const char *)payload, (size_t)ctx->size_bytes);
+				if (clock_gettime(CLOCK_MONOTONIC, &end) != 0) {
 					set_worker_error(ctx, "clock_gettime failed", 0);
-				} else {
-					int write_result = api->write_full(ctx->ioctx, object_name, (const char *)payload, (size_t)ctx->size_bytes);
-					if (clock_gettime(CLOCK_MONOTONIC, &write_end) != 0) {
-						set_worker_error(ctx, "clock_gettime failed", 0);
-					} else if (write_result < 0) {
-						set_worker_error(ctx, "mixed write_full failed", write_result);
-					} else {
-						ctx->latencies[latency_index + 1] = timespec_diff_ns(write_begin, write_end);
-					}
+					break;
 				}
+				if (result < 0 || (operation % 2 == 0 && (result != (int)ctx->size_bytes || memcmp(read_buffer, payload, (size_t)ctx->size_bytes) != 0))) {
+					set_worker_error(ctx, "mixed operation or payload validation failed", result);
+					break;
+				}
+				ctx->latencies[latency_index + operation] = timespec_diff_ns(begin, end);
 			}
 		} else {
 			set_worker_error(ctx, "invalid workload", 0);
@@ -582,7 +622,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "native benchmark: TRANSPORT must be secure or crc\n");
 		return 2;
 	}
-	if (read_operations_per_worker() < 0) {
+	if (read_matrix_settings() != 0 || read_operations_per_worker() < 0) {
 		return 2;
 	}
 
@@ -676,12 +716,16 @@ int main(int argc, char **argv) {
 		run_id = 1;
 	}
 	for (size_t i = 0; i < sizeof(k_sizes) / sizeof(k_sizes[0]); i++) {
+		if (matrix.size != 0 && matrix.size != k_sizes[i]) continue;
 		for (size_t j = 0; j < sizeof(k_concurrencies) / sizeof(k_concurrencies[0]); j++) {
+			if (matrix.concurrency != 0 && j != 0) continue;
+			int concurrency = matrix.concurrency != 0 ? matrix.concurrency : k_concurrencies[j];
 			for (size_t k = 0; k < sizeof(k_workloads) / sizeof(k_workloads[0]); k++) {
+				if (matrix.workload != -1 && matrix.workload != (int)k_workloads[k]) continue;
 				if (total_rows == 1 && (k_sizes[i] != 65536 || k_concurrencies[j] != 16 || k_workloads[k] != WORKLOAD_READ)) {
 					continue;
 				}
-				if (run_row(&api, ioctx, run_id, k_sizes[i], k_concurrencies[j], k_workloads[k], &rows[row_index]) != 0) {
+				if (run_row(&api, ioctx, run_id, k_sizes[i], concurrency, k_workloads[k], &rows[row_index]) != 0) {
 					free(rows);
 					api.ioctx_destroy(ioctx);
 					api.shutdown(cluster);
@@ -742,7 +786,7 @@ int main(int argc, char **argv) {
 	printf("\"max_rss_bytes\":%" PRIu64, max_rss_bytes);
 	printf("},");
 	printf("\"rows\":[");
-	for (size_t i = 0; i < total_rows; i++) {
+	for (size_t i = 0; i < row_index; i++) {
 		if (i > 0) {
 			printf(",");
 		}

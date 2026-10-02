@@ -59,7 +59,7 @@ func (fixture *performanceQueue) fill() {
 		pending.message.Header.Sequence = pending.seq
 		markSessionPendingSent(owner, pending)
 		pending.mayHaveExecuted = true
-		owner.replay = append(owner.replay, pending)
+		owner.addReplay(pending)
 	}
 	fixture.storage = owner.pending[:cap(owner.pending)]
 	fixture.replay = owner.replay[:cap(owner.replay)]
@@ -146,6 +146,11 @@ type performanceWireTransport struct {
 	wires  chan []byte
 	closed chan struct{}
 	once   sync.Once
+}
+
+func (transport *performanceWireTransport) OwnsWriteFrames() bool {
+	_, secure := transport.codec.(*SecureCodec)
+	return secure
 }
 
 func newPerformanceWireTransport(codec Codec) *performanceWireTransport {

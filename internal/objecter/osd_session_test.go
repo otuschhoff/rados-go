@@ -15,6 +15,65 @@ import (
 
 var backoffTestLimits = osd.Limits{MaxBytes: 4096, MaxOperations: 4}
 
+func TestOSDSessionBackoffIndexTracksReusedIDs(t *testing.T) {
+	session := &osdSession{backoffs: make(map[uint64]osd.Backoff)}
+	first := maps.PG{Pool: 7, Seed: 1, Preferred: -1}
+	second := maps.PG{Pool: 7, Seed: 2, Preferred: -1}
+	object := osd.HObject{Object: "blocked", Pool: 7, Snapshot: osd.NoSnap}
+	block := osd.Backoff{ID: 1, PG: first, Begin: object, End: object}
+	session.addBackoff(block)
+	block.PG = second
+	session.addBackoff(block)
+	if len(session.backoffsByPG[first]) != 0 || len(session.backoffsByPG[second]) != 1 || len(session.backoffs) != 1 {
+		t.Fatal("reused ID left a stale PG index")
+	}
+	block.ID = 2
+	session.addBackoff(block)
+	session.removeBackoff(1)
+	if len(session.backoffsByPG[second]) != 1 || session.backoffsByPG[second][2].ID != 2 {
+		t.Fatal("removal discarded an overlapping block")
+	}
+	session.removeBackoff(2)
+	if len(session.backoffsByPG) != 0 || len(session.backoffs) != 0 {
+		t.Fatal("empty PG index retained ranges")
+	}
+}
+
+func TestOSDSessionSubmissionIndexCleanup(t *testing.T) {
+	session := &osdSession{submissions: make(map[uint64]*targetSubmission)}
+	first := maps.PG{Pool: 7, Seed: 1, Preferred: -1}
+	second := maps.PG{Pool: 7, Seed: 2, Preferred: -1}
+	session.addSubmission(1, &targetSubmission{pg: first})
+	session.addSubmission(2, &targetSubmission{pg: first})
+	session.addSubmission(1, &targetSubmission{pg: second})
+	if session.submissionsByPG[first] == nil || session.submissionsByPG[first].next != nil || session.submissionsByPG[second] == nil || session.submissionsByPG[second].next != nil {
+		t.Fatal("reused submission ID left stale PG membership")
+	}
+	session.removeSubmission(2)
+	session.removeSubmission(1)
+	session.removeSubmission(1)
+	if len(session.submissions) != 0 || len(session.submissionsByPG) != 0 {
+		t.Fatal("completed submissions retained PG buckets")
+	}
+}
+
+func TestOSDSessionBackoffWakeBeforeWait(t *testing.T) {
+	session := &osdSession{raw: newFakeOSDTransport(), backoffs: make(map[uint64]osd.Backoff)}
+	pg := maps.PG{Pool: 7, Seed: 1, Preferred: -1}
+	session.mu.Lock()
+	waiters, changed := session.subscribeBackoff(pg)
+	session.wakeBackoffPG(pg)
+	session.mu.Unlock()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	if err := session.waitBackoff(ctx, pg, waiters, changed); err != nil {
+		t.Fatalf("wake before select was lost: %v", err)
+	}
+	if len(session.backoffWaiters) != 0 {
+		t.Fatal("completed wait retained subscription")
+	}
+}
+
 type borrowedOSDTransport struct {
 	*fakeOSDTransport
 	borrow func(context.Context, msgr.Message, func()) (msgr.Message, func(), error)

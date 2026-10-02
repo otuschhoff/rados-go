@@ -20,10 +20,10 @@ func newBackoffBurstSession(ranges int) (*osdSession, *fakeOSDTransport) {
 	}
 	for index := 0; index < ranges; index++ {
 		object := osd.HObject{Object: "blocked", Pool: 7, Snapshot: osd.NoSnap}
-		session.backoffs[uint64(index+1)] = osd.Backoff{
+		session.addBackoff(osd.Backoff{
 			ID: uint64(index + 1), PG: maps.PG{Pool: 7, Seed: uint32(index + 1), Preferred: -1},
 			Shard: -1, Operation: osd.BackoffBlock, Begin: object, End: object,
-		}
+		})
 	}
 	return session, transport
 }
@@ -40,7 +40,7 @@ func BenchmarkBackoffBurst(benchmark *testing.B) {
 				session, _ := newBackoffBurstSession(ranges)
 				pg := maps.PG{Pool: 7, Seed: 0, Preferred: -1}
 				object := osd.HObject{Object: "unrelated", Pool: 7, Snapshot: osd.NoSnap}
-				benchmark.Log("One op is W synchronous real Wait calls, each a guaranteed full B-entry unrelated-PG map scan under the mutex. Models predicate work of W broadcast wake rescans; NOT actual blocked goroutines, scheduler wake latency or early-exit matching lookup. Fixture construction excluded by B.Loop; no reset required.")
+				benchmark.Log("One op is W synchronous real Wait calls with B unrelated-PG ranges. Measures indexed predicate lookup under the mutex, not blocked goroutines or scheduler wake latency. Fixture construction excluded by B.Loop; no reset required.")
 				benchmark.ReportAllocs()
 				for benchmark.Loop() {
 					for waiter := 0; waiter < waiters; waiter++ {
@@ -50,14 +50,14 @@ func BenchmarkBackoffBurst(benchmark *testing.B) {
 					}
 				}
 				backoffBurstMetrics(benchmark, waiters)
-				benchmark.ReportMetric(float64(ranges*waiters), "range-visits/op")
+				benchmark.ReportMetric(0, "range-visits/op")
 			})
 		}
 		benchmark.Run(fmt.Sprintf("submit-register/ranges=%d/batch=128/setup-excluded", ranges), func(benchmark *testing.B) {
 			session, _ := newBackoffBurstSession(ranges)
 			pg := maps.PG{Pool: 7, Seed: 0, Preferred: -1}
 			object := osd.HObject{Object: "unrelated", Pool: 7, Snapshot: osd.NoSnap}
-			benchmark.Log("One op is 128 real SubmitTarget calls: full unrelated-PG scan, child context, submission registration, immediate fake transport admission/unlock and reply, deregistration and cancel. Prebuilt fixture excluded; no wire/pumps/network, outstanding submissions or sleeping goroutines.")
+			benchmark.Log("One op is 128 real SubmitTarget calls: PG-indexed lookup, child context, submission registration, immediate fake transport admission/unlock and reply, deregistration and cancel. Prebuilt fixture excluded; no wire/pumps/network, outstanding submissions or sleeping goroutines.")
 			benchmark.ReportAllocs()
 			for benchmark.Loop() {
 				for request := 0; request < 128; request++ {
@@ -76,6 +76,7 @@ func BenchmarkBackoffBurst(benchmark *testing.B) {
 				defer session.Stop()
 				session.mu.Lock()
 				session.backoffs = fixture.backoffs
+				session.backoffsByPG = fixture.backoffsByPG
 				blocked := session.backoffs[1]
 				entries := make([]targetSubmission, submissions)
 				cancellations := 0
@@ -84,17 +85,17 @@ func BenchmarkBackoffBurst(benchmark *testing.B) {
 					if index == 0 {
 						entries[index].pg = blocked.PG
 					}
-					session.submissions[uint64(index+1)] = &entries[index]
+					session.addSubmission(uint64(index+1), &entries[index])
 				}
 				session.mu.Unlock()
 				unblock := blocked
 				unblock.Operation = osd.BackoffUnblock
 				message := encodeBackoffMessage(benchmark, unblock)
-				benchmark.Log("One op is one real receive-dispatch unblock: timed restore of one range and S resend flags, unbuffered injection, decode, ID deletion, S admitted-submission scan (exactly one match/cancel), global changed broadcast, and unbuffered second-message barrier. Two fixed session workers, no S goroutines; setup/message encoding excluded. Does NOT include waiter rescans, ACK writer progress or scheduler wake fanout. ns/request means per scanned submission, not per unblock.")
+				benchmark.Log("One op is one real receive-dispatch unblock: timed restore of one range and S resend flags, unbuffered injection, decode, ID deletion, PG-indexed admitted-submission lookup (exactly one match/cancel), affected-PG notification, and unbuffered second-message barrier. Two fixed session workers, no S goroutines; setup/message encoding excluded. S flag resets remain linear and timed. Does NOT include waiter rescans, ACK writer progress or scheduler wake fanout. ns/request means per fixture submission, not per unblock lookup.")
 				benchmark.ReportAllocs()
 				for benchmark.Loop() {
 					session.mu.Lock()
-					session.backoffs[blocked.ID] = blocked
+					session.addBackoff(blocked)
 					for index := range entries {
 						entries[index].resend = false
 					}
@@ -126,7 +127,7 @@ func (ctx backoffBurstWaitContext) Done() <-chan struct{} {
 	return ctx.Context.Done()
 }
 
-func TestBackoffBurstBroadcastRescansUnrelatedWaiters(t *testing.T) {
+func TestBackoffBurstUnblockDoesNotWakeUnrelatedWaiters(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	fixture, transport := newBackoffBurstSession(128)
@@ -135,6 +136,7 @@ func TestBackoffBurstBroadcastRescansUnrelatedWaiters(t *testing.T) {
 	defer session.Stop()
 	session.mu.Lock()
 	session.backoffs = fixture.backoffs
+	session.backoffsByPG = fixture.backoffsByPG
 	first, second := session.backoffs[1], session.backoffs[2]
 	changed := session.changed
 	session.mu.Unlock()
@@ -162,6 +164,9 @@ func TestBackoffBurstBroadcastRescansUnrelatedWaiters(t *testing.T) {
 	for _, signal := range entered {
 		await(signal)
 	}
+	session.mu.Lock()
+	unrelatedChanged := session.backoffWaiters[second.PG].changed
+	session.mu.Unlock()
 	first.Operation = osd.BackoffUnblock
 	select {
 	case transport.incoming <- encodeBackoffMessage(t, first):
@@ -180,7 +185,6 @@ func TestBackoffBurstBroadcastRescansUnrelatedWaiters(t *testing.T) {
 		}
 	}
 	for index := group; index < group*2; index++ {
-		await(entered[index])
 		select {
 		case err := <-results[index]:
 			t.Fatalf("unrelated blocked waiter returned: %v", err)
@@ -188,6 +192,9 @@ func TestBackoffBurstBroadcastRescansUnrelatedWaiters(t *testing.T) {
 		}
 	}
 	session.mu.Lock()
+	if session.backoffWaiters[second.PG].changed != unrelatedChanged {
+		t.Fatal("unrelated PG notification changed")
+	}
 	if len(session.backoffs) != 127 || session.backoffs[2].ID != 2 {
 		t.Fatal("unblock removed unrelated ranges")
 	}
@@ -203,5 +210,10 @@ func TestBackoffBurstBroadcastRescansUnrelatedWaiters(t *testing.T) {
 			t.Fatal("cancel did not drain waiter")
 		}
 	}
-	t.Log("32 waiters registered; one unblock broadcast releases 16 matching waiters and causes 16 unrelated blocked waiters to enter a second predicate wait; no sleeps")
+	session.mu.Lock()
+	if len(session.backoffWaiters) != 0 {
+		t.Fatal("cancellation retained PG subscriptions")
+	}
+	session.mu.Unlock()
+	t.Log("32 waiters registered; one unblock releases 16 matching waiters without notifying 16 unrelated waiters; cancellation removes all subscriptions")
 }

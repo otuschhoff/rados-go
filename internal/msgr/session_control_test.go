@@ -36,6 +36,7 @@ func TestSessionDispatchSelectionNoControls(t *testing.T) {
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			owner := &sessionOwner{pending: test.pending}
+			indexSessionFixture(owner)
 			for _, pending := range owner.pending {
 				pending.request = &submitCommand{}
 				if pending.sent {
@@ -62,6 +63,7 @@ func TestSessionDispatchSelectionControls(t *testing.T) {
 		pending:      []*pendingRequest{freshApplication, application, freshControl, replayedControl},
 		controlCount: 2,
 	}
+	indexSessionFixture(owner)
 	for _, want := range []*pendingRequest{replayedControl, application, freshControl, freshApplication} {
 		if got := owner.nextPendingWrite(); got != want {
 			t.Fatalf("selected %p, want %p", got, want)
@@ -84,6 +86,7 @@ func TestSessionDispatchSelectionSaturatedReplay(t *testing.T) {
 	owner.inFlight = 1
 	owner.controlCount = 1
 	owner.replay = []*pendingRequest{inFlight, application, control}
+	indexSessionFixture(owner)
 	if got := owner.nextPendingWrite(); got != application {
 		t.Fatalf("selected %p, want older application %p", got, application)
 	}
@@ -104,6 +107,7 @@ func BenchmarkSessionDispatchSelection(b *testing.B) {
 					requests[index].seq = uint64(index + 1)
 					owner.pending[index] = &requests[index]
 				}
+				indexSessionFixture(owner)
 				want := owner.pending[0]
 				if controls {
 					owner.controlCount = 1
@@ -186,7 +190,7 @@ func TestSessionInlineFaultPreservesMatchedReply(t *testing.T) {
 	pending.seq = owner.takeSequence()
 	markSessionPendingSent(owner, pending)
 	pending.mayHaveExecuted = true
-	owner.replay = append(owner.replay, pending)
+	owner.addReplay(pending)
 	reply := testMessage("durable reply")
 	reply.Header.Sequence = 1
 	reply.Header.AckSequence = pending.seq
@@ -594,7 +598,7 @@ func TestSessionControlTerminalAndResetRelease(t *testing.T) {
 			started := controlUnitSubmit(owner, controlTestMessage(29))
 			pending := owner.byRequest[started]
 			pending.seq, pending.sent, pending.mayHaveExecuted = 1, true, true
-			owner.replay = append(owner.replay, pending)
+			owner.addReplay(pending)
 			queued := controlUnitSubmit(owner, controlTestMessage(29))
 			test.fail(owner)
 			assertControlOwnerEmpty(t, owner)
@@ -642,7 +646,7 @@ func TestSessionControlReplayCancellationUnknown(t *testing.T) {
 	owner.submit(command)
 	pending := owner.byRequest[command]
 	pending.seq, pending.mayHaveExecuted = 1, true
-	owner.replay = append(owner.replay, pending)
+	owner.addReplay(pending)
 	cancel()
 	owner.dispatch()
 	if result := <-command.result; !errors.Is(result.err, context.Canceled) || !errors.Is(result.err, ErrOutcomeUnknown) {

@@ -30,22 +30,32 @@ type osdSession struct {
 	ackDone        chan struct{}
 	dispatcherDone chan struct{}
 
-	mu             sync.Mutex
-	backoffs       map[uint64]osd.Backoff
-	submissions    map[uint64]*targetSubmission
-	nextSubmission uint64
-	changed        chan struct{}
-	err            error
-	notifications  chan osd.WatchNotification
-	interruptions  chan error
-	observe        func(bool, error)
+	mu              sync.Mutex
+	backoffs        map[uint64]osd.Backoff
+	backoffsByPG    map[maps.PG]map[uint64]osd.Backoff
+	backoffWaiters  map[maps.PG]*backoffWaiters
+	submissions     map[uint64]*targetSubmission
+	submissionsByPG map[maps.PG]*targetSubmission
+	nextSubmission  uint64
+	changed         chan struct{}
+	err             error
+	notifications   chan osd.WatchNotification
+	interruptions   chan error
+	observe         func(bool, error)
+}
+
+type backoffWaiters struct {
+	changed chan struct{}
+	count   int
 }
 
 type targetSubmission struct {
-	pg     maps.PG
-	object osd.HObject
-	cancel context.CancelFunc
-	resend bool
+	previous *targetSubmission
+	next     *targetSubmission
+	pg       maps.PG
+	object   osd.HObject
+	cancel   context.CancelFunc
+	resend   bool
 }
 
 type backoffACK struct {
@@ -137,8 +147,8 @@ func (session *osdSession) submitTarget(ctx context.Context, pg maps.PG, object 
 			return msgr.Message{}, noRelease, err
 		}
 		blocked := false
-		for _, backoff := range session.backoffs {
-			if backoff.PG == pg && backoff.Contains(object) {
+		for _, backoff := range session.backoffsByPG[pg] {
+			if backoff.Contains(object) {
 				blocked = true
 				break
 			}
@@ -151,7 +161,7 @@ func (session *osdSession) submitTarget(ctx context.Context, pg maps.PG, object 
 			}
 			id := session.nextSubmission
 			submission := &targetSubmission{pg: pg, object: object, cancel: cancel}
-			session.submissions[id] = submission
+			session.addSubmission(id, submission)
 			var unlock sync.Once
 			var result msgr.Message
 			var err error
@@ -166,7 +176,7 @@ func (session *osdSession) submitTarget(ctx context.Context, pg maps.PG, object 
 			}
 			unlock.Do(session.mu.Unlock)
 			session.mu.Lock()
-			delete(session.submissions, id)
+			session.removeSubmission(id)
 			resend := submission.resend
 			session.mu.Unlock()
 			cancel()
@@ -179,14 +189,10 @@ func (session *osdSession) submitTarget(ctx context.Context, pg maps.PG, object 
 			}
 			return result, release, err
 		}
-		changed := session.changed
+		waiters, changed := session.subscribeBackoff(pg)
 		session.mu.Unlock()
-		select {
-		case <-ctx.Done():
-			return msgr.Message{}, noRelease, ctx.Err()
-		case <-session.raw.Done():
-			return msgr.Message{}, noRelease, session.failure(msgr.ErrSessionClosed)
-		case <-changed:
+		if err := session.waitBackoff(ctx, pg, waiters, changed); err != nil {
+			return msgr.Message{}, noRelease, err
 		}
 	}
 }
@@ -305,8 +311,8 @@ func (session *osdSession) Wait(ctx context.Context, pg maps.PG, object osd.HObj
 			return err
 		}
 		blocked := false
-		for _, backoff := range session.backoffs {
-			if backoff.PG == pg && backoff.Contains(object) {
+		for _, backoff := range session.backoffsByPG[pg] {
+			if backoff.Contains(object) {
 				blocked = true
 				break
 			}
@@ -315,16 +321,117 @@ func (session *osdSession) Wait(ctx context.Context, pg maps.PG, object osd.HObj
 			session.mu.Unlock()
 			return nil
 		}
-		changed := session.changed
+		waiters, changed := session.subscribeBackoff(pg)
 		session.mu.Unlock()
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-session.raw.Done():
-			return session.failure(msgr.ErrSessionClosed)
-		case <-changed:
+		if err := session.waitBackoff(ctx, pg, waiters, changed); err != nil {
+			return err
 		}
 	}
+}
+
+func (session *osdSession) subscribeBackoff(pg maps.PG) (*backoffWaiters, <-chan struct{}) {
+	if session.backoffWaiters == nil {
+		session.backoffWaiters = make(map[maps.PG]*backoffWaiters)
+	}
+	waiters := session.backoffWaiters[pg]
+	if waiters == nil {
+		waiters = &backoffWaiters{changed: make(chan struct{})}
+		session.backoffWaiters[pg] = waiters
+	}
+	waiters.count++
+	return waiters, waiters.changed
+}
+
+func (session *osdSession) waitBackoff(ctx context.Context, pg maps.PG, waiters *backoffWaiters, changed <-chan struct{}) error {
+	defer func() {
+		session.mu.Lock()
+		waiters.count--
+		if waiters.count == 0 {
+			delete(session.backoffWaiters, pg)
+		}
+		session.mu.Unlock()
+	}()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-session.raw.Done():
+		return session.failure(msgr.ErrSessionClosed)
+	case <-changed:
+		return nil
+	}
+}
+
+func (session *osdSession) wakeBackoffPG(pg maps.PG) {
+	if waiters := session.backoffWaiters[pg]; waiters != nil {
+		close(waiters.changed)
+		waiters.changed = make(chan struct{})
+	}
+}
+
+func (session *osdSession) wakeAllBackoffs() {
+	for pg := range session.backoffWaiters {
+		session.wakeBackoffPG(pg)
+	}
+}
+
+func (session *osdSession) addSubmission(id uint64, submission *targetSubmission) {
+	session.removeSubmission(id)
+	if session.submissionsByPG == nil {
+		session.submissionsByPG = make(map[maps.PG]*targetSubmission)
+	}
+	submission.previous, submission.next = nil, session.submissionsByPG[submission.pg]
+	if submission.next != nil {
+		submission.next.previous = submission
+	}
+	session.submissions[id] = submission
+	session.submissionsByPG[submission.pg] = submission
+}
+
+func (session *osdSession) removeSubmission(id uint64) {
+	submission := session.submissions[id]
+	if submission == nil {
+		return
+	}
+	delete(session.submissions, id)
+	if submission.previous == nil {
+		session.submissionsByPG[submission.pg] = submission.next
+	} else {
+		submission.previous.next = submission.next
+	}
+	if submission.next != nil {
+		submission.next.previous = submission.previous
+	}
+	submission.previous, submission.next = nil, nil
+	if session.submissionsByPG[submission.pg] == nil {
+		delete(session.submissionsByPG, submission.pg)
+	}
+}
+
+func (session *osdSession) addBackoff(backoff osd.Backoff) {
+	session.removeBackoff(backoff.ID)
+	if session.backoffsByPG == nil {
+		session.backoffsByPG = make(map[maps.PG]map[uint64]osd.Backoff)
+	}
+	if session.backoffsByPG[backoff.PG] == nil {
+		session.backoffsByPG[backoff.PG] = make(map[uint64]osd.Backoff)
+	}
+	session.backoffs[backoff.ID] = backoff
+	session.backoffsByPG[backoff.PG][backoff.ID] = backoff
+	session.wakeBackoffPG(backoff.PG)
+}
+
+func (session *osdSession) removeBackoff(id uint64) (osd.Backoff, bool) {
+	backoff, exists := session.backoffs[id]
+	if exists {
+		delete(session.backoffs, id)
+		ranges := session.backoffsByPG[backoff.PG]
+		delete(ranges, id)
+		if len(ranges) == 0 {
+			delete(session.backoffsByPG, backoff.PG)
+		}
+		session.wakeBackoffPG(backoff.PG)
+	}
+	return backoff, exists
 }
 
 func (session *osdSession) receive() {
@@ -354,6 +461,8 @@ func (session *osdSession) receive() {
 		session.ackMu.Unlock()
 		session.resetACKs(generation)
 		clear(session.backoffs)
+		clear(session.backoffsByPG)
+		session.wakeAllBackoffs()
 		close(session.changed)
 		session.changed = make(chan struct{})
 		return true
@@ -397,6 +506,7 @@ func (session *osdSession) receive() {
 			}
 			if current && session.err == nil {
 				session.err = result.err
+				session.wakeAllBackoffs()
 				close(session.changed)
 				session.changed = make(chan struct{})
 			}
@@ -454,14 +564,13 @@ func (session *osdSession) receive() {
 			current := !authoritative || message.TransportGeneration == scoped.ControlGeneration()
 			if current && err == nil {
 				if backoff.Operation == osd.BackoffBlock {
-					session.backoffs[backoff.ID] = backoff
+					session.addBackoff(backoff)
 					err = session.enqueueACK(ack)
 				} else {
-					blocked, ok := session.backoffs[backoff.ID]
-					delete(session.backoffs, backoff.ID)
+					blocked, ok := session.removeBackoff(backoff.ID)
 					if ok {
-						for _, submission := range session.submissions {
-							if submission.pg == blocked.PG && blocked.Contains(submission.object) {
+						for submission := session.submissionsByPG[blocked.PG]; submission != nil; submission = submission.next {
+							if blocked.Contains(submission.object) {
 								submission.resend = true
 								submission.cancel()
 							}
@@ -477,6 +586,7 @@ func (session *osdSession) receive() {
 			}
 			if current && err != nil && session.err == nil {
 				session.err = err
+				session.wakeAllBackoffs()
 				close(session.changed)
 				session.changed = make(chan struct{})
 			}
@@ -531,6 +641,7 @@ func (session *osdSession) fail(err error) {
 	session.mu.Lock()
 	if session.err == nil {
 		session.err = err
+		session.wakeAllBackoffs()
 		close(session.changed)
 		session.changed = make(chan struct{})
 	}

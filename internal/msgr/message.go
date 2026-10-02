@@ -97,6 +97,14 @@ func DecodeMessageHeader(data []byte) (MessageHeader, error) {
 }
 
 func EncodeMessage(message Message, limits Limits) (Frame, error) {
+	return encodeMessage(message, limits, true)
+}
+
+func encodeOwnedMessage(message Message, limits Limits) (Frame, error) {
+	return encodeMessage(message, limits, false)
+}
+
+func encodeMessage(message Message, limits Limits, copyPayloads bool) (Frame, error) {
 	frontLength, err := checkedUint32Length(len(message.Front))
 	if err != nil {
 		return Frame{}, err
@@ -128,7 +136,11 @@ func EncodeMessage(message Message, limits Limits) (Frame, error) {
 		return Frame{}, err
 	}
 	for index := range segments {
-		segments[index].Data = append([]byte(nil), segments[index].Data...)
+		if copyPayloads {
+			segments[index].Data = append([]byte(nil), segments[index].Data...)
+		} else {
+			segments[index].Data = segments[index].Data[:len(segments[index].Data):len(segments[index].Data)]
+		}
 	}
 	return Frame{Tag: TagMessage, Segments: segments}, nil
 }

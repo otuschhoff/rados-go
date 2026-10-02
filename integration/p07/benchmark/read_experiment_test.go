@@ -5,6 +5,35 @@ import (
 	"testing"
 )
 
+func TestMatrixExperimentLimits(t *testing.T) {
+	values := map[string]string{"P07_MATRIX_OPERATIONS_PER_WORKER": "1024", "P07_MATRIX_SIZE": "4194304", "P07_MATRIX_CONCURRENCY": "128", "P07_MATRIX_WORKLOAD": "mixed"}
+	getenv := func(name string) string { return values[name] }
+	value, err := parseMatrixExperiment(getenv, false)
+	if err != nil || value.operations != 1024 || value.size != 4194304 || value.concurrency != 128 || value.workload != "mixed" {
+		t.Fatalf("value=%+v err=%v", value, err)
+	}
+	if _, err := parseMatrixExperiment(getenv, true); err == nil {
+		t.Fatal("diagnostic accepted matrix overrides")
+	}
+	for name, invalid := range map[string][]string{
+		"P07_MATRIX_OPERATIONS_PER_WORKER": {"0", "255", "4097", "+256", " 256", "99999999999999999999"},
+		"P07_MATRIX_SIZE":                  {"0", "65537"}, "P07_MATRIX_CONCURRENCY": {"0", "65", "257"}, "P07_MATRIX_WORKLOAD": {"delete", "READ"},
+	} {
+		previous := values[name]
+		for _, text := range invalid {
+			values[name] = text
+			if _, err := parseMatrixExperiment(getenv, false); err == nil {
+				t.Fatalf("invalid %s=%q accepted", name, text)
+			}
+		}
+		values[name] = previous
+	}
+	value, err = parseMatrixExperiment(func(string) string { return "" }, false)
+	if err != nil || value.operations != 2 || value.size != 0 || value.concurrency != 0 || value.workload != "" {
+		t.Fatal("default matrix changed")
+	}
+}
+
 func TestReadExperimentLimits(t *testing.T) {
 	value, err := parseReadExperiment("1024", "4", "8", "1", true)
 	if err != nil || value.operations != 1024 || value.slots != 4 || value.window != 8 || !value.allocationLoad {

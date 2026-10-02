@@ -48,14 +48,18 @@ func (fixture *queueBurstFixture) reset() {
 	owner := fixture.owner
 	clear(owner.byRequest)
 	clear(owner.byTID)
-	owner.pending, owner.replay = fixture.pending, fixture.replay
+	owner.pending, owner.replay = fixture.pending[:0], fixture.replay[:0]
+	owner.pendingHead, owner.pendingTail = nil, nil
+	owner.replayHead, owner.replayTail = nil, nil
 	owner.controlQueue = owner.controlQueue[:0]
 	owner.state, owner.lastInbound, owner.nextOutbound = StateReady, 0, uint64(len(fixture.entries)+1)
 	owner.retainedBytes, owner.inFlight = uint64(len(fixture.entries))*MessageHeaderSize, len(fixture.entries)
 	for index := range fixture.entries {
 		pending := &fixture.entries[index]
 		pending.sent = true
-		fixture.pending[index], fixture.replay[index] = pending, pending
+		pending.inReplay = false
+		owner.addPending(pending)
+		owner.addReplay(pending)
 		owner.byRequest[pending.request] = pending
 		owner.byTID[pending.message.Header.TransactionID] = pending
 	}
@@ -161,10 +165,21 @@ func TestQueueBurstACKBatchPreservesPending(t *testing.T) {
 			t.Fatal("ACK changed live request accounting")
 		}
 		for index, pending := range fixture.owner.replay {
-			if pending.seq != sequence+uint64(index)+1 {
-				t.Fatal("ACK reordered replay suffix")
+			if pending.seq <= sequence || pending.replayIndex != index {
+				t.Fatal("ACK retained an acknowledged entry or stale dense index")
 			}
 		}
+		expected := sequence + 1
+		for pending := fixture.owner.replayHead; pending != nil; pending = pending.replayNext {
+			if pending.seq != expected {
+				t.Fatal("ACK reordered replay suffix")
+			}
+			expected++
+		}
+		if expected != 129 {
+			t.Fatal("ACK lost an unacknowledged replay entry")
+		}
+		assertFuzzSessionInvariants(t, fixture.owner)
 		for _, pending := range fixture.replay[len(fixture.owner.replay):] {
 			if pending != nil {
 				t.Fatal("ACK retained trimmed backing")

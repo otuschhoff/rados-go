@@ -26,6 +26,36 @@ func assertSessionInFlight(t *testing.T, owner *sessionOwner) {
 	}
 }
 
+func TestSessionIndexedQueueFIFOAfterRemoval(t *testing.T) {
+	owner := newUnitSessionOwner(t)
+	owner.config = performanceConfig(16)
+	entries := make([]*pendingRequest, 7)
+	for index := range entries {
+		request := &submitCommand{ctx: context.Background(), message: testMessage("application"), result: make(chan submitResult, 1)}
+		owner.submit(request)
+		entries[index] = owner.byRequest[request]
+		entries[index].seq = uint64(index + 1)
+		owner.addReplay(entries[index])
+	}
+	storage, replay := owner.pending, owner.replay
+	owner.removePending(entries[1])
+	owner.removePending(entries[4])
+	owner.trimReplay(3)
+	assertFuzzSessionInvariants(t, owner)
+	for _, index := range []int{0, 2, 3, 5, 6} {
+		if got := owner.nextPendingWrite(); got != entries[index] {
+			t.Fatalf("FIFO changed after dense removal: got %p, want entry %d", got, index)
+		}
+		owner.removePending(entries[index])
+		assertFuzzSessionInvariants(t, owner)
+	}
+	for index := range storage {
+		if storage[index] != nil || replay[index] != nil || entries[index].previous != nil || entries[index].next != nil || entries[index].replayPrevious != nil || entries[index].replayNext != nil {
+			t.Fatal("completed indexed queue retained a backing or linked reference")
+		}
+	}
+}
+
 func TestSessionInFlightTransitions(t *testing.T) {
 	owner := newUnitSessionOwner(t)
 	owner.writeTasks = make(chan writeTask, 1)
@@ -182,8 +212,8 @@ func TestSessionInFlightReplayIdempotentAndRenewal(t *testing.T) {
 	if owner.state != StateReady || !owner.renewalPending {
 		t.Fatal("renewal ignored ACKed applications awaiting replies")
 	}
-	for owner.pending[0].sent {
-		owner.cancel(cancelCommand{request: owner.pending[0].request, err: context.Canceled})
+	for owner.pendingHead != nil && owner.pendingHead.sent {
+		owner.cancel(cancelCommand{request: owner.pendingHead.request, err: context.Canceled})
 		assertSessionInFlight(t, owner)
 	}
 	owner.dispatch()

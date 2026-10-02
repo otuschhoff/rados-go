@@ -240,7 +240,7 @@ func ApplyOSDMapIncremental(current *OSDMap, incremental *OSDMapIncremental, lim
 		}
 		return replacement, nil
 	}
-	next := cloneOSDMap(current)
+	next := cloneOSDMapForIncremental(current, incremental)
 	next.epoch = incremental.epoch
 	next.modified = incremental.modified
 	next.crc = incremental.fullCRC
@@ -373,6 +373,64 @@ func ApplyOSDMapIncremental(current *OSDMap, incremental *OSDMapIncremental, lim
 		}
 	}
 	return next, nil
+}
+
+func cloneOSDMapForIncremental(source *OSDMap, changes *OSDMapIncremental) *OSDMap {
+	result := &OSDMap{
+		fsid: source.fsid, epoch: source.epoch, created: source.created, modified: source.modified,
+		poolMax: source.poolMax, flags: source.flags, maxOSD: source.maxOSD,
+		crushVersion: source.crushVersion, lastUpChange: source.lastUpChange, lastInChange: source.lastInChange,
+		crc: source.crc, crcVerified: source.crcVerified, appliedIncremental: source.appliedIncremental,
+		placementState: source.crushPlacementState(),
+		pools:          source.pools, nameToID: source.nameToID,
+		osdState: source.osdState, osdWeight: source.osdWeight,
+		primaryAffinity: source.primaryAffinity, clientAddresses: source.clientAddresses,
+		crushData: source.crushData, pgTemp: source.pgTemp, primaryTemp: source.primaryTemp,
+		pgUpmap: source.pgUpmap, pgUpmapItems: source.pgUpmapItems, pgUpmapPrimaries: source.pgUpmapPrimaries,
+		erasureCodeProfiles: source.erasureCodeProfiles,
+	}
+	if len(changes.newPools)+len(changes.newPoolNames)+len(changes.oldPools) != 0 {
+		result.pools = make(map[int64]Pool, len(source.pools))
+		for id, pool := range source.pools {
+			result.pools[id] = pool
+		}
+		result.nameToID = make(map[string]int64, len(source.nameToID))
+		for name, id := range source.nameToID {
+			result.nameToID[name] = id
+		}
+	}
+	resize := changes.newMaxOSD >= 0
+	if resize || len(changes.newWeight)+len(changes.newState)+len(changes.newUpClient) != 0 {
+		result.osdState = append([]uint32(nil), source.osdState...)
+	}
+	if resize || len(changes.newWeight) != 0 {
+		result.osdWeight = append([]uint32(nil), source.osdWeight...)
+	}
+	if resize || len(changes.newPrimaryAffinity)+len(changes.newState) != 0 {
+		result.primaryAffinity = append([]uint32(nil), source.primaryAffinity...)
+	}
+	if resize || len(changes.newUpClient)+len(changes.newState) != 0 {
+		result.clientAddresses = append([]protocol.EntityAddrVec(nil), source.clientAddresses...)
+	}
+	if len(changes.newPGTemp) != 0 {
+		result.pgTemp = clonePGVectors(source.pgTemp)
+	}
+	if len(changes.newPrimaryTemp) != 0 {
+		result.primaryTemp = clonePGInts(source.primaryTemp)
+	}
+	if len(changes.newPGUpmap)+len(changes.oldPGUpmap) != 0 {
+		result.pgUpmap = clonePGVectors(source.pgUpmap)
+	}
+	if len(changes.newPGUpmapItems)+len(changes.oldPGUpmapItems) != 0 {
+		result.pgUpmapItems = clonePGRemaps(source.pgUpmapItems)
+	}
+	if len(changes.newPGUpmapPrimaries)+len(changes.oldPGUpmapPrimaries) != 0 {
+		result.pgUpmapPrimaries = clonePGInts(source.pgUpmapPrimaries)
+	}
+	if len(changes.newErasureProfiles)+len(changes.oldErasureProfiles) != 0 {
+		result.erasureCodeProfiles = cloneNestedStringsMap(source.erasureCodeProfiles)
+	}
+	return result
 }
 
 func (osdMap *OSDMap) resizeOSDs(size int) {

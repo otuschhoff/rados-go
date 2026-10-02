@@ -59,18 +59,22 @@ func TestConnTransportFrameOwnership(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, test := range []struct {
-		name  string
-		codec Codec
-		owned bool
+		name       string
+		codec      Codec
+		owned      bool
+		writeOwned bool
 	}{
 		{name: "crc", codec: CRCCodec{}, owned: true},
-		{name: "secure", codec: secure, owned: true},
+		{name: "secure", codec: secure, owned: true, writeOwned: true},
 		{name: "custom", codec: &blockingCodec{}, owned: false},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			transport := &connTransport{codec: test.codec}
 			if transport.OwnsReadFrames() != test.owned {
 				t.Fatalf("ownership=%v want=%v", transport.OwnsReadFrames(), test.owned)
+			}
+			if transport.OwnsWriteFrames() != test.writeOwned {
+				t.Fatalf("write ownership=%v want=%v", transport.OwnsWriteFrames(), test.writeOwned)
 			}
 		})
 	}

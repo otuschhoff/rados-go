@@ -57,7 +57,7 @@ func validateControlMessage(message Message) error {
 
 func (owner *sessionOwner) nextPendingWrite() *pendingRequest {
 	if owner.controlCount == 0 {
-		for _, pending := range owner.pending {
+		for pending := owner.pendingHead; pending != nil; pending = pending.next {
 			if !pending.sent {
 				return pending
 			}
@@ -65,7 +65,7 @@ func (owner *sessionOwner) nextPendingWrite() *pendingRequest {
 		return nil
 	}
 	var replay, control, application *pendingRequest
-	for _, pending := range owner.pending {
+	for pending := owner.pendingHead; pending != nil; pending = pending.next {
 		if pending.sent {
 			continue
 		}

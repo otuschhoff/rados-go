@@ -156,6 +156,10 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	}()
 	diagnostic := os.Getenv("P07_READ_DIAGNOSTIC") == "1"
 	seedOnly := os.Getenv("P07_SEED_ONLY") == "1"
+	matrix, err := parseMatrixExperiment(os.Getenv, diagnostic || seedOnly)
+	if err != nil {
+		return err
+	}
 	shape, err := parseReadShape(os.Getenv("P07_READ_SIZE"), os.Getenv("P07_READ_CONCURRENCY"), diagnostic, seedOnly)
 	if err != nil {
 		return err
@@ -336,10 +340,20 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	rowSizes, rowConcurrencies := sizes, concurrencies
 	if diagnostic {
 		rowSizes, rowConcurrencies = []uint64{shape.size}, []int{shape.concurrency}
+	} else {
+		if matrix.size != 0 {
+			rowSizes = []uint64{matrix.size}
+		}
+		if matrix.concurrency != 0 {
+			rowConcurrencies = []int{matrix.concurrency}
+		}
 	}
 	for _, size := range rowSizes {
 		for _, concurrency := range rowConcurrencies {
 			for _, workload := range workloads {
+				if !diagnostic && matrix.workload != "" && workload != matrix.workload {
+					continue
+				}
 				if diagnostic && !shape.matches(size, concurrency, workload) {
 					continue
 				}
@@ -471,8 +485,8 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 		Resources: res,
 		Rows:      rows,
 	}
+	output.Environment.GOMAXPROCS = runtime.GOMAXPROCS(0)
 	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
-		output.Environment.GOMAXPROCS = runtime.GOMAXPROCS(0)
 		output.Diagnostic = &diagnosticMethodology{WarmupOperations: shape.operationCount(readWarmupPerWorker), ResourceScope: "warmup_and_measured_reads", ObjectSet: shape.objectSet(), BackgroundCPUWorkers: backgroundWorkers}
 		output.Diagnostic.ReadAPI = "read"
 		output.Diagnostic.OperationsPerWorker = experiment.operations
@@ -501,7 +515,11 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 		return row{}, &benchError{message: "invalid concurrency"}
 	}
 
-	opPerWorker := 2
+	matrix, err := parseMatrixExperiment(os.Getenv, os.Getenv("P07_READ_DIAGNOSTIC") == "1")
+	if err != nil {
+		return row{}, err
+	}
+	opPerWorker := matrix.operations
 	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
 		experiment, err := parseReadExperiment(os.Getenv("P07_OPERATIONS_PER_WORKER"), "", "", "", true)
 		if err != nil {
@@ -574,8 +592,15 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 				data, _, err := obj.Read(readCtx, 0, size)
 				return data, err
 			}
-			if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+			if os.Getenv("P07_READ_DIAGNOSTIC") == "1" || matrix.operations > 2 {
 				for warmup := 0; warmup < readWarmupPerWorker; warmup++ {
+					if workload == "write" || workload == "mixed" && warmup%2 == 1 {
+						if _, err := obj.WriteFull(ctx, payload); err != nil {
+							once.Do(func() { errCh <- &benchError{message: "warmup write", err: err}; cancel() })
+							break
+						}
+						continue
+					}
 					data, err := read(ctx)
 					if err != nil || !bytes.Equal(data, payload) {
 						once.Do(func() { errCh <- &benchError{message: "warmup read", err: err}; cancel() })
@@ -670,57 +695,32 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 					record(i, begin)
 				}
 			case "mixed":
-				if ctx.Err() != nil {
-					measuredWG.Done()
-					cleanupObject(obj)
-					return
+				for operation := 0; operation < opPerWorker; operation++ {
+					if ctx.Err() != nil {
+						measuredWG.Done()
+						cleanupObject(obj)
+						return
+					}
+					begin := time.Now()
+					var err error
+					if operation%2 == 0 {
+						var data []byte
+						data, err = read(ctx)
+						record(operation, begin)
+						if err == nil && !bytes.Equal(data, payload) {
+							err = fmt.Errorf("mixed short read or payload mismatch")
+						}
+					} else {
+						_, err = obj.WriteFull(ctx, payload)
+						record(operation, begin)
+					}
+					if err != nil {
+						once.Do(func() { errCh <- &benchError{message: "mixed operation", err: err}; cancel() })
+						measuredWG.Done()
+						cleanupObject(obj)
+						return
+					}
 				}
-				beginRead := time.Now()
-				data, _, err := obj.Read(ctx, 0, size)
-				record(0, beginRead)
-				if err != nil {
-					once.Do(func() {
-						errCh <- &benchError{message: "mixed read", err: err}
-						cancel()
-					})
-					measuredWG.Done()
-					cleanupObject(obj)
-					return
-				}
-				if uint64(len(data)) != size {
-					once.Do(func() {
-						errCh <- &benchError{message: "mixed short read"}
-						cancel()
-					})
-					measuredWG.Done()
-					cleanupObject(obj)
-					return
-				}
-				if !bytes.Equal(data, payload) {
-					once.Do(func() {
-						errCh <- &benchError{message: "mixed read payload mismatch"}
-						cancel()
-					})
-					measuredWG.Done()
-					cleanupObject(obj)
-					return
-				}
-				if ctx.Err() != nil {
-					measuredWG.Done()
-					cleanupObject(obj)
-					return
-				}
-				beginWrite := time.Now()
-				if _, err := obj.WriteFull(ctx, payload); err != nil {
-					once.Do(func() {
-						errCh <- &benchError{message: "mixed write", err: err}
-						cancel()
-					})
-					measuredWG.Done()
-					cleanupObject(obj)
-					return
-				}
-				record(1, beginWrite)
 			default:
 				once.Do(func() {
 					errCh <- &benchError{message: "invalid workload"}
