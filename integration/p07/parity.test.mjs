@@ -108,7 +108,8 @@ test('native sustained collector and driver reject invalid capture settings befo
       P07_QUALIFICATION_ROUND: '1', P07_QUALIFICATION_SEED: '42', P07_QUALIFICATION_LEG: 'r1-native'};
     for (const invalid of [{P07_QUALIFICATION_FILE: ''}, {P07_NATIVE_MODE_LOG: ''}, {P07_QUALIFICATION_ROUND: '0'}, {P07_QUALIFICATION_ROUND: '9007199254740992'},
       {P07_QUALIFICATION_SEED: '-1'}, {P07_QUALIFICATION_LEG: 'bad"leg'}, {P07_PARITY_NAMESPACE: 'unapproved'}, {P07_MATRIX_SIZE: '1'}, {P07_MATRIX_CONCURRENCY: '999'},
-      {P07_MATRIX_WORKLOAD: 'unknown'}, {P07_OFFERED_LOAD: '1'}, {P07_MATRIX_OPERATIONS_PER_WORKER: '256'}, {P07_NATIVE_MODE_LOG: environment.P07_QUALIFICATION_FILE}]) {
+      {P07_MATRIX_WORKLOAD: 'unknown'}, {P07_OFFERED_LOAD: '1'}, {P07_MATRIX_OPERATIONS_PER_WORKER: '256'}, {P07_NATIVE_MODE_LOG: environment.P07_QUALIFICATION_FILE},
+      {P07_PGO_DIAGNOSTIC: '0'}, {P07_PGO_PROFILE_FILE: 'training.pprof'}]) {
       const rejected = spawnSync(path.join(root, 'native_qualification'), ['missing-config', 'missing-key', 'unused-pool', 'secure'], {env: {...environment, ...invalid}, encoding: 'utf8', timeout: 5000});
       assert.equal(rejected.status, 2, JSON.stringify(invalid));
       assert.equal(fs.existsSync(environment.P07_QUALIFICATION_FILE), false);

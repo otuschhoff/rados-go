@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"runtime/pprof"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,6 +42,17 @@ func qualificationPhases(concurrency int) (qualificationPhase, qualificationPhas
 
 func (phase qualificationPhase) complete(successful uint64, elapsed time.Duration) bool {
 	return successful >= phase.minimumOperations && elapsed >= phase.minimumDuration
+}
+
+func pgoDiagnosticPhases(concurrency int) (qualificationPhase, qualificationPhase, error) {
+	warmup, measured, err := qualificationPhases(concurrency)
+	if err != nil {
+		return warmup, measured, err
+	}
+	workers := uint64(concurrency)
+	warmup.minimumOperations, warmup.minimumDuration = (1000+workers-1)/workers, time.Second
+	measured.minimumOperations, measured.minimumDuration = (10000+workers-1)/workers, 8*time.Second
+	return warmup, measured, nil
 }
 
 type qualificationOperation struct {
@@ -365,21 +377,27 @@ func collectQualificationAttempt(ctx context.Context, concurrency int, warmup, m
 }
 
 type qualificationConfig struct {
-	file  string
-	Round int    `json:"round"`
-	Leg   string `json:"leg"`
-	Seed  uint64 `json:"seed"`
+	file          string
+	pgoDiagnostic bool
+	profileFile   string
+	Round         int    `json:"round"`
+	Leg           string `json:"leg"`
+	Seed          uint64 `json:"seed"`
 }
 
 func parseQualificationConfig(env func(string) string) (*qualificationConfig, error) {
 	file := env("P07_QUALIFICATION_FILE")
 	if file == "" {
-		for _, name := range []string{"P07_QUALIFICATION_ROUND", "P07_QUALIFICATION_LEG", "P07_QUALIFICATION_SEED"} {
+		for _, name := range []string{"P07_QUALIFICATION_ROUND", "P07_QUALIFICATION_LEG", "P07_QUALIFICATION_SEED", "P07_PGO_DIAGNOSTIC", "P07_PGO_PROFILE_FILE"} {
 			if env(name) != "" {
 				return nil, fmt.Errorf("%s requires P07_QUALIFICATION_FILE", name)
 			}
 		}
 		return nil, nil
+	}
+	pgoDiagnostic := env("P07_PGO_DIAGNOSTIC")
+	if pgoDiagnostic != "" && pgoDiagnostic != "1" {
+		return nil, fmt.Errorf("P07_PGO_DIAGNOSTIC must be explicitly 1")
 	}
 	for _, name := range []string{"P07_READ_DIAGNOSTIC", "P07_SEED_ONLY", "P07_OFFERED_LOAD", "P07_RETENTION_WINDOWS", "P07_BACKGROUND_WORKERS", "P07_CPU_PROFILE", "P07_MEMORY_PROFILE", "P07_TRACE_FILE", "P07_RESOURCE_FILE", "P07_TIMING_FILE", "P07_MATRIX_OPERATIONS_PER_WORKER", "P07_OPERATIONS_PER_WORKER", "P07_SCRATCH_SLOTS", "P07_ADMISSION_WINDOW", "P07_BACKGROUND_ALLOCATIONS"} {
 		if env(name) != "" {
@@ -400,6 +418,13 @@ func parseQualificationConfig(env func(string) string) (*qualificationConfig, er
 	if modeFile == "" || outputErr != nil || modeErr != nil || outputPath == modePath {
 		return nil, fmt.Errorf("qualification requires a distinct fresh mode evidence file")
 	}
+	profileFile := env("P07_PGO_PROFILE_FILE")
+	if profileFile != "" {
+		profilePath, err := filepath.Abs(profileFile)
+		if pgoDiagnostic != "1" || err != nil || profilePath == outputPath || profilePath == modePath {
+			return nil, fmt.Errorf("PGO training profile requires diagnostic mode and a distinct fresh file")
+		}
+	}
 	round, err := strconv.Atoi(env("P07_QUALIFICATION_ROUND"))
 	if err != nil || round < 1 || uint64(round) > 9007199254740991 {
 		return nil, fmt.Errorf("qualification round must be a positive safe integer")
@@ -417,7 +442,7 @@ func parseQualificationConfig(env func(string) string) (*qualificationConfig, er
 			return nil, fmt.Errorf("qualification leg must contain lowercase ASCII letters, digits and hyphens")
 		}
 	}
-	return &qualificationConfig{file: file, Round: round, Seed: seed, Leg: leg}, nil
+	return &qualificationConfig{file: file, pgoDiagnostic: pgoDiagnostic == "1", profileFile: profileFile, Round: round, Seed: seed, Leg: leg}, nil
 }
 
 func runQualification(parent context.Context, pool rados.Pool, config qualificationConfig, matrix matrixExperiment) (resultErr error) {
@@ -426,9 +451,33 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 		return fmt.Errorf("create fresh qualification capture: %w", err)
 	}
 	defer func() { resultErr = errors.Join(resultErr, file.Close()) }()
+	var profileFile *os.File
+	profileActive := false
+	stopProfile := func() error {
+		if profileActive {
+			pprof.StopCPUProfile()
+			profileActive = false
+		}
+		if profileFile != nil {
+			err := profileFile.Close()
+			profileFile = nil
+			return err
+		}
+		return nil
+	}
+	defer func() { resultErr = errors.Join(resultErr, stopProfile()) }()
+	if config.profileFile != "" {
+		profileFile, err = os.OpenFile(config.profileFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+	}
 	ctx, cancel := context.WithTimeout(parent, 15*time.Minute)
 	defer cancel()
 	warmup, measured, err := qualificationPhases(matrix.concurrency)
+	if config.pgoDiagnostic {
+		warmup, measured, err = pgoDiagnosticPhases(matrix.concurrency)
+	}
 	if err != nil {
 		return err
 	}
@@ -481,6 +530,12 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 		},
 		beforeMeasured: func() error {
 			var err error
+			if profileFile != nil {
+				if err = pprof.StartCPUProfile(profileFile); err != nil {
+					return err
+				}
+				profileActive = true
+			}
 			rssSampler, err = startQualificationRSSSampler(100*time.Millisecond, residentBytes, time.Now)
 			if err != nil {
 				return err
@@ -501,6 +556,7 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 			if err == nil {
 				rssAfter, err = residentBytes()
 			}
+			err = errors.Join(err, stopProfile())
 			return errors.Join(err, rssSampler.err)
 		},
 		verify: func(ctx context.Context) error {
@@ -575,6 +631,9 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 		result.ThroughputBytesPerSecond = result.IOPS * float64(matrix.size)
 	}
 	status := "sustained_go_capture_unqualified"
+	if config.pgoDiagnostic {
+		status = "pgo_diagnostic_go_capture_unqualified"
+	}
 	var failure *string
 	if collectionErr != nil {
 		status = "failed"

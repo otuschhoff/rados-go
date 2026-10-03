@@ -344,7 +344,8 @@ Phases 0-7 retain their historical contracts and evidence; Phases 8-14 own
 the remaining checkpoint work rather than restarting completed remediations.
 Phase 8's tooling exit gate is complete; its native retry rejection and
 instrumentation limitations remain explicit, not parity acceptance.
-Next evaluate Phase 9 PGO and Phase 10 syscall hypotheses as separately pinned
+Phase 9's consumer PGO assessment is complete with adoption rejected.
+Next evaluate Phase 10 syscall hypotheses as separately pinned
 experiments, and complete Phase 11 policy/endurance work. Shared-host training,
 profiling, timing and pressure captures run serially; freeze implementation
 and build identities for each capture and retain rejected variants.
@@ -795,8 +796,19 @@ qualification on a frozen implementation.
 ### Phase 9: Evaluate Explicit Consumer PGO Builds
 
 Dependencies: fixed diagnostic contract; Phase 8 for any qualifying claim.
-Assessment: A2. Owner: benchmark/build tooling. Status: pending experiment,
-not authorization to enable production PGO or alter runtime settings.
+Assessment: A2. Owner: benchmark/build tooling. Status: complete experiment;
+reject adoption. See the [Phase 9 results and retained assessments](performance-phase9/README.md).
+Six representative training profiles, explicit CGO-free off/PGO builds with
+compiler-use proof, separate correctness probes and five seeded ABBA rounds
+per held-out cell are implemented and exercised. The final private capture at
+`/root/proj/rados-go/phase9-pgo-20261003195757` retains 90 held-out legs and
+6,198,269 operations; dependency-pinned raw re-analysis is exact. Small-read
+CPU upper 1.29144 and throughput lower 0.88027 do not establish the unchanged
+gates. Mixed CPU improves modestly in two runs, but other CPU benefits are not
+established; all three source-bound reject/defer/reject results remain retained.
+Final PGO binary size grew 2.56%. This closes the reproducible assessment
+with a reject decision, not proof of a causal regression,
+native parity, a universal speedup, production PGO or runtime authorization.
 
 - First check: build the same consumer executable with `-pgo=off` and an
   explicit pinned CPU profile, verify compiler use and distinct binary pins,

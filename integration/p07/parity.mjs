@@ -82,7 +82,7 @@ export function validateQualificationLeg(report, implementation, cell, evidence)
   return {...row, ...validateQualificationMemory(evidence.memory, row.elapsed_ns), evidence_status: 'leg_validated_not_matrix_qualification'};
 }
 
-export function validateQualificationRecords(cell, evidence, elapsedNS, populations) {
+export function validateQualificationRecords(cell, evidence, elapsedNS, populations, allowUnknownRetries = false) {
   assert(Array.isArray(populations) && populations.length === cell.concurrency && populations.every(count => Number.isSafeInteger(count) && count > 0), 'raw worker populations');
   assert(Array.isArray(evidence.records) && evidence.records.length === populations.reduce((sum, count) => sum + count, 0), 'raw operation population');
   const identities = new Set(), ordinals = Array.from({length: cell.concurrency}, () => 0), workerEnds = Array.from({length: cell.concurrency}, () => 0), latencies = [];
@@ -103,7 +103,7 @@ export function validateQualificationRecords(cell, evidence, elapsedNS, populati
     assert.equal(record.error, null, 'operation error');
     assert.equal(record.timeout, false, 'operation timeout');
     assert.equal(record.censored, false, 'operation censoring');
-    assert(Number.isSafeInteger(record.retry_count) && record.retry_count >= 0, 'retry count must be observed');
+    assert(allowUnknownRetries && record.retry_count === null || Number.isSafeInteger(record.retry_count) && record.retry_count >= 0, 'retry count must be observed');
     assert(record.timeout_deadline_ns === null || (Number.isSafeInteger(record.timeout_deadline_ns) && record.timeout_deadline_ns >= record.end_ns), 'declared timeout deadline');
     latencies.push(record.end_ns - record.start_ns);
   }

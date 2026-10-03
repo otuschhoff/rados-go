@@ -115,6 +115,25 @@ qualification work, not results of this two-leg smoke.
 
 ## Outputs
 
+Consumer PGO training and held-out diagnostics use a separate explicit driver:
+
+```sh
+node integration/p07/pgo.mjs /absolute/fresh/private-output p07-parity-pgo-fresh-prefix
+node integration/p07/pgo.mjs analyze /absolute/private-output /absolute/private-output/fresh-assessment.json
+```
+
+Run only from the repository root on the already approved fixture deployment
+with the private path variables above. The frozen six-cell training composition,
+compiler-use proof, off/PGO correctness probes, five seeded held-out rounds,
+unchanged native brackets and all three retained assessments are documented in the
+[Phase 9 assessment](../../docs/performance-phase9/README.md). Explicit
+`P07_PGO_DIAGNOSTIC=1` uses shorter 1-second/1,000 and 8-second/10,000 minima
+and distinct unqualified statuses; it cannot change normal qualification
+defaults. `P07_PGO_PROFILE_FILE` is allowed only for Go diagnostic training,
+with exclusive paths and measured-window profiling. Training, probes and
+held-out timing stay separate. Adoption is rejected; this is not a production
+PGO recipe, hidden default profile or native parity claim.
+
 - `native-1.json`, `go-1.json`, `go-2.json`, `native-2.json`: baseline latency distributions.
 - `*-osd-*-before.json`, `*-osd-*-after.json`: aggregate Ceph perf counters.
 - `*-started-at`, `*-finished-at`: UTC timestamps bracketing baseline client processes.

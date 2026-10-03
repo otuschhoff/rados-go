@@ -330,6 +330,10 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "native qualification requires secure transport, explicit parity matrix and fresh capture/mode paths with round/leg/seed\n"); return 2;
 	}
 	const char *namespace = getenv("P07_PARITY_NAMESPACE");
+	const char *pgo = getenv("P07_PGO_DIAGNOSTIC");
+	if (pgo && *pgo && strcmp(pgo, "1")) return 2;
+	if (getenv("P07_PGO_PROFILE_FILE") && *getenv("P07_PGO_PROFILE_FILE")) return 2;
+	int pgo_diagnostic = pgo && !strcmp(pgo, "1");
 	if (strlen(namespace) > 64 || strncmp(namespace, "p07-parity-", 11)) return 2;
 	for (const char *character = namespace; *character; character++) if (*character != '-' && (*character < 'a' || *character > 'z') && (*character < '0' || *character > '9')) return 2;
 	for (const char *character = leg; *character; character++) if (*character != '-' && (*character < 'a' || *character > 'z') && (*character < '0' || *character > '9')) return 2;
@@ -380,16 +384,16 @@ int main(int argc, char **argv) {
 		error = api.write_full(io.ioctx, io.objects[worker], (const char *)io.payloads[worker], (size_t)io.size);
 		if (error) goto cleanup;
 	}
-	error = collect_native_qualification_phase(io.concurrency, (10000ULL + (uint64_t)io.concurrency - 1) / (uint64_t)io.concurrency,
-		10000000000ULL, QUALIFICATION_RECORD_LIMIT / (uint64_t)io.concurrency, deadline, qualification_now, qualification_io_operation, &io, &warmup);
+	error = collect_native_qualification_phase(io.concurrency, ((pgo_diagnostic ? 1000ULL : 10000ULL) + (uint64_t)io.concurrency - 1) / (uint64_t)io.concurrency,
+		pgo_diagnostic ? 1000000000ULL : 10000000000ULL, QUALIFICATION_RECORD_LIMIT / (uint64_t)io.concurrency, deadline, qualification_now, qualification_io_operation, &io, &warmup);
 	if (error) goto cleanup;
 	error = qualification_rss_start(&rss_sampler, 100000000ULL, qualification_now, qualification_rss_read, NULL);
 	if (error) goto cleanup;
 	rss_started = 1;
 	rss_before = rss_sampler.baseline.bytes;
 	if (getrusage(RUSAGE_SELF, &before)) { error = -EIO; goto cleanup; }
-	error = collect_native_qualification_phase(io.concurrency, (100000ULL + (uint64_t)io.concurrency - 1) / (uint64_t)io.concurrency,
-		60000000000ULL, QUALIFICATION_RECORD_LIMIT / (uint64_t)io.concurrency, deadline, qualification_now, qualification_io_operation, &io, &measured);
+	error = collect_native_qualification_phase(io.concurrency, ((pgo_diagnostic ? 10000ULL : 100000ULL) + (uint64_t)io.concurrency - 1) / (uint64_t)io.concurrency,
+		pgo_diagnostic ? 8000000000ULL : 60000000000ULL, QUALIFICATION_RECORD_LIMIT / (uint64_t)io.concurrency, deadline, qualification_now, qualification_io_operation, &io, &measured);
 	int rss_error = qualification_rss_stop(&rss_sampler);
 	rss_started = 0;
 	if (!rss_error) rss_error = qualification_rss_validate(&rss_sampler, measured.start_ns, measured.elapsed_ns);
@@ -447,7 +451,7 @@ emit:
 		uint64_t user_before = timeval_to_ns(before.ru_utime), user_after = timeval_to_ns(after.ru_utime);
 		uint64_t system_before = timeval_to_ns(before.ru_stime), system_after = timeval_to_ns(after.ru_stime);
 		fprintf(output, "{\"status\":\"%s\",\"identity\":{\"round\":%" PRIu64 ",\"leg\":\"%s\",\"seed\":%" PRIu64 "},\"report\":{\"implementation\":\"native\",\"transport\":\"secure\",\"environment\":{\"library\":\"librados.so.2\"},\"rows\":[{\"size_bytes\":%" PRIu64 ",\"concurrency\":%d,\"workload\":\"%s\",\"operations\":%" PRIu64 ",\"bytes\":%" PRIu64 ",\"elapsed_ns\":%" PRIu64 ",\"iops\":%.17g,\"throughput_bytes_per_second\":%.17g,\"p50_ns\":%" PRIu64 ",\"p95_ns\":%" PRIu64 ",\"p99_ns\":%" PRIu64 ",\"parity\":{\"payload_verified\":%s,\"cleanup_verified\":%s,\"rss_before_bytes\":%" PRIu64 ",\"rss_after_bytes\":%" PRIu64 ",\"rss_after_cleanup_bytes\":%" PRIu64 ",\"measured_resources\":{\"cpu_user_ns\":%" PRIu64 ",\"cpu_system_ns\":%" PRIu64 "}}}]},\"attempt\":{\"payload_verified\":%s,\"cleanup_verified\":%s,\"warmup\":",
-			error ? "failed" : "sustained_native_capture_unqualified", round, leg, seed, io.size, io.concurrency, workload_name((enum workload_kind)io.workload), operations, operations * io.size, measured.elapsed_ns, iops, iops * (double)io.size,
+			error ? "failed" : pgo_diagnostic ? "pgo_diagnostic_native_capture_unqualified" : "sustained_native_capture_unqualified", round, leg, seed, io.size, io.concurrency, workload_name((enum workload_kind)io.workload), operations, operations * io.size, measured.elapsed_ns, iops, iops * (double)io.size,
 			latencies ? percentile(latencies, (size_t)operations, 50, 100) : 0, latencies ? percentile(latencies, (size_t)operations, 95, 100) : 0, latencies ? percentile(latencies, (size_t)operations, 99, 100) : 0,
 			payload_verified ? "true" : "false", cleanup_verified ? "true" : "false", rss_before, rss_after, rss_cleanup, user_after >= user_before ? user_after - user_before : 0, system_after >= system_before ? system_after - system_before : 0,
 			payload_verified ? "true" : "false", cleanup_verified ? "true" : "false");

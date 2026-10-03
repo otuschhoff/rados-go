@@ -442,11 +442,28 @@ func TestParseQualificationConfig(t *testing.T) {
 	if err != nil || config.Round != 1 || config.Leg != "r1-l1-go" || config.Seed != 42 || config.file != valid["P07_QUALIFICATION_FILE"] {
 		t.Fatalf("configuration=%+v err=%v", config, err)
 	}
+	valid["P07_PGO_DIAGNOSTIC"] = "1"
+	valid["P07_PGO_PROFILE_FILE"] = "/private/training.pprof"
+	if diagnostic, err := parseQualificationConfig(env); err != nil || !diagnostic.pgoDiagnostic {
+		t.Fatalf("explicit PGO diagnostic configuration=%+v err=%v", diagnostic, err)
+	}
+	valid["P07_PGO_PROFILE_FILE"] = "/private/./modes.json"
+	if _, err := parseQualificationConfig(env); err == nil {
+		t.Fatal("training profile allowed to overwrite mode evidence")
+	}
+	valid["P07_PGO_PROFILE_FILE"] = "/private/training.pprof"
+	delete(valid, "P07_PGO_DIAGNOSTIC")
+	if _, err := parseQualificationConfig(env); err == nil {
+		t.Fatal("training profile allowed outside PGO diagnostic mode")
+	}
+	delete(valid, "P07_PGO_PROFILE_FILE")
 	for _, sample := range []struct{ name, value string }{
 		{"P07_QUALIFICATION_FILE", ""}, {"P07_QUALIFICATION_ROUND", "0"}, {"P07_QUALIFICATION_ROUND", "9007199254740992"}, {"P07_QUALIFICATION_SEED", ""}, {"P07_QUALIFICATION_SEED", "9007199254740992"},
 		{"P07_QUALIFICATION_LEG", "../escape"}, {"P07_PARITY_NAMESPACE", ""}, {"P07_READ_INTO", "0"}, {"P07_MODE_EVIDENCE_FILE", ""}, {"P07_MODE_EVIDENCE_FILE", "/private/./attempt.json"},
 		{"GOMAXPROCS", "16"}, {"GOGC", "off"}, {"GOMEMLIMIT", "1GiB"}, {"P07_MATRIX_SIZE", ""}, {"P07_MATRIX_CONCURRENCY", ""}, {"P07_MATRIX_WORKLOAD", ""},
 		{"P07_MATRIX_OPERATIONS_PER_WORKER", "256"}, {"P07_RETENTION_WINDOWS", "16"}, {"P07_CPU_PROFILE", "/private/profile"}, {"P07_OFFERED_LOAD", "1"}, {"P07_SCRATCH_SLOTS", "1"},
+		{"P07_PGO_DIAGNOSTIC", "0"},
+		{"P07_PGO_PROFILE_FILE", "/private/profile.pprof"},
 	} {
 		modified := func(name string) string {
 			if name == sample.name {
@@ -456,6 +473,19 @@ func TestParseQualificationConfig(t *testing.T) {
 		}
 		if _, err := parseQualificationConfig(modified); err == nil {
 			t.Fatalf("accepted invalid %s=%q", sample.name, sample.value)
+		}
+	}
+}
+
+func TestPGODiagnosticPhasesDoNotChangeQualification(t *testing.T) {
+	for _, concurrency := range []int{1, 16, 256} {
+		warmup, measured, err := pgoDiagnosticPhases(concurrency)
+		if err != nil || warmup.minimumDuration != time.Second || measured.minimumDuration != 8*time.Second || warmup.minimumOperations*uint64(concurrency) < 1000 || measured.minimumOperations*uint64(concurrency) < 10000 {
+			t.Fatalf("diagnostic phases=%+v/%+v err=%v", warmup, measured, err)
+		}
+		warmup, measured, err = qualificationPhases(concurrency)
+		if err != nil || warmup.minimumDuration != 10*time.Second || measured.minimumDuration != 60*time.Second || warmup.minimumOperations*uint64(concurrency) < 10000 || measured.minimumOperations*uint64(concurrency) < 100000 {
+			t.Fatal("PGO diagnostic changed qualification minima")
 		}
 	}
 }
