@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -79,11 +80,17 @@ test('plan freeze and file analysis are exclusive and reject incomplete inputs',
     const plan = freezeQualificationPlan(specification, planFile);
     assert.equal(fs.statSync(planFile).mode & 0o777, 0o600);
     assert.throws(() => freezeQualificationPlan(specification, planFile), /EEXIST/);
-    const manifest = {plan_id: plan.plan_id, capture_started_ms: Math.ceil(fs.statSync(planFile).mtimeMs) + 1, rounds: []};
+    const dependencies = Object.fromEntries(['qualification.mjs', 'parity.mjs'].map(file => [file, crypto.createHash('sha256').update(fs.readFileSync(new URL(file, import.meta.url))).digest('hex')]));
+    const manifest = {plan_id: plan.plan_id, capture_started_ms: Math.ceil(fs.statSync(planFile).mtimeMs) + 1, analyzer_dependencies: dependencies, rounds: []};
     fs.writeFileSync(manifestFile, JSON.stringify(manifest));
     assert.equal(analyzeQualificationFiles(planFile, manifestFile, output).status, 'invalid');
     assert.equal(fs.statSync(output).mode & 0o777, 0o600);
     assert.throws(() => analyzeQualificationFiles(planFile, manifestFile, output), /must be fresh/);
+    for (const pins of [undefined, {...dependencies, 'parity.mjs': '0'.repeat(64)}, {'qualification.mjs': dependencies['qualification.mjs']}]) {
+      fs.writeFileSync(manifestFile, JSON.stringify({...manifest, analyzer_dependencies: pins}));
+      assert.throws(() => analyzeQualificationFiles(planFile, manifestFile, path.join(root, 'dependency-mismatch.json')), /executing analyzer dependency pins/);
+      assert.equal(fs.existsSync(path.join(root, 'dependency-mismatch.json')), false);
+    }
     const unpinned = {...manifest, rounds: [{legs: [{provenance: {pins: {before: {tool: '0'.repeat(64)}}}}]}]};
     fs.writeFileSync(manifestFile, JSON.stringify(unpinned));
     assert.throws(() => analyzeQualificationFiles(planFile, manifestFile, path.join(root, 'unpinned.json')), /executing analyzer tool pin/);

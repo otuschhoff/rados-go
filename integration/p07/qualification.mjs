@@ -15,6 +15,11 @@ const metrics = {
 const digest = value => crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const safeSeed = value => Number.isSafeInteger(value) && value >= 0;
 
+export function qualificationToolPins() {
+  return Object.fromEntries(['qualification.mjs', 'parity.mjs'].map(file => [file,
+    crypto.createHash('sha256').update(fs.readFileSync(new URL(file, import.meta.url))).digest('hex')]));
+}
+
 export function createQualificationPlan({cells, rounds = 5, seed, bootstrapSeed, bootstrapReplicates, rssResolutionBytes = 4096}) {
   assert(Array.isArray(cells) && cells.length >= 1 && cells.length <= 256, 'declared matrix');
   const identifiers = new Set();
@@ -305,6 +310,7 @@ export function analyzeQualificationFiles(planFile, manifestFile, outputFile) {
   const manifest = JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
   assert.equal(manifest.plan_id, plan.plan_id, 'manifest plan binding');
   assert(Number.isSafeInteger(manifest.capture_started_ms) && manifest.capture_started_ms > fs.statSync(planFile).mtimeMs, 'plan must be frozen before capture');
+  assert.deepEqual(manifest.analyzer_dependencies, qualificationToolPins(), 'executing analyzer dependency pins');
   const root = path.dirname(path.resolve(manifestFile)), inputs = [];
   const analyzerSHA256 = crypto.createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');
   const rounds = manifest.rounds.map(round => ({...round, legs: round.legs.map(leg => {
@@ -321,7 +327,7 @@ export function analyzeQualificationFiles(planFile, manifestFile, outputFile) {
     };
     return {...leg, capture: load('capture'), modes: load('modes')};
   })}));
-  const result = {...analyzeQualificationCaptures(plan, rounds), attempted_rounds: manifest.rounds, inputs, analyzer_sha256: analyzerSHA256,
+  const result = {...analyzeQualificationCaptures(plan, rounds), attempted_rounds: manifest.rounds, inputs, analyzer_sha256: analyzerSHA256, analyzer_dependencies: manifest.analyzer_dependencies,
     plan_file_sha256: crypto.createHash('sha256').update(fs.readFileSync(planFile)).digest('hex'), manifest_sha256: crypto.createHash('sha256').update(fs.readFileSync(manifestFile)).digest('hex')};
   writeExclusive(outputFile, result);
   return result;

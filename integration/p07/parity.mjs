@@ -4,7 +4,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
-import {createQualificationPlan, validateQualificationPlan, qualificationOrder, analyzeQualificationFiles} from './qualification.mjs';
+import {createQualificationPlan, validateQualificationPlan, qualificationOrder, analyzeQualificationFiles, qualificationToolPins} from './qualification.mjs';
 
 export const parityCells = [
   {size: 1048576, concurrency: 1, workload: 'write', operations: 1024},
@@ -361,7 +361,7 @@ export function runQualificationSmoke(root, namespace, planFile = null) {
     for (const leg of legs.filter(leg => leg.implementation === 'native')) execute(`${leg.process_id}-mode-check`, binaries.checker,
       ['-go', goModes, '-native-log', path.join(root, `${leg.process_id}.modes.log`), '-requested', 'secure', '-native-out', path.join(root, leg.modes.file)]);
     for (const leg of legs) leg.modes.sha256 = digest(path.join(root, leg.modes.file));
-    write('manifest.json', {plan_id: plan.plan_id, capture_started_ms: captureStartedMS, rounds});
+    write('manifest.json', {plan_id: plan.plan_id, capture_started_ms: captureStartedMS, analyzer_dependencies: qualificationToolPins(), rounds});
     const analyzed = analyzeQualificationFiles(path.join(root, 'plan.json'), path.join(root, 'manifest.json'), path.join(root, 'analysis.json'));
     assert.equal(analyzed.status, 'invalid_evidence', 'unknown native retry evidence must reject qualification');
     assert(analyzed.attempted_legs.filter(leg => leg.implementation === 'go').every(leg => leg.status === 'leg_validated_not_matrix_qualification'), 'all Go raw evidence must validate');

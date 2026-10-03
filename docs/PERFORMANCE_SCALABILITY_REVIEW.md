@@ -926,7 +926,12 @@ metrics. Unknown policy, growth or resource failures keep this phase blocked.
 Dependencies: Phase 8; Phases 9-11 completed or explicitly assessed/deferred,
 with unresolved safety/measurement blockers retained. Assessments: A1, A2,
 A4, A6. Owners: qualification runner and Phase 4 regression assessment.
-Status: pending; neither O diagnostics nor `486305c` qualify the current source.
+Status: in progress, blocked; no completion commit. The
+[current audit and evidence repair](performance-phase12/README.md) closes
+qualification analyzer-dependency binding, but native retry/instrumentation,
+the explicit Phase 4 margin, timeout causality and fresh final matrix remain
+open. Neither O diagnostics nor Phase 11 resource/endurance evidence qualifies
+current-source native parity.
 
 - Freeze the approved final build, matrix, limits, exclusions and analysis plan;
   collect fresh independent samples without optional stopping or replacing
