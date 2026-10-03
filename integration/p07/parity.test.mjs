@@ -1,6 +1,34 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 import {fixtureName, validateParity, validateParityHealth, validateQualificationLeg} from './parity.mjs';
+
+test('native sustained collector and driver reject invalid capture settings before connecting', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rados-go-qualification-test-'));
+  try {
+    for (const source of ['native_qualification', 'native_qualification_test']) {
+      const result = spawnSync('gcc', ['-O2', '-std=c11', '-D_POSIX_C_SOURCE=200809L', '-Wall', '-Wextra', '-Werror', '-pthread', `integration/p07/${source}.c`, '-ldl', '-o', path.join(root, source)], {encoding: 'utf8', timeout: 30000});
+      assert.equal(result.status, 0, result.stderr);
+    }
+    const result = spawnSync(path.join(root, 'native_qualification_test'), [], {encoding: 'utf8', timeout: 30000});
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /native qualification core:.*tests passed/);
+    const environment = {P07_QUALIFICATION_FILE: path.join(root, 'capture.json'), P07_NATIVE_MODE_LOG: path.join(root, 'modes.log'),
+      P07_PARITY_NAMESPACE: 'p07-parity-invalid-config-test', P07_MATRIX_SIZE: '4096', P07_MATRIX_CONCURRENCY: '1', P07_MATRIX_WORKLOAD: 'read',
+      P07_QUALIFICATION_ROUND: '1', P07_QUALIFICATION_SEED: '42', P07_QUALIFICATION_LEG: 'r1-native'};
+    for (const invalid of [{P07_QUALIFICATION_FILE: ''}, {P07_NATIVE_MODE_LOG: ''}, {P07_QUALIFICATION_ROUND: '0'}, {P07_QUALIFICATION_ROUND: '9007199254740992'},
+      {P07_QUALIFICATION_SEED: '-1'}, {P07_QUALIFICATION_LEG: 'bad"leg'}, {P07_PARITY_NAMESPACE: 'unapproved'}, {P07_MATRIX_SIZE: '1'}, {P07_MATRIX_CONCURRENCY: '999'},
+      {P07_MATRIX_WORKLOAD: 'unknown'}, {P07_OFFERED_LOAD: '1'}, {P07_MATRIX_OPERATIONS_PER_WORKER: '256'}, {P07_NATIVE_MODE_LOG: environment.P07_QUALIFICATION_FILE}]) {
+      const rejected = spawnSync(path.join(root, 'native_qualification'), ['missing-config', 'missing-key', 'unused-pool', 'secure'], {env: {...environment, ...invalid}, encoding: 'utf8', timeout: 5000});
+      assert.equal(rejected.status, 2, JSON.stringify(invalid));
+      assert.equal(fs.existsSync(environment.P07_QUALIFICATION_FILE), false);
+      assert.equal(fs.existsSync(environment.P07_NATIVE_MODE_LOG), false);
+    }
+  } finally { fs.rmSync(root, {recursive: true, force: true}); }
+});
 
 test('qualification rejects short, incomplete, failed or censored leg evidence', () => {
   const cell = {size: 4096, concurrency: 1, workload: 'read', operations: 100000};
@@ -16,6 +44,17 @@ test('qualification rejects short, incomplete, failed or censored leg evidence',
   const validate = (row = report, capture = evidence) => validateQualificationLeg(row, 'go', cell, capture);
   assert.equal(validate().rss_incremental_peak_bytes, 3072);
   assert.equal(validate().evidence_status, 'leg_validated_not_matrix_qualification');
+  const concurrentCell = {...cell, concurrency: 2, operations: 50000};
+  const concurrentRecords = evidence.records.map((record, index) => {
+    const worker = index < 40000 ? 0 : 1, ordinal = worker === 0 ? index : index - 40000;
+    return {...record, worker, ordinal, object: fixtureName(concurrentCell, worker), start_ns: ordinal * latency, end_ns: (ordinal + 1) * latency};
+  });
+  const concurrentReport = {...report, rows: [{...report.rows[0], concurrency: 2}]};
+  const concurrentEvidence = {...evidence, records: concurrentRecords, operations_per_worker: [40000, 60000]};
+  assert.equal(validateQualificationLeg(concurrentReport, 'go', concurrentCell, concurrentEvidence).operations, 100000);
+  for (const populations of [[50000, 50000], [40000, 60001], [100000], [0, 100000], [-1, 100001], [40000.5, 59999.5]]) {
+    assert.throws(() => validateQualificationLeg(concurrentReport, 'go', concurrentCell, {...concurrentEvidence, operations_per_worker: populations}));
+  }
   assert.throws(() => validateQualificationLeg(report, 'go', cell, undefined));
   const short = structuredClone(report); short.rows[0].elapsed_ns--;
   assert.throws(() => validate(short));

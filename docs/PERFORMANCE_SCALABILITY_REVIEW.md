@@ -3,14 +3,18 @@
 ## Status and Scope
 
 Review date: 2026-09-30.
+Latest assessment and roadmap update: 2026-10-03.
 Reviewed Go baseline: `dde29cde727dc963238acc4fa13a5a277a9f5c80`.
+Current implementation checkpoint: `486305c` (committed, not qualified).
 Native comparison target: Ceph v20.2.4, commit
 `7f793731f1b39eb4f465e960113d2363c311b964`.
 
 **Conclusion: general performance and scalability parity with native librados
 is not established.** Existing measurements pass local regression budgets but
-leave material scaling risks and coverage gaps. This document records a
-read-only review; none of the proposed remediations is implemented by it.
+leave material scaling risks and coverage gaps. This document preserves the
+original read-only review and records subsequent implementation evidence,
+decisions and remaining phases. Updating this plan does not implement its
+pending work or confer qualification on the checkpoint.
 
 The review covers messenger admission, transport, replay, OSD backoffs,
 placement, session lifecycle, map updates, memory bounds, and benchmark scope.
@@ -65,6 +69,89 @@ checks passed; overall capture metadata remains incomplete because manager
 statistics were denied. See the same live retest report for individual blocks,
 client/server identities and limitations. This narrow idle read result does
 not establish general native parity or close the Phase 4 latency gate.
+
+## Current Assessment and Decisions
+
+The [native parity investigation](performance-p99-scheduler/NATIVE_PARITY_20261002.md)
+records captures A-H, K and O, narrower probes, rejected changes and retained
+failures. Checkpoint `486305c` includes ownership-aware copy removal, leased
+mutation-buffer reuse, bounded secure wire reuse, ACK piggybacking, registered
+admission callbacks, a buffered writer completion, small receive scratch and
+value-only endpoint lookup. These are tested local improvements, not proof of
+general native parity. Earlier rejected cumulative-ACK batching is distinct
+from the later retained bounded piggyback/deferred-ACK implementation.
+
+The latest O diagnostic retains 72 closed-loop blocks, 288 legs and 3,686,400
+operations. Ten of twelve CPU point estimates and exploratory upper bounds
+exceed the 1.20 target. Serial-write CPU ratios are approximately 1.52-1.63;
+4-KiB serial-read ratios are approximately 1.83-1.93. Offered load retains
+336 delivery-valid legs and 48,768,000 arrivals: 29,588,004 successes and
+19,179,996 overloads, with no other outcomes. The earlier K timeout remains
+an unresolved finding, not erased by O. Retention has 24 processes and
+384 windows with no declared bounded-growth findings, but is not endurance
+qualification. Exact per-cell values and private evidence identities are in
+the investigation; do not promote its short samples to acceptance evidence.
+
+| Assessment | Finding or decision | Implementation owner phase |
+| --- | --- | --- |
+| A1 | Sustained collectors and interval RSS pass a matched tooling smoke; complete retry observation, harness-cost separation and matrix-wide analysis remain incomplete. | 8, 12 |
+| A2 | Remaining CPU costs include crypto, syscalls and scheduling. No further safe small syscall fix is demonstrated; PGO is unmeasured. | 9, 10, 12 |
+| A3 | Keep Go deployment builds pure Go/CGO-free and retain standard-library crypto. Defer evolving AES/SIMD backend work. | 14 monitoring only |
+| A4 | Keep current RSS parity and memory limits. Bounded-window growth does not establish sustained memory behavior or equal native/Go live heap. | 8, 11, 12 |
+| A5 | Active-backoff overflow, outbound/fanout memory and broad workload/recovery coverage remain separately scoped obligations. | 11, 13 |
+| A6 | The checkpoint is committed, but older source-bound qualification and historical status text cannot certify it. | 12, 14 |
+
+### Fixed Engineering Constraints
+
+- Production and ordinary consumer builds remain `CGO_ENABLED=0` compatible,
+  with no native crypto dependency, forked crypto toolchain or automatic
+  `GOEXPERIMENT=simd` requirement. Native comparison executables are separate
+  tools; Go race instrumentation may require CGO without changing this policy.
+- Keep stdlib AES-GCM and its existing nonce, authentication and ownership
+  contracts. The installed Go 1.27 GCM uses AES-NI/PCLMUL rather than wide
+  VAES/VPCLMUL. The host and experimental archsimd API expose the latter, but
+  enabling SIMD does not automatically accelerate stdlib crypto. A future
+  backend needs separate approval, security review and independent evidence.
+- PGO is a prospective explicit consumer-build variant, not a global runtime
+  tuning change or a library-wide performance guarantee. Do not enable or
+  distribute a training profile implicitly before Phase 9 evaluation.
+- Preserve the [provisional qualification contract](performance-phase0/QUALIFICATION.md):
+  CPU/op upper bound <=1.20, p99 upper bound <=1.25, successful-throughput
+  lower bound >=0.90 and incremental-RSS upper bound <=1.25, with its stated
+  confidence and failure rules. P12 guardrails remain separate and unchanged.
+- Additional RAM may be economically useful, but no relaxed acceptance track
+  is approved. A future deployment-efficiency budget must be explicitly
+  approved and predeclared before new capture, reported separately from strict
+  parity, and must never retrospectively convert failed evidence into a pass.
+- Do not change queue/session/receive budgets, process parallelism, GC policy,
+  TCP settings or cluster policy merely to improve a comparison. Live work
+  remains restricted to approved fixtures and pools; recovery requires separate
+  disposable-cluster authorization.
+
+### Syscall and Crypto Assessment
+
+The current built-in transport passes a contiguous encrypted frame to
+`net.Conn.Write`, retrying short writes, and uses a bounded 512-KiB reader.
+One Go Write is not necessarily one kernel syscall. The historical syscall
+count probe predates the later scheduling and ACK changes; refresh it before
+asserting current syscall excess. Futex and epoll counts may reflect runtime
+handoffs or waiting, and accumulated blocked time is not process CPU cost.
+Potential follow-ups are measured removal of unnecessary wakeups and combining
+already-ready same-connection frames without waiting to form a batch. Neither
+is an established win; concurrency-one workloads may offer no batching benefit.
+Do not repeat rejected admission-window, affinity or completion-barrier changes
+without a new falsifiable hypothesis and separately retained evidence.
+
+The separate synthetic Go/OpenSSL AES-GCM comparison measured about 4.7 versus
+10.7 GB/s, with setup/AAD differences; librados links the compared OpenSSL.
+The latest excluded O profile attributes about 46% of sampled CPU to AES-GCM,
+34% to syscalls and 9% to memmove. These are attribution clues, not a proof of
+the selected native instruction path, an irreducible floor or an end-to-end
+speedup prediction. OpenSSL and native Intel bindings do not fit the retained
+CGO-free policy. MinIO sio uses stdlib AES-GCM and adds a different storage
+format; sha256-simd accelerates SHA-256, not AES-GCM. CGO-free Go assembly or
+archsimd could use wider instructions, but implementing reviewed AES-GCM is
+substantial crypto work and is deferred rather than a prerequisite to this plan.
 
 ## Evidence and Native Comparison
 
@@ -250,6 +337,24 @@ available; otherwise report repeated samples without claiming significance.
 Separate benchmark runs from race instrumentation.
 
 ## Phased Remediation
+
+### Follow-Up Execution Order
+
+Phases 0-7 retain their historical contracts and evidence; Phases 8-14 own
+the remaining checkpoint work rather than restarting completed remediations.
+Start Phase 8 with collector consistency and retry-observability tests.
+Then evaluate Phase 9 PGO and Phase 10 syscall hypotheses as separately pinned
+experiments, and complete Phase 11 policy/endurance work. Shared-host training,
+profiling, timing and pressure captures run serially; freeze implementation
+and build identities for each capture and retain rejected variants.
+
+Phase 12 evaluates the selected frozen source against unchanged gates; an
+unresolved CPU or measurement finding remains a blocker, even if no further
+safe optimization is available. Phase 13 executes only separately approved
+workload/topology/recovery scopes. Phase 14 documentation and validation are
+maintained throughout and renewed after the final changes, with broader scope
+deferrals explicit. Crypto watching is deferred monitoring, not permission to
+add a backend or a prerequisite that must be implemented to advance this plan.
 
 ### Phase 0: Freeze Evidence and Define Qualification
 
@@ -461,8 +566,14 @@ retained after its timing improvement was not established. See the
 [execution record](performance-p99-scheduler/RECOMMENDATIONS_20261001.md) for
 measurement scope and open certification/endurance gates.
 Complete public 4-MiB writes reduce whole-process allocations and improve c16
-elapsed time, but serial elapsed time regresses. The write exit gate remains
-open; these results do not establish a general end-to-end improvement.
+elapsed time, but the historical comparison observed a serial elapsed-time
+regression. The [source-bound Linux write qualification](performance-p99-scheduler/LINUX_WRITE_QUALIFICATION_20261002.md)
+did not reproduce it and passed its predeclared scope for `576ce5e` only.
+Checkpoint `486305c` adds leased admission/secure storage reuse and endpoint
+copy removal, with ownership, authentication and race coverage; its O native
+CPU gaps and independent qualification remain open. Do not transfer the older
+write qualification to this source or describe the historical regression as
+a demonstrated current defect. Report write and map outcomes separately.
 
 - Write slice: benchmark complete Submit/Send and replay for 64 KiB and 4 MiB,
   including OSD encoding, admission, framing, and wire encryption. Preserve
@@ -487,15 +598,19 @@ post-GC retained heap does not regress. Report write and map outcomes separately
 
 Dependencies: Phases 1-6, or explicit recorded deferrals.
 
-Execution status: the final-source matched secure matrix, sustained sample
-counts, concurrency sweep through 256, supplementary before/current public
-writes and metadata semantics are completed. The
+Execution status: the earlier diagnostic matched secure matrix, sample-count
+follow-up, concurrency sweep through 256, supplementary before/current public
+writes and metadata semantics are completed on their recorded source states. The
 [execution record](performance-p99-scheduler/RECOMMENDATIONS_20261001.md) and
 [compact evidence](performance-p99-scheduler/recommendations-20261001.json)
 retain 488 timed legs, observed regressions and all current qualification
-blockers. Native offered-load saturation, multi-host/fanout, snapshots,
-watch/notify load, disruptive recovery and formal certification remain
-unqualified. No Phase 7 exit-gate completion or broad parity is claimed.
+blockers. The later A-O investigation adds matched native offered-load
+diagnostics and bounded same-process retention; their implementation and
+capture are no longer pending. Sustained saturation certification,
+multi-host/fanout, snapshots, watch/notify load, disruptive recovery and formal
+certification remain unqualified. No Phase 7 exit-gate completion or broad
+parity is claimed. Phases 8-14 below decompose its remaining work and the
+checkpoint follow-up into actionable ownership boundaries.
 
 - Rerun the existing matched Go/native matrix and longer secure ABBA diagnostic
   on the final source state. Preserve both passing and failing artifacts.
@@ -531,6 +646,301 @@ runs. A failed Docker setup is a blocked experiment, not a client regression.
 Exit gate: agreed Phase 0 criteria evaluated against repeated final-state
 measurements, resource limits and correctness checks passed, remaining gaps
 explicitly enumerated. Claim parity only within the measured scope and confidence.
+
+Continuation validation on 2026-10-03: full Go 1.27.1 unit/race tests, vet,
+the CGO-free Linux arm64 benchmark cross-build and focused minimum-Go 1.26.8
+collector tests passed. P07 and P13 semantic verifiers both rejected stale
+source artifacts against the current tree. Docker is unavailable on this host;
+renewal requires the documented disposable harness environment. Existing live
+fixture authorization does not authorize OSD/MON lifecycle changes or
+multi-host recovery experiments. Reports were not rewritten to hide these
+failures, and no Phase 7 completion commit is justified by these checks.
+
+### Phase 8: Implement Qualification Capture and Analysis
+
+Dependencies: Phase 0 contract and existing parity drivers. Assessments: A1,
+A4. Owners: Go/native benchmark collectors and evidence analyzer.
+Status: in progress. A Go collection primitive now tests both stopping minima,
+synchronized concurrent workers, retained failures/censoring, cancellation and
+safety deadlines. Each phase has a one-million-record process limit, divided
+among workers; reaching that limit before both minima returns an error and
+retains collected records. This is an evidence-storage limit, not a library
+memory-policy change or a passing incomplete leg. Unobserved retries remain
+null. Explicit unequal worker populations are checked against raw records;
+fixed-count diagnostic validation is unchanged. Both live collectors are now
+wired, with 30-second operation budgets from recorded start, 30-second setup
+and verification RPC defaults, a 15-minute attempt limit and independently
+bounded cleanup. Native synchronous calls are not immediately cancelable;
+late completion rejects the capture. Existing fixtures are rejected before
+seeding, and cleanup owns only fixtures observed absent before the attempt.
+Native recorder allocation is outside per-operation timing, as in Go; measured
+CPU still includes worker startup and record storage in both implementations.
+
+The current collector integration smoke is privately retained at
+`/root/proj/rados-go/qualification-smoke-20261003T164603`. It used one fixed
+Go/native pair on approved readcache, 4-KiB reads at concurrency one, not ABBA.
+Go warmup/measured populations were 24,347/148,790; native populations were
+23,423/136,339. Both measured intervals exceeded 60 seconds; payload, fixture
+collision protection, removal/NotFound, source/binary/library continuity,
+boundary health/placement and actual authenticated MON/OSD modes passed.
+Both collectors retained 601 actual RSS samples at a predeclared 100-ms
+cadence, with immediately preceding connected/warmed baselines and validated
+clock, gap and end coverage. Go idle/peak/incremental bytes were
+22,937,600/98,418,688/75,481,088; native bytes were
+29,286,400/33,726,464/4,440,064. These are process observations with unequal
+recorder representations/retention, not a library-only RSS comparison or a
+passing memory gate. Go resource capture now stops before raw-record assembly;
+native aggregation is constant work per worker. Sampling errors reject the
+attempt without discarding raw operations.
+Both captures deliberately fail qualification for unknown retries. Earlier
+failed smoke assertions and separately rejected collision attempts remain
+retained; they were not overwritten or promoted to passing evidence.
+
+The parity payload investigation also found a 17-bit Go versus 19-bit native
+worker-seed shift for concurrent parity fixtures. Go now uses the native shift
+in explicit parity mode; ordinary benchmark payloads remain unchanged. The
+worker-zero captures are unaffected, but older concurrent captures must not be
+retroactively treated as byte-identical conditioning or qualification.
+
+Complete retry observation, library/harness cost separation, seeded ABBA rounds
+and matrix-wide analysis remain pending. Boundary RSS fields remain separate
+from the new timestamped interval samples. The one-million-record
+limit can reject faster or imbalanced cells before the time minimum; such a
+failure is retained, never accepted as a truncated leg. This tooling smoke is
+not a Phase 7 exit-gate result. This phase can proceed before CPU gaps close.
+
+Native retry-observation assessment: in the pinned Ceph 20.2.4 upstream
+`src/osdc/Objecter.cc`, EAGAIN and redirect replies resubmit through
+`_op_submit` without incrementing `op_resend`. A zero `op_resend` delta therefore
+cannot establish zero retries. `_prepare_osd_op` increments `op_send` alongside
+the request attempt counter, making complete, quiescent before/after samples a
+candidate check for prepared objecter attempts. This is not implemented or
+accepted retry telemetry: process/counter continuity, exact operation scope,
+reset detection, messenger replay coverage and agreement with the Go retry
+definition still require proof. Synchronous API success is insufficient.
+
+- First discriminating checks: deterministic collector tests cross the time
+  minimum before the count minimum and vice versa; neither may stop early.
+  Test safety-deadline failure, warmup failure, incomplete output, unknown
+  retries, timeout/censoring, missing mode records and gapped RSS traces.
+- Implement matched Go/native warmup of >=10 seconds AND >=10,000 successful
+  operations, followed by >=60 seconds AND >=100,000 measured operations per
+  leg. Predeclare safety deadlines and retain incomplete/failed attempts.
+- Retain per-operation round/leg/identity/type, start/end, success/error,
+  timeout deadline, observed retry count and censoring. Unknown native retry
+  telemetry blocks acceptance; do not fabricate zero or count only outer calls.
+- Collect connected, equally warmed, immediately preceding idle RSS and all
+  interval samples using the same OS method/cadence. Report absolute baseline,
+  peak and incremental bytes. Nonpositive or sub-resolution native increments
+  make a ratio unavailable, not passing. Keep native allocation and Go heap
+  metrics explicitly distinct.
+- Bind source/binaries, runtime, limits, topology, fixture conditioning and
+  actual authenticated MON/OSD modes for every connection and reconnect.
+  Preserve health/placement/correctness guards and observation limitations.
+- Implement at least five independently conditioned process-lifecycle rounds,
+  with seeded randomized ABBA assignment. Freeze matrix, exclusions, estimator,
+  within-round weighting, bootstrap seed/count, quantile/interval convention
+  and simultaneous-confidence method before capture. Resample whole paired
+  rounds, not individual operations; retain all analysis inputs and tool pins.
+- Test analysis on synthetic known pass/fail/undefined cases, including a
+  single failing cell, missing or duplicate rounds, invalid ABBA pairing and
+  denominator failures. Emit per-round tails/histograms and all four bounds;
+  missing evidence must never yield an acceptance result.
+
+Exit gate: both collectors and analysis pass focused tests and a separately
+labeled integration smoke run, with reproducible raw records and fail-closed
+validation. Tooling completion is not native parity; Phase 12 performs fresh
+qualification on a frozen implementation.
+
+### Phase 9: Evaluate Explicit Consumer PGO Builds
+
+Dependencies: fixed diagnostic contract; Phase 8 for any qualifying claim.
+Assessment: A2. Owner: benchmark/build tooling. Status: pending experiment,
+not authorization to enable production PGO or alter runtime settings.
+
+- First check: build the same consumer executable with `-pgo=off` and an
+  explicit pinned CPU profile, verify compiler use and distinct binary pins,
+  then run byte-exact correctness tests. Keep `CGO_ENABLED=0` for both builds.
+- Collect representative training profiles across reads/writes/mixed traffic,
+  sizes, concurrency and real call sites; predeclare composition/weighting.
+  Do not use the short excluded O write profile as the sole training set.
+- Separate instrumented training, tuning/pilot runs and independent held-out
+  evaluation. Compare randomized paired builds under identical runtime and
+  limits; measure CPU/op, throughput, p99, interval RSS and binary size, with
+  a stdlib/non-PGO baseline and unchanged native comparator.
+- Explain consumer ownership of PGO: benefits depend on the final application's
+  workload/profile. Avoid a hidden default.pgo or universal library speedup
+  claim. PGO will not create a missing VAES AES-GCM implementation.
+- Retain regressions and inconclusive cells. Recommend an opt-in build recipe
+  only if independently repeated benefits justify its profile maintenance and
+  do not violate the unchanged correctness/performance/memory gates.
+
+Exit gate: reproducible held-out assessment and explicit keep/reject/defer
+decision. A null or unfavorable result closes this experiment, not the CPU
+parity finding. Any adopted variant needs its own Phase 12 source/build scope.
+
+### Phase 10: Attribute and Reduce Confirmed Syscall Overhead
+
+Dependencies: checkpoint baseline and Phase 1 control-progress contracts;
+Phase 8 for qualification. Assessment: A2. Owners: messenger/transport.
+Status: pending attribution; no demonstrated additional safe small fix.
+
+- First measurement: fresh matched, excluded profiles on small c1 reads and
+  concurrent read/write cells, recording socket read/write, ACK, epoll and
+  futex counts alongside CPU attribution and scheduler traces. Separate setup,
+  warmup and cleanup; do not interpret blocked durations as CPU time or old D
+  counts as current-source evidence.
+- Establish a local hypothesis about avoidable wakeups or already-ready frame
+  density. Add a deterministic handoff/control test and repeated benchmark
+  before editing. Keep source/runtime/affinity/fixture limits identical.
+- Investigate scheduling handoffs before adding transport complexity. Consider
+  opportunistic same-connection coalescing only when measured queue density
+  supports it, with no deliberate batch-fill wait and a strict memory bound.
+  A complete-frame Write already exists; writev is not an automatic benefit.
+- Preserve control priority/reserves, FIFO/replay and nonce order, generations,
+  cancellation/deadlines, unknown mutation outcomes, short-write/error handling
+  and producer/pending/writer lease lifetimes. Do not blindly buffer writeTasks
+  or let reused wire storage overwrite an active batch.
+- Compare c1 and concurrent workloads, idle and host-load cases, and full
+  latency distributions. A lower syscall count alone is insufficient; require
+  repeated CPU/throughput benefit without tail, memory or correctness regression.
+  Leave TCP and global runtime knobs unchanged unless separately approved.
+
+Exit gate: every retained change has causal local evidence, lifecycle/race
+coverage and independent full-client benefit; otherwise publish a no-change
+verdict. No-change does not waive the remaining native CPU target.
+
+### Phase 11: Complete Resource Policy and Endurance Assessment
+
+Dependencies: Phases 4-6 ownership/accounting, Phase 8 resource collection.
+Assessments: A4, A5. Owners: backoff/session budgets and endurance tooling.
+Status: pending policy and sustained evidence; bounded O windows already pass.
+
+- First policy test: reach a proposed active-backoff bound with duplicate and
+  overlapping IDs/ranges, then apply further blocks/unblocks under saturation.
+  Define a bounded-state outcome that never silently drops required blocks or
+  reports an unknown mutation as successful. Obtain approval before adding
+  defaults, changing caps or choosing new overload semantics.
+- Audit aggregate outbound and connection-scaled memory, not just receive
+  charges. Include reader capacity, wire/mutation caches, active leases, queues,
+  stacks, maps and allocator overhead; report application-retained outputs
+  separately. Existing per-session limits are not a whole-client RSS cap.
+- Specify any missing policy as a separate small implementation slice, with
+  deterministic boundary/overflow/slow-consumer/reconnect/Close tests. Do not
+  evict active operations, replay obligations, watches or installing sessions.
+- Predeclare sustained duration, workload cycles, session fanout, sampling,
+  memory-pressure envelope and growth criteria before execution. Exercise
+  read/write/mixed traffic, cancellation, retries, overload and post-Close idle;
+  retain RSS trajectories, GC behavior and native allocator observations.
+- Compare controlled memory pressure against unconstrained runs, with no OOM,
+  uncontrolled retention or unacceptable GC-tail behavior under the declared
+  budget. Do not globally tune GOGC/GOMEMLIMIT or relax RSS parity to rescue a
+  result. Finite logical backing does not prove an allocator/RSS bound.
+- Preserve N's rejected padded-4-MiB memory tradeoff and K's timeout. A new
+  approved deployment-efficiency experiment, if requested later, must keep its
+  absolute memory budget and verdict separate from original parity failures.
+
+Exit gate: approved required bounded-state policies are implemented and tested;
+predeclared endurance/pressure criteria pass with correctly labeled memory
+metrics. Unknown policy, growth or resource failures keep this phase blocked.
+
+### Phase 12: Evaluate Final-Source Latency and Native Parity Gates
+
+Dependencies: Phase 8; Phases 9-11 completed or explicitly assessed/deferred,
+with unresolved safety/measurement blockers retained. Assessments: A1, A2,
+A4, A6. Owners: qualification runner and Phase 4 regression assessment.
+Status: pending; neither O diagnostics nor `486305c` qualify the current source.
+
+- Freeze the approved final build, matrix, limits, exclusions and analysis plan;
+  collect fresh independent samples without optional stopping or replacing
+  unfavorable attempts. Qualify adopted PGO and non-PGO build scopes separately.
+- Evaluate CPU, p99, successful throughput and incremental RSS confidence
+  gates in every in-scope cell, alongside correctness/mode/environment checks.
+  Do not average ten failing CPU cells away or turn AES deferral into a waiver.
+- Reevaluate the specific Phase 4 secure-read no-regression/latency gate with
+  its existing guardrail and explicitly agreed margin. Application P2 tuning
+  or a short favorable c16 result is not a library-default closure.
+- Investigate K's admitted timeout with retained queue/service/delivery evidence
+  and narrowly targeted reproductions. Run sustained offered-load comparisons
+  with all outcomes and goodput at the same latency budget; publish safe load
+  ceilings per workload, not a success-only p99 or universal capacity claim.
+- Assess the current write/map/ownership changes against their historical
+  regressions and source pins. Keep `576ce5e`'s narrow write qualification
+  distinct from current-source native parity and from independent local gains.
+- Publish pass/fail/unknown per gate, unresolved causes and scoped deferrals.
+  If CPU or another gate still fails under retained constraints, state that
+  qualification is blocked rather than expanding the optimization scope or
+  weakening acceptance automatically.
+
+Exit gate: every scoped qualification and Phase 4 requirement passes with
+source-bound independent evidence. A complete failure assessment is useful
+work, but is not a passed phase or a phase-complete parity verdict.
+
+### Phase 13: Extend Workload, Fanout and Recovery Coverage
+
+Dependencies: Phase 8 evidence tooling and explicit topology/operation scope;
+Phases 11-12 for any inherited resource or qualification claim. Assessment: A5.
+Owners: workload-specific harnesses and authorized deployment operators.
+Status: deferred beyond current native Linux two-pool fixture authorization.
+
+- Predeclare independent read/write/mixed cells through higher concurrency and
+  real connection fanout. Include allocating Read and caller-buffer ReadInto
+  as distinct contracts. Synthetic routing/map/fanout evidence remains separate
+  from live multi-node behavior.
+- Implement paired metadata/xattr/OMAP, enumeration, compound operations,
+  snapshots and watch/notify workloads with operation-specific completion,
+  rates, value/cardinality limits and failure budgets. Byte throughput is not
+  an appropriate substitute for every operation family.
+- Build controlled reconnect/replay, map-churn and OSD/MON loss/rejoin cases
+  only on an explicitly authorized disposable cluster. Distinguish injected
+  failures from unexpected client errors and unknown mutation outcomes.
+- Record representative hardware, fault domains, devices, network, placement,
+  replication, occupancy and client connections. Separate local, 64-OSD and
+  256-OSD results as required by the governing topology contract; none can
+  inherit qualification from another without evidence.
+- Cover supported deployment architectures and actual matched service modes;
+  do not label CRC requested policy as observed CRC transport. Record missing
+  hosts/containers/tooling as scoped deferrals, not successful execution.
+
+Exit gate: each approved expanded scope passes its own predeclared evidence
+and correctness/resource gates. Missing topology or destructive-test approval
+keeps that scope deferred; it is not permission to modify production pools.
+
+### Phase 14: Renew Validation, Documentation and Crypto Watch
+
+Dependencies: frozen implementation/builds from preceding phases, with explicit
+remaining findings and approved certification scope. Assessments: A3, A6.
+Owners: release/verification tooling and documentation. Status: pending renewal;
+AES work is monitoring only, not a scheduled backend implementation.
+
+- Refresh the review/index/status catalog after each completed capture or
+  checkpoint. Preserve dated historical failures and source-bound records;
+  correct stale pending/uncommitted wording in current summaries without
+  rewriting the older verdicts. Update the handoff with actual blocked gates.
+- Run final source/build unit, diagnostic, vet and focused/full race gates,
+  minimum-Go checks and CGO-disabled deployment builds. Cross-build the
+  Linux-only benchmark and supported targets explicitly; a cross-build is not
+  runtime coverage. Race-toolchain CGO does not authorize shipped native deps.
+- Regenerate applicable P03/P04/P06-P11 integration evidence through harnesses,
+  then the required P07/P12 qualification, fuzz, endurance and release gates.
+  Run P13 recovery only within approved disposable scope. Never hand-edit
+  hashes or manufacture independent/human signoff; unavailable required hosts
+  or tools keep the relevant certification unqualified.
+- Bind qualification to the actual consumer build, source/profile/analysis
+  identities and negotiated-mode scope. A changed profile, dependency, runtime,
+  resource policy or implementation needs the appropriate renewal, not an
+  inherited certificate from an older checkpoint.
+- Watch upstream Go AES-GCM/VAES/GHASH and archsimd maturity, including API
+  stability across supported Go versions. Reconsider only on a concrete,
+  maintained CGO-free implementation with independent benchmarks and security
+  review. Keep native OpenSSL/Intel bindings and experimental SIMD out of the
+  default build; do not implement bespoke crypto as routine phase cleanup.
+
+Exit gate: current documentation and required source-bound validation/release
+records agree with the real scope and unresolved findings; all required
+certification gates and signoffs pass before any release-qualified claim.
+Crypto monitoring has no backend-delivery exit gate and never blocks an
+otherwise valid CGO-free build or silently relaxes the parity requirements.
 
 ## Handoff Record Template
 

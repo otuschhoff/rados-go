@@ -142,6 +142,10 @@ func main() {
 }
 
 func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (resultErr error) {
+	qualification, err := parseQualificationConfig(os.Getenv)
+	if err != nil {
+		return err
+	}
 	namespace, err := parityNamespace(os.Getenv("P07_PARITY_NAMESPACE"))
 	if err != nil {
 		return err
@@ -169,7 +173,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	if err != nil {
 		return err
 	}
-	if namespace != "" && !diagnostic && !seedOnly && (matrix.size == 0 || matrix.concurrency == 0 || matrix.workload == "" || matrix.operations <= 2) {
+	if namespace != "" && !diagnostic && !seedOnly && (matrix.size == 0 || matrix.concurrency == 0 || matrix.workload == "" || qualification == nil && matrix.operations <= 2) {
 		return fmt.Errorf("parity mode requires explicit sustained size, concurrency and workload")
 	}
 	shape, err := parseReadShape(os.Getenv("P07_READ_SIZE"), os.Getenv("P07_READ_CONCURRENCY"), diagnostic, seedOnly)
@@ -209,13 +213,20 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 		return err
 	}
 
+	operationTimeout := 10 * time.Minute
+	if qualification != nil {
+		if transport != "secure" || runtime.GOMAXPROCS(0) != 10 {
+			return fmt.Errorf("qualification requires secure transport and ten active Ps")
+		}
+		operationTimeout = 30 * time.Second
+	}
 	client, err := rados.New(rados.Config{
 		Monitors:         monitors,
 		Entity:           entity,
 		ClusterFSID:      fsid,
 		Key:              key,
 		SecurityMode:     securityMode,
-		OperationTimeout: 10 * time.Minute,
+		OperationTimeout: operationTimeout,
 	})
 	if err != nil {
 		return &benchError{message: "create client", err: err}
@@ -260,6 +271,9 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	}
 	if namespace != "" {
 		pool = pool.WithNamespace(namespace)
+	}
+	if qualification != nil {
+		return runQualification(ctx, pool, *qualification, matrix)
 	}
 	if retentionWindows != 0 {
 		if transport != "secure" {
@@ -900,7 +914,7 @@ func makePayload(size, runID, workerID uint64) []byte {
 		return payload
 	}
 	state := runID ^ (workerID << 17) ^ 0x9E3779B97F4A7C15
-	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" || os.Getenv("P07_SEED_ONLY") == "1" {
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" || os.Getenv("P07_SEED_ONLY") == "1" || os.Getenv("P07_PARITY_NAMESPACE") != "" {
 		state = runID ^ (workerID << 19) ^ 0x9E3779B97F4A7C15
 	}
 	for i := range payload {

@@ -23,6 +23,51 @@ or certification results. Profiles and resource counters include warmup.
 Per-leg OSD snapshots bracket connection,
 warmup and measured reads; expect 4,224 OSD reads, not 4,096.
 
+## Sustained Collector Smoke
+
+On the already approved Linux deployment only, the following entry point runs
+a fixed Go/native pair on `readcache`, 4-KiB reads at concurrency one. It does
+not provision a cluster, change pool/caps policy or exercise recovery. It
+requires Go 1.27.1, Node, gcc, librados, `ceph`, `rados` and CPUs 0-9. Set the
+existing private path variables `P07_PARITY_CONFIG`, `P07_PARITY_KEY`,
+`P07_PARITY_KEYRING`, `P07_PARITY_MONITORS_FILE` and `P07_PARITY_FSID_FILE`.
+The entity is `client.amakura`; do not use this driver on an unapproved target.
+
+```sh
+node integration/p07/parity.mjs /absolute/fresh/private-output p07-parity-fresh-namespace --qualification-smoke
+node --test integration/p07/parity.test.mjs
+```
+
+Both collectors require warmup of at least 10 seconds AND 10,000 successful
+operations, then measurement of at least 60 seconds AND 100,000 successful
+operations. Each phase permits at most one million retained records across
+workers. Reaching the cap before both minima fails, retaining the population.
+Declared operation budgets are 30 seconds from recorded start; setup and final
+verification RPC defaults are also 30 seconds. The attempt limit is 15 minutes.
+Go cleanup gets an independent 15-second context. Native cleanup checks a
+15-second boundary and uses one-second synchronous RPC timeouts; an in-flight
+call cannot be canceled immediately. Late observations cannot count as success.
+
+The driver retains source/binary/library pins, raw warmup/measured observations,
+failed fixture-collision probes, boundary health/placement, exact payload and
+removal/NotFound results, and independently checked actual MON/OSD modes.
+Both clients also retain actual 100-ms interval RSS observations and an
+immediately preceding connected/warmed baseline, using the same Linux
+`/proc/self/status` method. Missing reads, storage limits, non-increasing clocks,
+baseline/end coverage defects or sampling gaps reject the attempt. Samplers stop
+before final verification, cleanup and Go raw-record assembly.
+Capture and mode files are fresh/exclusive and private. Existing fixtures are
+never overwritten or removed by a rejected attempt. Failed outer startup or
+process executions retain exit metadata and private logs, but may have no
+complete attempt JSON; they cannot become accepted legs.
+
+This smoke never accepts qualification. Retry counts remain null rather than
+invented zeroes. RSS includes unequal harness recorder representations/retention,
+and measured CPU includes worker startup, RSS sampling and recorder storage;
+library-only costs are not established. There are no randomized ABBA rounds or matrix-wide
+confidence bounds. Ordinary fixed-count diagnostic behavior is unchanged.
+Go production builds remain CGO-free with standard-library crypto.
+
 ## Outputs
 
 - `native-1.json`, `go-1.json`, `go-2.json`, `native-2.json`: baseline latency distributions.
