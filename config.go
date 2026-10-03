@@ -32,7 +32,8 @@ func DefaultConfig() Config {
 		MaxSessions:           defaultMaxSessions,
 		MaxReceiveBytes:       defaultMaxReceiveBytes,
 		MaxQueuedReceiveBytes: defaultMaxQueuedReceiveBytes,
-		cluster:               "ceph",
+		MaxBackoffs:           4096, MaxBackoffBytes: 8 << 20,
+		cluster: "ceph",
 	}
 }
 
@@ -105,7 +106,7 @@ func (config Config) withOption(name, value string, loadKeyring bool) (Config, e
 	if name == "" {
 		return Config{}, invalidConfig("option", errors.New("empty option name"))
 	}
-	if name != "max_sessions" && name != "max_receive_bytes" && name != "max_queued_receive_bytes" {
+	if name != "max_sessions" && name != "max_receive_bytes" && name != "max_queued_receive_bytes" && name != "max_backoffs" && name != "max_backoff_bytes" {
 		value = strings.TrimSpace(value)
 	}
 	switch name {
@@ -169,12 +170,19 @@ func (config Config) withOption(name, value string, loadKeyring bool) (Config, e
 			return Config{}, err
 		}
 		config.HandshakeTimeout = duration
-	case "max_sessions", "max_receive_bytes", "max_queued_receive_bytes":
+	case "max_sessions", "max_receive_bytes", "max_queued_receive_bytes", "max_backoffs", "max_backoff_bytes":
 		limit, err := parsePositiveDecimal(name, value)
 		if err != nil {
 			return Config{}, err
 		}
 		switch name {
+		case "max_backoffs":
+			if limit > uint64(^uint(0)>>1) {
+				return Config{}, invalidConfig(name, errors.New("backoff count exceeds platform int range"))
+			}
+			config.MaxBackoffs = int(limit)
+		case "max_backoff_bytes":
+			config.MaxBackoffBytes = limit
 		case "max_sessions":
 			if limit > uint64(^uint(0)>>1) {
 				return Config{}, invalidConfig(name, errors.New("session count exceeds platform int range"))
@@ -239,6 +247,10 @@ func (config Config) Option(name string) (string, bool) {
 		return strconv.FormatUint(config.withReceiveDefaults().MaxReceiveBytes, 10), true
 	case "max_queued_receive_bytes":
 		return strconv.FormatUint(config.withReceiveDefaults().MaxQueuedReceiveBytes, 10), true
+	case "max_backoffs":
+		return strconv.Itoa(config.withBackoffDefaults().MaxBackoffs), true
+	case "max_backoff_bytes":
+		return strconv.FormatUint(config.withBackoffDefaults().MaxBackoffBytes, 10), true
 	case "operation_timeout", "rados_osd_op_timeout":
 		return config.OperationTimeout.String(), true
 	default:
@@ -331,6 +343,8 @@ func (config Config) ParseEnv(name string) (Config, error) {
 		{"MAX_SESSIONS", "max_sessions"},
 		{"MAX_RECEIVE_BYTES", "max_receive_bytes"},
 		{"MAX_QUEUED_RECEIVE_BYTES", "max_queued_receive_bytes"},
+		{"MAX_BACKOFFS", "max_backoffs"},
+		{"MAX_BACKOFF_BYTES", "max_backoff_bytes"},
 	}
 	credentialOption := ""
 	for _, variable := range variables {
@@ -365,7 +379,7 @@ func (config *Config) applySection(values map[string]string) error {
 	if _, exists := values["include_dir"]; exists {
 		return invalidConfig("include_dir", errors.New("includes are not supported"))
 	}
-	ordered := []string{"cluster", "entity", "name", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout", "max_sessions", "max_receive_bytes", "max_queued_receive_bytes"}
+	ordered := []string{"cluster", "entity", "name", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout", "max_sessions", "max_receive_bytes", "max_queued_receive_bytes", "max_backoffs", "max_backoff_bytes"}
 	for _, name := range ordered {
 		value, exists := values[name]
 		if !exists {
@@ -390,6 +404,16 @@ func (config Config) withReceiveDefaults() Config {
 	}
 	if config.MaxQueuedReceiveBytes == 0 {
 		config.MaxQueuedReceiveBytes = defaultMaxQueuedReceiveBytes
+	}
+	return config
+}
+
+func (config Config) withBackoffDefaults() Config {
+	if config.MaxBackoffs == 0 {
+		config.MaxBackoffs = 4096
+	}
+	if config.MaxBackoffBytes == 0 {
+		config.MaxBackoffBytes = 8 << 20
 	}
 	return config
 }
@@ -481,7 +505,7 @@ func normalizeOptionName(name string) string {
 
 func isArgumentOption(name string) bool {
 	switch name {
-	case "name", "id", "cluster", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout", "max_sessions", "max_receive_bytes", "max_queued_receive_bytes":
+	case "name", "id", "cluster", "mon_host", "fsid", "key", "keyring", "ms_mode", "dial_timeout", "handshake_timeout", "operation_timeout", "rados_osd_op_timeout", "max_sessions", "max_receive_bytes", "max_queued_receive_bytes", "max_backoffs", "max_backoff_bytes":
 		return true
 	default:
 		return false

@@ -32,6 +32,9 @@ type osdSession struct {
 
 	mu              sync.Mutex
 	backoffs        map[uint64]osd.Backoff
+	maxBackoffs     int
+	maxBackoffBytes uint64
+	backoffBytes    uint64
 	backoffsByPG    map[maps.PG]map[uint64]osd.Backoff
 	backoffWaiters  map[maps.PG]*backoffWaiters
 	submissions     map[uint64]*targetSubmission
@@ -90,11 +93,16 @@ type osdTransport interface {
 }
 
 func newOSDSession(raw osdTransport, limits osd.Limits, ackTimeout time.Duration, observers ...func(bool, error)) *osdSession {
+	return newOSDSessionWithBackoffLimits(raw, limits, ackTimeout, 4096, 8<<20, observers...)
+}
+
+func newOSDSessionWithBackoffLimits(raw osdTransport, limits osd.Limits, ackTimeout time.Duration, count int, bytes uint64, observers ...func(bool, error)) *osdSession {
 	var observe func(bool, error)
 	if len(observers) != 0 {
 		observe = observers[0]
 	}
 	session := &osdSession{raw: raw, limits: limits, ackTimeout: ackTimeout, backoffs: make(map[uint64]osd.Backoff), submissions: make(map[uint64]*targetSubmission), changed: make(chan struct{}), notifications: make(chan osd.WatchNotification, 128), interruptions: make(chan error, 1), observe: observe}
+	session.maxBackoffs, session.maxBackoffBytes = count, bytes
 	if scoped, ok := raw.(generationControlTransport); ok {
 		session.ackGeneration = scoped.ControlGeneration()
 	}
@@ -416,7 +424,27 @@ func (session *osdSession) removeSubmission(id uint64) {
 	}
 }
 
-func (session *osdSession) addBackoff(backoff osd.Backoff) {
+func backoffCharge(backoff osd.Backoff) uint64 {
+	return 1024 + uint64(len(backoff.Begin.Key)) + uint64(len(backoff.Begin.Object)) + uint64(len(backoff.Begin.Namespace)) + uint64(len(backoff.End.Key)) + uint64(len(backoff.End.Object)) + uint64(len(backoff.End.Namespace))
+}
+
+func (session *osdSession) addBackoff(backoff osd.Backoff) error {
+	count, bytes := session.maxBackoffs, session.maxBackoffBytes
+	if count == 0 {
+		count = 4096
+	}
+	if bytes == 0 {
+		bytes = 8 << 20
+	}
+	previous, exists := session.backoffs[backoff.ID]
+	retained := session.backoffBytes
+	if exists {
+		retained -= backoffCharge(previous)
+	}
+	charge := backoffCharge(backoff)
+	if !exists && len(session.backoffs) >= count || retained > bytes || charge > bytes-retained {
+		return fmt.Errorf("active backoff state: %w", msgr.ErrQueueSaturated)
+	}
 	session.removeBackoff(backoff.ID)
 	if session.backoffsByPG == nil {
 		session.backoffsByPG = make(map[maps.PG]map[uint64]osd.Backoff)
@@ -425,13 +453,16 @@ func (session *osdSession) addBackoff(backoff osd.Backoff) {
 		session.backoffsByPG[backoff.PG] = make(map[uint64]osd.Backoff)
 	}
 	session.backoffs[backoff.ID] = backoff
+	session.backoffBytes += charge
 	session.backoffsByPG[backoff.PG][backoff.ID] = backoff
 	session.wakeBackoffPG(backoff.PG)
+	return nil
 }
 
 func (session *osdSession) removeBackoff(id uint64) (osd.Backoff, bool) {
 	backoff, exists := session.backoffs[id]
 	if exists {
+		session.backoffBytes -= backoffCharge(backoff)
 		delete(session.backoffs, id)
 		ranges := session.backoffsByPG[backoff.PG]
 		delete(ranges, id)
@@ -451,6 +482,12 @@ func (session *osdSession) receive() {
 		session.ackMu.Unlock()
 		session.resetACKs(generation)
 		<-session.ackDone
+		session.fail(msgr.ErrSessionClosed)
+		session.mu.Lock()
+		session.backoffs = nil
+		session.backoffsByPG = nil
+		session.backoffBytes = 0
+		session.mu.Unlock()
 		close(session.notifications)
 		close(session.dispatcherDone)
 	}()
@@ -471,6 +508,7 @@ func (session *osdSession) receive() {
 		session.resetACKs(generation)
 		clear(session.backoffs)
 		clear(session.backoffsByPG)
+		session.backoffBytes = 0
 		session.wakeAllBackoffs()
 		close(session.changed)
 		session.changed = make(chan struct{})
@@ -573,8 +611,10 @@ func (session *osdSession) receive() {
 			current := !authoritative || message.TransportGeneration == scoped.ControlGeneration()
 			if current && err == nil {
 				if backoff.Operation == osd.BackoffBlock {
-					session.addBackoff(backoff)
-					err = session.enqueueACK(ack)
+					err = session.addBackoff(backoff)
+					if err == nil {
+						err = session.enqueueACK(ack)
+					}
 				} else {
 					blocked, ok := session.removeBackoff(backoff.ID)
 					if ok {

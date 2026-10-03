@@ -58,6 +58,8 @@ type Config struct {
 	// MaxQueuedReceiveBytes bounds queued receive bytes per messenger session.
 	// Zero selects 64 MiB; the effective value must not exceed MaxReceiveBytes.
 	MaxQueuedReceiveBytes uint64
+	MaxBackoffs           int
+	MaxBackoffBytes       uint64
 	cluster               string
 	keyring               string
 	options               map[string]string
@@ -94,6 +96,10 @@ func New(config Config) (*Client, error) {
 	}
 	config = config.clone()
 	config = config.withReceiveDefaults()
+	if config.MaxBackoffs < 0 {
+		return nil, invalidConfig("max_backoffs", errors.New("backoff count must not be negative"))
+	}
+	config = config.withBackoffDefaults()
 	if config.MaxQueuedReceiveBytes > config.MaxReceiveBytes {
 		return nil, &OpError{Op: "new", Err: ErrInvalidArgument}
 	}
@@ -207,6 +213,7 @@ func (client *Client) Connect(ctx context.Context) error {
 		Maps: monitorClient, AuthoritySource: func() *cephx.Connector { return client.authority.Load() }, ClientAddresses: protocol.EntityAddrVec{clientAddress},
 		ServiceConnector: cephx.ServiceConnectorConfig{DialTimeout: client.config.DialTimeout, HandshakeTimeout: client.config.HandshakeTimeout, MessageLimits: messageLimits, AllowCRC: client.config.SecurityMode == SecurityModeCRC},
 		Session:          sessionConfig, MessageLimits: osd.Limits{MaxBytes: 32 << 20, MaxOperations: 16}, MaxAttempts: 4,
+		MaxBackoffs: client.config.MaxBackoffs, MaxBackoffBytes: client.config.MaxBackoffBytes,
 		UnlimitedRetries: client.config.OperationTimeout == 0, RefreshWait: 2 * time.Second, ObserveSession: client.observeOSDConnection,
 	})
 	if err != nil {

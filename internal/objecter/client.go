@@ -143,6 +143,8 @@ type Config struct {
 	RefreshWait       time.Duration
 	MaxMutations      int
 	MaxMutationBytes  uint64
+	MaxBackoffs       int
+	MaxBackoffBytes   uint64
 	ClientIncarnation int32
 	SessionFactory    SessionFactory
 	ObserveSession    func(OSDSessionEvent)
@@ -204,6 +206,15 @@ func (client *Client) MaxEnumerationEntries() uint64 {
 }
 
 func New(config Config) (*Client, error) {
+	if config.MaxBackoffs < 0 {
+		return nil, wire.ErrLimitExceeded
+	}
+	if config.MaxBackoffs == 0 {
+		config.MaxBackoffs = 4096
+	}
+	if config.MaxBackoffBytes == 0 {
+		config.MaxBackoffBytes = 8 << 20
+	}
 	if config.Maps == nil || config.MessageLimits.MaxBytes == 0 || config.MessageLimits.MaxOperations == 0 || config.MaxAttempts <= 0 || config.RefreshWait <= 0 {
 		return nil, wire.ErrLimitExceeded
 	}
@@ -1361,7 +1372,7 @@ func productionSessionFactory(config Config) SessionFactory {
 		if err != nil {
 			return nil, err
 		}
-		return newOSDSession(raw, config.MessageLimits, config.RefreshWait, func(available bool, err error) {
+		return newOSDSessionWithBackoffLimits(raw, config.MessageLimits, config.RefreshWait, config.MaxBackoffs, config.MaxBackoffBytes, func(available bool, err error) {
 			if config.ObserveSession != nil {
 				config.ObserveSession(OSDSessionEvent{OSDID: osdID, Available: available, Err: err})
 			}

@@ -388,7 +388,7 @@ type qualificationConfig struct {
 func parseQualificationConfig(env func(string) string) (*qualificationConfig, error) {
 	file := env("P07_QUALIFICATION_FILE")
 	if file == "" {
-		for _, name := range []string{"P07_QUALIFICATION_ROUND", "P07_QUALIFICATION_LEG", "P07_QUALIFICATION_SEED", "P07_PGO_DIAGNOSTIC", "P07_PGO_PROFILE_FILE"} {
+		for _, name := range []string{"P07_QUALIFICATION_ROUND", "P07_QUALIFICATION_LEG", "P07_QUALIFICATION_SEED", "P07_PGO_DIAGNOSTIC", "P07_PGO_PROFILE_FILE", "P11_ENDURANCE_ROOT"} {
 			if env(name) != "" {
 				return nil, fmt.Errorf("%s requires P07_QUALIFICATION_FILE", name)
 			}
@@ -442,7 +442,13 @@ func parseQualificationConfig(env func(string) string) (*qualificationConfig, er
 			return nil, fmt.Errorf("qualification leg must contain lowercase ASCII letters, digits and hyphens")
 		}
 	}
-	return &qualificationConfig{file: file, pgoDiagnostic: pgoDiagnostic == "1", profileFile: profileFile, Round: round, Seed: seed, Leg: leg}, nil
+	config := &qualificationConfig{file: file, pgoDiagnostic: pgoDiagnostic == "1", profileFile: profileFile, Round: round, Seed: seed, Leg: leg}
+	if root := env("P11_ENDURANCE_ROOT"); root != "" {
+		if err := validateEnduranceConfig(root, *config, matrix); err != nil {
+			return nil, err
+		}
+	}
+	return config, nil
 }
 
 func runQualification(parent context.Context, pool rados.Pool, config qualificationConfig, matrix matrixExperiment) (resultErr error) {

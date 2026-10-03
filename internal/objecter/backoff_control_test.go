@@ -139,6 +139,201 @@ func TestBackoffControlProgressUnderApplicationSaturation(t *testing.T) {
 	}
 }
 
+func TestBackoffStateLimits(t *testing.T) {
+	object := osd.HObject{Object: "bounded", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+	block := osd.Backoff{PG: maps.PG{Pool: 7, Seed: 1, Preferred: -1}, Shard: -1, Operation: osd.BackoffBlock, ID: 1, Begin: object, End: object}
+	for _, bound := range []string{"count", "bytes"} {
+		t.Run(bound, func(t *testing.T) {
+			session := &osdSession{backoffs: make(map[uint64]osd.Backoff), maxBackoffs: 1, maxBackoffBytes: backoffCharge(block)}
+			if err := session.addBackoff(block); err != nil {
+				t.Fatal(err)
+			}
+			if err := session.addBackoff(block); err != nil || session.backoffBytes != backoffCharge(block) {
+				t.Fatalf("duplicate charge: %d, %v", session.backoffBytes, err)
+			}
+			other := block
+			if bound == "count" {
+				other.ID++
+				session.maxBackoffBytes *= 2
+			} else {
+				other.Begin.Key = "larger replacement"
+			}
+			if err := session.addBackoff(other); !errors.Is(err, msgr.ErrQueueSaturated) {
+				t.Fatalf("overflow = %v", err)
+			}
+			if len(session.backoffs) != 1 || session.backoffs[block.ID] != block || session.backoffBytes != backoffCharge(block) {
+				t.Fatal("rejected block changed installed state")
+			}
+			session.removeBackoff(block.ID)
+			if session.backoffBytes != 0 {
+				t.Fatal("unblock did not release charged bytes")
+			}
+		})
+	}
+}
+
+func TestBackoffStateOverflowStopsBeforeACK(t *testing.T) {
+	for _, bound := range []string{"count", "bytes"} {
+		t.Run(bound, func(t *testing.T) {
+			transport := newFakeOSDTransport()
+			session := newOSDSessionWithBackoffLimits(transport, backoffTestLimits, time.Second, 1, 8<<20)
+			defer session.Stop()
+			object := osd.HObject{Object: "bounded", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+			block := osd.Backoff{PG: maps.PG{Pool: 7, Seed: 1, Preferred: -1}, Shard: -1, Operation: osd.BackoffBlock, ID: 1, Begin: object, End: object}
+			if bound == "bytes" {
+				session.mu.Lock()
+				session.maxBackoffs = 2
+				session.maxBackoffBytes = backoffCharge(block)
+				session.mu.Unlock()
+			}
+			transport.incoming <- encodeBackoffMessage(t, block)
+			select {
+			case <-transport.sent:
+			case <-time.After(time.Second):
+				t.Fatal("first block not acknowledged")
+			}
+			block.ID++
+			transport.incoming <- encodeBackoffMessage(t, block)
+			select {
+			case <-session.dispatcherDone:
+			case <-time.After(time.Second):
+				t.Fatal("overflow did not stop affected session")
+			}
+			select {
+			case <-transport.sent:
+				t.Fatal("uninstalled block acknowledged")
+			default:
+			}
+			if !errors.Is(session.NotificationError(), msgr.ErrQueueSaturated) || session.backoffBytes != 0 {
+				t.Fatal("overflow error or terminal accounting changed")
+			}
+		})
+	}
+}
+
+func TestBackoffStateDuplicateOverlapAndReplacementAccounting(t *testing.T) {
+	const population = 4096
+	session := &osdSession{backoffs: make(map[uint64]osd.Backoff)}
+	object := osd.HObject{Object: "overlapping", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+	verify := func(expected int) {
+		t.Helper()
+		if len(session.backoffs) != expected {
+			t.Fatalf("active IDs = %d, want %d", len(session.backoffs), expected)
+		}
+		indexed := 0
+		for pg, ranges := range session.backoffsByPG {
+			if len(ranges) == 0 {
+				t.Fatal("empty PG index retained")
+			}
+			for id, backoff := range ranges {
+				current, exists := session.backoffs[id]
+				if !exists || current != backoff || backoff.PG != pg {
+					t.Fatalf("PG index diverged for ID %d", id)
+				}
+				indexed++
+			}
+		}
+		if indexed != expected {
+			t.Fatalf("indexed IDs = %d, want %d", indexed, expected)
+		}
+	}
+	for index := 0; index < population; index++ {
+		backoff := osd.Backoff{PG: maps.PG{Pool: 7, Seed: uint32(index % 4), Preferred: -1}, Shard: -1, Operation: osd.BackoffBlock, ID: uint64(index), Begin: object, End: object}
+		if err := session.addBackoff(backoff); err != nil {
+			t.Fatal(err)
+		}
+		if err := session.addBackoff(backoff); err != nil {
+			t.Fatal(err)
+		}
+	}
+	verify(population)
+	for index := 0; index < population; index++ {
+		backoff := session.backoffs[uint64(index)]
+		backoff.PG.Seed += 4
+		backoff.Begin.Key, backoff.End.Key = "replacement", "replacement"
+		if err := session.addBackoff(backoff); err != nil {
+			t.Fatal(err)
+		}
+	}
+	verify(population)
+	if len(session.backoffsByPG) != 4 {
+		t.Fatalf("replacement retained old PG indexes: %d", len(session.backoffsByPG))
+	}
+	if _, exists := session.removeBackoff(population + 1); exists {
+		t.Fatal("unknown unblock removed active state")
+	}
+	for index := 0; index < population; index++ {
+		if _, exists := session.removeBackoff(uint64(index)); !exists {
+			t.Fatalf("active ID %d disappeared", index)
+		}
+		if _, exists := session.removeBackoff(uint64(index)); exists {
+			t.Fatalf("duplicate unblock removed ID %d twice", index)
+		}
+	}
+	verify(0)
+}
+
+func TestBackoffStateOverflowPreservesDispatchedUnknownOutcome(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	transport := newBackoffControlTransport()
+	limits := msgr.Limits{MaxSegmentBytes: 4096, MaxFrameBytes: 8192}
+	raw, err := msgr.NewSession(transport, nil, msgr.SessionConfig{Limits: limits, MaxQueuedMessages: 8, MaxRetainedBytes: 8192, MaxInFlightTransactions: 8, MaxHandshakeTransitions: 8, EventBuffer: 16})
+	if err != nil {
+		t.Fatal(err)
+	}
+	session := newOSDSessionWithBackoffLimits(raw, backoffTestLimits, time.Second, 1, 8<<20)
+	defer session.Stop()
+	object := osd.HObject{Object: "dispatched", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+	result := make(chan error, 1)
+	go func() {
+		_, err := session.SubmitTarget(ctx, maps.PG{Pool: 7, Seed: 9, Preferred: -1}, object, msgr.Message{Header: msgr.MessageHeader{Type: protocol.MessageOSDOp}, Data: []byte("mutation"), Lengths: msgr.MessageLengths{Data: 8}})
+		result <- err
+	}()
+	select {
+	case <-transport.writes:
+	case <-ctx.Done():
+		t.Fatal("request not dispatched")
+	}
+	for index := 1; index <= 2; index++ {
+		message := encodeBackoffMessage(t, osd.Backoff{PG: maps.PG{Pool: 7, Seed: 3, Preferred: -1}, Shard: -1, Operation: osd.BackoffBlock, ID: uint64(index), Begin: object, End: object})
+		message.Header.Sequence = uint64(index)
+		frame, err := msgr.EncodeMessage(message, limits)
+		if err != nil {
+			t.Fatal(err)
+		}
+		transport.reads <- frame
+		if index == 1 {
+			for {
+				select {
+				case sent := <-transport.writes:
+					if sent.Tag != msgr.TagMessage {
+						continue
+					}
+					ack, err := msgr.DecodeMessage(sent, limits)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if ack.Header.Type != protocol.MessageOSDBackoff {
+						t.Fatal("unexpected application replay")
+					}
+				case <-ctx.Done():
+					t.Fatal("installed block not acknowledged")
+				}
+				break
+			}
+		}
+	}
+	select {
+	case err := <-result:
+		if !errors.Is(err, msgr.ErrOutcomeUnknown) || !errors.Is(err, msgr.ErrQueueSaturated) {
+			t.Fatalf("dispatched outcome = %v", err)
+		}
+	case <-ctx.Done():
+		t.Fatal("overflow did not terminate dispatched request")
+	}
+}
+
 type controlSend struct {
 	ctx     context.Context
 	message msgr.Message

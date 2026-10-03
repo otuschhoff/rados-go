@@ -273,6 +273,9 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 		pool = pool.WithNamespace(namespace)
 	}
 	if qualification != nil {
+		if root := os.Getenv("P11_ENDURANCE_ROOT"); root != "" {
+			return runEndurance(ctx, client, pool, root, *qualification)
+		}
 		return runQualification(ctx, pool, *qualification, matrix)
 	}
 	if retentionWindows != 0 {

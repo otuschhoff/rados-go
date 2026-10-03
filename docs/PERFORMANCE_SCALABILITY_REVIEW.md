@@ -347,7 +347,7 @@ instrumentation limitations remain explicit, not parity acceptance.
 Phase 9's consumer PGO assessment is complete with adoption rejected.
 Phase 10's fresh syscall/scheduler attribution is complete with a no-production-
 change verdict; see the [evidence and reevaluation](performance-phase10/README.md).
-Next complete Phase 11 policy/endurance work. Shared-host training,
+Next evaluate Phase 12 final-source latency/native parity. Shared-host training,
 profiling, timing and pressure captures run serially; freeze implementation
 and build identities for each capture and retain rejected variants.
 
@@ -879,7 +879,19 @@ verdict. No-change does not waive the remaining native CPU target.
 
 Dependencies: Phases 4-6 ownership/accounting, Phase 8 resource collection.
 Assessments: A4, A5. Owners: backoff/session budgets and endurance tooling.
-Status: pending policy and sustained evidence; bounded O windows already pass.
+Status: complete within the approved diagnostic scope; not native parity or
+release qualification. See the [resource policy, frozen plan and full evidence](performance-phase11/README.md).
+Explicit approval authorizes configurable defaults of 4,096 active IDs / 8 MiB
+logical charge per OSD session and fail-stop before ACK on overflow. Tests cover
+overlapping/duplicate/replaced IDs, both bounds, reset/terminal release and
+preservation of dispatched unknown outcomes. No silent eviction or whole-client
+RSS guarantee is introduced. Final eight-process / 120-window same-client
+read/write/mixed assessment passes the frozen isolated-pressure, growth,
+GC-tail/throughput and post-Close criteria: 1,430,585 measured operations over
+1,040.737003 measured seconds, exact raw reproduction and 384 independently
+absent fixtures. Both failed conditioning assessments remain retained. Peak
+full-cycle conditioning fixes the unstable/read-only baseline, without changing
+pressure increments or relaxing any gates. Historical O windows remain separate.
 
 - First policy test: reach a proposed active-backoff bound with duplicate and
   overlapping IDs/ranges, then apply further blocks/unblocks under saturation.

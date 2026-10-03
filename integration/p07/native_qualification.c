@@ -1,6 +1,7 @@
 #define main p07_qualification_closed_loop_main
 #include "native_benchmark.c"
 #undef main
+#include <malloc.h>
 
 #define QUALIFICATION_RECORD_LIMIT 1000000ULL
 
@@ -334,6 +335,16 @@ int main(int argc, char **argv) {
 	if (pgo && *pgo && strcmp(pgo, "1")) return 2;
 	if (getenv("P07_PGO_PROFILE_FILE") && *getenv("P07_PGO_PROFILE_FILE")) return 2;
 	int pgo_diagnostic = pgo && !strcmp(pgo, "1");
+	const char *endurance_root = getenv("P11_ENDURANCE_ROOT");
+	int endurance = endurance_root && *endurance_root;
+	int window = 0;
+	char window_file[1024], window_leg[80];
+	uint64_t window_rss[15] = {0}, window_allocated[15] = {0};
+	if (endurance && (!pgo_diagnostic || endurance_root[0] != '/' || strlen(endurance_root) > 900 || matrix.size != 1048576 || matrix.concurrency != 16 || round != 1 || seed != 1101 || strcmp(leg, "endurance-w0"))) return 2;
+	if (endurance) {
+		snprintf(window_file, sizeof(window_file), "%s/window0.capture.json", endurance_root);
+		if (strcmp(file, window_file) || matrix.workload != WORKLOAD_READ) return 2;
+	}
 	if (strlen(namespace) > 64 || strncmp(namespace, "p07-parity-", 11)) return 2;
 	for (const char *character = namespace; *character; character++) if (*character != '-' && (*character < 'a' || *character > 'z') && (*character < '0' || *character > '9')) return 2;
 	for (const char *character = leg; *character; character++) if (*character != '-' && (*character < 'a' || *character > 'z') && (*character < '0' || *character > '9')) return 2;
@@ -365,6 +376,9 @@ int main(int argc, char **argv) {
 		(error = api.conf_set(cluster, "debug_auth", "0/0")) || (error = api.conf_set(cluster, "log_to_file", "true")) ||
 		(error = api.connect(cluster)) || (error = api.ioctx_create(cluster, argv[3], &io.ioctx))) goto emit;
 	api.ioctx_set_namespace(io.ioctx, namespace);
+endurance_window:
+	payload_verified = 0; cleanup_verified = 0;
+	if (endurance && (error = api.conf_set(cluster, "rados_osd_op_timeout", "30"))) goto cleanup;
 	deadline = qualification_now(NULL) + 900000000000ULL;
 	io.objects = calloc((size_t)io.concurrency, sizeof(*io.objects));
 	io.owned = calloc((size_t)io.concurrency, sizeof(*io.owned));
@@ -481,9 +495,42 @@ emit:
 		if (io.destinations) free(io.destinations[worker]);
 	}
 	free(io.objects); free(io.owned); free(io.payloads); free(io.destinations);
+	io.objects = NULL; io.owned = NULL; io.payloads = NULL; io.destinations = NULL;
+	if (endurance && !error) {
+		struct mallinfo2 memory = mallinfo2();
+		window_rss[window] = resident_bytes();
+		window_allocated[window] = (uint64_t)memory.uordblks + (uint64_t)memory.hblkhd;
+		if (++window < 15) {
+			snprintf(window_file, sizeof(window_file), "%s/window%d.capture.json", endurance_root, window);
+			snprintf(window_leg, sizeof(window_leg), "endurance-w%d", window);
+			leg = window_leg;
+			io.workload = window % 3;
+			memset(&warmup, 0, sizeof(warmup)); memset(&measured, 0, sizeof(measured)); memset(&rss_sampler, 0, sizeof(rss_sampler));
+			descriptor = open(window_file, O_WRONLY | O_CREAT | O_EXCL, 0600);
+			if (descriptor < 0 || !(output = fdopen(descriptor, "w"))) { if (descriptor >= 0) close(descriptor); error = -EIO; }
+			else goto endurance_window;
+		}
+	}
 	if (io.ioctx) api.ioctx_destroy(io.ioctx);
 	if (cluster) api.shutdown(cluster);
 	dlclose(api.library);
+	if (endurance && !error) {
+		snprintf(window_file, sizeof(window_file), "%s/endurance.json", endurance_root);
+		descriptor = open(window_file, O_WRONLY | O_CREAT | O_EXCL, 0600);
+		if (descriptor < 0) return 1;
+		output = fdopen(descriptor, "w"); if (!output) { close(descriptor); return 1; }
+		fprintf(output, "{\"implementation\":\"native\",\"windows\":[");
+		for (int index = 0; index < 15; index++) fprintf(output, "%s{\"index\":%d,\"rss_bytes\":%llu,\"glibc_allocated_bytes\":%llu}", index ? "," : "", index, (unsigned long long)window_rss[index], (unsigned long long)window_allocated[index]);
+		fprintf(output, "],\"post_close_idle\":[");
+		uint64_t begin = qualification_now(NULL);
+		for (int index = 0; index < 32; index++) {
+			fprintf(output, "%s{\"at_ns\":%llu,\"rss_bytes\":%llu}", index ? "," : "", (unsigned long long)(qualification_now(NULL)-begin), (unsigned long long)resident_bytes());
+			struct timespec interval = {.tv_nsec = 100000000}; while (nanosleep(&interval, &interval) && errno == EINTR) {}
+		}
+		fprintf(output, "]}\n");
+		int failed = ferror(output); if (fclose(output)) failed = 1;
+		if (failed) return 1;
+	}
 	return error ? 1 : 0;
 }
 #endif

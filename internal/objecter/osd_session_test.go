@@ -228,9 +228,49 @@ func TestOSDSessionBackoffIsSelectiveAndCancelable(t *testing.T) {
 	}
 }
 
+func TestOSDSessionTerminalReleasesBackoffState(t *testing.T) {
+	for _, mode := range []string{"stop", "terminal"} {
+		t.Run(mode, func(t *testing.T) {
+			transport := newFakeOSDTransport()
+			session := newOSDSession(transport, backoffTestLimits, time.Second)
+			defer session.Stop()
+			pg := maps.PG{Pool: 7, Seed: 3, Preferred: -1}
+			object := osd.HObject{Object: "retained-after-close", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
+			transport.incoming <- encodeBackoffMessage(t, osd.Backoff{PG: pg, Shard: -1, Operation: osd.BackoffBlock, ID: 1, Begin: object, End: object})
+			select {
+			case <-transport.sent:
+			case <-time.After(time.Second):
+				t.Fatal("backoff ACK did not complete")
+			}
+			failure := error(msgr.ErrSessionClosed)
+			if mode == "terminal" {
+				failure = errors.New("terminal resource test")
+				transport.terminal <- failure
+			} else {
+				transport.Stop()
+			}
+			select {
+			case <-session.dispatcherDone:
+			case <-time.After(time.Second):
+				t.Fatal("terminal dispatcher did not exit")
+			}
+			session.mu.Lock()
+			retained := session.backoffs != nil || session.backoffsByPG != nil
+			session.mu.Unlock()
+			if retained {
+				t.Fatal("closed session retained active backoff maps")
+			}
+			if err := session.Wait(context.Background(), pg, object); !errors.Is(err, failure) {
+				t.Fatalf("terminal backoff wait = %v, want %v", err, failure)
+			}
+		})
+	}
+}
+
 func TestOSDSessionResetClearsBackoffsAndSignalsInterruption(t *testing.T) {
 	transport := newFakeOSDTransport()
 	session := newOSDSession(transport, backoffTestLimits, time.Second)
+	defer session.Stop()
 	pg := maps.PG{Pool: 7, Seed: 3, Preferred: -1}
 	object := osd.HObject{Object: "object", Snapshot: osd.NoSnap, Hash: 5, Pool: 7}
 	transport.incoming <- encodeBackoffMessage(t, osd.Backoff{PG: pg, Shard: -1, Operation: osd.BackoffBlock, ID: 1, Begin: object, End: object})
@@ -246,6 +286,11 @@ func TestOSDSessionResetClearsBackoffsAndSignalsInterruption(t *testing.T) {
 	}
 	if err := session.Wait(context.Background(), pg, object); err != nil {
 		t.Fatalf("wait after reset: %v", err)
+	}
+	session.mu.Lock()
+	defer session.mu.Unlock()
+	if session.backoffBytes != 0 || len(session.backoffs) != 0 || len(session.backoffsByPG) != 0 {
+		t.Fatal("reset retained active backoff accounting")
 	}
 }
 

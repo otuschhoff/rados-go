@@ -13,7 +13,7 @@ import (
 
 func TestDefaultConfig(t *testing.T) {
 	config := DefaultConfig()
-	if config.Entity != "client.admin" || config.SecurityMode != SecurityModeSecure || config.DialTimeout != 10*time.Second || config.HandshakeTimeout != 15*time.Second || config.OperationTimeout != 30*time.Second || config.MaxSessions != 256 || config.MaxReceiveBytes != 256<<20 || config.MaxQueuedReceiveBytes != 64<<20 {
+	if config.Entity != "client.admin" || config.SecurityMode != SecurityModeSecure || config.DialTimeout != 10*time.Second || config.HandshakeTimeout != 15*time.Second || config.OperationTimeout != 30*time.Second || config.MaxSessions != 256 || config.MaxReceiveBytes != 256<<20 || config.MaxQueuedReceiveBytes != 64<<20 || config.MaxBackoffs != 4096 || config.MaxBackoffBytes != 8<<20 {
 		t.Fatalf("defaults = %+v", config)
 	}
 	if cluster, ok := config.Option("cluster"); !ok || cluster != "ceph" {
@@ -29,6 +29,8 @@ func TestReceiveConfigOptions(t *testing.T) {
 		{"max_sessions", "256"},
 		{"max_receive_bytes", "268435456"},
 		{"max_queued_receive_bytes", "67108864"},
+		{"max_backoffs", "4096"},
+		{"max_backoff_bytes", "8388608"},
 	} {
 		t.Run(option.name, func(t *testing.T) {
 			for _, config := range []Config{{}, DefaultConfig()} {
@@ -47,7 +49,7 @@ func TestReceiveConfigOptions(t *testing.T) {
 				}
 			}
 			invalid := []string{"", "0", "-1", "+1", " 1", "1 ", "1 2", "1.5", "1MiB", "18446744073709551616"}
-			if option.name == "max_sessions" {
+			if option.name == "max_sessions" || option.name == "max_backoffs" {
 				invalid = append(invalid, strconv.FormatUint(uint64(^uint(0)>>1)+1, 10))
 			}
 			for _, value := range invalid {
@@ -60,24 +62,24 @@ func TestReceiveConfigOptions(t *testing.T) {
 }
 
 func TestReceiveConfigParsing(t *testing.T) {
-	config, err := ParseConfig([]byte("[global]\nmax sessions = 12\nmax receive bytes = 1024\nmax queued receive bytes = 256\n[client.admin]\nmax_sessions = 8\n"))
+	config, err := ParseConfig([]byte("[global]\nmax sessions = 12\nmax receive bytes = 1024\nmax queued receive bytes = 256\nmax backoffs = 19\nmax backoff bytes = 4096\n[client.admin]\nmax_sessions = 8\nmax_backoffs = 17\n"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.MaxSessions != 8 || config.MaxReceiveBytes != 1024 || config.MaxQueuedReceiveBytes != 256 {
+	if config.MaxSessions != 8 || config.MaxReceiveBytes != 1024 || config.MaxQueuedReceiveBytes != 256 || config.MaxBackoffs != 17 || config.MaxBackoffBytes != 4096 {
 		t.Fatal("file receive limits differ")
 	}
-	configured, remainder, err := config.ParseArgs([]string{"--max-sessions=4", "--max-receive-bytes", "2048", "--max-queued-receive-bytes=512", "--future-receive-limit=9", "input"})
+	configured, remainder, err := config.ParseArgs([]string{"--max-sessions=4", "--max-receive-bytes", "2048", "--max-queued-receive-bytes=512", "--max-backoffs=7", "--max-backoff-bytes", "8192", "--future-receive-limit=9", "input"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if configured.MaxSessions != 4 || configured.MaxReceiveBytes != 2048 || configured.MaxQueuedReceiveBytes != 512 || !reflect.DeepEqual(remainder, []string{"--future-receive-limit=9", "input"}) {
+	if configured.MaxSessions != 4 || configured.MaxReceiveBytes != 2048 || configured.MaxQueuedReceiveBytes != 512 || configured.MaxBackoffs != 7 || configured.MaxBackoffBytes != 8192 || !reflect.DeepEqual(remainder, []string{"--future-receive-limit=9", "input"}) {
 		t.Fatal("argument receive limits or remainder differ")
 	}
-	if config.MaxSessions != 8 || config.MaxReceiveBytes != 1024 || config.MaxQueuedReceiveBytes != 256 {
+	if config.MaxSessions != 8 || config.MaxReceiveBytes != 1024 || config.MaxQueuedReceiveBytes != 256 || config.MaxBackoffs != 17 || config.MaxBackoffBytes != 4096 {
 		t.Fatal("argument parsing mutated its input")
 	}
-	for _, name := range []string{"max_sessions", "max_receive_bytes", "max_queued_receive_bytes"} {
+	for _, name := range []string{"max_sessions", "max_receive_bytes", "max_queued_receive_bytes", "max_backoffs", "max_backoff_bytes"} {
 		for _, value := range []string{"0", "-1", "1.5", "18446744073709551616"} {
 			if _, err := ParseConfig([]byte("[global]\n" + name + "=" + value + "\n")); !errors.Is(err, ErrInvalidArgument) {
 				t.Fatalf("file option %s=%s error = %v", name, value, err)
@@ -97,18 +99,20 @@ func TestReceiveConfigEnv(t *testing.T) {
 	t.Setenv("RECEIVE_TEST_MAX_SESSIONS", "7")
 	t.Setenv("RECEIVE_TEST_MAX_RECEIVE_BYTES", "4096")
 	t.Setenv("RECEIVE_TEST_MAX_QUEUED_RECEIVE_BYTES", "1024")
+	t.Setenv("RECEIVE_TEST_MAX_BACKOFFS", "23")
+	t.Setenv("RECEIVE_TEST_MAX_BACKOFF_BYTES", "8192")
 	t.Setenv("RECEIVE_TEST_FUTURE_RECEIVE_LIMIT", "0")
 	config, err := (Config{}).ParseEnv("RECEIVE_TEST_")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if config.MaxSessions != 7 || config.MaxReceiveBytes != 4096 || config.MaxQueuedReceiveBytes != 1024 {
+	if config.MaxSessions != 7 || config.MaxReceiveBytes != 4096 || config.MaxQueuedReceiveBytes != 1024 || config.MaxBackoffs != 23 || config.MaxBackoffBytes != 8192 {
 		t.Fatal("environment receive limits differ")
 	}
 	if _, ok := config.Option("future_receive_limit"); ok {
 		t.Fatal("unrecognized environment option was applied")
 	}
-	for _, suffix := range []string{"MAX_SESSIONS", "MAX_RECEIVE_BYTES", "MAX_QUEUED_RECEIVE_BYTES"} {
+	for _, suffix := range []string{"MAX_SESSIONS", "MAX_RECEIVE_BYTES", "MAX_QUEUED_RECEIVE_BYTES", "MAX_BACKOFFS", "MAX_BACKOFF_BYTES"} {
 		t.Run(suffix, func(t *testing.T) {
 			for _, value := range []string{"0", "-1", " 2", "18446744073709551616"} {
 				t.Setenv("RECEIVE_TEST_"+suffix, value)
@@ -145,7 +149,7 @@ func TestReceiveConfigSetterOrderAndUint64Range(t *testing.T) {
 	if err != nil || config.MaxSessions != int(^uint(0)>>1) {
 		t.Fatalf("maximum int session count error = %v", err)
 	}
-	for _, name := range []string{"max_receive_bytes", "max_queued_receive_bytes"} {
+	for _, name := range []string{"max_receive_bytes", "max_queued_receive_bytes", "max_backoff_bytes"} {
 		config, err = config.WithOption(name, "18446744073709551615")
 		if err != nil {
 			t.Fatal(err)

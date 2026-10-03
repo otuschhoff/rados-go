@@ -29,6 +29,19 @@ returns the effective Go duration for either name, including `0s`. Malformed
 known values return an error compatible with `ErrInvalidArgument`. Unknown file
 properties are ignored.
 
+Resource options are `max_sessions`, `max_receive_bytes`,
+`max_queued_receive_bytes`, `max_backoffs` and `max_backoff_bytes`; corresponding
+hyphenated command arguments and uppercase environment suffixes are recognized.
+Values must be positive unsigned decimal without whitespace; counts must fit
+the platform `int`. Zero struct fields select defaults: 256 sessions, 256 MiB
+aggregate receive backing, 64 MiB queued receive per session, and 4,096 active
+backoff IDs / 8 MiB logical backoff charge per OSD session. Effective queued
+receive bytes cannot exceed aggregate receive bytes. Backoff overflow fail-stops
+only its session before ACK; duplicate/replacement/unblock/reset accounting and
+the non-RSS charging model are described in the
+[resource policy](../performance-phase11/README.md). These logical policies are
+not a whole-client memory or RSS guarantee.
+
 `LoadConfig` is the bounded file form of `ParseConfig`. If the selected
 configuration has a `keyring` and no direct `key`, it expands only `$cluster`
 and `$name` in that path after both sections have been applied, then loads the
@@ -44,9 +57,11 @@ Precedence is:
 4. `WithOption` or `ParseArgs`
 
 `ParseEnv("")` uses prefix `GO_LIBRADOS`; another argument selects that exact
-prefix. The only read suffixes are `CLUSTER`, `ENTITY`, `MON_HOST`, `KEYRING`,
+prefix. Read suffixes are `CLUSTER`, `ENTITY`, `MON_HOST`, `KEYRING`,
 `FSID`, `KEY`, `MS_MODE`, `DIAL_TIMEOUT`, `HANDSHAKE_TIMEOUT`, and
-`OPERATION_TIMEOUT`. There is no `RADOS_OSD_OP_TIMEOUT` environment alias. No
+`OPERATION_TIMEOUT`, plus `MAX_SESSIONS`, `MAX_RECEIVE_BYTES`,
+`MAX_QUEUED_RECEIVE_BYTES`, `MAX_BACKOFFS` and `MAX_BACKOFF_BYTES`.
+There is no `RADOS_OSD_OP_TIMEOUT` environment alias. No
 API reads process environment implicitly.
 
 `ParseArgs` recognizes `--name`, `--id`, `--cluster`, `--mon-host`, `--fsid`,

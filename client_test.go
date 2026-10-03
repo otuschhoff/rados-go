@@ -51,7 +51,7 @@ func TestNewReceiveConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer client.Close()
-	if client.config.MaxSessions != 256 || client.config.MaxReceiveBytes != 256<<20 || client.config.MaxQueuedReceiveBytes != 64<<20 || client.config.OperationTimeout != 0 {
+	if client.config.MaxSessions != 256 || client.config.MaxReceiveBytes != 256<<20 || client.config.MaxQueuedReceiveBytes != 64<<20 || client.config.OperationTimeout != 0 || client.config.MaxBackoffs != 4096 || client.config.MaxBackoffBytes != 8<<20 {
 		t.Fatal("New did not apply receive defaults or preserve unlimited operation timeout")
 	}
 	if base.MaxSessions != 0 || base.MaxReceiveBytes != 0 || base.MaxQueuedReceiveBytes != 0 {
@@ -64,20 +64,23 @@ func TestNewReceiveConfig(t *testing.T) {
 		{MaxSessions: 3, MaxReceiveBytes: 1024, MaxQueuedReceiveBytes: 512},
 		{MaxSessions: int(maxSessions)},
 		{MaxReceiveBytes: math.MaxUint64, MaxQueuedReceiveBytes: math.MaxUint64},
+		{MaxBackoffs: 1, MaxBackoffBytes: 1024},
+		{MaxBackoffs: int(platformMaxSessions), MaxBackoffBytes: math.MaxUint64},
 	} {
 		config.Monitors, config.Entity, config.Key = base.Monitors, base.Entity, base.Key
 		client, err := New(config)
 		if err != nil {
 			t.Fatal(err)
 		}
-		effective := config.withReceiveDefaults()
-		if client.config.MaxSessions != effective.MaxSessions || client.config.MaxReceiveBytes != effective.MaxReceiveBytes || client.config.MaxQueuedReceiveBytes != effective.MaxQueuedReceiveBytes {
+		effective := config.withReceiveDefaults().withBackoffDefaults()
+		if client.config.MaxSessions != effective.MaxSessions || client.config.MaxReceiveBytes != effective.MaxReceiveBytes || client.config.MaxQueuedReceiveBytes != effective.MaxQueuedReceiveBytes || client.config.MaxBackoffs != effective.MaxBackoffs || client.config.MaxBackoffBytes != effective.MaxBackoffBytes {
 			t.Fatal("New changed explicit receive byte limits")
 		}
 		_ = client.Close()
 	}
 	invalidConfigs := []Config{
 		{MaxSessions: -1},
+		{MaxBackoffs: -1},
 		{MaxReceiveBytes: 1024},
 		{MaxReceiveBytes: 1024, MaxQueuedReceiveBytes: 1025},
 		{MaxQueuedReceiveBytes: 257 << 20},

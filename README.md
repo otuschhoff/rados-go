@@ -56,6 +56,14 @@ shuts down. Configuration accepts `operation_timeout` as a Go duration and the
 Ceph-compatible `rados_osd_op_timeout` alias as either a Go duration or bare
 seconds; zero means unlimited for both names.
 
+OSD backoff state defaults to 4,096 active IDs and 8 MiB of logical charge per
+session. `Config.MaxBackoffs` / `Config.MaxBackoffBytes` override these limits;
+zero selects defaults, not unlimited. Configuration options `max_backoffs` and
+`max_backoff_bytes` accept positive decimal values. Overflow stops the affected
+session before acknowledging an uninstalled block, without silently evicting
+required state or reporting an uncertain mutation as successful. These are not
+whole-client RSS limits; see the [resource policy](docs/performance-phase11/README.md).
+
 `SubscribeClusterChanges` may be called before `Connect` to observe the initial
 maps. Authoritative events report accepted ordered MonMap or OSDMap state;
 observed events report only this client's connection availability and are not
