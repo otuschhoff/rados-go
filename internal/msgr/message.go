@@ -3,6 +3,8 @@ package msgr
 import (
 	"fmt"
 	"math"
+	"sync"
+	"sync/atomic"
 
 	wire "github.com/otuschhoff/rados-go/internal/encoding"
 )
@@ -37,6 +39,86 @@ type MessageLengths struct {
 	Data   uint32
 }
 
+type MessageLease struct {
+	references    atomic.Int64
+	reclaim       func()
+	paddedPayload []byte
+	plaintextMu   sync.Mutex
+}
+
+const LeasedPayloadPadding = secureBlockSize
+const LeasedPayloadPrefix = 1024
+
+func NewMessageLease(reclaim func()) *MessageLease {
+	lease := &MessageLease{reclaim: reclaim}
+	lease.references.Store(1)
+	return lease
+}
+
+func NewPaddedMessageLease(storage, payload []byte, reclaim func()) *MessageLease {
+	if len(payload) == 0 || len(payload)%LeasedPayloadPadding != 0 || len(storage) != LeasedPayloadPrefix+len(payload)+LeasedPayloadPadding || &payload[0] != &storage[LeasedPayloadPrefix] {
+		panic("msgr: invalid padded message payload")
+	}
+	lease := NewMessageLease(reclaim)
+	lease.paddedPayload = storage
+	clear(storage[len(storage)-LeasedPayloadPadding:])
+	storage[len(storage)-LeasedPayloadPadding] = LateStatusComplete
+	return lease
+}
+
+func (lease *MessageLease) securePlaintext(segments []Segment) []byte {
+	if lease == nil || len(lease.paddedPayload) == 0 || len(segments) < 2 {
+		return nil
+	}
+	payload := segments[len(segments)-1].Data
+	if len(payload) == 0 || LeasedPayloadPrefix+len(payload)+LeasedPayloadPadding != len(lease.paddedPayload) || &payload[0] != &lease.paddedPayload[LeasedPayloadPrefix] {
+		return nil
+	}
+	prefixSize := 0
+	for _, segment := range segments[1 : len(segments)-1] {
+		padded := paddedSecureLength(uint64(len(segment.Data)))
+		if padded > uint64(LeasedPayloadPrefix-prefixSize) {
+			return nil
+		}
+		prefixSize += int(padded)
+	}
+	plaintext := lease.paddedPayload[LeasedPayloadPrefix-prefixSize:]
+	clear(plaintext[:prefixSize])
+	offset := 0
+	for _, segment := range segments[1 : len(segments)-1] {
+		copy(plaintext[offset:], segment.Data)
+		offset += int(paddedSecureLength(uint64(len(segment.Data))))
+	}
+	return plaintext
+}
+
+func (lease *MessageLease) Retain() {
+	for {
+		references := lease.references.Load()
+		if references <= 0 || references == math.MaxInt64 {
+			panic("msgr: invalid message lease retention")
+		}
+		if lease.references.CompareAndSwap(references, references+1) {
+			return
+		}
+	}
+}
+
+func (lease *MessageLease) Release() {
+	references := lease.references.Add(-1)
+	if references < 0 {
+		panic("msgr: message lease released twice")
+	}
+	if references == 0 {
+		reclaim := lease.reclaim
+		lease.reclaim = nil
+		lease.paddedPayload = nil
+		if reclaim != nil {
+			reclaim()
+		}
+	}
+}
+
 type Message struct {
 	Header              MessageHeader
 	Lengths             MessageLengths
@@ -45,6 +127,33 @@ type Message struct {
 	Data                []byte
 	TransportGeneration uint64
 	receiveLease        *receiveLease
+	transferred         bool
+	payloadLease        *MessageLease
+}
+
+// TakeMessageOwnership transfers exclusive ownership of all message buffers to
+// the receiving session, including when admission fails. The caller must never
+// mutate or reuse those buffers after submission.
+func TakeMessageOwnership(message Message) Message {
+	message.transferred = true
+	return message
+}
+
+// RetainImmutableMessage permits the session to retain buffers without cloning.
+// All holders must keep them immutable permanently, including after rejection
+// or cancellation; immutable buffers may be shared by independent retries.
+func RetainImmutableMessage(message Message) Message {
+	message.transferred = true
+	return message
+}
+
+func RetainLeasedMessage(message Message, lease *MessageLease) Message {
+	if lease == nil {
+		panic("msgr: nil message lease")
+	}
+	message.transferred = true
+	message.payloadLease = lease
+	return message
 }
 
 func EncodeMessageHeader(header MessageHeader) [MessageHeaderSize]byte {

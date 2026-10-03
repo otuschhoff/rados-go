@@ -71,6 +71,47 @@ func TestDecodeOSDMapRejectsCRCAndLimits(t *testing.T) {
 	}
 }
 
+func TestOSDClientEndpointSelectionAndPresence(t *testing.T) {
+	endpoint := netip.MustParseAddrPort("192.0.2.8:6800")
+	valid, err := protocol.IPv4EntityAddr(protocol.AddressV2, 9, endpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacy := valid
+	legacy.Type = protocol.AddressLegacy
+	zeroPort, err := protocol.IPv4EntityAddr(protocol.AddressV2, 9, netip.MustParseAddrPort("192.0.2.8:0"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, test := range []struct {
+		name      string
+		addresses protocol.EntityAddrVec
+		want      netip.AddrPort
+		known     bool
+	}{
+		{name: "missing"},
+		{name: "invalid", addresses: protocol.EntityAddrVec{{Type: protocol.AddressV2}}, known: true},
+		{name: "legacy only", addresses: protocol.EntityAddrVec{legacy}, known: true},
+		{name: "selection", addresses: protocol.EntityAddrVec{legacy, zeroPort, {Type: protocol.AddressV2}, valid}, want: endpoint, known: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			osdMap := &OSDMap{clientAddresses: []protocol.EntityAddrVec{test.addresses}}
+			got, known := osdMap.OSDClientEndpoint(0)
+			if got != test.want || known != test.known {
+				t.Fatalf("endpoint=%v known=%t, want %v known=%t", got, known, test.want, test.known)
+			}
+			for _, id := range []int32{-1, 1} {
+				if _, known := osdMap.OSDClientEndpoint(id); known {
+					t.Fatalf("out-of-range OSD %d found", id)
+				}
+			}
+			if allocations := testing.AllocsPerRun(100, func() { _, _ = osdMap.OSDClientEndpoint(0) }); allocations != 0 {
+				t.Fatalf("endpoint lookup allocated %g times", allocations)
+			}
+		})
+	}
+}
+
 func TestOSDClientAddressesAreImmutable(t *testing.T) {
 	address, err := protocol.IPv4EntityAddr(protocol.AddressV2, 9, netip.MustParseAddrPort("192.0.2.8:6800"))
 	if err != nil {

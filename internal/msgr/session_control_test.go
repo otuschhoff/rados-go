@@ -75,6 +75,110 @@ func TestSessionDispatchSelectionControls(t *testing.T) {
 	}
 }
 
+func TestSessionDispatchPiggybacksLatestAcknowledgment(t *testing.T) {
+	for _, replay := range []bool{false, true} {
+		t.Run(fmt.Sprintf("replay=%t", replay), func(t *testing.T) {
+			owner := newUnitSessionOwner(t)
+			owner.writeTasks = make(chan writeTask, 1)
+			owner.lastInbound = 7
+			owner.queueAcknowledgment(7)
+			t.Cleanup(owner.clearPendingAcknowledgment)
+			command := &submitCommand{
+				ctx:     context.Background(),
+				message: Message{Header: MessageHeader{AckSequence: 99}},
+				result:  make(chan submitResult, 1),
+			}
+			owner.submit(command)
+			pending := owner.byRequest[command]
+			if replay {
+				pending.seq = 3
+				pending.message.Header.Sequence = 3
+				pending.message.Header.AckSequence = 2
+				owner.addReplay(pending)
+			}
+			owner.dispatch()
+			select {
+			case task := <-owner.writeTasks:
+				message, err := DecodeMessage(task.frame, owner.config.Limits)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if message.Header.AckSequence != 7 {
+					t.Fatalf("acknowledgment = %d, want 7", message.Header.AckSequence)
+				}
+				if replay && message.Header.Sequence != 3 {
+					t.Fatalf("replay sequence = %d, want 3", message.Header.Sequence)
+				}
+				if owner.pendingAck != 0 || owner.ackTimerC != nil || len(owner.controlQueue) != 0 {
+					t.Fatal("piggyback left an acknowledgment pending")
+				}
+			default:
+				t.Fatal("message was not dispatched")
+			}
+		})
+	}
+}
+
+func TestSessionAcknowledgmentDeadlineAndControlPriority(t *testing.T) {
+	owner := newUnitSessionOwner(t)
+	t.Cleanup(owner.clearPendingAcknowledgment)
+	owner.writeTasks = make(chan writeTask, 1)
+	owner.queueAcknowledgment(4)
+	deadline := owner.ackTimerC
+	owner.queueAcknowledgment(7)
+	if owner.ackTimerC != deadline || len(owner.controlQueue) != 0 {
+		t.Fatal("acknowledgment restarted deadline or queued an immediate frame")
+	}
+	owner.queueControl(Keepalive2{})
+	owner.dispatch()
+	task := <-owner.writeTasks
+	if task.frame.Tag != TagKeepalive2 || owner.pendingAck != 7 {
+		t.Fatal("pending acknowledgment blocked or displaced control traffic")
+	}
+	select {
+	case <-deadline:
+	case <-time.After(time.Second):
+		t.Fatal("idle acknowledgment timer did not fire")
+	}
+	owner.flushPendingAcknowledgment()
+	owner.writeBusy = false
+	owner.dispatch()
+	task = <-owner.writeTasks
+	payload, err := DecodeControl(task.frame, owner.config.Limits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if acknowledgment, ok := payload.(Ack); !ok || acknowledgment.Sequence != 7 {
+		t.Fatalf("idle acknowledgment = %#v, want sequence 7", payload)
+	}
+	if owner.pendingAck != 0 || owner.ackTimerC != nil {
+		t.Fatal("idle flush retained pending state")
+	}
+}
+
+func TestSessionAcknowledgmentLifecycle(t *testing.T) {
+	for _, test := range []struct {
+		name string
+		stop func(*sessionOwner)
+	}{
+		{name: "terminal", stop: func(owner *sessionOwner) { owner.failTerminal(ErrIntegrity) }},
+		{name: "new-identity", stop: func(owner *sessionOwner) { owner.resetForNewIdentity() }},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			owner := newUnitSessionOwner(t)
+			owner.queueAcknowledgment(7)
+			test.stop(owner)
+			if owner.pendingAck != 0 || owner.ackTimerC != nil || len(owner.controlQueue) != 0 {
+				t.Fatal("lifecycle transition retained stale acknowledgment")
+			}
+			owner.flushPendingAcknowledgment()
+			if len(owner.controlQueue) != 0 {
+				t.Fatal("stale timer flush produced an acknowledgment")
+			}
+		})
+	}
+}
+
 func TestSessionDispatchSelectionSaturatedReplay(t *testing.T) {
 	owner := newUnitSessionOwner(t)
 	owner.config.MaxInFlightTransactions = 1

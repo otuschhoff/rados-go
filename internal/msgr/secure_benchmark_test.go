@@ -2,9 +2,37 @@ package msgr
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/binary"
 	"fmt"
 	"testing"
 )
+
+func BenchmarkSecureGCMBackend(benchmark *testing.B) {
+	for _, size := range []int{1048576, 4194304} {
+		benchmark.Run(fmt.Sprintf("bytes=%d", size), func(benchmark *testing.B) {
+			block, err := aes.NewCipher(make([]byte, 16))
+			if err != nil {
+				benchmark.Fatal(err)
+			}
+			gcm, err := cipher.NewGCM(block)
+			if err != nil {
+				benchmark.Fatal(err)
+			}
+			wire := make([]byte, size+gcm.Overhead())
+			var nonce [12]byte
+			var counter uint64
+			benchmark.SetBytes(int64(size))
+			benchmark.ReportAllocs()
+			for benchmark.Loop() {
+				binary.LittleEndian.PutUint64(nonce[4:], counter)
+				counter++
+				gcm.Seal(wire[:0], nonce[:], wire[:size], nil)
+			}
+		})
+	}
+}
 
 func BenchmarkSecureEncode(benchmark *testing.B) {
 	for _, size := range []int{65536, 4194304} {

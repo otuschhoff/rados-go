@@ -7,8 +7,140 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sync"
 	"testing"
 )
+
+func TestSecureLeasedPayloadEncoding(t *testing.T) {
+	for _, size := range []int{4096, 65536, 1048576, 4194304} {
+		t.Run(fmt.Sprint(size), func(t *testing.T) {
+			backing := bytes.Repeat([]byte{0xa5}, LeasedPayloadPrefix+size+LeasedPayloadPadding)
+			payload := backing[LeasedPayloadPrefix : LeasedPayloadPrefix+size]
+			original := append([]byte(nil), payload...)
+			lease := NewPaddedMessageLease(backing, payload, nil)
+			defer lease.Release()
+			front := bytes.Repeat([]byte{0x13}, 80)
+			frame, err := encodeOwnedMessage(Message{Lengths: MessageLengths{Front: uint32(len(front)), Data: uint32(size)}, Front: front, Data: payload}, performanceLimits)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if plaintext := lease.securePlaintext(frame.Segments); len(plaintext) != len(front)+size+LeasedPayloadPadding || &plaintext[len(front)] != &payload[0] || !bytes.Equal(plaintext[:len(front)], front) || plaintext[len(front)+size] != LateStatusComplete || !allZero(plaintext[len(front)+size+1:]) {
+				t.Fatal("real message layout did not select direct leased plaintext")
+			}
+			ordinary := mustSecureCodec(t, testSecureSecret(), false)
+			leased := mustSecureCodec(t, testSecureSecret(), false)
+			receiver := mustSecureCodec(t, testSecureSecret(), true)
+			for iteration := 0; iteration < 2; iteration++ {
+				expected, err := ordinary.Encode(frame, performanceLimits)
+				if err != nil {
+					t.Fatal(err)
+				}
+				frame.payloadLease = lease
+				actual, err := leased.encodeInto(frame, performanceLimits, bytes.Repeat([]byte{0xcc}, len(expected)))
+				frame.payloadLease = nil
+				if err != nil || !bytes.Equal(actual, expected) {
+					t.Fatalf("leased ciphertext differs: %v", err)
+				}
+				decoded, err := receiver.Read(bytes.NewReader(actual), performanceLimits)
+				if err != nil || !bytes.Equal(decoded.Segments[3].Data, original) || !bytes.Equal(payload, original) || backing[LeasedPayloadPrefix+size] != LateStatusComplete || !allZero(backing[LeasedPayloadPrefix+size+1:]) {
+					t.Fatalf("leased input changed or ciphertext did not authenticate: %v", err)
+				}
+			}
+			frame.Segments[1].Data = bytes.Repeat([]byte{1}, LeasedPayloadPrefix+1)
+			if lease.securePlaintext(frame.Segments) != nil {
+				t.Fatal("oversized prefix incorrectly selected direct plaintext")
+			}
+			expected, err := ordinary.Encode(frame, performanceLimits)
+			if err != nil {
+				t.Fatal(err)
+			}
+			frame.payloadLease = lease
+			actual, err := leased.Encode(frame, performanceLimits)
+			frame.payloadLease = nil
+			if err != nil || !bytes.Equal(actual, expected) {
+				t.Fatalf("oversized prefix fallback changed ciphertext: %v", err)
+			}
+			frame.Segments[1].Data = front
+			frame.Segments[3].Data = append([]byte(nil), original...)
+			if lease.securePlaintext(frame.Segments) != nil {
+				t.Fatal("unrelated payload incorrectly selected direct plaintext")
+			}
+			expected, err = ordinary.Encode(frame, performanceLimits)
+			if err != nil {
+				t.Fatal(err)
+			}
+			frame.payloadLease = lease
+			actual, err = leased.Encode(frame, performanceLimits)
+			if err != nil || !bytes.Equal(actual, expected) {
+				t.Fatalf("unrelated payload fallback changed ciphertext: %v", err)
+			}
+		})
+	}
+}
+
+func TestSecurePaddedMessageLeaseRejectsInvalidAllocation(t *testing.T) {
+	for index, payload := range [][]byte{nil, make([]byte, 16), make([]byte, 1, 17), make([]byte, 17, 33)} {
+		t.Run(fmt.Sprint(index), func(t *testing.T) {
+			defer func() {
+				if recover() == nil {
+					t.Fatal("invalid padded allocation was accepted")
+				}
+			}()
+			NewPaddedMessageLease(payload, payload, nil)
+		})
+	}
+}
+
+func TestSecureLeasedPayloadConcurrentWriters(t *testing.T) {
+	storage := make([]byte, LeasedPayloadPrefix+4096+LeasedPayloadPadding)
+	payload := storage[LeasedPayloadPrefix : LeasedPayloadPrefix+4096]
+	copy(payload, bytes.Repeat([]byte{0x5a}, len(payload)))
+	lease := NewPaddedMessageLease(storage, payload, nil)
+	defer lease.Release()
+	start := make(chan struct{})
+	failures := make(chan error, 16)
+	var writers sync.WaitGroup
+	for index := 0; index < 16; index++ {
+		front := bytes.Repeat([]byte{byte(index + 1)}, 17+index)
+		middle := bytes.Repeat([]byte{byte(index + 32)}, 19)
+		frame, err := encodeOwnedMessage(Message{Lengths: MessageLengths{Front: uint32(len(front)), Middle: uint32(len(middle)), Data: uint32(len(payload))}, Front: front, Middle: middle, Data: payload}, performanceLimits)
+		if err != nil {
+			t.Fatal(err)
+		}
+		frame.payloadLease = lease
+		sender := mustSecureCodec(t, testSecureSecret(), false)
+		receiver := mustSecureCodec(t, testSecureSecret(), true)
+		lease.Retain()
+		writers.Add(1)
+		go func() {
+			defer writers.Done()
+			defer lease.Release()
+			<-start
+			for iteration := 0; iteration < 16; iteration++ {
+				ciphertext, err := sender.Encode(frame, performanceLimits)
+				if err != nil {
+					failures <- err
+					return
+				}
+				decoded, err := receiver.Read(bytes.NewReader(ciphertext), performanceLimits)
+				if err != nil {
+					failures <- err
+					return
+				}
+				if !bytes.Equal(decoded.Segments[1].Data, front) || !bytes.Equal(decoded.Segments[2].Data, middle) || !bytes.Equal(decoded.Segments[3].Data, payload) {
+					failures <- errors.New("concurrent leased prefix or payload changed")
+					return
+				}
+			}
+		}()
+	}
+	close(start)
+	writers.Wait()
+	close(failures)
+	for failure := range failures {
+		t.Error(failure)
+	}
+}
 
 func TestSecureDeterministicVector(t *testing.T) {
 	secret := testSecureSecret()
@@ -86,6 +218,30 @@ func TestSecureEncodeRecordBoundaries(t *testing.T) {
 					t.Fatalf("post-exhaustion error=%v", err)
 				}
 			})
+		}
+	}
+}
+
+func TestSecureEncodeIntoDirtyBuffer(t *testing.T) {
+	for _, firstSize := range []int{0, 47, 48, 49, 63, 64, 65} {
+		for _, tailSize := range []int{0, 1, 15, 16, 17, 97} {
+			frame := Frame{Tag: TagMessage, Segments: []Segment{
+				{Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{0x5a}, firstSize)},
+				{Alignment: PageAlignment, Data: bytes.Repeat([]byte{0xa5}, tailSize)},
+			}}
+			fresh := mustSecureCodec(t, testSecureSecret(), false)
+			reused := mustSecureCodec(t, testSecureSecret(), false)
+			for iteration := 0; iteration < 2; iteration++ {
+				want, err := fresh.Encode(frame, testLimits)
+				if err != nil {
+					t.Fatal(err)
+				}
+				buffer := bytes.Repeat([]byte{0xff}, len(want)+128)
+				got, err := reused.encodeInto(frame, testLimits, buffer)
+				if err != nil || !bytes.Equal(got, want) || &got[0] != &buffer[0] {
+					t.Fatalf("first=%d tail=%d iteration=%d reused encoding mismatch: %v", firstSize, tailSize, iteration, err)
+				}
+			}
 		}
 	}
 }

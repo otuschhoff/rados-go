@@ -50,8 +50,15 @@ func parseOfferedConfig(env func(string) string) (*offeredConfig, error) {
 		return nil, fmt.Errorf("offered load requires 64KiB/16, eight background workers, GOMAXPROCS=10 GOGC=100 GOMEMLIMIT=off")
 	}
 	rate, err := strconv.Atoi(env("P07_OFFERED_RATE"))
-	if err != nil || (rate != 1000 && rate != 2000 && rate != 4000) {
-		return nil, fmt.Errorf("offered rate must be 1000, 2000 or 4000")
+	highRateParity := false
+	if namespace := env("P07_PARITY_NAMESPACE"); namespace != "" {
+		if _, namespaceErr := parityNamespace(namespace); namespaceErr != nil {
+			return nil, namespaceErr
+		}
+		highRateParity = env("P07_OFFERED_FACTORIAL") == "1" && env("P07_OFFERED_CASE") == "none"
+	}
+	if err != nil || (rate != 1000 && rate != 2000 && rate != 4000 && !(highRateParity && (rate == 8000 || rate == 16000 || rate == 32000 || rate == 64000))) {
+		return nil, fmt.Errorf("offered rate must be 1000, 2000 or 4000; zero-background parity additionally permits 8000, 16000, 32000 or 64000")
 	}
 	alloc := env("P07_FIXED_ALLOC_RATE")
 	if alloc != "" && alloc != "100" {

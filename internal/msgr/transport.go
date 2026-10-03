@@ -11,6 +11,8 @@ import (
 
 var ErrNilCodec = errors.New("messenger codec is nil")
 
+const secureWriteCacheLimit = 8 << 20
+
 // Codec encodes and decodes framed messenger traffic.
 type Codec interface {
 	Encode(Frame, Limits) ([]byte, error)
@@ -25,6 +27,7 @@ type connTransport struct {
 	readMu    sync.Mutex
 	closed    bool
 	writeMu   sync.Mutex
+	writeWire []byte
 	closeOnce sync.Once
 	scratch   receiveScratch
 }
@@ -118,8 +121,18 @@ func (transport *connTransport) OwnsWriteFrames() bool {
 func (transport *connTransport) WriteFrame(frame Frame) error {
 	transport.writeMu.Lock()
 	defer transport.writeMu.Unlock()
-	wire, err := transport.codec.Encode(frame, transport.limits)
+	var wire []byte
+	var err error
+	if codec, secure := transport.codec.(*SecureCodec); secure {
+		wire, err = codec.encodeInto(frame, transport.limits, transport.writeWire)
+		if cap(wire) <= secureWriteCacheLimit {
+			transport.writeWire = wire
+		}
+	} else {
+		wire, err = transport.codec.Encode(frame, transport.limits)
+	}
 	if err != nil {
+		transport.writeWire = nil
 		return err
 	}
 	for len(wire) > 0 {
@@ -128,9 +141,11 @@ func (transport *connTransport) WriteFrame(frame Frame) error {
 			wire = wire[written:]
 		}
 		if writeErr != nil {
+			transport.writeWire = nil
 			return writeErr
 		}
 		if written == 0 {
+			transport.writeWire = nil
 			return io.ErrUnexpectedEOF
 		}
 	}
@@ -141,6 +156,11 @@ func (transport *connTransport) Close() error {
 	var err error
 	transport.closeOnce.Do(func() {
 		err = transport.conn.Close()
+		if _, secure := transport.codec.(*SecureCodec); secure {
+			transport.writeMu.Lock()
+			transport.writeWire = nil
+			transport.writeMu.Unlock()
+		}
 		transport.readMu.Lock()
 		defer transport.readMu.Unlock()
 		transport.closed = true

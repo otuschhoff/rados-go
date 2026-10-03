@@ -130,6 +130,10 @@ func (direction *secureDirection) openLocked(ciphertext []byte) ([]byte, error) 
 
 // Encode returns the Ceph msgr2.1 secure wire representation of frame.
 func (codec *SecureCodec) Encode(frame Frame, limits Limits) ([]byte, error) {
+	return codec.encodeInto(frame, limits, nil)
+}
+
+func (codec *SecureCodec) encodeInto(frame Frame, limits Limits, wire []byte) ([]byte, error) {
 	descriptors, segments, wireSize, records, err := prepareSecureFrame(frame, limits)
 	if err != nil {
 		return nil, err
@@ -142,8 +146,13 @@ func (codec *SecureCodec) Encode(frame Frame, limits Limits) ([]byte, error) {
 	}
 
 	preamble := encodePreamble(frame.Tag, descriptors)
-	wire := make([]byte, int(wireSize))
+	if uint64(cap(wire)) < wireSize {
+		wire = make([]byte, int(wireSize))
+	} else {
+		wire = wire[:int(wireSize)]
+	}
 	first := wire[:PreambleSize+secureInlineSize]
+	clear(first)
 	copy(first, preamble[:])
 	copy(first[PreambleSize:], segments[0].Data)
 	result, err := codec.tx.sealIntoLocked(first[:0], first)
@@ -155,6 +164,7 @@ func (codec *SecureCodec) Encode(frame Frame, limits Limits) ([]byte, error) {
 	if firstPadded > secureInlineSize {
 		plaintext := wire[len(result) : len(result)+int(firstPadded-secureInlineSize)]
 		copy(plaintext, segments[0].Data[secureInlineSize:])
+		clear(plaintext[len(segments[0].Data)-secureInlineSize:])
 		sealed, err := codec.tx.sealIntoLocked(plaintext[:0], plaintext)
 		if err != nil {
 			return nil, err
@@ -170,11 +180,27 @@ func (codec *SecureCodec) Encode(frame Frame, limits Limits) ([]byte, error) {
 		remainingSize += paddedSecureLength(uint64(len(segments[index].Data)))
 	}
 	remaining := wire[len(result) : len(result)+int(remainingSize)]
+	if lease := frame.payloadLease; lease != nil {
+		lease.plaintextMu.Lock()
+		plaintext := lease.securePlaintext(segments)
+		if plaintext != nil && len(plaintext) == len(remaining) {
+			sealed, err := codec.tx.sealIntoLocked(remaining[:0], plaintext)
+			lease.plaintextMu.Unlock()
+			if err != nil {
+				return nil, err
+			}
+			return wire[:len(result)+len(sealed)], nil
+		}
+		lease.plaintextMu.Unlock()
+	}
 	offset := 0
 	for index := 1; index < len(segments); index++ {
 		copy(remaining[offset:], segments[index].Data)
-		offset += int(paddedSecureLength(uint64(len(segments[index].Data))))
+		end := offset + int(paddedSecureLength(uint64(len(segments[index].Data))))
+		clear(remaining[offset+len(segments[index].Data) : end])
+		offset = end
 	}
+	clear(remaining[offset:])
 	remaining[offset] = LateStatusComplete
 	sealed, err := codec.tx.sealIntoLocked(remaining[:0], remaining)
 	if err != nil {

@@ -384,6 +384,46 @@ func (conn *shortWriteConn) Write(data []byte) (int, error) {
 	return conn.Conn.Write(data)
 }
 
+func TestConnTransportSecureWriteCache(t *testing.T) {
+	limits := testLimits
+	limits.MaxFrameBytes = 16 << 20
+	limits.MaxSegmentBytes = 16 << 20
+	handle, err := NewConnTransport(&recordingConn{}, mustSecureCodec(t, testSecureSecret(), false), limits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transport := handle.(*connTransport)
+	frame := Frame{Tag: TagAck, Segments: []Segment{{Alignment: DefaultAlignment, Data: []byte("ceph")}}}
+	if err := transport.WriteFrame(frame); err != nil {
+		t.Fatal(err)
+	}
+	buffer := transport.writeWire
+	if len(buffer) == 0 || cap(buffer) > secureWriteCacheLimit {
+		t.Fatal("missing or oversized secure cache")
+	}
+	if err := transport.WriteFrame(frame); err != nil || &buffer[0] != &transport.writeWire[0] {
+		t.Fatalf("secure buffer was not reused: %v", err)
+	}
+	large := Frame{Tag: TagMessage, Segments: []Segment{{Alignment: DefaultAlignment, Data: make([]byte, secureWriteCacheLimit+1)}}}
+	if err := transport.WriteFrame(large); err != nil || &buffer[0] != &transport.writeWire[0] || cap(transport.writeWire) > secureWriteCacheLimit {
+		t.Fatalf("oversized frame replaced bounded cache: %v", err)
+	}
+	if err := transport.Close(); err != nil || transport.writeWire != nil {
+		t.Fatalf("close retained secure cache: %v", err)
+	}
+	left, right := net.Pipe()
+	_ = right.Close()
+	handle, err = NewConnTransport(left, mustSecureCodec(t, testSecureSecret(), false), testLimits)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transport = handle.(*connTransport)
+	defer transport.Close()
+	if err := transport.WriteFrame(frame); err == nil || transport.writeWire != nil {
+		t.Fatalf("failed write retained cache: %v", err)
+	}
+}
+
 func TestConnTransportCloseIsIdempotent(t *testing.T) {
 	left, right := net.Pipe()
 	defer right.Close()

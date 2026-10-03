@@ -18,6 +18,134 @@ func (route routeFunc) Route(target Target) (Route, error) {
 	return route(target)
 }
 
+func TestMutationBufferCachePaddedCapacityBudget(t *testing.T) {
+	cache := newMutationBufferCache()
+	var buffers [][]byte
+	for index := 0; index < 8; index++ {
+		buffers = append(buffers, cache.take(1048576))
+	}
+	first := buffers[0]
+	if len(first) != msgr.LeasedPayloadPrefix+1048576+msgr.LeasedPayloadPadding || cap(first) != len(first) {
+		t.Fatal("private payload does not reserve its epilogue")
+	}
+	for _, buffer := range buffers {
+		cache.put(buffer)
+	}
+	if retained := cache.bytes.Load(); retained != 7*int64(cap(first)) || retained > mutationBufferCacheLimit || len(cache.large) != 7 {
+		t.Fatalf("padded idle capacity exceeded budget: bytes=%d entries=%d", retained, len(cache.large))
+	}
+	var reused []byte
+	for index := 0; index < 7; index++ {
+		buffer := cache.take(1048576)
+		if index == 0 {
+			reused = buffer
+		}
+	}
+	if &reused[0] != &first[0] || cache.bytes.Load() != 0 {
+		t.Fatal("padded buffer reuse did not release its full capacity charge")
+	}
+	cache.closed.Store(true)
+	cache.put(reused)
+	if cache.bytes.Load() != 0 || len(cache.large) != 0 {
+		t.Fatal("closed cache retained padded storage")
+	}
+}
+
+func TestMutationBufferCacheHugePayloadKeepsTwoEntries(t *testing.T) {
+	cache := newMutationBufferCache()
+	first, second := cache.take(4194304), cache.take(4194304)
+	if len(first) != 4194304 || cap(first) != len(first) || len(second) != len(first) || cap(second) != len(second) {
+		t.Fatal("huge payload unexpectedly reserved prefix storage")
+	}
+	cache.put(first)
+	cache.put(second)
+	if cache.bytes.Load() != mutationBufferCacheLimit || len(cache.huge) != 2 {
+		t.Fatal("huge payload lost its original two-entry idle capacity")
+	}
+}
+
+func TestMutationBufferCacheBudgetAndConcurrency(t *testing.T) {
+	cache := newMutationBufferCache()
+	for index := 0; index < 8; index++ {
+		cache.put(make([]byte, 1048576))
+	}
+	cache.put(make([]byte, 4194304))
+	if cache.bytes.Load() != mutationBufferCacheLimit {
+		t.Fatalf("idle bytes = %d, want bounded 8 MiB", cache.bytes.Load())
+	}
+	for index := 0; index < 8; index++ {
+		if len(cache.take(1048576)) != 1048576 {
+			t.Fatal("cached buffer size changed")
+		}
+	}
+	if cache.bytes.Load() != 0 || cache.take(123) != nil {
+		t.Fatal("checkout accounting or unsupported-size fallback failed")
+	}
+	var workers sync.WaitGroup
+	for index := 0; index < 32; index++ {
+		workers.Add(1)
+		go func() {
+			defer workers.Done()
+			for iteration := 0; iteration < 64; iteration++ {
+				buffer := cache.take(65536)
+				buffer[0] = byte(iteration)
+				cache.put(buffer)
+			}
+		}()
+	}
+	workers.Wait()
+	if retained := cache.bytes.Load(); retained < 0 || retained > mutationBufferCacheLimit {
+		t.Fatalf("concurrent idle bytes = %d", retained)
+	}
+}
+
+func TestMutationBufferCacheAdmissionOwnershipAndClose(t *testing.T) {
+	client := newTestClient(t, &fakeMapSource{}, &fakeRouter{}, func(int32, protocol.EntityAddrVec) (session, error) {
+		return &fakeSession{}, nil
+	})
+	defer client.Close()
+	if client.mutationBuffers != nil {
+		t.Fatal("custom session factory enabled payload recycling")
+	}
+	cache := newMutationBufferCache()
+	client.mutationBuffers = cache
+	payload := make([]byte, 4096)
+	payload[0] = 'p'
+	sequence, _, owned, lease, err := client.admitMutationOperationsWithLease(context.Background(), []osd.Operation{{Code: osd.OpWriteFull, Length: uint64(len(payload)), Data: payload}}, true)
+	if err != nil || lease == nil {
+		t.Fatalf("leased admission = %v, lease=%p", err, lease)
+	}
+	if &owned[0].Data[0] == &payload[0] {
+		t.Fatal("leased admission aliased caller data")
+	}
+	payload[0] = 'x'
+	if owned[0].Data[0] != 'p' {
+		t.Fatal("caller mutation changed admitted data")
+	}
+	lease.Retain()
+	client.completeMutation(sequence, nil)
+	lease.Release()
+	other := cache.take(len(payload))
+	if &other[msgr.LeasedPayloadPrefix] == &owned[0].Data[0] || cache.bytes.Load() != 0 {
+		t.Fatal("producer completion recycled a writer-held buffer")
+	}
+	lease.Release()
+	recycled := cache.take(len(payload))
+	if &recycled[msgr.LeasedPayloadPrefix] != &owned[0].Data[0] {
+		t.Fatal("final writer release failed to recycle the admitted buffer")
+	}
+	cache.put(recycled)
+	client.Close()
+	if client.mutationBuffers != nil || !cache.closed.Load() || cache.take(len(payload)) != nil {
+		t.Fatal("close retained or exposed the idle cache")
+	}
+	retained := cache.bytes.Load()
+	cache.put(other)
+	if cache.bytes.Load() != retained {
+		t.Fatal("post-close completion repopulated the cache")
+	}
+}
+
 func TestCompoundMutationPreservesOrderAndRetryIdentity(t *testing.T) {
 	route := testRoute(t, 10, 0, "192.0.2.10:6800")
 	var requests []msgr.Message
@@ -151,6 +279,13 @@ func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	}
 	if string(requests[0].Data) != "abc" || string(requests[1].Data) != "abc" {
 		t.Fatalf("payloads=%q/%q", requests[0].Data, requests[1].Data)
+	}
+	if &requests[0].Data[0] == &payload[0] || &requests[0].Data[0] != &requests[1].Data[0] {
+		t.Fatal("immutable retry payload is not the shared admission-owned copy")
+	}
+	payload[0] = 'z'
+	if string(requests[0].Data) != "abc" || string(requests[1].Data) != "abc" {
+		t.Fatal("caller mutation changed retained retry payload")
 	}
 }
 

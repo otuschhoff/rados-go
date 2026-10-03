@@ -209,6 +209,7 @@ type SessionConfig struct {
 const (
 	defaultInitialReconnectBackoff = 200 * time.Millisecond
 	defaultMaxReconnectBackoff     = 15 * time.Second
+	acknowledgmentDelay            = 200 * time.Microsecond
 )
 
 type GlobalSequenceSource interface {
@@ -263,6 +264,7 @@ type submitCommand struct {
 	oneWay            bool
 	control           bool
 	admitted          chan struct{}
+	registered        func()
 	result            chan submitResult
 }
 
@@ -368,6 +370,9 @@ type sessionOwner struct {
 	writeBusy     bool
 	nextWriteID   uint64
 	controlQueue  []Frame
+	pendingAck    uint64
+	ackTimer      *time.Timer
+	ackTimerC     <-chan time.Time
 	pending       []*pendingRequest
 	pendingHead   *pendingRequest
 	pendingTail   *pendingRequest
@@ -509,7 +514,7 @@ func NewSession(transport Transport, connector Connector, config SessionConfig) 
 		connectorRequests: make(chan connectRequest),
 		connectorResults:  make(chan connectResult),
 		frames:            make(chan pumpFrame, 1),
-		writes:            make(chan pumpWriteResult),
+		writes:            make(chan pumpWriteResult, 1),
 		faults:            make(chan pumpFault, 2),
 		renewals:          make(chan renewalDue),
 	}
@@ -545,6 +550,14 @@ func (session *Session) SubmitBorrowedAdmitted(ctx context.Context, message Mess
 	return session.submitResultGeneration(ctx, message, false, false, admitted, 0).borrow()
 }
 
+func (session *Session) SubmitRegistered(ctx context.Context, message Message, registered func()) (Message, error) {
+	return session.submitResultRegisteredGeneration(ctx, message, false, false, nil, 0, registered).take()
+}
+
+func (session *Session) SubmitBorrowedRegistered(ctx context.Context, message Message, registered func()) (Message, func(), error) {
+	return session.submitResultRegisteredGeneration(ctx, message, false, false, nil, 0, registered).borrow()
+}
+
 // Send transmits a one-way message and returns after its frame has been
 // accepted by the transport. Callers must resubmit it after reconnect.
 func (session *Session) Send(ctx context.Context, message Message) error {
@@ -561,6 +574,10 @@ func (session *Session) submitGeneration(ctx context.Context, message Message, o
 }
 
 func (session *Session) submitResultGeneration(ctx context.Context, message Message, oneWay, control bool, admitted func(), generation uint64) submitResult {
+	return session.submitResultRegisteredGeneration(ctx, message, oneWay, control, admitted, generation, nil)
+}
+
+func (session *Session) submitResultRegisteredGeneration(ctx context.Context, message Message, oneWay, control bool, admitted func(), generation uint64, registered func()) submitResult {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -571,7 +588,7 @@ func (session *Session) submitResultGeneration(ctx context.Context, message Mess
 		defer recordRequestTiming(ctx, "submit_return", 0)
 	}
 	recordRequestTiming(ctx, "submit_enter", message.Header.TransactionID)
-	request := &submitCommand{ctx: ctx, message: message, oneWay: oneWay, control: control, controlGeneration: generation, admitted: make(chan struct{}), result: make(chan submitResult, 1)}
+	request := &submitCommand{ctx: ctx, message: message, oneWay: oneWay, control: control, controlGeneration: generation, admitted: make(chan struct{}), registered: registered, result: make(chan submitResult, 1)}
 	select {
 	case session.commands <- request:
 	case <-ctx.Done():
@@ -579,39 +596,41 @@ func (session *Session) submitResultGeneration(ctx context.Context, message Mess
 	case <-session.done:
 		return submitResult{err: ErrSessionClosed}
 	}
-	select {
-	case <-request.admitted:
-		if admitted != nil {
-			admitted()
-		}
-	case <-session.done:
+	if registered == nil {
 		select {
 		case <-request.admitted:
 			if admitted != nil {
 				admitted()
 			}
-			result := <-request.result
-			return result
-		default:
-			return submitResult{err: ErrSessionClosed}
+		case <-session.done:
+			select {
+			case <-request.admitted:
+				if admitted != nil {
+					admitted()
+				}
+				result := <-request.result
+				return result
+			default:
+				return submitResult{err: ErrSessionClosed}
+			}
 		}
 	}
+	var result submitResult
 	select {
-	case result := <-request.result:
-		return result
+	case result = <-request.result:
 	case <-ctx.Done():
 		select {
 		case session.commands <- cancelCommand{request: request, err: ctx.Err()}:
 		case <-session.done:
-			result := <-request.result
-			return result
 		}
-		result := <-request.result
-		return result
+		result = <-request.result
 	case <-session.done:
-		result := <-request.result
-		return result
+		result = <-request.result
 	}
+	if registered != nil {
+		<-request.admitted
+	}
+	return result
 }
 
 func (session *Session) Snapshot(ctx context.Context) (SessionSnapshot, error) {
@@ -654,6 +673,7 @@ func (session *Session) Stop() {
 }
 
 func (owner *sessionOwner) run() {
+	defer owner.clearPendingAcknowledgment()
 	if owner.transport != nil {
 		owner.startTransport(owner.transport, StateReady)
 	} else {
@@ -729,6 +749,8 @@ func (owner *sessionOwner) run() {
 			}
 		case connected := <-owner.connectorResults:
 			owner.handleConnected(connected)
+		case <-owner.ackTimerC:
+			owner.flushPendingAcknowledgment()
 		}
 	}
 }
@@ -736,6 +758,11 @@ func (owner *sessionOwner) run() {
 func (owner *sessionOwner) submit(command *submitCommand) {
 	defer func() {
 		command.message = Message{}
+		if command.registered != nil {
+			registered := command.registered
+			command.registered = nil
+			registered()
+		}
 		if command.admitted != nil {
 			close(command.admitted)
 		}
@@ -768,7 +795,11 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 		command.result <- submitResult{err: ErrQueueSaturated}
 		return
 	}
-	message := cloneMessage(command.message)
+	message := command.message
+	if !message.transferred {
+		message = cloneMessage(message)
+	}
+	message.transferred = false
 	if message.Header.TransactionID == 0 {
 		transactionID, err := owner.takeTID()
 		if err != nil {
@@ -782,6 +813,9 @@ func (owner *sessionOwner) submit(command *submitCommand) {
 		return
 	}
 	pending := &pendingRequest{request: command, message: message, bytes: messageBytes}
+	if message.payloadLease != nil {
+		message.payloadLease.Retain()
+	}
 	owner.addPending(pending)
 	owner.byRequest[command] = pending
 	owner.byTID[message.Header.TransactionID] = pending
@@ -813,6 +847,9 @@ func (owner *sessionOwner) cancel(command cancelCommand) {
 func (owner *sessionOwner) dispatch() {
 	if owner.writeBusy || owner.writeTasks == nil || owner.state == StateDisconnected || owner.state == StateWait || owner.state == StateStopped {
 		return
+	}
+	if owner.renewalPending && owner.pendingAck != 0 && owner.inFlightCount() == 0 {
+		owner.flushPendingAcknowledgment()
 	}
 	if len(owner.controlQueue) > 0 {
 		frame := owner.controlQueue[0]
@@ -858,6 +895,7 @@ func (owner *sessionOwner) dispatch() {
 			pending.seq = sequence
 			pending.message.Header.Sequence = pending.seq
 		}
+		pending.message.Header.AckSequence = owner.lastInbound
 		encode := EncodeMessage
 		if transport, ok := owner.transport.(interface{ OwnsWriteFrames() bool }); ok && transport.OwnsWriteFrames() {
 			encode = encodeOwnedMessage
@@ -871,9 +909,14 @@ func (owner *sessionOwner) dispatch() {
 		if !pending.request.control {
 			owner.inFlight++
 		}
+		owner.clearPendingAcknowledgment()
 		pending.sent = true
 		pending.mayHaveExecuted = true
 		owner.addReplay(pending)
+		if pending.message.payloadLease != nil {
+			pending.message.payloadLease.Retain()
+			frame.payloadLease = pending.message.payloadLease
+		}
 		owner.sendWrite(writeTask{frame: frame, request: pending.request, seq: pending.seq, transactionID: pending.message.Header.TransactionID})
 		return
 	}
@@ -952,10 +995,10 @@ func (owner *sessionOwner) handleMessage(message Message) {
 		recordRequestTiming(pending.request.ctx, "reply_delivered", message.Header.TransactionID)
 		pending.request.result <- submitResult{message: message}
 		message.receiveLease = nil
-		owner.queueControl(Ack{Sequence: sequence})
+		owner.queueAcknowledgment(sequence)
 		return
 	}
-	owner.queueControl(Ack{Sequence: sequence})
+	owner.queueAcknowledgment(sequence)
 	if owner.session.ControlGeneration() != transportGeneration {
 		return
 	}
@@ -1138,6 +1181,7 @@ func (owner *sessionOwner) transitionAllowed(want SessionState) bool {
 }
 
 func (owner *sessionOwner) handleReset(full bool) {
+	owner.clearPendingAcknowledgment()
 	owner.invalidateControls()
 	owner.emit(SessionEvent{Kind: EventSessionReset, Full: full})
 	owner.signalReset()
@@ -1214,13 +1258,55 @@ func (owner *sessionOwner) sendReconnect() {
 	})
 }
 
+func (owner *sessionOwner) clearPendingAcknowledgment() {
+	if owner.ackTimer != nil {
+		owner.ackTimer.Stop()
+	}
+	owner.ackTimerC = nil
+	owner.pendingAck = 0
+}
+
+func (owner *sessionOwner) flushPendingAcknowledgment() {
+	sequence := owner.pendingAck
+	owner.clearPendingAcknowledgment()
+	if sequence != 0 {
+		owner.queueControl(Ack{Sequence: sequence})
+	}
+}
+
+func (owner *sessionOwner) queueAcknowledgment(sequence uint64) {
+	if owner.state != StateReady {
+		owner.queueControl(Ack{Sequence: sequence})
+		return
+	}
+	if owner.pendingAck != 0 {
+		owner.pendingAck = sequence
+		return
+	}
+	if len(owner.controlQueue) >= owner.config.MaxQueuedMessages {
+		owner.handleFault(ErrQueueSaturated)
+		return
+	}
+	owner.pendingAck = sequence
+	if owner.ackTimer == nil {
+		owner.ackTimer = time.NewTimer(acknowledgmentDelay)
+	} else {
+		owner.ackTimer.Reset(acknowledgmentDelay)
+	}
+	owner.ackTimerC = owner.ackTimer.C
+}
+
 func (owner *sessionOwner) queueControl(payload any) {
 	frame, err := EncodeControl(payload, owner.config.Limits)
 	if err != nil {
 		owner.handleFault(err)
 		return
 	}
-	if len(owner.controlQueue) >= owner.config.MaxQueuedMessages {
+	queued := len(owner.controlQueue)
+	if owner.pendingAck != 0 {
+		queued++
+	}
+	if queued >= owner.config.MaxQueuedMessages {
 		owner.handleFault(ErrQueueSaturated)
 		return
 	}
@@ -1248,6 +1334,7 @@ func (owner *sessionOwner) handleFault(err error) {
 	if owner.terminalErr != nil || owner.state == StateStopped || owner.state == StateDisconnected && owner.connectPending {
 		return
 	}
+	owner.clearPendingAcknowledgment()
 	owner.invalidateControls()
 	owner.emit(SessionEvent{Kind: EventTransportFault, Err: err})
 	owner.signalReset()
@@ -1284,6 +1371,7 @@ func (owner *sessionOwner) signalReset() {
 }
 
 func (owner *sessionOwner) failTerminal(err error) {
+	owner.clearPendingAcknowledgment()
 	owner.releaseReceiveQueue()
 	owner.generation++
 	if owner.connectorCancel != nil {
@@ -1417,6 +1505,7 @@ func (owner *sessionOwner) handleConnected(result connectResult) {
 }
 
 func (owner *sessionOwner) resetForNewIdentity() {
+	owner.clearPendingAcknowledgment()
 	owner.serverCookie = 0
 	owner.serverFlags = 0
 	owner.connectSeq = 0
@@ -1545,6 +1634,11 @@ func (owner *sessionOwner) writePump(generation uint64, transport Transport, tas
 				recordRequestTiming(task.request.ctx, "write_begin", task.transactionID)
 			}
 			err := transport.WriteFrame(task.frame)
+			if task.frame.payloadLease != nil {
+				task.frame.payloadLease.Release()
+				task.frame.payloadLease = nil
+				task.frame.Segments = nil
+			}
 			if task.request != nil {
 				recordRequestTiming(task.request.ctx, "write_end", task.transactionID)
 			}
@@ -1760,6 +1854,12 @@ func (owner *sessionOwner) removePending(target *pendingRequest) {
 		owner.controlBytes -= target.bytes
 	} else {
 		owner.retainedBytes -= target.bytes
+	}
+	if target.message.payloadLease != nil {
+		lease := target.message.payloadLease
+		target.message.payloadLease = nil
+		target.message.Data = nil
+		lease.Release()
 	}
 }
 

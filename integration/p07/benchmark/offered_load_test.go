@@ -74,6 +74,25 @@ func TestOfferedConfig(t *testing.T) {
 	}
 }
 
+func TestOfferedParityRates(t *testing.T) {
+	valid := map[string]string{"P07_OFFERED_LOAD": "1", "P07_READ_DIAGNOSTIC": "1", "P07_READ_INTO": "1", "P07_BACKGROUND_WORKERS": "8", "GOMAXPROCS": "10", "GOGC": "100", "GOMEMLIMIT": "off", "P07_PARITY_NAMESPACE": "p07-parity-offered", "P07_OFFERED_FACTORIAL": "1", "P07_OFFERED_CASE": "none"}
+	get := func(name string) string { return valid[name] }
+	for _, rate := range []string{"8000", "16000", "32000", "64000"} {
+		valid["P07_OFFERED_RATE"] = rate
+		if config, err := parseOfferedConfig(get); err != nil || config.CPUWorkers != 0 || config.AllocationWorkers != 0 {
+			t.Fatalf("rate=%s config=%+v err=%v", rate, config, err)
+		}
+	}
+	for name, value := range map[string]string{"P07_PARITY_NAMESPACE": "", "P07_OFFERED_FACTORIAL": "", "P07_OFFERED_CASE": "both", "P07_OFFERED_RATE": "128000"} {
+		original := valid[name]
+		valid[name] = value
+		if _, err := parseOfferedConfig(get); err == nil {
+			t.Fatalf("accepted high rate with %s=%q", name, value)
+		}
+		valid[name] = original
+	}
+}
+
 func TestOfferedAbsoluteAfterStall(t *testing.T) {
 	start := time.Now().Add(time.Hour)
 	clock := &manualOfferedClock{now: start, stall: 75 * time.Millisecond}

@@ -3,6 +3,7 @@ package msgr
 import (
 	"bytes"
 	"errors"
+	"strconv"
 	"sync"
 	"testing"
 )
@@ -21,16 +22,25 @@ func scratchRead(t *testing.T, scratch *receiveScratch, budget *ReceiveBudget, s
 }
 
 func TestReceiveScratchReuseIsChargedAndWiped(t *testing.T) {
+	for _, size := range []int{4096, 4160, 65568} {
+		t.Run(strconv.Itoa(size), func(t *testing.T) {
+			testReceiveScratchReuseIsChargedAndWiped(t, size)
+		})
+	}
+}
+
+func testReceiveScratchReuseIsChargedAndWiped(t *testing.T, size int) {
+	t.Helper()
 	budget, _ := NewReceiveBudget(1, 1<<20)
 	scratch := &receiveScratch{}
-	lease, backing := scratchRead(t, scratch, budget, 65568)
+	lease, backing := scratchRead(t, scratch, budget, size)
 	backing[0] = 42
 	address := &backing[0]
 	lease.reclaim()
 	if budget.Snapshot().RetainedBytes != uint64(cap(backing)) {
 		t.Fatal("idle scratch is not charged")
 	}
-	lease, next := scratchRead(t, scratch, budget, 65568)
+	lease, next := scratchRead(t, scratch, budget, size)
 	if &next[0] != address || next[0] != 0 {
 		t.Fatal("scratch not reused or plaintext not wiped")
 	}
@@ -42,15 +52,24 @@ func TestReceiveScratchReuseIsChargedAndWiped(t *testing.T) {
 }
 
 func TestReceiveScratchOrdinaryHandoffNeverRecycles(t *testing.T) {
+	for _, size := range []int{4096, 4160, 65568} {
+		t.Run(strconv.Itoa(size), func(t *testing.T) {
+			testReceiveScratchOrdinaryHandoffNeverRecycles(t, size)
+		})
+	}
+}
+
+func testReceiveScratchOrdinaryHandoffNeverRecycles(t *testing.T, size int) {
+	t.Helper()
 	budget, _ := NewReceiveBudget(1, 1<<20)
 	scratch := &receiveScratch{}
-	lease, backing := scratchRead(t, scratch, budget, 65568)
+	lease, backing := scratchRead(t, scratch, budget, size)
 	backing[0] = 42
 	lease.release()
 	if scratch.idle != nil || budget.Snapshot().RetainedBytes != 0 {
 		t.Fatal("ordinary handoff recycled caller backing")
 	}
-	nextLease, next := scratchRead(t, scratch, budget, 65568)
+	nextLease, next := scratchRead(t, scratch, budget, size)
 	next[0] = 21
 	if backing[0] != 42 {
 		t.Fatal("caller backing overwritten")
@@ -67,10 +86,19 @@ type scratchConn struct{ budgetBytesConn }
 func (*scratchConn) Close() error { return nil }
 
 func TestSecureScratchMixedOwnership(t *testing.T) {
+	for _, size := range []int{4096, 65536} {
+		t.Run(strconv.Itoa(size), func(t *testing.T) {
+			testSecureScratchMixedOwnership(t, size)
+		})
+	}
+}
+
+func testSecureScratchMixedOwnership(t *testing.T, size int) {
+	t.Helper()
 	encoder, decoder := performanceCodecs(t, "secure")
 	var wire []byte
 	for index := 0; index < 3; index++ {
-		encoded, err := encoder.Encode(Frame{Tag: TagMessage, Segments: []Segment{{Alignment: DefaultAlignment, Data: make([]byte, 80)}, {Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{byte(index + 1)}, 65536)}}}, performanceLimits)
+		encoded, err := encoder.Encode(Frame{Tag: TagMessage, Segments: []Segment{{Alignment: DefaultAlignment, Data: make([]byte, 80)}, {Alignment: DefaultAlignment, Data: bytes.Repeat([]byte{byte(index + 1)}, size)}}}, performanceLimits)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -105,7 +133,7 @@ func TestSecureScratchMixedOwnership(t *testing.T) {
 		t.Fatal(err)
 	}
 	third.receiveLease.reclaim()
-	if !bytes.Equal(owned.Data, bytes.Repeat([]byte{2}, 65536)) {
+	if !bytes.Equal(owned.Data, bytes.Repeat([]byte{2}, size)) {
 		t.Fatal("ordinary Read backing reused")
 	}
 }

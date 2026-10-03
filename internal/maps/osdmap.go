@@ -2,6 +2,7 @@ package maps
 
 import (
 	"fmt"
+	"net/netip"
 	"reflect"
 	"sync"
 
@@ -406,6 +407,20 @@ func (osdMap *OSDMap) OSDClientAddresses(id int32) (protocol.EntityAddrVec, bool
 		return nil, false
 	}
 	return cloneAddressVector(addresses), true
+}
+func (osdMap *OSDMap) OSDClientEndpoint(id int32) (netip.AddrPort, bool) {
+	if id < 0 || int(id) >= len(osdMap.clientAddresses) || len(osdMap.clientAddresses[id]) == 0 {
+		return netip.AddrPort{}, false
+	}
+	for _, address := range osdMap.clientAddresses[id] {
+		if address.Type != protocol.AddressV2 {
+			continue
+		}
+		if endpoint, ok := address.AddrPort(); ok && endpoint.Port() != 0 {
+			return endpoint, true
+		}
+	}
+	return netip.AddrPort{}, true
 }
 func (osdMap *OSDMap) OSDState(id int32) (OSDState, bool) {
 	if id < 0 || int(id) >= len(osdMap.osdState) {

@@ -91,6 +91,15 @@ inconclusive pilot remains separate. Other architectures/environments are
 deferred, not blockers for this scope; global P12/P13, native parity, endurance
 and the read Phase 4 gate are not closed by this workload qualification.
 
+The [native parity follow-up](NATIVE_PARITY_20261002.md) implements matched
+closed-loop, offered-load and same-client retention diagnostics and removes
+three redundant payload allocations while preserving caller ownership. Four
+closed-loop captures and two offered/retention sequences are complete; the
+[compact evidence](native-parity-20261002.json) retains source identities,
+ratios, overload outcomes and limitations. The final candidate still misses
+the provisional CPU target in multiple cells. This phase is incomplete and
+uncommitted; these diagnostic results do not qualify native parity.
+
 ## Results
 
 Three fresh isolated Ceph clusters on the same Docker Linux ARM64 VM (10 CPUs),

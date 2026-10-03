@@ -66,6 +66,7 @@ type Frame struct {
 	Tag          Tag
 	Segments     []Segment
 	receiveLease *receiveLease
+	payloadLease *MessageLease
 }
 
 type CRCCodec struct {

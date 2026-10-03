@@ -12,7 +12,7 @@ type receiveScratch struct {
 }
 
 func (scratch *receiveScratch) get(lease *receiveLease, size int) ([]byte, error) {
-	if size < 32<<10 || size > maxReceiveScratch {
+	if size < 4<<10 || size > maxReceiveScratch {
 		lease.budget.recordScratch(false, true)
 		return make([]byte, size), nil
 	}

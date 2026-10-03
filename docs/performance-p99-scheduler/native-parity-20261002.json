@@ -1,0 +1,76 @@
+{
+  "status": "in_progress_unqualified",
+  "claim": "Matched native Linux diagnostic evidence only; phase and native parity qualification remain incomplete",
+  "scope": {
+    "platform": "linux/amd64",
+    "go": "1.27.1",
+    "gomaxprocs": 10,
+    "gogc": 100,
+    "gomemlimit": "off",
+    "transport": "secure",
+    "ceph_client_release": "20.2.4",
+    "pools": ["test-3x", "readcache"]
+  },
+  "source_bound_capture_d": {
+    "sources_before_sha256": "5b44c9389e012ef799c80f3d5a7e4be6548fbac8b5f9f0e58e53007f1e8a200a",
+    "summary_sha256": "ae631689993f17b6bd1c6234456750965523156881fc9fc69acc33fcf289a20c",
+    "analysis_sha256": "3c707b6342f7afffdacc2e76bd56393b5283a5ada241a87ac7e1a01b19f0eb72",
+    "go_binary_sha256": "f3e0a3119ae617c0b551abc76b8ee60edf64d5fc5b2c5198bc7b50e348756dd9",
+    "native_binary_sha256": "53ae9ab21a7823fde15e08a0fb2b601b2aa1d5901238115219dc449c89bdedd7",
+    "librados_sha256": "0e592bc86a68b4f7bb50c1b22f645776f4c3c8e8487d2789a3573acc6ee7e887",
+    "private_root": "/root/proj/rados-go/native-parity-20261002-d",
+    "blocks": 72,
+    "primary_legs": 288,
+    "timed_operations": 3686400,
+    "capture_failures": 0
+  },
+  "closed_loop_d": {
+    "estimator": "Geometric mean of six mirrored paired-block Go/native ratios",
+    "intervals": "Exploratory Student-t on log paired ratios, df5, alpha .05/48 for four primary metrics across twelve cells; not final contract bootstrap",
+    "rows": [
+      {"pool":"test-3x","size":1048576,"concurrency":1,"workload":"write","cpu_ratio":2.442145,"p99_ratio":1.189899,"iops_ratio":0.887704,"timed_end_rss_ratio":0.595753},
+      {"pool":"readcache","size":1048576,"concurrency":1,"workload":"write","cpu_ratio":2.502155,"p99_ratio":1.453766,"iops_ratio":0.819865,"timed_end_rss_ratio":0.591081},
+      {"pool":"test-3x","size":1048576,"concurrency":1,"workload":"mixed","cpu_ratio":1.831341,"p99_ratio":1.210728,"iops_ratio":0.928443,"timed_end_rss_ratio":0.575968},
+      {"pool":"readcache","size":1048576,"concurrency":1,"workload":"mixed","cpu_ratio":1.799100,"p99_ratio":1.243886,"iops_ratio":0.908132,"timed_end_rss_ratio":0.588774},
+      {"pool":"test-3x","size":4194304,"concurrency":1,"workload":"write","cpu_ratio":2.149789,"p99_ratio":1.130351,"iops_ratio":0.862290,"timed_end_rss_ratio":0.795133},
+      {"pool":"readcache","size":4194304,"concurrency":1,"workload":"write","cpu_ratio":2.049465,"p99_ratio":1.126151,"iops_ratio":0.873378,"timed_end_rss_ratio":0.808159},
+      {"pool":"test-3x","size":4194304,"concurrency":16,"workload":"write","cpu_ratio":1.462548,"p99_ratio":1.338967,"iops_ratio":0.931029,"timed_end_rss_ratio":1.007806},
+      {"pool":"readcache","size":4194304,"concurrency":16,"workload":"write","cpu_ratio":1.383734,"p99_ratio":1.023274,"iops_ratio":0.972720,"timed_end_rss_ratio":1.011339},
+      {"pool":"test-3x","size":65536,"concurrency":16,"workload":"read","cpu_ratio":1.125254,"p99_ratio":1.092797,"iops_ratio":1.013584,"timed_end_rss_ratio":0.851256},
+      {"pool":"readcache","size":65536,"concurrency":16,"workload":"read","cpu_ratio":1.108387,"p99_ratio":1.200847,"iops_ratio":0.985876,"timed_end_rss_ratio":0.882704},
+      {"pool":"test-3x","size":4096,"concurrency":1,"workload":"read","cpu_ratio":2.388936,"p99_ratio":1.237963,"iops_ratio":0.894784,"timed_end_rss_ratio":0.493178},
+      {"pool":"readcache","size":4096,"concurrency":1,"workload":"read","cpu_ratio":2.457940,"p99_ratio":1.223774,"iops_ratio":0.896173,"timed_end_rss_ratio":0.495885}
+    ]
+  },
+  "offered_load": {
+    "rates": [1000, 2000, 4000, 8000, 16000, 32000, 64000],
+    "workers": 16,
+    "queue_capacity": 128,
+    "issuance_seconds": 8,
+    "deadline_ms": 500,
+    "goodput_budget_ms": 10,
+    "captures": [
+      {"id":"c","blocks":84,"legs":336,"delivery_valid_legs":336,"arrivals":48768000,"success":29972881,"overload":18795119,"timeouts":0,"errors":0,"canceled":0},
+      {"id":"d","blocks":84,"legs":336,"delivery_valid_legs":336,"arrivals":48768000,"success":30743978,"overload":18024022,"timeouts":0,"errors":0,"canceled":0}
+    ],
+    "limitation": "All arrivals accounted, but saturation overloads are failures; goodput and success-only metrics cannot certify successful delivery of all offered work. Resource CPU includes warmup and bookkeeping. Not final qualification."
+  },
+  "bounded_retention": {
+    "captures": [
+      {"id":"c","processes":24,"verified_windows":384,"growth_budget_findings":0},
+      {"id":"d","processes":24,"verified_windows":384,"growth_budget_findings":0}
+    ],
+    "budget": "Median final four windows minus median windows 5..8 <= max(16 MiB, 10% baseline), separately for RSS and implementation-specific allocated bytes",
+    "metrics": ["RSS", "Go post-GC heap", "partial glibc allocation counters"],
+    "limitation": "Bounded same-client windows, not equal total live heap, incremental peak RSS qualification, or endurance"
+  },
+  "remaining_gates": [
+    "CPU ratios exceed the existing provisional <=1.20 target in write/mixed/small-read rows",
+    "Some serial-throughput and p99 rows remain outside or inconclusive against the unchanged targets",
+    "Incremental RSS needs matched connected warmed-idle baselines and sampled interval peaks",
+    "Final qualification needs the existing time/count/warmup minima, raw operation records and predeclared paired cluster-bootstrap confidence procedure",
+    "A phase-completion commit is not authorized while these findings remain"
+  ],
+  "qualification_contract": "docs/performance-phase0/QUALIFICATION.md",
+  "release_certification": "Not renewed; independent P12/P13, broader topology and human signoff obligations unchanged"
+}

@@ -168,6 +168,15 @@ func (session *osdSession) submitTarget(ctx context.Context, pg maps.PG, object 
 			release := noRelease
 			admitted := func() { unlock.Do(session.mu.Unlock) }
 			if source, ok := session.raw.(interface {
+				SubmitRegistered(context.Context, msgr.Message, func()) (msgr.Message, error)
+				SubmitBorrowedRegistered(context.Context, msgr.Message, func()) (msgr.Message, func(), error)
+			}); ok {
+				if borrowed {
+					result, release, err = source.SubmitBorrowedRegistered(attemptCtx, message, admitted)
+				} else {
+					result, err = source.SubmitRegistered(attemptCtx, message, admitted)
+				}
+			} else if source, ok := session.raw.(interface {
 				SubmitBorrowedAdmitted(context.Context, msgr.Message, func()) (msgr.Message, func(), error)
 			}); borrowed && ok {
 				result, release, err = source.SubmitBorrowedAdmitted(attemptCtx, message, admitted)

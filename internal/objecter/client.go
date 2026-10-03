@@ -163,6 +163,7 @@ type Client struct {
 	retainedMutationBytes uint64
 	unknownMutation       uint64
 	mutationChanged       chan struct{}
+	mutationBuffers       *mutationBufferCache
 	watches               map[uint64]*Watch
 	notifies              map[uint64]chan notifyCompletion
 	mapWatchCancel        context.CancelFunc
@@ -225,7 +226,8 @@ func New(config Config) (*Client, error) {
 		}
 		config.ClientIncarnation = int32(binary.LittleEndian.Uint32(value[:])&math.MaxInt32 | 1)
 	}
-	if config.SessionFactory == nil {
+	productionSessions := config.SessionFactory == nil
+	if productionSessions {
 		if config.AuthoritySource == nil {
 			config.AuthoritySource = func() *cephx.Connector { return config.Authority }
 		}
@@ -236,6 +238,9 @@ func New(config Config) (*Client, error) {
 	}
 	config.ClientAddresses = cloneAddresses(config.ClientAddresses)
 	client := &Client{config: config, done: make(chan struct{}), sessions: make(map[int32]sessionEntry), nextTransaction: 1, pendingMutations: make(map[uint64]uint64), mutationChanged: make(chan struct{}), watches: make(map[uint64]*Watch), notifies: make(map[uint64]chan notifyCompletion)}
+	if productionSessions {
+		client.mutationBuffers = newMutationBufferCache()
+	}
 	if waiter, ok := config.Maps.(osdMapWaiter); ok {
 		watchCtx, cancel := context.WithCancel(context.Background())
 		client.mapWatchCancel = cancel
@@ -260,7 +265,7 @@ func (client *Client) ReadInto(ctx context.Context, target Target, offset uint64
 	if length > math.MaxUint64-offset || minimumReplyBytes > uint64(client.config.MessageLimits.MaxBytes) || length > uint64(client.config.MessageLimits.MaxBytes)-minimumReplyBytes {
 		return Result{}, wire.ErrLimitExceeded
 	}
-	return client.executeRoutedResultInto(ctx, target, []osd.Operation{{Code: osd.OpRead, Offset: offset, Length: length}}, 0, false, false, 0, client.config.Router.Route, false, destination, true)
+	return client.executeRoutedResultInto(ctx, target, []osd.Operation{{Code: osd.OpRead, Offset: offset, Length: length}}, 0, false, false, 0, client.config.Router.Route, false, destination, true, false, nil)
 }
 
 func (client *Client) SparseRead(ctx context.Context, target Target, offset, length uint64) (SparseReadResult, error) {
@@ -349,14 +354,18 @@ func (client *Client) executeOperations(ctx context.Context, target Target, oper
 }
 
 func (client *Client) executeRoutedOperations(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error)) (Result, error) {
-	return client.executeRoutedResult(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, true)
+	return client.executeRoutedOperationsWithOwnership(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, false)
+}
+
+func (client *Client) executeRoutedOperationsWithOwnership(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), immutable bool) (Result, error) {
+	return client.executeRoutedResultInto(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, true, nil, false, immutable, nil)
 }
 
 func (client *Client) executeRoutedResult(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), retainOperations bool) (Result, error) {
-	return client.executeRoutedResultInto(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, retainOperations, nil, false)
+	return client.executeRoutedResultInto(ctx, target, operations, transactionID, outcomeSensitive, durable, initialFlags, routeTarget, retainOperations, nil, false, false, nil)
 }
 
-func (client *Client) executeRoutedResultInto(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), retainOperations bool, destination []byte, readInto bool) (Result, error) {
+func (client *Client) executeRoutedResultInto(ctx context.Context, target Target, operations []osd.Operation, transactionID uint64, outcomeSensitive, durable bool, initialFlags uint32, routeTarget func(Target) (Route, error), retainOperations bool, destination []byte, readInto, immutable bool, payloadLease *msgr.MessageLease) (Result, error) {
 	releaseReply := func() {}
 	defer func() { releaseReply() }()
 	if ctx == nil {
@@ -405,7 +414,11 @@ func (client *Client) executeRoutedResultInto(ctx context.Context, target Target
 				clientGlobalID = authority.InstanceID()
 			}
 		}
-		request, err := osd.EncodeRequest(osd.Request{
+		encode := osd.EncodeRequest
+		if immutable {
+			encode = osd.EncodeImmutableRequest
+		}
+		request, err := encode(osd.Request{
 			MapEpoch: route.Epoch, PG: route.PG, ObjectHash: route.RawHash, Shard: route.Shard, Sharded: route.Sharded,
 			PoolID: currentTarget.PoolID, Object: currentTarget.Object, Locator: currentTarget.Locator,
 			Namespace: currentTarget.Namespace, Snapshot: currentTarget.Snapshot, SnapshotSequence: currentTarget.SnapshotSequence,
@@ -416,6 +429,13 @@ func (client *Client) executeRoutedResultInto(ctx context.Context, target Target
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		object := osd.HObject{Key: currentTarget.Locator, Object: currentTarget.Object, Snapshot: currentTarget.Snapshot, Hash: route.RawHash, Namespace: currentTarget.Namespace, Pool: currentTarget.PoolID}
+		if payloadLease != nil {
+			request = msgr.RetainLeasedMessage(request, payloadLease)
+		} else if immutable {
+			request = msgr.RetainImmutableMessage(request)
+		} else {
+			request = msgr.TakeMessageOwnership(request)
+		}
 		attemptTarget := currentTarget
 		submitCtx, finishSubmit, err := client.beginRoutedAttempt(ctx, route, func() (Route, error) {
 			return routeTarget(attemptTarget)
@@ -883,17 +903,17 @@ func (client *Client) sessionTarget(osdID int32, addresses protocol.EntityAddrVe
 			client.supersedeCreation(osdID)
 			return "", 0, ErrNoPrimary
 		}
-		currentAddresses, addressesKnown := current.OSDClientAddresses(osdID)
+		currentEndpoint, addressesKnown := current.OSDClientEndpoint(osdID)
 		if stateKnown && !addressesKnown {
 			client.supersedeCreation(osdID)
 			return "", 0, ErrNoPrimary
 		}
 		if addressesKnown {
-			currentAddress, valid := selectAddress(currentAddresses)
-			if !valid {
+			if !currentEndpoint.IsValid() {
 				client.supersedeCreation(osdID)
 				return "", 0, ErrNoPrimary
 			}
+			currentAddress := currentEndpoint.String()
 			if currentAddress != address {
 				client.mu.Lock()
 				if pending := client.creations[osdID]; pending != nil && (pending.address != currentAddress || pending.generation != generation) {
@@ -1260,6 +1280,10 @@ func (client *Client) Close() {
 		return
 	}
 	client.closed = true
+	if client.mutationBuffers != nil {
+		client.mutationBuffers.closed.Store(true)
+		client.mutationBuffers = nil
+	}
 	client.closeDone = make(chan struct{})
 	closeDone := client.closeDone
 	client.mutationClosed = true

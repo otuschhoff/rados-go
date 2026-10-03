@@ -87,6 +87,35 @@ func TestEncodeRequestFrontLimits(t *testing.T) {
 	}
 }
 
+func TestEncodeImmutableRequest(t *testing.T) {
+	for _, count := range []int{1, 2} {
+		operations := make([]Operation, count)
+		for index := range operations {
+			operations[index] = Operation{Code: OpWriteFull, Data: []byte("abc")}
+		}
+		request := Request{Object: "object", Operations: operations}
+		owned, err := EncodeRequest(request, testLimits)
+		if err != nil {
+			t.Fatal(err)
+		}
+		immutable, err := EncodeImmutableRequest(request, testLimits)
+		if err != nil || !bytes.Equal(owned.Front, immutable.Front) || !bytes.Equal(owned.Data, immutable.Data) {
+			t.Fatalf("changed encoding: %v", err)
+		}
+		if aliases := &immutable.Data[0] == &operations[0].Data[0]; aliases != (count == 1) {
+			t.Fatalf("count=%d aliases=%v", count, aliases)
+		}
+		if &owned.Data[0] == &operations[0].Data[0] {
+			t.Fatal("default encoding shares data")
+		}
+		for _, budget := range []uint32{0, uint32(len(owned.Front) + len(owned.Data) - 1)} {
+			if _, err := EncodeImmutableRequest(request, Limits{MaxBytes: budget, MaxOperations: 4}); !errors.Is(err, wire.ErrLimitExceeded) {
+				t.Fatalf("immutable limit err=%v", err)
+			}
+		}
+	}
+}
+
 func TestEncodeRequestOwnershipAndReplay(t *testing.T) {
 	request := Request{
 		Object: "object", SnapshotSequence: 9, WriteSnapshots: []uint64{9, 7},

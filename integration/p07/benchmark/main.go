@@ -50,17 +50,18 @@ type resources struct {
 }
 
 type row struct {
-	SizeBytes                uint64  `json:"size_bytes"`
-	Concurrency              int     `json:"concurrency"`
-	Workload                 string  `json:"workload"`
-	Operations               uint64  `json:"operations"`
-	Bytes                    uint64  `json:"bytes"`
-	ElapsedNS                uint64  `json:"elapsed_ns"`
-	ThroughputBytesPerSecond float64 `json:"throughput_bytes_per_second"`
-	IOPS                     float64 `json:"iops"`
-	P50NS                    uint64  `json:"p50_ns"`
-	P95NS                    uint64  `json:"p95_ns"`
-	P99NS                    uint64  `json:"p99_ns"`
+	SizeBytes                uint64         `json:"size_bytes"`
+	Concurrency              int            `json:"concurrency"`
+	Workload                 string         `json:"workload"`
+	Operations               uint64         `json:"operations"`
+	Bytes                    uint64         `json:"bytes"`
+	ElapsedNS                uint64         `json:"elapsed_ns"`
+	ThroughputBytesPerSecond float64        `json:"throughput_bytes_per_second"`
+	IOPS                     float64        `json:"iops"`
+	P50NS                    uint64         `json:"p50_ns"`
+	P95NS                    uint64         `json:"p95_ns"`
+	P99NS                    uint64         `json:"p99_ns"`
+	Parity                   *parityMetrics `json:"parity,omitempty"`
 }
 
 type report struct {
@@ -141,6 +142,14 @@ func main() {
 }
 
 func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (resultErr error) {
+	namespace, err := parityNamespace(os.Getenv("P07_PARITY_NAMESPACE"))
+	if err != nil {
+		return err
+	}
+	retentionWindows, err := parseRetentionWindows(os.Getenv)
+	if err != nil {
+		return err
+	}
 	if err := validateOfferedObservationConfig(os.Getenv); err != nil {
 		return err
 	}
@@ -159,6 +168,9 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	matrix, err := parseMatrixExperiment(os.Getenv, diagnostic || seedOnly)
 	if err != nil {
 		return err
+	}
+	if namespace != "" && !diagnostic && !seedOnly && (matrix.size == 0 || matrix.concurrency == 0 || matrix.workload == "" || matrix.operations <= 2) {
+		return fmt.Errorf("parity mode requires explicit sustained size, concurrency and workload")
 	}
 	shape, err := parseReadShape(os.Getenv("P07_READ_SIZE"), os.Getenv("P07_READ_CONCURRENCY"), diagnostic, seedOnly)
 	if err != nil {
@@ -246,6 +258,15 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	if err != nil {
 		return &benchError{message: "open pool", err: err}
 	}
+	if namespace != "" {
+		pool = pool.WithNamespace(namespace)
+	}
+	if retentionWindows != 0 {
+		if transport != "secure" {
+			return fmt.Errorf("retention requires secure transport")
+		}
+		return runRetention(ctx, pool, retentionWindows, matrix.size, matrix.concurrency, matrix.workload, os.Stdout)
+	}
 	if seedOnly {
 		for workerID := 0; workerID < shape.concurrency; workerID++ {
 			if err := writeSeed(ctx, pool.Object(shape.objectName(workerID)), makePayload(shape.size, 1, uint64(workerID))); err != nil {
@@ -317,7 +338,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	if os.Getenv("P07_BACKGROUND_WORKERS") != "" && os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
 		return &benchError{message: "background CPU workers require read diagnostic mode"}
 	}
-	if os.Getenv("P07_READ_INTO") != "" && os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
+	if os.Getenv("P07_READ_INTO") != "" && os.Getenv("P07_READ_DIAGNOSTIC") != "1" && namespace == "" {
 		return &benchError{message: "caller-buffer reads require read diagnostic mode"}
 	}
 	backgroundWorkers, stopBackground, err := startBackgroundWork(os.Getenv("P07_BACKGROUND_WORKERS"), experiment.allocationLoad)
@@ -334,7 +355,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 	rows := make([]row, 0, len(sizes)*len(concurrencies)*len(workloads))
 	var resourceRows []rowResources
 	runID := uint64(time.Now().UnixNano())
-	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
+	if os.Getenv("P07_READ_DIAGNOSTIC") == "1" || namespace != "" {
 		runID = 1
 	}
 	rowSizes, rowConcurrencies := sizes, concurrencies
@@ -511,6 +532,7 @@ func run(monitorsArg, keyFile, fsid, poolName, transport, entity string) (result
 }
 
 func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurrency int, workload string) (row, error) {
+	matched := os.Getenv("P07_PARITY_NAMESPACE") != ""
 	if concurrency <= 0 {
 		return row{}, &benchError{message: "invalid concurrency"}
 	}
@@ -539,6 +561,9 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 		if os.Getenv("P07_READ_DIAGNOSTIC") == "1" {
 			return (readShape{size: size, concurrency: concurrency}).objectName(workerID)
 		}
+		if matched {
+			return parityObjectName(size, concurrency, workload, workerID)
+		}
 		return fmt.Sprintf("p07-go-%d-%d-%s-w%d", runID, size, workload, workerID)
 	}
 	if (workload == "read" || workload == "mixed") && os.Getenv("P07_READ_DIAGNOSTIC") != "1" {
@@ -561,6 +586,7 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 	var once sync.Once
 
 	start := make(chan struct{})
+	verificationStart := make(chan struct{})
 	var readyWG sync.WaitGroup
 	var measuredWG sync.WaitGroup
 	var allWG sync.WaitGroup
@@ -732,15 +758,65 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 			}
 
 			measuredWG.Done()
-			cleanupObject(obj)
+			if matched {
+				<-verificationStart
+				data, _, verifyErr := obj.Read(ctx, 0, size)
+				if verifyErr != nil || !bytes.Equal(data, payload) {
+					once.Do(func() { errCh <- fmt.Errorf("final parity payload verification failed: %v", verifyErr) })
+				}
+				cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cleanupCancel()
+				if _, cleanupErr := obj.Remove(cleanupCtx); cleanupErr != nil {
+					once.Do(func() { errCh <- cleanupErr })
+				}
+				if _, statErr := obj.Stat(cleanupCtx); !errors.Is(statErr, rados.ErrNotFound) {
+					once.Do(func() { errCh <- fmt.Errorf("parity fixture not removed: %v", statErr) })
+				}
+			} else {
+				cleanupObject(obj)
+			}
 		}()
 	}
 
 	readyWG.Wait()
+	var metrics *parityMetrics
+	var measuredBefore resourceSnapshot
+	if matched {
+		metrics = &parityMetrics{}
+		metrics.RSSBefore, err = residentBytes()
+		if err != nil {
+			cancel()
+			close(start)
+			close(verificationStart)
+			allWG.Wait()
+			return row{}, err
+		}
+		measuredBefore, err = snapshotResources()
+		if err != nil {
+			cancel()
+			close(start)
+			close(verificationStart)
+			allWG.Wait()
+			return row{}, err
+		}
+	}
 	startTime := time.Now()
 	close(start)
 	measuredWG.Wait()
 	elapsed := time.Since(startTime)
+	if matched {
+		measuredAfter, snapshotErr := snapshotResources()
+		if snapshotErr == nil {
+			metrics.Resources, snapshotErr = deltaResources(measuredBefore, measuredAfter)
+		}
+		if snapshotErr == nil {
+			metrics.RSSAfter, snapshotErr = residentBytes()
+		}
+		if snapshotErr != nil {
+			once.Do(func() { errCh <- snapshotErr })
+		}
+	}
+	close(verificationStart)
 	allWG.Wait()
 
 	select {
@@ -749,6 +825,17 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 			return row{}, err
 		}
 	default:
+	}
+	if matched {
+		runtime.GC()
+		var memory runtime.MemStats
+		runtime.ReadMemStats(&memory)
+		metrics.HeapPostGC = memory.HeapAlloc
+		metrics.RSSCleanup, err = residentBytes()
+		if err != nil {
+			return row{}, err
+		}
+		metrics.PayloadVerified, metrics.CleanupVerified = true, true
 	}
 
 	sort.Slice(latencies, func(i, j int) bool {
@@ -780,6 +867,7 @@ func runRow(parent context.Context, pool rados.Pool, runID, size uint64, concurr
 		P50NS:                    percentile(latencies, 0.50),
 		P95NS:                    percentile(latencies, 0.95),
 		P99NS:                    percentile(latencies, 0.99),
+		Parity:                   metrics,
 	}, nil
 }
 

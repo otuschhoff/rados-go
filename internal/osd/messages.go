@@ -166,6 +166,16 @@ type Limits struct {
 }
 
 func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
+	return encodeRequest(request, limits, false)
+}
+
+// EncodeImmutableRequest may share a single operation's data with the message.
+// The data must remain immutable for the lifetime of all submissions and replays.
+func EncodeImmutableRequest(request Request, limits Limits) (msgr.Message, error) {
+	return encodeRequest(request, limits, true)
+}
+
+func encodeRequest(request Request, limits Limits, immutable bool) (msgr.Message, error) {
 	if limits.MaxBytes == 0 || limits.MaxOperations == 0 || len(request.Operations) == 0 || uint64(len(request.Operations)) > uint64(limits.MaxOperations) || len(request.Operations) > int(^uint16(0)) || len(request.WriteSnapshots) > int(^uint32(0)) || request.PoolID < 0 {
 		return msgr.Message{}, wire.ErrLimitExceeded
 	}
@@ -243,9 +253,14 @@ func EncodeRequest(request Request, limits Limits) (msgr.Message, error) {
 	if uint64(len(front))+dataLength > uint64(limits.MaxBytes) {
 		return msgr.Message{}, wire.ErrLimitExceeded
 	}
-	data := make([]byte, 0, dataLength)
-	for _, operation := range request.Operations {
-		data = append(data, operation.Data...)
+	var data []byte
+	if immutable && len(request.Operations) == 1 {
+		data = request.Operations[0].Data
+	} else {
+		data = make([]byte, 0, dataLength)
+		for _, operation := range request.Operations {
+			data = append(data, operation.Data...)
+		}
 	}
 	return msgr.Message{Header: msgr.MessageHeader{TransactionID: request.TransactionID, Type: protocol.MessageOSDOp, Version: 8, CompatVersion: 3}, Front: front, Data: data, Lengths: msgr.MessageLengths{Front: uint32(len(front)), Data: uint32(len(data))}}, nil
 }

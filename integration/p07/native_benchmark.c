@@ -25,6 +25,7 @@ typedef void (*shutdown_fn)(rados_t);
 typedef int (*write_full_fn)(rados_ioctx_t, const char *, const char *, size_t);
 typedef int (*read_fn)(rados_ioctx_t, const char *, char *, size_t, uint64_t);
 typedef int (*remove_fn)(rados_ioctx_t, const char *);
+typedef void (*ioctx_set_namespace_fn)(rados_ioctx_t, const char *);
 
 struct api {
 	void *library;
@@ -39,6 +40,7 @@ struct api {
 	write_full_fn write_full;
 	read_fn read;
 	remove_fn remove;
+	ioctx_set_namespace_fn ioctx_set_namespace;
 };
 
 struct row_result {
@@ -53,6 +55,7 @@ struct row_result {
 	uint64_t p50_ns;
 	uint64_t p95_ns;
 	uint64_t p99_ns;
+	uint64_t cpu_user_ns, cpu_system_ns, rss_before, rss_after, rss_cleanup;
 };
 
 enum workload_kind {
@@ -77,6 +80,7 @@ struct row_ctx {
 	int ready_count;
 	int done_count;
 	int start_flag;
+	int verification_flag;
 	int cancel_flag;
 	int error_flag;
 	char error_message[256];
@@ -101,6 +105,24 @@ static struct {
 static int read_diagnostic(void) {
 	const char *value = getenv("P07_READ_DIAGNOSTIC");
 	return value != NULL && strcmp(value, "1") == 0;
+}
+
+static int matched_parity(void) {
+	const char *value = getenv("P07_PARITY_NAMESPACE");
+	return value != NULL && value[0] != '\0';
+}
+
+static uint64_t resident_bytes(void) {
+	FILE *file = fopen("/proc/self/status", "r");
+	if (file == NULL) return 0;
+	char line[256];
+	uint64_t result = 0;
+	while (fgets(line, sizeof(line), file) != NULL) {
+		uint64_t value;
+		if (sscanf(line, "VmRSS: %" SCNu64 " kB", &value) == 1) { result = value * 1024; break; }
+	}
+	fclose(file);
+	return result;
 }
 
 static int read_matrix_settings(void) {
@@ -163,6 +185,11 @@ static int format_object_name(char *buffer, size_t buffer_size, uint64_t run_id,
 		int result = snprintf(buffer, buffer_size, "p07-shared-read-%d", worker_id);
 		return result >= 0 && (size_t)result < buffer_size ? 0 : -1;
 	}
+	if (matched_parity()) {
+		const char *name = workload == WORKLOAD_READ ? "read" : workload == WORKLOAD_WRITE ? "write" : "mixed";
+		int result = snprintf(buffer, buffer_size, "p07-parity-%" PRIu64 "-c%d-%s-w%d", size_bytes, matrix.concurrency, name, worker_id);
+		return result >= 0 && (size_t)result < buffer_size ? 0 : -1;
+	}
 	int result = snprintf(buffer, buffer_size, "p07-native-%" PRIu64 "-%" PRIu64 "-%d-%d",
 		run_id, size_bytes, (int)workload, worker_id);
 	return result >= 0 && (size_t)result < buffer_size ? 0 : -1;
@@ -198,6 +225,7 @@ static struct api load_api(void) {
 	BIND(&result, write_full);
 	BIND(&result, read);
 	BIND(&result, remove);
+	BIND(&result, ioctx_set_namespace);
 	return result;
 }
 
@@ -238,6 +266,7 @@ static void set_worker_error(struct row_ctx *ctx, const char *message, int code)
 		}
 	}
 	pthread_cond_broadcast(&ctx->start_cv);
+	pthread_cond_broadcast(&ctx->ready_cv);
 	pthread_cond_broadcast(&ctx->done_cv);
 	pthread_mutex_unlock(&ctx->mu);
 }
@@ -273,7 +302,8 @@ static void wait_for_start(struct row_ctx *ctx) {
 static void mark_done(struct row_ctx *ctx) {
 	pthread_mutex_lock(&ctx->mu);
 	ctx->done_count++;
-	pthread_cond_signal(&ctx->done_cv);
+	if (matched_parity()) pthread_cond_broadcast(&ctx->done_cv);
+	else pthread_cond_signal(&ctx->done_cv);
 	pthread_mutex_unlock(&ctx->mu);
 }
 
@@ -408,10 +438,20 @@ static void *worker_main(void *arg) {
 	}
 
 	mark_done(ctx);
-	int remove_result = read_diagnostic() ? 0 : api->remove(ctx->ioctx, object_name);
+	if (matched_parity()) {
+		pthread_mutex_lock(&ctx->mu);
+		while (!ctx->verification_flag) pthread_cond_wait(&ctx->done_cv, &ctx->mu);
+		pthread_mutex_unlock(&ctx->mu);
+		int verified = api->read(ctx->ioctx, object_name, (char *)read_buffer, (size_t)ctx->size_bytes, 0);
+		if (verified != (int)ctx->size_bytes || memcmp(read_buffer, payload, (size_t)ctx->size_bytes) != 0)
+			set_worker_error(ctx, "final parity payload mismatch", verified);
+	}
+	int remove_result = read_diagnostic() && !matched_parity() ? 0 : api->remove(ctx->ioctx, object_name);
 	if (remove_result < 0 && remove_result != -ENOENT) {
 		set_worker_error(ctx, "cleanup remove failed", remove_result);
 	}
+	if (matched_parity() && (remove_result != 0 || api->read(ctx->ioctx, object_name, (char *)read_buffer, 1, 0) != -ENOENT))
+		set_worker_error(ctx, "parity fixture cleanup not verified", remove_result);
 
 	free(payload);
 	free(read_buffer);
@@ -538,6 +578,13 @@ static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64
 	}
 	struct timespec start_mono;
 	struct timespec end_mono;
+	struct rusage measured_before, measured_after;
+	memset(&measured_before, 0, sizeof(measured_before));
+	memset(&measured_after, 0, sizeof(measured_after));
+	if (matched_parity()) {
+		result->rss_before = resident_bytes();
+		if (result->rss_before == 0 || getrusage(RUSAGE_SELF, &measured_before) != 0) ctx.error_flag = ctx.cancel_flag = 1;
+	}
 	memset(&start_mono, 0, sizeof(start_mono));
 	memset(&end_mono, 0, sizeof(end_mono));
 	if (!ctx.error_flag) {
@@ -558,11 +605,21 @@ static int run_row(struct api *api, rados_ioctx_t ioctx, uint64_t run_id, uint64
 			snprintf(ctx.error_message, sizeof(ctx.error_message), "clock_gettime failed");
 		}
 	}
+	if (matched_parity()) {
+		if (getrusage(RUSAGE_SELF, &measured_after) != 0) ctx.error_flag = 1;
+		result->rss_after = resident_bytes();
+		if (result->rss_after == 0) ctx.error_flag = 1;
+		result->cpu_user_ns = timeval_to_ns(measured_after.ru_utime) - timeval_to_ns(measured_before.ru_utime);
+		result->cpu_system_ns = timeval_to_ns(measured_after.ru_stime) - timeval_to_ns(measured_before.ru_stime);
+	}
+	ctx.verification_flag = 1;
+	pthread_cond_broadcast(&ctx.done_cv);
 	pthread_mutex_unlock(&ctx.mu);
 
 	for (int i = 0; i < created; i++) {
 		pthread_join(threads[i], NULL);
 	}
+	if (matched_parity()) { result->rss_cleanup = resident_bytes(); if (result->rss_cleanup == 0) ctx.error_flag = 1; }
 
 	if (ctx.error_flag) {
 		if (ctx.error_message[0] != '\0') {
@@ -625,6 +682,13 @@ int main(int argc, char **argv) {
 	if (read_matrix_settings() != 0 || read_operations_per_worker() < 0) {
 		return 2;
 	}
+	if (matched_parity()) {
+		const char *name = getenv("P07_PARITY_NAMESPACE");
+		if (strlen(name) > 64 || strncmp(name, "p07-parity-", 11) != 0) return 2;
+		for (const char *character = name; *character; character++)
+			if (*character != '-' && (*character < 'a' || *character > 'z') && (*character < '0' || *character > '9')) return 2;
+		if (!read_diagnostic() && (matrix.size == 0 || matrix.concurrency == 0 || matrix.workload < 0 || matrix.operations <= 2)) return 2;
+	}
 
 	struct api api = load_api();
 	rados_t cluster = NULL;
@@ -678,6 +742,7 @@ int main(int argc, char **argv) {
 		dlclose(api.library);
 		return 1;
 	}
+	if (matched_parity()) api.ioctx_set_namespace(ioctx, getenv("P07_PARITY_NAMESPACE"));
 
 	struct rusage before_usage;
 	struct rusage after_usage;
@@ -712,7 +777,7 @@ int main(int argc, char **argv) {
 
 	size_t row_index = 0;
 	uint64_t run_id = (uint64_t)time(NULL);
-	if (read_diagnostic()) {
+	if (read_diagnostic() || matched_parity()) {
 		run_id = 1;
 	}
 	for (size_t i = 0; i < sizeof(k_sizes) / sizeof(k_sizes[0]); i++) {
@@ -802,6 +867,9 @@ int main(int argc, char **argv) {
 		printf("\"p50_ns\":%" PRIu64 ",", rows[i].p50_ns);
 		printf("\"p95_ns\":%" PRIu64 ",", rows[i].p95_ns);
 		printf("\"p99_ns\":%" PRIu64, rows[i].p99_ns);
+		if (matched_parity()) {
+			printf(",\"parity\":{\"measured_resources\":{\"cpu_user_ns\":%" PRIu64 ",\"cpu_system_ns\":%" PRIu64 "},\"rss_before_bytes\":%" PRIu64 ",\"rss_after_bytes\":%" PRIu64 ",\"rss_after_cleanup_bytes\":%" PRIu64 ",\"payload_verified\":true,\"cleanup_verified\":true}", rows[i].cpu_user_ns, rows[i].cpu_system_ns, rows[i].rss_before, rows[i].rss_after, rows[i].rss_cleanup);
+		}
 		printf("}");
 	}
 	printf("]}\n");
