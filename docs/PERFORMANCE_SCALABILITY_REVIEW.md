@@ -345,8 +345,9 @@ the remaining checkpoint work rather than restarting completed remediations.
 Phase 8's tooling exit gate is complete; its native retry rejection and
 instrumentation limitations remain explicit, not parity acceptance.
 Phase 9's consumer PGO assessment is complete with adoption rejected.
-Next evaluate Phase 10 syscall hypotheses as separately pinned
-experiments, and complete Phase 11 policy/endurance work. Shared-host training,
+Phase 10's fresh syscall/scheduler attribution is complete with a no-production-
+change verdict; see the [evidence and reevaluation](performance-phase10/README.md).
+Next complete Phase 11 policy/endurance work. Shared-host training,
 profiling, timing and pressure captures run serially; freeze implementation
 and build identities for each capture and retain rejected variants.
 
@@ -835,7 +836,19 @@ parity finding. Any adopted variant needs its own Phase 12 source/build scope.
 
 Dependencies: checkpoint baseline and Phase 1 control-progress contracts;
 Phase 8 for qualification. Assessment: A2. Owners: messenger/transport.
-Status: pending attribution; no demonstrated additional safe small fix.
+Status: complete attribution experiment; no production change. See the
+[Phase 10 contract, repeated evidence and verdict](performance-phase10/README.md).
+The final source-bound 36-leg capture at
+`/root/proj/rados-go/phase10-syscalls-20261003212821` has 2,294,809 measured
+operations and exact raw reproduction. Separate phase-filtered baseline,
+raw-address socket/futex/epoll traces and CPU/context-switch probes cover small
+c1 reads and concurrent reads/writes. Small reads already issue about one
+socket write/op; concurrent-write control candidates do not prove ready-frame
+density. Scheduling costs vary by workload and observer overhead is explicit.
+No causal safe small optimization or independent adoption benefit is established;
+ACK ambiguity, unavailable scheduler tracepoints and native instrumentation are
+not silently promoted to certainty. No transport, runtime, TCP or crypto policy
+changed. This closes the permitted no-change experiment, not native CPU parity.
 
 - First measurement: fresh matched, excluded profiles on small c1 reads and
   concurrent read/write cells, recording socket read/write, ACK, epoll and

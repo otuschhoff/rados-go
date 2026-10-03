@@ -351,6 +351,7 @@ int main(int argc, char **argv) {
 	int rss_started = 0;
 	int error = 0, payload_verified = 0, cleanup_verified = 0;
 	struct rusage before = {0}, after = {0};
+	struct timespec window_start = {0}, window_end = {0};
 	uint64_t rss_before = 0, rss_after = 0, rss_cleanup = 0, deadline = 0;
 	const char *entity = argc == 6 ? argv[5] : "client.p07";
 	if ((error = api.create2(&cluster, "ceph", entity, 0)) || (error = api.conf_read_file(cluster, argv[1])) ||
@@ -392,8 +393,10 @@ int main(int argc, char **argv) {
 	rss_started = 1;
 	rss_before = rss_sampler.baseline.bytes;
 	if (getrusage(RUSAGE_SELF, &before)) { error = -EIO; goto cleanup; }
+	if (clock_gettime(CLOCK_REALTIME, &window_start)) { error = -EIO; goto cleanup; }
 	error = collect_native_qualification_phase(io.concurrency, ((pgo_diagnostic ? 10000ULL : 100000ULL) + (uint64_t)io.concurrency - 1) / (uint64_t)io.concurrency,
 		pgo_diagnostic ? 8000000000ULL : 60000000000ULL, QUALIFICATION_RECORD_LIMIT / (uint64_t)io.concurrency, deadline, qualification_now, qualification_io_operation, &io, &measured);
+	if (clock_gettime(CLOCK_REALTIME, &window_end) && !error) error = -EIO;
 	int rss_error = qualification_rss_stop(&rss_sampler);
 	rss_started = 0;
 	if (!rss_error) rss_error = qualification_rss_validate(&rss_sampler, measured.start_ns, measured.elapsed_ns);
@@ -461,6 +464,9 @@ emit:
 		if (rss_sampler.samples && rss_sampler.count) qualification_print_memory(output, &rss_sampler, measured.start_ns);
 		fprintf(output, "},\"error\":");
 		if (error) fprintf(output, "\"native_error_%d\"", error); else fprintf(output, "null");
+		fprintf(output, ",\"measurement_window\":{\"clock\":\"realtime\",\"start_ns\":\"%llu\",\"end_ns\":\"%llu\"}",
+			(unsigned long long)window_start.tv_sec * 1000000000ULL + (unsigned long long)window_start.tv_nsec,
+			(unsigned long long)window_end.tv_sec * 1000000000ULL + (unsigned long long)window_end.tv_nsec);
 		fprintf(output, ",\"limitations\":[\"Retry counts are unknown, not zero; no qualification acceptance\",\"RSS interval samples include harness retention; library-only RSS is not established\",\"Measured CPU includes worker start, RSS sampling and record retention\",\"Synchronous RPC cancellation is not immediate: a failed safety deadline may overrun by up to the 30-second RPC timeout\",\"Source/binary, placement/health and Go pairing require an outer evidence driver\"]}\n");
 		free(latencies);
 	}

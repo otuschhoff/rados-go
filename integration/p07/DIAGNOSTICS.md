@@ -115,6 +115,21 @@ qualification work, not results of this two-leg smoke.
 
 ## Outputs
 
+Fresh syscall/CPU/software-context-switch attribution is a separate excluded
+experiment, documented in the [Phase 10 assessment](../../docs/performance-phase10/README.md):
+
+```sh
+node integration/p07/syscalls.mjs /absolute/fresh/private-root p07-parity-sys-fresh-prefix
+node integration/p07/syscalls.mjs analyze /absolute/private-root /absolute/private-root/fresh-reanalysis.json
+```
+
+Use the repository root and already approved deployment/path variables. The
+fixed 36-leg serial plan separates baseline, strace and perf processes; collector
+realtime windows exclude setup/warmup/cleanup. Raw-address socket traces do not
+dump payloads. Censored/cross-boundary calls, control-size ambiguity and software
+scheduler limitations stay labeled; blocked durations are not CPU. Final verdict
+is no production change, not parity. Private traces/profiles remain outside Git.
+
 Consumer PGO training and held-out diagnostics use a separate explicit driver:
 
 ```sh

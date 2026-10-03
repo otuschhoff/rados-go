@@ -490,6 +490,7 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 		destinations[worker] = make([]byte, int(matrix.size))
 	}
 	var measuredBefore resourceSnapshot
+	var windowStart, windowEnd time.Time
 	var rssSampler *qualificationRSSSampler
 	var measuredResources resources
 	var rssBefore, rssAfter, rssCleanup uint64
@@ -544,10 +545,13 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 			measuredBefore, err = snapshotResources()
 			if err != nil {
 				rssSampler.stopAndJoin()
+			} else {
+				windowStart = time.Now()
 			}
 			return err
 		},
 		afterMeasured: func() error {
+			windowEnd = time.Now()
 			rssSampler.stopAndJoin()
 			after, err := snapshotResources()
 			if err == nil {
@@ -646,8 +650,10 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 		Report      report               `json:"report"`
 		Attempt     qualificationAttempt `json:"attempt"`
 		Error       *string              `json:"error"`
+		Window      map[string]string    `json:"measurement_window"`
 		Limitations []string             `json:"limitations"`
 	}{status, config, report{Implementation: "go", Transport: "secure", Environment: environment{GOOS: runtime.GOOS, GOARCH: runtime.GOARCH, GoVersion: runtime.Version(), GOMAXPROCS: runtime.GOMAXPROCS(0)}, Rows: []row{result}}, attempt, failure,
+		map[string]string{"clock": "realtime", "start_ns": strconv.FormatInt(windowStart.UnixNano(), 10), "end_ns": strconv.FormatInt(windowEnd.UnixNano(), 10)},
 		[]string{"Retry observation counts request preparations beyond the first plus messenger replay dispatches; missing dispatch coverage stays unknown", "RSS interval samples include harness retention; library-only RSS is not established", "Measured CPU includes worker start, RSS sampling, retry observation and record retention; excludes warmup, final verification and cleanup", "Source/binary, placement/health and native pairing require an outer evidence driver; no qualification acceptance"}})
 	return errors.Join(collectionErr, outputErr)
 }
