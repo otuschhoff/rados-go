@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
+import {createQualificationPlan, validateQualificationPlan, qualificationOrder, analyzeQualificationFiles} from './qualification.mjs';
 
 export const parityCells = [
   {size: 1048576, concurrency: 1, workload: 'write', operations: 1024},
@@ -73,7 +74,17 @@ export function validateQualificationLeg(report, implementation, cell, evidence)
   assert(Number.isSafeInteger(evidence.warmup?.successful_operations) && evidence.warmup.successful_operations >= 10000, 'warmup count minimum');
   assert.equal(evidence.warmup.unexpected_failures, 0, 'warmup failures');
   assert.equal(evidence.warmup.censored, 0, 'warmup censoring');
-  assert(Array.isArray(evidence.records) && evidence.records.length === row.operations, 'raw operation population');
+  const latencies = validateQualificationRecords(cell, evidence, row.elapsed_ns, populations);
+  latencies.sort((left, right) => left - right);
+  for (const [field, quantile] of [['p50_ns', .5], ['p95_ns', .95], ['p99_ns', .99]]) {
+    assert.equal(row[field], latencies[Math.ceil(latencies.length * quantile) - 1], 'raw quantile agreement');
+  }
+  return {...row, ...validateQualificationMemory(evidence.memory, row.elapsed_ns), evidence_status: 'leg_validated_not_matrix_qualification'};
+}
+
+export function validateQualificationRecords(cell, evidence, elapsedNS, populations) {
+  assert(Array.isArray(populations) && populations.length === cell.concurrency && populations.every(count => Number.isSafeInteger(count) && count > 0), 'raw worker populations');
+  assert(Array.isArray(evidence.records) && evidence.records.length === populations.reduce((sum, count) => sum + count, 0), 'raw operation population');
   const identities = new Set(), ordinals = Array.from({length: cell.concurrency}, () => 0), workerEnds = Array.from({length: cell.concurrency}, () => 0), latencies = [];
   for (const record of evidence.records) {
     assert.equal(record.round, evidence.round, 'operation round');
@@ -85,7 +96,7 @@ export function validateQualificationLeg(report, implementation, cell, evidence)
     assert.equal(record.object, fixtureName(cell, record.worker), 'operation fixture');
     assert.equal(record.type, cell.workload === 'mixed' ? (record.ordinal % 2 ? 'write' : 'read') : cell.workload, 'operation type');
     assert(Number.isSafeInteger(record.start_ns) && record.start_ns >= 0, 'operation start');
-    assert(Number.isSafeInteger(record.end_ns) && record.end_ns > record.start_ns && record.end_ns <= row.elapsed_ns, 'operation end');
+    assert(Number.isSafeInteger(record.end_ns) && record.end_ns > record.start_ns && record.end_ns <= elapsedNS, 'operation end');
     assert(record.start_ns >= workerEnds[record.worker], 'closed-loop worker operations overlap');
     workerEnds[record.worker] = record.end_ns;
     assert.equal(record.success, true, 'unexpected operation failure');
@@ -97,11 +108,7 @@ export function validateQualificationLeg(report, implementation, cell, evidence)
     latencies.push(record.end_ns - record.start_ns);
   }
   assert(ordinals.every((count, worker) => count === populations[worker]), 'worker operation population');
-  latencies.sort((left, right) => left - right);
-  for (const [field, quantile] of [['p50_ns', .5], ['p95_ns', .95], ['p99_ns', .99]]) {
-    assert.equal(row[field], latencies[Math.ceil(latencies.length * quantile) - 1], 'raw quantile agreement');
-  }
-  return {...row, ...validateQualificationMemory(evidence.memory, row.elapsed_ns), evidence_status: 'leg_validated_not_matrix_qualification'};
+  return latencies;
 }
 
 export function validateQualificationMemory(memory, elapsedNS) {
@@ -219,7 +226,7 @@ export function runParity(root, namespace, repetitions = 6) {
   if (failures.length) throw Error(failures[0].error);
 }
 
-export function runQualificationSmoke(root, namespace) {
+export function runQualificationSmoke(root, namespace, planFile = null) {
   assert(/^p07-parity-[a-z0-9-]+$/.test(namespace) && namespace.length <= 64);
   const env = process.env;
   for (const name of ['P07_PARITY_CONFIG', 'P07_PARITY_KEY', 'P07_PARITY_KEYRING', 'P07_PARITY_MONITORS_FILE', 'P07_PARITY_FSID_FILE']) assert(env[name], `missing ${name}`);
@@ -236,6 +243,12 @@ export function runQualificationSmoke(root, namespace) {
     return result.stdout;
   };
   const cell = {size: 4096, concurrency: 1, workload: 'read'};
+  const plan = planFile ? validateQualificationPlan(JSON.parse(fs.readFileSync(planFile, 'utf8'))) : createQualificationPlan({cells: [{id: 'read-small', pool: 'readcache', ...cell}], seed: 42, bootstrapSeed: 123});
+  if (planFile) assert(namespace.length <= 48, 'matrix namespace prefix too long');
+  write('plan.json', plan);
+  const schedule = planFile ? plan.cells.flatMap((cell, cellIndex) => Array.from({length: plan.rounds}, (_, index) => ({cell, round: index + 1})).flatMap(({cell, round}) =>
+    qualificationOrder(plan, cell.id, round).map((implementation, position) => ({cell, round, implementation, name: `${cell.id}-r${round}-l${position + 1}`, namespace: `${namespace}-c${cellIndex}r${round}`})))) :
+    ['go', 'native'].map(implementation => ({cell: plan.cells[0], round: 1, implementation, name: `r1-${implementation}`, namespace}));
   const fsid = fs.readFileSync(env.P07_PARITY_FSID_FILE, 'utf8').trim();
   const monitors = fs.readFileSync(env.P07_PARITY_MONITORS_FILE, 'utf8').trim().split(/\s+/).map(host => `${host}:3300`).join(',');
   const ceph = (name, args) => JSON.parse(execute(name, 'ceph', ['-c', env.P07_PARITY_CONFIG, '-n', 'client.amakura', '-k', env.P07_PARITY_KEY, ...args, '--format', 'json']));
@@ -243,11 +256,11 @@ export function runQualificationSmoke(root, namespace) {
   const sourcePins = () => sourceFiles.map(file => ({file, sha256: digest(file)}));
   const sources = sourcePins(); write('sources-before.json', sources);
   const binaries = {go: path.join(root, 'go-benchmark'), native: path.join(root, 'native-qualification'), checker: path.join(root, 'mode-check')};
-  const attempts = [], failures = [];
-  write('methodology.json', {status: 'fixed Go/native integration smoke, not ABBA or qualification', pool: 'readcache', namespace, cell, runtime, affinity: '0-9', order: ['go', 'native'],
+  const attempts = [], failures = [], capturedRounds = new Map();
+  write('methodology.json', {status: planFile ? 'predeclared sustained ABBA capture, not qualification' : 'fixed Go/native integration smoke, not ABBA or qualification', plan_id: plan.plan_id, namespace, schedule, runtime, affinity: '0-9',
     round: 1, seed: 42, warmup_minimum_seconds: 10, warmup_minimum_operations: 10000, measured_minimum_seconds: 60, measured_minimum_operations: 100000,
     operation_timeout_seconds: 30, safety_deadline_seconds: 900, maximum_records_per_phase: 1000000,
-    rss: '100ms interval samples and immediately preceding connected/warmed baseline; harness retention included', retries: 'unknown, not zero', observation: 'health/placement at leg boundaries only', stopping: 'fixed two legs; retain failed attempts; do not retry for a pass'});
+    rss: '100ms interval samples and immediately preceding connected/warmed baseline; harness retention included', retries: 'Go preparation/replay-dispatch observation; native unknown, not zero', observation: 'health/placement at leg boundaries only', stopping: 'fixed two legs; retain failed attempts; do not retry for a pass'});
   try {
     execute('build-go', 'go', ['build', '-o', binaries.go, './integration/p07/benchmark']);
     execute('build-native', 'gcc', ['-O2', '-std=c11', '-D_POSIX_C_SOURCE=200809L', '-Wall', '-Wextra', '-Werror', '-pthread', 'integration/p07/native_qualification.c', '-ldl', '-o', binaries.native]);
@@ -256,85 +269,116 @@ export function runQualificationSmoke(root, namespace) {
     const library = fs.realpathSync('/lib64/librados.so.2'), libraryPin = digest(library);
     write('native-library.json', {path: library, sha256: libraryPin, release: execute('native-version', 'ceph', ['--version']).trim()});
     const warnings = validateParityHealth(ceph('health-before', ['status']), fsid);
-    const placement = ceph('placement-before', ['osd', 'map', 'readcache', fixtureName(cell, 0), namespace]);
-    assert(placement.pgid && placement.acting?.length && Number.isInteger(placement.acting_primary));
-    for (const implementation of ['go', 'native']) {
-      assert.deepEqual(validateParityHealth(ceph(`${implementation}-health-before`, ['status']), fsid), warnings);
-      const name = `r1-${implementation}`, file = path.join(root, `${name}.attempt.json`);
-      const extra = {P07_PARITY_NAMESPACE: namespace, P07_MATRIX_SIZE: '4096', P07_MATRIX_CONCURRENCY: '1', P07_MATRIX_WORKLOAD: 'read',
-        P07_QUALIFICATION_FILE: file, P07_QUALIFICATION_ROUND: '1', P07_QUALIFICATION_SEED: '42', P07_QUALIFICATION_LEG: name};
-      const args = implementation === 'go' ? ['-monitors', monitors, '-fsid', fsid, '-key-file', env.P07_PARITY_KEY, '-entity', 'client.amakura', '-pool', 'readcache', '-transport', 'secure'] : [env.P07_PARITY_CONFIG, env.P07_PARITY_KEYRING, 'readcache', 'secure', 'client.amakura'];
-      if (implementation === 'go') { extra.P07_READ_INTO = '1'; extra.P07_MODE_EVIDENCE_FILE = path.join(root, 'go.modes.json'); }
-      else extra.P07_NATIVE_MODE_LOG = path.join(root, 'native.modes.log');
-      const fixtureArgs = ['-c', env.P07_PARITY_CONFIG, '-n', 'client.amakura', '-k', env.P07_PARITY_KEY, '-p', 'readcache', '-N', namespace];
-      const collisionPayload = path.join(root, `${implementation}-collision-payload.bin`);
-      fs.writeFileSync(collisionPayload, Buffer.alloc(4096, 0xa7), {flag: 'wx', mode: 0o600});
-      execute(`${implementation}-collision-seed`, 'rados', [...fixtureArgs, 'put', fixtureName(cell, 0), collisionPayload]);
+    const captureStartedMS = Date.now();
+    for (const {implementation, name, cell, round, namespace} of schedule) {
+      const healthBefore = ceph(`${name}-health-before`, ['status']);
+      assert.deepEqual(validateParityHealth(healthBefore, fsid), warnings);
+      const placement = Array.from({length: cell.concurrency}, (_, worker) => ({worker, before: ceph(`${name}-w${worker}-placement-before`, ['osd', 'map', cell.pool, fixtureName(cell, worker), namespace])}));
+      for (const value of placement) assert(value.before.pgid && value.before.acting?.length && Number.isInteger(value.before.acting_primary));
+      const file = path.join(root, `${name}.attempt.json`);
+      const extra = {P07_PARITY_NAMESPACE: namespace, P07_MATRIX_SIZE: String(cell.size), P07_MATRIX_CONCURRENCY: String(cell.concurrency), P07_MATRIX_WORKLOAD: cell.workload,
+        P07_QUALIFICATION_FILE: file, P07_QUALIFICATION_ROUND: String(round), P07_QUALIFICATION_SEED: String(plan.seed), P07_QUALIFICATION_LEG: name};
+      const args = implementation === 'go' ? ['-monitors', monitors, '-fsid', fsid, '-key-file', env.P07_PARITY_KEY, '-entity', 'client.amakura', '-pool', cell.pool, '-transport', 'secure'] : [env.P07_PARITY_CONFIG, env.P07_PARITY_KEYRING, cell.pool, 'secure', 'client.amakura'];
+      if (implementation === 'go') { extra.P07_READ_INTO = '1'; extra.P07_MODE_EVIDENCE_FILE = path.join(root, `${name}.modes.json`); }
+      else extra.P07_NATIVE_MODE_LOG = path.join(root, `${name}.modes.log`);
+      const fixtureArgs = ['-c', env.P07_PARITY_CONFIG, '-n', 'client.amakura', '-k', env.P07_PARITY_KEY, '-p', cell.pool, '-N', namespace];
+      for (let worker = 0; worker < cell.concurrency; worker++) {
+        execute(`${name}-w${worker}-absence`, 'rados', [...fixtureArgs, 'stat', fixtureName(cell, worker)], {}, 1);
+        assert.match(fs.readFileSync(path.join(root, `${name}-w${worker}-absence.stderr`), 'utf8'), /\(2\) No such file or directory/);
+      }
+      const collisionPayload = path.join(root, `${name}-collision-payload.bin`);
+      fs.writeFileSync(collisionPayload, Buffer.alloc(cell.size, 0xa7), {flag: 'wx', mode: 0o600});
+      execute(`${name}-collision-seed`, 'rados', [...fixtureArgs, 'put', fixtureName(cell, 0), collisionPayload]);
       try {
-        const collision = {...extra, P07_QUALIFICATION_FILE: path.join(root, `${implementation}-collision.attempt.json`), P07_QUALIFICATION_LEG: `${implementation}-collision`};
-        if (implementation === 'go') collision.P07_MODE_EVIDENCE_FILE = path.join(root, 'go-collision.modes.json');
-        else collision.P07_NATIVE_MODE_LOG = path.join(root, 'native-collision.modes.log');
-        execute(`${implementation}-collision`, 'taskset', ['-c', '0-9', binaries[implementation], ...args], collision, 1);
+        const collision = {...extra, P07_QUALIFICATION_FILE: path.join(root, `${name}-collision.attempt.json`), P07_QUALIFICATION_LEG: `${name}-collision`};
+        if (implementation === 'go') collision.P07_MODE_EVIDENCE_FILE = path.join(root, `${name}-collision.modes.json`);
+        else collision.P07_NATIVE_MODE_LOG = path.join(root, `${name}-collision.modes.log`);
+        execute(`${name}-collision`, 'taskset', ['-c', '0-9', binaries[implementation], ...args], collision, 1);
         const rejected = JSON.parse(fs.readFileSync(collision.P07_QUALIFICATION_FILE, 'utf8'));
         assert.equal(rejected.status, 'failed'); assert(rejected.error);
         assert.equal(rejected.attempt.payload_verified, false); assert.equal(rejected.attempt.cleanup_verified, true);
         assert.equal(rejected.attempt.measured.records?.length ?? 0, 0);
-        const retained = path.join(root, `${implementation}-collision-retained.bin`);
-        execute(`${implementation}-collision-get`, 'rados', [...fixtureArgs, 'get', fixtureName(cell, 0), retained]);
+        const retained = path.join(root, `${name}-collision-retained.bin`);
+        execute(`${name}-collision-get`, 'rados', [...fixtureArgs, 'get', fixtureName(cell, 0), retained]);
         fs.chmodSync(retained, 0o600);
         assert.deepEqual(fs.readFileSync(retained), fs.readFileSync(collisionPayload), 'pre-existing fixture must not be overwritten or removed');
       } finally {
-        execute(`${implementation}-collision-cleanup`, 'rados', [...fixtureArgs, 'rm', fixtureName(cell, 0)]);
-        execute(`${implementation}-collision-notfound`, 'rados', [...fixtureArgs, 'stat', fixtureName(cell, 0)], {}, 1);
-        assert.match(fs.readFileSync(path.join(root, `${implementation}-collision-notfound.stderr`), 'utf8'), /\(2\) No such file or directory/);
+        execute(`${name}-collision-cleanup`, 'rados', [...fixtureArgs, 'rm', fixtureName(cell, 0)]);
+        execute(`${name}-collision-notfound`, 'rados', [...fixtureArgs, 'stat', fixtureName(cell, 0)], {}, 1);
+        assert.match(fs.readFileSync(path.join(root, `${name}-collision-notfound.stderr`), 'utf8'), /\(2\) No such file or directory/);
       }
       execute(name, 'taskset', ['-c', '0-9', binaries[implementation], ...args], extra);
       assert.equal(fs.statSync(file).mode & 0o777, 0o600);
       const capture = JSON.parse(fs.readFileSync(file, 'utf8'));
       assert.equal(capture.status, `sustained_${implementation}_capture_unqualified`);
       assert.equal(capture.error, null);
-      assert.deepEqual(capture.identity, {round: 1, leg: name, seed: 42});
+      assert.deepEqual(capture.identity, {round, leg: name, seed: plan.seed});
       assert.equal(capture.attempt.payload_verified, true); assert.equal(capture.attempt.cleanup_verified, true);
       for (const [phase, seconds, count] of [['warmup', 10, 10000], ['measured', 60, 100000]]) {
         const value = capture.attempt[phase];
         assert(value.elapsed_ns >= seconds * 1000000000 && value.successful_operations >= count);
         assert.equal(value.unexpected_failures, 0); assert.equal(value.censored, 0);
         assert.equal(value.records.length, value.successful_operations);
-        assert.equal(value.operations_per_worker.length, 1); assert.equal(value.operations_per_worker[0], value.records.length);
-        const identities = new Set(); let preceding = 0;
-        for (const [ordinal, record] of value.records.entries()) {
-          assert.equal(record.round, 1); assert.equal(record.leg, name); assert.equal(record.ordinal, ordinal); assert.equal(record.worker, 0);
-          assert.equal(record.object, fixtureName(cell, 0)); assert.equal(record.type, 'read');
+        assert.equal(value.operations_per_worker.length, cell.concurrency);
+        const identities = new Set(), ordinals = Array(cell.concurrency).fill(0), preceding = Array(cell.concurrency).fill(0);
+        for (const record of value.records) {
+          assert.equal(record.round, round); assert.equal(record.leg, name); assert.equal(record.ordinal, ordinals[record.worker]++);
+          assert.equal(record.object, fixtureName(cell, record.worker)); assert.equal(record.type, cell.workload === 'mixed' ? record.ordinal % 2 ? 'write' : 'read' : cell.workload);
           assert(!identities.has(record.operation_id)); identities.add(record.operation_id);
-          assert(record.start_ns >= preceding && record.end_ns > record.start_ns && record.end_ns <= value.elapsed_ns); preceding = record.end_ns;
+          assert(record.start_ns >= preceding[record.worker] && record.end_ns > record.start_ns && record.end_ns <= value.elapsed_ns); preceding[record.worker] = record.end_ns;
           assert.equal(record.success, true); assert.equal(record.error, null); assert.equal(record.timeout, false); assert.equal(record.censored, false);
-          assert.equal(record.retry_count, null); assert(record.timeout_deadline_ns >= record.end_ns);
+          if (implementation === 'native') assert.equal(record.retry_count, null);
+          else assert(Number.isSafeInteger(record.retry_count) && record.retry_count >= 0, 'Go retries must be observed');
+          assert(record.timeout_deadline_ns >= record.end_ns);
           assert(record.timeout_deadline_ns - record.start_ns <= 30000000000);
         }
+        assert.deepEqual(ordinals, value.operations_per_worker);
       }
       const measured = capture.attempt.measured;
       const memory = validateQualificationMemory(capture.attempt.memory, measured.elapsed_ns);
       validateParity(capture.report, implementation, cell, measured.successful_operations);
-      assert.throws(() => validateQualificationLeg(capture.report, implementation, cell, {...capture.identity, warmup: capture.attempt.warmup, records: measured.records, operations_per_worker: measured.operations_per_worker}), /retry count must be observed/);
-      attempts.push({implementation, file: path.basename(file), warmup_operations: capture.attempt.warmup.successful_operations, measured_operations: measured.successful_operations, elapsed_ns: measured.elapsed_ns, rss_samples: capture.attempt.memory.samples.length, memory, collision_rejected_without_mutation: true, qualification_rejected: 'retry count must be observed'});
-      assert.deepEqual(validateParityHealth(ceph(`${implementation}-health-after`, ['status']), fsid), warnings);
-      const after = ceph(`${implementation}-placement-after`, ['osd', 'map', 'readcache', fixtureName(cell, 0), namespace]);
-      for (const key of ['pgid', 'acting', 'acting_primary']) assert.deepEqual(after[key], placement[key]);
+      const evidence = {...capture.identity, warmup: capture.attempt.warmup, records: measured.records, operations_per_worker: measured.operations_per_worker, memory: capture.attempt.memory};
+      if (implementation === 'native') assert.throws(() => validateQualificationLeg(capture.report, implementation, cell, evidence), /retry count must be observed/);
+      else assert.equal(validateQualificationLeg(capture.report, implementation, cell, evidence).evidence_status, 'leg_validated_not_matrix_qualification');
+      attempts.push({implementation, file: path.basename(file), warmup_operations: capture.attempt.warmup.successful_operations, measured_operations: measured.successful_operations, elapsed_ns: measured.elapsed_ns, rss_samples: capture.attempt.memory.samples.length, memory, collision_rejected_without_mutation: true, evidence_status: implementation === 'native' ? 'retry_count_unknown_qualification_rejected' : 'leg_validated_not_matrix_qualification'});
+      const healthAfter = ceph(`${name}-health-after`, ['status']);
+      assert.deepEqual(validateParityHealth(healthAfter, fsid), warnings);
+      for (const value of placement) {
+        value.after = ceph(`${name}-w${value.worker}-placement-after`, ['osd', 'map', cell.pool, fixtureName(cell, value.worker), namespace]);
+        for (const key of ['pgid', 'acting', 'acting_primary']) assert.deepEqual(value.after[key], value.before[key]);
+      }
       assert.equal(digest(binaries[implementation]), binaryPins[implementation]);
+      assert.deepEqual(sourcePins(), sources); assert.equal(digest(library), libraryPin);
+      const key = `${cell.id}:${round}`;
+      if (!capturedRounds.has(key)) capturedRounds.set(key, {cell_id: cell.id, round, namespace, plan_id: plan.plan_id, legs: []});
+      const pins = {source: crypto.createHash('sha256').update(JSON.stringify(sources)).digest('hex'), binary: binaryPins[implementation], tool: digest('integration/p07/qualification.mjs'), ...(implementation === 'native' ? {library: libraryPin} : {})};
+      capturedRounds.get(key).legs.push({implementation, process_id: name, capture: {file: path.basename(file), sha256: digest(file)},
+        modes: {file: `${name}.modes.json`}, provenance: {plan_id: plan.plan_id, pool: cell.pool, namespace, runtime: plan.runtime, resource_scope: plan.resource_scope,
+          instrumentation: plan.instrumentation[implementation], rss_method: plan.rss_method, pins: {before: pins, after: {...pins}}, fsid, health: {before: healthBefore, after: healthAfter}, placement}});
     }
-    execute('mode-check', binaries.checker, ['-go', path.join(root, 'go.modes.json'), '-native-log', path.join(root, 'native.modes.log'), '-requested', 'secure', '-native-out', path.join(root, 'native.modes.json')]);
+    const rounds = [...capturedRounds.values()], legs = rounds.flatMap(round => round.legs);
+    const goModes = path.join(root, legs.find(leg => leg.implementation === 'go').modes.file);
+    for (const leg of legs.filter(leg => leg.implementation === 'native')) execute(`${leg.process_id}-mode-check`, binaries.checker,
+      ['-go', goModes, '-native-log', path.join(root, `${leg.process_id}.modes.log`), '-requested', 'secure', '-native-out', path.join(root, leg.modes.file)]);
+    for (const leg of legs) leg.modes.sha256 = digest(path.join(root, leg.modes.file));
+    write('manifest.json', {plan_id: plan.plan_id, capture_started_ms: captureStartedMS, rounds});
+    const analyzed = analyzeQualificationFiles(path.join(root, 'plan.json'), path.join(root, 'manifest.json'), path.join(root, 'analysis.json'));
+    assert.equal(analyzed.status, 'invalid_evidence', 'unknown native retry evidence must reject qualification');
+    assert(analyzed.attempted_legs.filter(leg => leg.implementation === 'go').every(leg => leg.status === 'leg_validated_not_matrix_qualification'), 'all Go raw evidence must validate');
+    assert(analyzed.attempted_legs.filter(leg => leg.implementation === 'native').every(leg => leg.findings.some(finding => /retry count must be observed/.test(finding))), 'native retry rejection retained');
     assert.equal(digest(library), libraryPin);
     assert.deepEqual(validateParityHealth(ceph('health-after', ['status']), fsid), warnings);
   } catch (error) { failures.push({error: error.message}); }
   const after = sourcePins(); write('sources-after.json', after);
   try { assert.deepEqual(after, sources); } catch (error) { failures.push({error: error.message}); }
-  write('summary.json', {status: failures.length ? 'failed' : 'integration_smoke_passed_not_qualification', attempts, failures});
+  write('summary.json', {status: failures.length ? 'failed' : planFile ? 'matrix_capture_complete_not_qualification' : 'integration_smoke_passed_not_qualification', plan_id: plan.plan_id, attempts, failures, attempted_rounds: [...capturedRounds.values()]});
   if (failures.length) throw Error(failures[0].error);
-  console.log(JSON.stringify({root, status: 'integration_smoke_passed_not_qualification', attempts}));
+  console.log(JSON.stringify({root, status: planFile ? 'matrix_capture_complete_not_qualification' : 'integration_smoke_passed_not_qualification', attempts}));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   if (process.argv.length === 5 && process.argv[4] === '--qualification-smoke') runQualificationSmoke(path.resolve(process.argv[2]), process.argv[3]);
+  else if (process.argv.length === 6 && process.argv[4] === '--qualification-matrix') runQualificationSmoke(path.resolve(process.argv[2]), process.argv[3], path.resolve(process.argv[5]));
   else {
   assert.equal(process.argv.length, 4, 'usage: node parity.mjs FRESH_PRIVATE_OUTPUT NAMESPACE [--qualification-smoke]');
   runParity(path.resolve(process.argv[2]), process.argv[3]);

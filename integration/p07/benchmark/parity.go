@@ -18,6 +18,7 @@ import (
 	"time"
 
 	rados "github.com/otuschhoff/rados-go"
+	"github.com/otuschhoff/rados-go/internal/msgr"
 )
 
 const qualificationRecordLimit = 1000000
@@ -460,16 +461,23 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 			operationCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 			defer cancel()
 			deadline, _ := operationCtx.Deadline()
+			operationCtx, observation := msgr.WithRequestAttempts(operationCtx)
 			result := qualificationOperationResult{Deadline: &deadline}
+			observed := func() qualificationOperationResult {
+				if count, known := observation.RetryCount(); known {
+					result.RetryCount = &count
+				}
+				return result
+			}
 			if matrix.workload == "write" || matrix.workload == "mixed" && ordinal%2 == 1 {
 				_, err := objects[worker].WriteFull(operationCtx, payloads[worker])
-				return result, err
+				return observed(), err
 			}
 			count, _, err := objects[worker].ReadInto(operationCtx, 0, destinations[worker])
 			if err == nil && !bytes.Equal(destinations[worker][:count], payloads[worker]) {
 				err = fmt.Errorf("qualification read payload mismatch for worker %d", worker)
 			}
-			return result, err
+			return observed(), err
 		},
 		beforeMeasured: func() error {
 			var err error
@@ -581,7 +589,7 @@ func runQualification(parent context.Context, pool rados.Pool, config qualificat
 		Error       *string              `json:"error"`
 		Limitations []string             `json:"limitations"`
 	}{status, config, report{Implementation: "go", Transport: "secure", Environment: environment{GOOS: runtime.GOOS, GOARCH: runtime.GOARCH, GoVersion: runtime.Version(), GOMAXPROCS: runtime.GOMAXPROCS(0)}, Rows: []row{result}}, attempt, failure,
-		[]string{"Retry counts are unobserved, not zero; no qualification acceptance", "RSS interval samples include harness retention; library-only RSS is not established", "Measured CPU includes worker start, RSS sampling and record retention; excludes warmup, final verification and cleanup", "Source/binary, placement/health and native pairing require an outer evidence driver"}})
+		[]string{"Retry observation counts request preparations beyond the first plus messenger replay dispatches; missing dispatch coverage stays unknown", "RSS interval samples include harness retention; library-only RSS is not established", "Measured CPU includes worker start, RSS sampling, retry observation and record retention; excludes warmup, final verification and cleanup", "Source/binary, placement/health and native pairing require an outer evidence driver; no qualification acceptance"}})
 	return errors.Join(collectionErr, outputErr)
 }
 

@@ -521,7 +521,9 @@ func TestSessionReconnectReplaysOriginalIdentity(t *testing.T) {
 	session := newTestSession(t, firstTransport, connector, config)
 	defer session.Stop()
 
-	result := submitAsync(session, context.Background(), testMessage("request"))
+	ctx, observation := WithRequestAttempts(context.Background())
+	RecordPreparedRequest(ctx)
+	result := submitAsync(session, ctx, testMessage("request"))
 	original := decodeWrittenMessage(t, firstTransport)
 	firstTransport.fail(errors.New("read failed"))
 	reconnect, ok := decodeWrittenControl(t, secondTransport).(SessionReconnect)
@@ -543,6 +545,9 @@ func TestSessionReconnectReplaysOriginalIdentity(t *testing.T) {
 	secondTransport.inject(messageFrame(t, response))
 	if outcome := waitOutcome(t, result); outcome.err != nil {
 		t.Fatal(outcome.err)
+	}
+	if retries, known := observation.RetryCount(); !known || retries != 1 {
+		t.Fatalf("reconnect replay: retries=%d known=%t", retries, known)
 	}
 }
 

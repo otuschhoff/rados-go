@@ -15,6 +15,57 @@ func TestRequestTimingCorrelatesSessionStages(t *testing.T) {
 	}
 }
 
+func TestRequestAttemptsObservePreparedRetriesAndReplay(t *testing.T) {
+	ctx, observation := WithRequestAttempts(context.Background())
+	if _, known := observation.RetryCount(); known {
+		t.Fatal("unobserved requests reported as zero retries")
+	}
+	RecordPreparedRequest(ctx)
+	if _, known := observation.RetryCount(); known {
+		t.Fatal("missing messenger observation reported as known")
+	}
+	recordRequestDispatch(ctx, false)
+	if retries, known := observation.RetryCount(); !known || retries != 0 {
+		t.Fatalf("first request: retries=%d known=%t", retries, known)
+	}
+	recordRequestDispatch(ctx, true)
+	RecordPreparedRequest(ctx)
+	recordRequestDispatch(ctx, false)
+	if retries, known := observation.RetryCount(); !known || retries != 2 {
+		t.Fatalf("prepared retry plus replay: retries=%d known=%t", retries, known)
+	}
+	otherCtx, other := WithRequestAttempts(ctx)
+	RecordPreparedRequest(otherCtx)
+	recordRequestDispatch(otherCtx, false)
+	if retries, known := other.RetryCount(); !known || retries != 0 {
+		t.Fatalf("isolated observation: retries=%d known=%t", retries, known)
+	}
+	if retries, known := observation.RetryCount(); !known || retries != 2 {
+		t.Fatal("nested operation contaminated parent observation")
+	}
+}
+
+func TestRequestAttemptsCorrelateActualSessionDispatch(t *testing.T) {
+	transport := newFakeTransport()
+	session := newTestSession(t, transport, nil, testSessionConfig(t))
+	defer session.Stop()
+	ctx, observation := WithRequestAttempts(context.Background())
+	RecordPreparedRequest(ctx)
+	result := submitAsync(session, ctx, testMessage("observed"))
+	request := decodeWrittenMessage(t, transport)
+	response := testMessage("response")
+	response.Header.Sequence = 1
+	response.Header.AckSequence = request.Header.Sequence
+	response.Header.TransactionID = request.Header.TransactionID
+	transport.inject(messageFrame(t, response))
+	if outcome := waitOutcome(t, result); outcome.err != nil {
+		t.Fatal(outcome.err)
+	}
+	if retries, known := observation.RetryCount(); !known || retries != 0 {
+		t.Fatalf("actual session dispatch: retries=%d known=%t", retries, known)
+	}
+}
+
 func testRequestTimingStages(t *testing.T, transactionID uint64) {
 	t.Helper()
 	transport := newFakeTransport()

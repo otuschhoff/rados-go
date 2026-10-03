@@ -342,8 +342,9 @@ Separate benchmark runs from race instrumentation.
 
 Phases 0-7 retain their historical contracts and evidence; Phases 8-14 own
 the remaining checkpoint work rather than restarting completed remediations.
-Start Phase 8 with collector consistency and retry-observability tests.
-Then evaluate Phase 9 PGO and Phase 10 syscall hypotheses as separately pinned
+Phase 8's tooling exit gate is complete; its native retry rejection and
+instrumentation limitations remain explicit, not parity acceptance.
+Next evaluate Phase 9 PGO and Phase 10 syscall hypotheses as separately pinned
 experiments, and complete Phase 11 policy/endurance work. Shared-host training,
 profiling, timing and pressure captures run serially; freeze implementation
 and build identities for each capture and retain rejected variants.
@@ -660,7 +661,8 @@ failures, and no Phase 7 completion commit is justified by these checks.
 
 Dependencies: Phase 0 contract and existing parity drivers. Assessments: A1,
 A4. Owners: Go/native benchmark collectors and evidence analyzer.
-Status: in progress. A Go collection primitive now tests both stopping minima,
+Status: complete within the tooling exit gate, not native parity qualification.
+A Go collection primitive now tests both stopping minima,
 synchronized concurrent workers, retained failures/censoring, cancellation and
 safety deadlines. Each phase has a one-million-record process limit, divided
 among workers; reaching that limit before both minima returns an error and
@@ -676,7 +678,7 @@ seeding, and cleanup owns only fixtures observed absent before the attempt.
 Native recorder allocation is outside per-operation timing, as in Go; measured
 CPU still includes worker startup and record storage in both implementations.
 
-The current collector integration smoke is privately retained at
+The earlier collector integration smoke is privately retained at
 `/root/proj/rados-go/qualification-smoke-20261003T164603`. It used one fixed
 Go/native pair on approved readcache, 4-KiB reads at concurrency one, not ABBA.
 Go warmup/measured populations were 24,347/148,790; native populations were
@@ -702,8 +704,9 @@ in explicit parity mode; ordinary benchmark payloads remain unchanged. The
 worker-zero captures are unaffected, but older concurrent captures must not be
 retroactively treated as byte-identical conditioning or qualification.
 
-Complete retry observation, library/harness cost separation, seeded ABBA rounds
-and matrix-wide analysis remain pending. Boundary RSS fields remain separate
+Native retry observation and library/harness cost separation remain qualification
+blockers. Seeded ABBA capture and matrix-wide analysis are implemented; fresh
+full-matrix qualification is not claimed. Boundary RSS fields remain separate
 from the new timestamped interval samples. The one-million-record
 limit can reject faster or imbalanced cells before the time minimum; such a
 failure is retained, never accepted as a truncated leg. This tooling smoke is
@@ -718,6 +721,43 @@ candidate check for prepared objecter attempts. This is not implemented or
 accepted retry telemetry: process/counter continuity, exact operation scope,
 reset detection, messenger replay coverage and agreement with the Go retry
 definition still require proof. Synchronous API success is insufficient.
+
+The final Phase 8 tooling smoke is privately retained at
+`/root/proj/rados-go/phase8-smoke-20261003172259`. Go warmup/measured counts
+were 25,015/152,326; native counts were 24,993/148,461. Both measured windows
+exceeded 60 seconds, and both retained 601 actual RSS samples. Go
+idle/peak/incremental RSS was 24,014,848/103,202,816/79,187,968 bytes;
+native was 29,450,240/34,234,368/4,784,128 bytes. These remain harness-inclusive
+observations. Payload, collision preservation, cleanup/NotFound, artifact pins,
+boundary health/placement and authenticated secure MON/OSD modes passed.
+Go raw evidence validates with opt-in bounded preparation/replay-dispatch
+counts; uninstrumented custom sessions or missing dispatch coverage stay unknown.
+The real messenger reconnect test observes one replay, and observer isolation,
+prepared retry accounting and collector failure paths pass race tests.
+Native raw analysis deliberately rejects unknown retries. The earlier
+`phase8-smoke-20261003171919` remains tied to its earlier analyzer source.
+
+The new analyzer freezes matrix, five-or-more rounds, seeded ABBA ordering,
+equal two-leg arithmetic weighting, geometric paired-round ratios, bootstrap
+seed/count, nearest-rank quantiles and Bonferroni simultaneous 95% intervals.
+It resamples whole paired-round vectors across all cells and preserves available
+bounds when another estimator is unknown. Synthetic pass/fail/undefined,
+single-cell failure, changed gates, missing/duplicate rounds, lifecycle reuse,
+unequal weighting and variable-round cases pass. Raw validation binds warmup
+and measured counters/records, conditioning, runtime, artifact continuity,
+health, every worker's placement, modes and RSS. Exclusive pinned file analysis
+retains all attempted leg findings and labeled raw tails/histograms, and checks
+the executing analyzer digest. The smoke is a fixed pair, not a full ABBA matrix;
+its manifest remains unqualified and reproducibly rejected.
+
+Native `msgr_send_messages` does not count ProtocolV2 replay writes, so it cannot
+prove zero retries. Also, `debug_ms=1/1` logs ordinary messages as well as ready
+events. The plan explicitly binds this instrumentation and whole-process harness
+scope: these native captures are not uninstrumented primary qualification timing.
+Neither successful API calls nor a passing statistical-tool result can establish
+library-only resource parity. Phases 10-12 retain the attribution and fresh
+qualification obligations; P07/P13 historical report renewal remains Phase 14
+work requiring a separately approved disposable environment.
 
 - First discriminating checks: deterministic collector tests cross the time
   minimum before the count minimum and vice versa; neither may stop early.

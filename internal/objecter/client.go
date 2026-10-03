@@ -429,6 +429,7 @@ func (client *Client) executeRoutedResultInto(ctx context.Context, target Target
 			return Result{}, preserveOutcomeUnknown(lastErr, err)
 		}
 		object := osd.HObject{Key: currentTarget.Locator, Object: currentTarget.Object, Snapshot: currentTarget.Snapshot, Hash: route.RawHash, Namespace: currentTarget.Namespace, Pool: currentTarget.PoolID}
+		msgr.RecordPreparedRequest(ctx)
 		if payloadLease != nil {
 			request = msgr.RetainLeasedMessage(request, payloadLease)
 		} else if immutable {

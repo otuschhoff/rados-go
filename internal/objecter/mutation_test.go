@@ -270,7 +270,8 @@ func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	})
 	defer client.Close()
 	payload := []byte("abc")
-	result, err := client.Mutate(context.Background(), Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 3, Data: payload})
+	ctx, observation := msgr.WithRequestAttempts(context.Background())
+	result, err := client.Mutate(ctx, Target{PoolID: 7, Object: "object", Snapshot: osd.NoSnap}, osd.Operation{Code: osd.OpAppend, Length: 3, Data: payload})
 	if err != nil || result.Version != 19 {
 		t.Fatalf("result=%+v error=%v", result, err)
 	}
@@ -286,6 +287,9 @@ func TestMutationRetryPreservesIdentityAndPayload(t *testing.T) {
 	payload[0] = 'z'
 	if string(requests[0].Data) != "abc" || string(requests[1].Data) != "abc" {
 		t.Fatal("caller mutation changed retained retry payload")
+	}
+	if _, known := observation.RetryCount(); known {
+		t.Fatal("custom session without dispatch observation reported known retries")
 	}
 }
 

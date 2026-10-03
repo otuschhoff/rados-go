@@ -886,6 +886,7 @@ func (owner *sessionOwner) dispatch() {
 			pending.request.result <- submitResult{err: err}
 			return
 		}
+		replay := pending.seq != 0
 		if pending.seq == 0 {
 			sequence, err := owner.allocateSequence()
 			if err != nil {
@@ -917,6 +918,7 @@ func (owner *sessionOwner) dispatch() {
 			pending.message.payloadLease.Retain()
 			frame.payloadLease = pending.message.payloadLease
 		}
+		recordRequestDispatch(pending.request.ctx, replay)
 		owner.sendWrite(writeTask{frame: frame, request: pending.request, seq: pending.seq, transactionID: pending.message.Header.TransactionID})
 		return
 	}

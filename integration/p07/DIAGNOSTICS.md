@@ -61,12 +61,57 @@ never overwritten or removed by a rejected attempt. Failed outer startup or
 process executions retain exit metadata and private logs, but may have no
 complete attempt JSON; they cannot become accepted legs.
 
-This smoke never accepts qualification. Retry counts remain null rather than
-invented zeroes. RSS includes unequal harness recorder representations/retention,
-and measured CPU includes worker startup, RSS sampling and recorder storage;
-library-only costs are not established. There are no randomized ABBA rounds or matrix-wide
-confidence bounds. Ordinary fixed-count diagnostic behavior is unchanged.
+This smoke never accepts qualification. Go counts request preparations beyond
+the first plus messenger replay dispatches; incomplete coverage stays unknown.
+Native counts remain null rather than invented zeroes. Native enqueue counters
+do not cover replay writes. RSS includes unequal harness recorder retention,
+and CPU includes worker startup, sampling, observation and recorder storage.
+Native `debug_ms=1/1` also logs ordinary messages; its measured cost is explicitly
+instrumented, not primary uninstrumented qualification timing. Library-only
+costs are not established. The fixed-pair smoke is not an ABBA matrix.
+Ordinary fixed-count diagnostic behavior is unchanged.
 Go production builds remain CGO-free with standard-library crypto.
+
+## Frozen Matrix And Analysis
+
+The specification JSON declares `cells` (unique `id`, approved `pool`, `size`,
+`concurrency`, `workload`), `rounds` (at least five), `seed`, `bootstrapSeed`,
+and optionally `bootstrapReplicates` and `rssResolutionBytes`. The planner
+rejects changed gates or unsupported methodology. Review the matrix's fixture
+scope and disk capacity before executing it; this is not authorization for a
+new cluster, lifecycle operation or recovery experiment.
+
+```sh
+node integration/p07/qualification.mjs freeze /absolute/private/specification.json /absolute/private/fresh-plan.json
+node integration/p07/parity.mjs /absolute/fresh/private-matrix p07-parity-fresh-prefix --qualification-matrix /absolute/private/fresh-plan.json
+node integration/p07/qualification.mjs analyze /absolute/private-matrix/plan.json /absolute/private-matrix/manifest.json /absolute/private-matrix/fresh-analysis.json
+```
+
+The driver freezes the plan before capture, builds once, runs serially in seeded
+ABBA order, uses fresh processes and per-round fixture namespaces, checks every
+worker's placement, and retains failures without replacing legs for a pass.
+Unsafe capture failure aborts the run with incomplete evidence retained;
+incomplete rounds cannot qualify. It writes exclusive private plan, manifest,
+capture, mode, command, source/binary/library and analysis artifacts. Offline
+analysis verifies input hashes and its executing tool pin and refuses an
+existing output. Keep the source tree frozen throughout capture and re-analysis.
+
+Estimation equally weights the two implementation legs within each round,
+takes geometric means of paired-round ratios, and bootstraps whole round
+vectors across the matrix. Predeclared Bonferroni two-sided intervals preserve
+the original CPU 1.20, p99 1.25, throughput 0.90 and RSS 1.25 gates. Nonpositive
+or sub-resolution native RSS is unknown, never passing. Raw validation covers
+both phases, counters, operation budgets, modes, runtime, conditioning and
+artifact/health/placement continuity. Labeled distributions and each rejected
+attempt's findings are retained. Statistical tooling success is not parity
+acceptance; unknown native retries currently reject these matrix captures.
+
+The final Phase 8 tooling smoke at
+`/root/proj/rados-go/phase8-smoke-20261003172259` passed correctness and guard
+checks, validated Go observations and rejected native unknown retry evidence.
+It also exercised the exclusive pinned manifest analyzer. A full qualifying
+matrix and uninstrumented, library-attributed resource evidence remain later
+qualification work, not results of this two-leg smoke.
 
 ## Outputs
 

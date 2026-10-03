@@ -3,10 +3,50 @@ package msgr
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
 type requestTimingKey struct{}
+
+type requestAttemptsKey struct{}
+
+type RequestAttempts struct {
+	prepared   atomic.Uint64
+	dispatched atomic.Uint64
+	replayed   atomic.Uint64
+}
+
+func WithRequestAttempts(ctx context.Context) (context.Context, *RequestAttempts) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	observation := &RequestAttempts{}
+	return context.WithValue(ctx, requestAttemptsKey{}, observation), observation
+}
+
+func RecordPreparedRequest(ctx context.Context) {
+	if observation, _ := ctx.Value(requestAttemptsKey{}).(*RequestAttempts); observation != nil {
+		observation.prepared.Add(1)
+	}
+}
+
+func recordRequestDispatch(ctx context.Context, replay bool) {
+	if observation, _ := ctx.Value(requestAttemptsKey{}).(*RequestAttempts); observation != nil {
+		observation.dispatched.Add(1)
+		if replay {
+			observation.replayed.Add(1)
+		}
+	}
+}
+
+func (observation *RequestAttempts) RetryCount() (uint64, bool) {
+	prepared, dispatched, replayed := observation.prepared.Load(), observation.dispatched.Load(), observation.replayed.Load()
+	if prepared == 0 || dispatched < replayed || dispatched-replayed != prepared || prepared-1 > ^uint64(0)-replayed {
+		return 0, false
+	}
+	return prepared - 1 + replayed, true
+}
 
 type RequestTimingEvent struct {
 	Stage         string    `json:"stage"`
