@@ -122,7 +122,7 @@ func TestValidateScenarioRequiresPairedMutationMarkers(t *testing.T) {
 		InjectedAt: start.Format(time.RFC3339Nano), ReleasedAt: finish.Format(time.RFC3339Nano),
 		Before: mapping{Epoch: 1, PGID: "1.0", Acting: []int32{0, 1, 2}, Primary: 0, PGState: "active+clean", ObservedAt: start.Format(time.RFC3339Nano)},
 		After:  mapping{Epoch: 2, PGID: "1.0", Acting: []int32{1, 2, 0}, Primary: 1, PGState: "active+clean", ObservedAt: finish.Format(time.RFC3339Nano)},
-		Go: result, Native: result, FinalData: "go-marker-1;native-marker-1;go-marker-2;native-marker-2;",
+		Go:     result, Native: result, FinalData: "go-marker-1;native-marker-1;go-marker-2;native-marker-2;",
 		MutationMarkers: []string{"go-marker-1;", "native-marker-1;", "go-marker-2;", "native-marker-2;"}, Notes: "paired",
 		FaultIntervals: []faultInterval{
 			{InjectedAt: start.Add(time.Second).Format(time.RFC3339Nano), ReleasedAt: start.Add(3 * time.Second).Format(time.RFC3339Nano)},

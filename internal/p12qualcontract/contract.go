@@ -5,6 +5,7 @@ import "fmt"
 const (
 	MinimumGo = "go1.26.8"
 	LatestGo  = "go1.27.1"
+	ScannerGo = "go1.27.2"
 	Module    = "github.com/otuschhoff/rados-go"
 
 	ImageAMD64  = "quay.io/ceph/ceph@sha256:09ee90f6f3e0c7b9954f71d214ee05e9bbaaaea3716b1dd619603283b829f8b8"
@@ -46,7 +47,7 @@ func Checks(pins Pins, releaseVersion string) []Spec {
 		{"cross-darwin-arm64", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " GOOS=darwin GOARCH=arm64 go build ./...", LatestGo, "darwin/arm64"},
 		{"race", "CGO_ENABLED=1 GOTOOLCHAIN=" + LatestGo + " go test -race ./...", LatestGo, "host"},
 		{"staticcheck", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go run honnef.co/go/tools/cmd/staticcheck@" + pins.Staticcheck + " ./...", LatestGo, "host"},
-		{"govulncheck", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go run golang.org/x/vuln/cmd/govulncheck@" + pins.Govulncheck + " ./...", LatestGo, "host"},
+		{"govulncheck", "CGO_ENABLED=0 GOTOOLCHAIN=" + ScannerGo + " go run golang.org/x/vuln/cmd/govulncheck@" + pins.Govulncheck + " ./...", ScannerGo, "host"},
 		{"module-verify", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go mod verify", LatestGo, "host"},
 		{"no-cgo", "test -z \"$(CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)\"", LatestGo, "host"},
 		{"reachable-dependencies", "test \"$(CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go list -deps -f '{{with .Module}}{{if not .Main}}{{.Path}} {{.Version}}{{end}}{{end}}' . | sort -u)\" = \"$(printf '%s\\n' 'github.com/jcmturner/aescts/v2 v2.0.0' 'github.com/jcmturner/gofork v1.7.6' 'github.com/otuschhoff/gokrb5/v8 v8.5.3' 'golang.org/x/crypto v0.56.0')\"", LatestGo, "host"},
