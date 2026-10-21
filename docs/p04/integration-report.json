@@ -34,7 +34,7 @@
       "internal/maps/osdmap.go": "bbf99f2c731911d8e26feeb912546926bc9cfb903aa60bdf0717a0ea87016c38",
       "internal/maps/osdmap_test.go": "3d2a5cf1aa5f9caa16d18fbbb58907f84a94f9677a66954f11f7f7edee4324fa",
       "internal/maps/p04_fixture_test.go": "98953880e9e9d7633d0ad10206491523f223125698fffa788616035245ac7088",
-      "internal/maps/performance_baseline_test.go": "62f7c2ba49f50009e249595c086d06d64f03bf35f19c217a047ddcda3b721f34",
+      "internal/maps/performance_baseline_test.go": "55aa8eb4ee95ac69ecbe5fce23e43a27f4fbf2c3117956440737f30c11b59b84",
       "internal/maps/placement.go": "3a66eadafb7fac7cc42b77329326e5ce8b1fbe98aa3e2d2191ba3b9c4f7de0f5",
       "internal/maps/placement_reuse_test.go": "9dfd26640045ab30aa01a30b3524653655177df1478d6f00c242c0922ae1affc",
       "internal/maps/placement_test.go": "96313b4783e2141560bae963c5f248473504c06358481275c9f245bf2d4b9f0f",

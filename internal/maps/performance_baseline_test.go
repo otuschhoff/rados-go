@@ -71,14 +71,16 @@ func performanceMapFixture(helper testing.TB, osdCount, overrideCount int, topol
 }
 
 func performanceRenameFixture(base *OSDMap, overrideCount int) (*OSDMapIncremental, Limits) {
-	return &OSDMapIncremental{
+	incremental := &OSDMapIncremental{
 		fsid: base.fsid, epoch: base.epoch + 1, newPoolMax: -1, newFlags: -1, newMaxOSD: -1,
 		newPoolNames: map[int64]string{2: "archive"},
-	}, Limits{
+	}
+	limits := Limits{
 		MaxBytes: uint32(len(base.crushData)) + uint32(base.maxOSD)*128 + uint32(overrideCount)*256 + 4096,
 		MaxPools: 1, MaxOSDs: uint32(base.maxOSD), MaxAddresses: 1,
 		MaxPGMappings: uint32(max(overrideCount, 1)), MaxCollectionEntries: 4096,
 	}
+	return incremental, limits
 }
 
 func encodePerformancePlacementCrush(helper testing.TB, unrelatedBuckets int) []byte {
