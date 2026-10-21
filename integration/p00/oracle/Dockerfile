@@ -21,7 +21,7 @@ RUN case "${TARGETARCH}" in \
 		curl -fsSL "${CEPH_DEVEL_REPOSITORY}/${rpm_arch}/${CEPHPP_DEVEL_PACKAGE}.${rpm_arch}.rpm" -o "${cpp_rpm}" && \
 		echo "${c_checksum}  ${c_rpm}" | sha256sum -c - && \
 		echo "${cpp_checksum}  ${cpp_rpm}" | sha256sum -c - && \
-		dnf -y install "${c_rpm}" "${cpp_rpm}" "${COMPILER_PACKAGE}" && \
+		dnf --disablerepo=epel -y install "${c_rpm}" "${cpp_rpm}" "${COMPILER_PACKAGE}" && \
 		test "$(rpm -q --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' librados-devel)" = "${CEPH_DEVEL_PACKAGE}" && \
 		test "$(rpm -q --qf '%{NAME}-%{VERSION}-%{RELEASE}\n' libradospp-devel)" = "${CEPHPP_DEVEL_PACKAGE}" && \
 		rm -f "${c_rpm}" "${cpp_rpm}" && dnf clean all

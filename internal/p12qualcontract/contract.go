@@ -5,7 +5,7 @@ import "fmt"
 const (
 	MinimumGo = "go1.26.8"
 	LatestGo  = "go1.27.1"
-	ScannerGo = "go1.27.2"
+	ScannerGo = "go1.27.3"
 	Module    = "github.com/otuschhoff/rados-go"
 
 	ImageAMD64  = "quay.io/ceph/ceph@sha256:09ee90f6f3e0c7b9954f71d214ee05e9bbaaaea3716b1dd619603283b829f8b8"
@@ -46,7 +46,7 @@ func Checks(pins Pins, releaseVersion string) []Spec {
 		{"cross-darwin-amd64", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " GOOS=darwin GOARCH=amd64 go build ./...", LatestGo, "darwin/amd64"},
 		{"cross-darwin-arm64", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " GOOS=darwin GOARCH=arm64 go build ./...", LatestGo, "darwin/arm64"},
 		{"race", "CGO_ENABLED=1 GOTOOLCHAIN=" + LatestGo + " go test -race ./...", LatestGo, "host"},
-		{"staticcheck", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go run honnef.co/go/tools/cmd/staticcheck@" + pins.Staticcheck + " ./...", LatestGo, "host"},
+		{"staticcheck", "mkdir -p \"$P12_TMP/bin\" && CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " GOBIN=\"$P12_TMP/bin\" go install honnef.co/go/tools/cmd/staticcheck@" + pins.Staticcheck + " && GOOS=linux GOTOOLCHAIN=" + LatestGo + " \"$P12_TMP/bin/staticcheck\" ./...", LatestGo, "host"},
 		{"govulncheck", "CGO_ENABLED=0 GOTOOLCHAIN=" + ScannerGo + " go run golang.org/x/vuln/cmd/govulncheck@" + pins.Govulncheck + " ./...", ScannerGo, "host"},
 		{"module-verify", "CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go mod verify", LatestGo, "host"},
 		{"no-cgo", "test -z \"$(CGO_ENABLED=0 GOTOOLCHAIN=" + LatestGo + " go list -deps -f '{{if .CgoFiles}}{{.ImportPath}}{{end}}' ./...)\"", LatestGo, "host"},

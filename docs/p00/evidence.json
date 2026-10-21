@@ -48,7 +48,7 @@
     "cephpp_devel_arm64_sha256": "3344fc0a7a5d66a65da1bbd4d6b815b72a7e6b290aaccc5358dae32637c85f76",
     "librados": "librados2-20.2.4-0.el9",
     "source_sha256": "bbcf6207628545d859546eb92d50e13027ab2d78154b0c54053b4befecc029ca",
-    "dockerfile_sha256": "8771c2758a7d994db357b96d0a845bb1e919d3acaf846908e425565c31dc186d"
+    "dockerfile_sha256": "359b17241893cf9b73e9a2d0a1565acdf1bb5c5d04bd2d06c4977aa313e19268"
   },
   "go": {
     "minimum": {

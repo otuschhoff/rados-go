@@ -152,7 +152,7 @@
       "internal/protocol/message_types.go": "57f3a95b49e8e4002a91ec99206f703cedd38aa86d12911c52ad1a8ea2169fe6",
       "internal/protocol/message_types_test.go": "2d4397612a4ac944ee1442e719718ecf387b84ceed5a68290e96f49289bb89b1",
       "internal/protocol/protocol_test.go": "2fd9418c3c3f6324ca9b65350b1857c990d89c9a184c0e91f0072d26f956ce68",
-      "Makefile": "802227a13233ad0e5dd711d92112e274d9c27fd39c12f67f56d77b33366a9ff4",
+      "Makefile": "f1a94919ed26f2d2b88609117af86259c1ef7cfcb2e4b90550c170cfd51a3da2",
       "README.md": "37a08d1e78bb050156e82b272f4b6e7cc4e826dd5f312ad321bdcdc7556a57bb",
       "SPEC.md": "933fb55517ee2aaaa9d7eefb775c561f01638b033fa1f541a2f69b67972cdd67",
       "client.go": "84babbf3657b368580f1d4ef76f4722ffbab5917f106f244f586427cf6b52f08",
