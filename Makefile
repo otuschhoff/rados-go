@@ -59,16 +59,16 @@ cross-p01:
 	CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build ./...
 
 fuzz-p01:
-	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzDecoder$$' -fuzztime=60s
-	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzVersionedEnvelope$$' -fuzztime=60s
-	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddr$$' -fuzztime=60s
-	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddrVec$$' -fuzztime=60s
+	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzDecoder$$' -fuzztime=6000000x
+	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzVersionedEnvelope$$' -fuzztime=6000000x
+	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddr$$' -fuzztime=6000000x
+	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddrVec$$' -fuzztime=6000000x
 
 fuzz-p01-nightly:
-	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzDecoder$$' -fuzztime=5m
-	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzVersionedEnvelope$$' -fuzztime=5m
-	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddr$$' -fuzztime=5m
-	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddrVec$$' -fuzztime=5m
+	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzDecoder$$' -fuzztime=30000000x
+	CGO_ENABLED=0 go test ./internal/encoding -run '^$$' -fuzz '^FuzzVersionedEnvelope$$' -fuzztime=30000000x
+	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddr$$' -fuzztime=30000000x
+	CGO_ENABLED=0 go test ./internal/protocol -run '^$$' -fuzz '^FuzzEntityAddrVec$$' -fuzztime=30000000x
 
 verify-p02: verify-p01
 	test -z "$$(gofmt -l $$(find . -name '*.go' -not -path './.git/*'))"
