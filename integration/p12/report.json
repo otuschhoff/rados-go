@@ -2,8 +2,8 @@
   "schema_version": 2,
   "status": "non-certifying",
   "command": "./integration/p12/reproduce.sh --quick",
-  "started_at": "2026-10-21T17:08:37Z",
-  "finished_at": "2026-10-21T17:12:17Z",
+  "started_at": "2026-11-01T11:08:38Z",
+  "finished_at": "2026-11-01T11:12:17Z",
   "qualification": null,
   "fuzz": null,
   "reviews": null,
@@ -21,7 +21,7 @@
       "THIRD_PARTY_NOTICES": "7c36fce9f9ff6adfbf728b640ebff7c57dffe69c62ef07584cec894c7d35ecb1",
       "changes.go": "34106d934b1da23a751d78ef04899fb5edcf80aa73d8c235f0b57e95adc177e9",
       "LICENSE": "10d2b9ae287146e3523195935cd9e2b79658acb32a73e974d8072cfbd1e34f43",
-      "Makefile": "f1a94919ed26f2d2b88609117af86259c1ef7cfcb2e4b90550c170cfd51a3da2",
+      "Makefile": "762de910f1dcc4b2ffcace2347748e270fcf5d386c42930a91b4871119fe15e0",
       "config_fuzz_test.go": "33de5ab9fc68a9fdfeb1116c5a844ff9b96cf4ac7bbe5d08cad4907e66e0c7c3",
       "client.go": "84babbf3657b368580f1d4ef76f4722ffbab5917f106f244f586427cf6b52f08",
       "admin_test.go": "ccd2dd8e24ecd05e571acf6aeec4e83e06284a38d772b3975443326103cc578f",
@@ -268,7 +268,7 @@
       "integration/p12/qualification-report.schema.json": "b84ac9934b4d6cd777bc7f13afbd9bf9f7a039445c7f2f102e64392e4dd1aeca",
       "docs/p12/cgo-migration.md": "4910cc32b4fe8ad957ba97f889ffcac83a3aaf0437e9ceb8ebe327ff972566a8",
       "docs/p12/troubleshooting.md": "e40957defc66437ebbeca650092307bcc1daf3b3cc1f439ea650aa2c60e59c73",
-      "docs/p12/qualification-report.json": "4031f0849b75ba8c1a0fe279a35e675ef19e182cb97fb4833e2a51846aba2358",
+      "docs/p12/qualification-report.json": "278031cbb9643e3a1477a09dceeb6c22ec0aaf404aca31aedb11a3b284969d7f",
       "docs/p12/dependencies.md": "2422d446964119fc30abe3cf09ad4764055ac2dd5fdafb1ad99def83eb817762",
       "docs/p12/review-template.md": "7f89486c65bc75b7b17e39b83d75e4a535fccda89efd33256af3b55d7b3224ca",
       "docs/p12/performance.md": "e78c2c595ff790c95f92f0f77caadbb16ff379e508cf46ee64d11862482d1edf",
@@ -324,17 +324,17 @@
     "secure": {
       "transport": "secure",
       "requested_duration_ns": 180000000000,
-      "elapsed_ns": 180001353944,
+      "elapsed_ns": 180000491948,
       "monotonic_duration_satisfied": true,
-      "operations": 18559,
-      "writes": 18559,
-      "append_once_verifications": 18559,
+      "operations": 18430,
+      "writes": 18430,
+      "append_once_verifications": 18430,
       "duplicate_mutations_detected": 0,
-      "reads": 18559,
-      "stats": 18559,
-      "removes": 18559,
+      "reads": 18430,
+      "stats": 18430,
+      "removes": 18430,
       "reconnects": 1,
-      "longest_connection_ns": 120002647048,
+      "longest_connection_ns": 120007763765,
       "credential_renewals": [
         {
           "service": "monitor",
@@ -342,8 +342,8 @@
           "session_id": 1,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:32.087293062Z",
-          "completed_at": "2026-10-21T17:09:32.289183567Z"
+          "due_at": "2026-11-01T11:09:30.284505249Z",
+          "completed_at": "2026-11-01T11:09:30.487693288Z"
         },
         {
           "service": "monitor",
@@ -351,8 +351,8 @@
           "session_id": 1,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:04.549983182Z",
-          "completed_at": "2026-10-21T17:10:04.752343415Z"
+          "due_at": "2026-11-01T11:10:02.005438872Z",
+          "completed_at": "2026-11-01T11:10:02.210748137Z"
         },
         {
           "service": "monitor",
@@ -360,8 +360,8 @@
           "session_id": 1,
           "due_generation": 8,
           "completed_generation": 10,
-          "due_at": "2026-10-21T17:10:27.25315244Z",
-          "completed_at": "2026-10-21T17:10:27.455485923Z"
+          "due_at": "2026-11-01T11:10:24.710466043Z",
+          "completed_at": "2026-11-01T11:10:24.913929668Z"
         },
         {
           "service": "monitor",
@@ -369,8 +369,8 @@
           "session_id": 1,
           "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-10-21T17:10:49.956090486Z",
-          "completed_at": "2026-10-21T17:10:50.158313216Z"
+          "due_at": "2026-11-01T11:10:47.415312672Z",
+          "completed_at": "2026-11-01T11:10:47.618235584Z"
         },
         {
           "service": "osd",
@@ -378,8 +378,8 @@
           "session_id": 2,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:35.836665468Z",
-          "completed_at": "2026-10-21T17:09:36.039043687Z"
+          "due_at": "2026-11-01T11:09:34.033906826Z",
+          "completed_at": "2026-11-01T11:09:34.24114065Z"
         },
         {
           "service": "osd",
@@ -387,8 +387,8 @@
           "session_id": 2,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:09:58.539928521Z",
-          "completed_at": "2026-10-21T17:09:58.743414154Z"
+          "due_at": "2026-11-01T11:09:56.737917489Z",
+          "completed_at": "2026-11-01T11:09:56.939719142Z"
         },
         {
           "service": "osd",
@@ -396,8 +396,8 @@
           "session_id": 2,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:08.298509714Z",
-          "completed_at": "2026-10-21T17:10:08.506352065Z"
+          "due_at": "2026-11-01T11:10:05.75535737Z",
+          "completed_at": "2026-11-01T11:10:05.974234835Z"
         },
         {
           "service": "osd",
@@ -405,8 +405,8 @@
           "session_id": 3,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:35.836742594Z",
-          "completed_at": "2026-10-21T17:09:36.03889981Z"
+          "due_at": "2026-11-01T11:09:34.033945202Z",
+          "completed_at": "2026-11-01T11:09:34.236714445Z"
         },
         {
           "service": "osd",
@@ -414,8 +414,8 @@
           "session_id": 3,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:09:58.539860812Z",
-          "completed_at": "2026-10-21T17:09:58.744584304Z"
+          "due_at": "2026-11-01T11:09:56.737654029Z",
+          "completed_at": "2026-11-01T11:09:56.939801809Z"
         },
         {
           "service": "osd",
@@ -423,8 +423,8 @@
           "session_id": 3,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:08.298561631Z",
-          "completed_at": "2026-10-21T17:10:08.510583198Z"
+          "due_at": "2026-11-01T11:10:05.755310744Z",
+          "completed_at": "2026-11-01T11:10:05.973950791Z"
         },
         {
           "service": "osd",
@@ -432,8 +432,8 @@
           "session_id": 3,
           "due_generation": 8,
           "completed_generation": 10,
-          "due_at": "2026-10-21T17:10:31.002604201Z",
-          "completed_at": "2026-10-21T17:10:31.206572386Z"
+          "due_at": "2026-11-01T11:10:28.457866228Z",
+          "completed_at": "2026-11-01T11:10:28.660017717Z"
         },
         {
           "service": "osd",
@@ -441,8 +441,8 @@
           "session_id": 3,
           "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-10-21T17:10:53.705985464Z",
-          "completed_at": "2026-10-21T17:10:53.915625063Z"
+          "due_at": "2026-11-01T11:10:51.163270028Z",
+          "completed_at": "2026-11-01T11:10:51.373872131Z"
         },
         {
           "service": "osd",
@@ -450,8 +450,8 @@
           "session_id": 4,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:35.836638176Z",
-          "completed_at": "2026-10-21T17:09:36.041916338Z"
+          "due_at": "2026-11-01T11:09:34.033891535Z",
+          "completed_at": "2026-11-01T11:09:34.241172067Z"
         },
         {
           "service": "osd",
@@ -459,8 +459,8 @@
           "session_id": 4,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:09:58.539913188Z",
-          "completed_at": "2026-10-21T17:09:58.74368091Z"
+          "due_at": "2026-11-01T11:09:56.73762382Z",
+          "completed_at": "2026-11-01T11:09:56.942412498Z"
         },
         {
           "service": "osd",
@@ -468,8 +468,8 @@
           "session_id": 4,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:08.298493672Z",
-          "completed_at": "2026-10-21T17:10:08.510977332Z"
+          "due_at": "2026-11-01T11:10:05.755296411Z",
+          "completed_at": "2026-11-01T11:10:05.974047167Z"
         },
         {
           "service": "osd",
@@ -477,8 +477,8 @@
           "session_id": 4,
           "due_generation": 8,
           "completed_generation": 10,
-          "due_at": "2026-10-21T17:10:31.003270007Z",
-          "completed_at": "2026-10-21T17:10:31.219079363Z"
+          "due_at": "2026-11-01T11:10:28.457923062Z",
+          "completed_at": "2026-11-01T11:10:28.659376044Z"
         },
         {
           "service": "osd",
@@ -486,8 +486,8 @@
           "session_id": 4,
           "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-10-21T17:10:53.705902129Z",
-          "completed_at": "2026-10-21T17:10:53.910881127Z"
+          "due_at": "2026-11-01T11:10:51.163275612Z",
+          "completed_at": "2026-11-01T11:10:51.36973022Z"
         },
         {
           "service": "osd",
@@ -495,8 +495,8 @@
           "session_id": 5,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:10:31.002640951Z",
-          "completed_at": "2026-10-21T17:10:31.217715251Z"
+          "due_at": "2026-11-01T11:10:28.457888312Z",
+          "completed_at": "2026-11-01T11:10:28.659619546Z"
         },
         {
           "service": "osd",
@@ -504,8 +504,8 @@
           "session_id": 5,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:10:53.70618876Z",
-          "completed_at": "2026-10-21T17:10:53.918832257Z"
+          "due_at": "2026-11-01T11:10:51.163379279Z",
+          "completed_at": "2026-11-01T11:10:51.380378104Z"
         },
         {
           "service": "monitor",
@@ -513,8 +513,8 @@
           "session_id": 6,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:32.097079898Z",
-          "completed_at": "2026-10-21T17:11:32.299472173Z"
+          "due_at": "2026-11-01T11:11:30.295392837Z",
+          "completed_at": "2026-11-01T11:11:30.498004823Z"
         },
         {
           "service": "monitor",
@@ -522,8 +522,8 @@
           "session_id": 6,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:11:54.800539976Z",
-          "completed_at": "2026-10-21T17:11:55.002545327Z"
+          "due_at": "2026-11-01T11:11:52.998103051Z",
+          "completed_at": "2026-11-01T11:11:53.199374607Z"
         },
         {
           "service": "osd",
@@ -531,8 +531,8 @@
           "session_id": 8,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:35.845704678Z",
-          "completed_at": "2026-10-21T17:11:36.048937181Z"
+          "due_at": "2026-11-01T11:11:34.045082573Z",
+          "completed_at": "2026-11-01T11:11:34.24733843Z"
         },
         {
           "service": "osd",
@@ -540,8 +540,8 @@
           "session_id": 8,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:11:58.550007233Z",
-          "completed_at": "2026-10-21T17:11:58.752632514Z"
+          "due_at": "2026-11-01T11:11:56.748509419Z",
+          "completed_at": "2026-11-01T11:11:56.951814079Z"
         },
         {
           "service": "osd",
@@ -549,8 +549,8 @@
           "session_id": 9,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:35.845591801Z",
-          "completed_at": "2026-10-21T17:11:36.049131143Z"
+          "due_at": "2026-11-01T11:11:34.045110448Z",
+          "completed_at": "2026-11-01T11:11:34.247323764Z"
         },
         {
           "service": "osd",
@@ -558,8 +558,8 @@
           "session_id": 9,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:11:58.550015608Z",
-          "completed_at": "2026-10-21T17:11:58.757247697Z"
+          "due_at": "2026-11-01T11:11:56.748474419Z",
+          "completed_at": "2026-11-01T11:11:56.952766088Z"
         },
         {
           "service": "osd",
@@ -567,136 +567,136 @@
           "session_id": 10,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:58.550130694Z",
-          "completed_at": "2026-10-21T17:11:58.75265689Z"
+          "due_at": "2026-11-01T11:11:56.748513836Z",
+          "completed_at": "2026-11-01T11:11:56.952450877Z"
         }
       ],
       "credential_renewal_abandonments": [],
       "samples": [
         {
-          "elapsed_ns": 9032749,
-          "rss_bytes": 6303744,
+          "elapsed_ns": 3067609,
+          "rss_bytes": 6369280,
           "goroutines": 8,
-          "heap_bytes": 1002920,
+          "heap_bytes": 1003088,
           "inflight": null
         },
         {
-          "elapsed_ns": 10003398755,
-          "rss_bytes": 11448320,
+          "elapsed_ns": 10004272616,
+          "rss_bytes": 11046912,
           "goroutines": 32,
-          "heap_bytes": 3136832,
+          "heap_bytes": 3837464,
           "inflight": null
         },
         {
-          "elapsed_ns": 20003611023,
-          "rss_bytes": 11206656,
+          "elapsed_ns": 20005771792,
+          "rss_bytes": 11304960,
           "goroutines": 32,
-          "heap_bytes": 4004096,
+          "heap_bytes": 2490296,
           "inflight": null
         },
         {
-          "elapsed_ns": 30005296470,
-          "rss_bytes": 12640256,
+          "elapsed_ns": 31970684061,
+          "rss_bytes": 12054528,
           "goroutines": 32,
-          "heap_bytes": 3219728,
+          "heap_bytes": 4153680,
           "inflight": null
         },
         {
-          "elapsed_ns": 40007963510,
-          "rss_bytes": 12238848,
+          "elapsed_ns": 40003926644,
+          "rss_bytes": 12337152,
           "goroutines": 32,
-          "heap_bytes": 3193824,
+          "heap_bytes": 4646296,
           "inflight": null
         },
         {
-          "elapsed_ns": 50004579694,
-          "rss_bytes": 11599872,
+          "elapsed_ns": 50001272410,
+          "rss_bytes": 12906496,
           "goroutines": 32,
-          "heap_bytes": 4101512,
+          "heap_bytes": 3057512,
           "inflight": null
         },
         {
-          "elapsed_ns": 60005726820,
-          "rss_bytes": 12410880,
+          "elapsed_ns": 60010115315,
+          "rss_bytes": 11509760,
           "goroutines": 32,
-          "heap_bytes": 2509944,
+          "heap_bytes": 3561496,
           "inflight": null
         },
         {
-          "elapsed_ns": 75258272139,
-          "rss_bytes": 12746752,
+          "elapsed_ns": 74807996697,
+          "rss_bytes": 11653120,
+          "goroutines": 24,
+          "heap_bytes": 2013944,
+          "inflight": null
+        },
+        {
+          "elapsed_ns": 80002558035,
+          "rss_bytes": 11341824,
           "goroutines": 32,
-          "heap_bytes": 3407248,
+          "heap_bytes": 4219272,
           "inflight": null
         },
         {
-          "elapsed_ns": 80006331700,
+          "elapsed_ns": 90001964485,
+          "rss_bytes": 11075584,
+          "goroutines": 32,
+          "heap_bytes": 2523352,
+          "inflight": null
+        },
+        {
+          "elapsed_ns": 100010156302,
           "rss_bytes": 11755520,
           "goroutines": 32,
-          "heap_bytes": 3545536,
+          "heap_bytes": 3211912,
           "inflight": null
         },
         {
-          "elapsed_ns": 90000591177,
-          "rss_bytes": 10973184,
+          "elapsed_ns": 110003556325,
+          "rss_bytes": 12754944,
           "goroutines": 32,
-          "heap_bytes": 3144168,
+          "heap_bytes": 2717288,
           "inflight": null
         },
         {
-          "elapsed_ns": 100002712157,
-          "rss_bytes": 11145216,
+          "elapsed_ns": 120000347130,
+          "rss_bytes": 12992512,
           "goroutines": 32,
-          "heap_bytes": 4261832,
+          "heap_bytes": 2841640,
           "inflight": null
         },
         {
-          "elapsed_ns": 110000263788,
-          "rss_bytes": 11595776,
+          "elapsed_ns": 130002302138,
+          "rss_bytes": 11673600,
           "goroutines": 32,
-          "heap_bytes": 3867704,
+          "heap_bytes": 3654824,
           "inflight": null
         },
         {
-          "elapsed_ns": 120001343285,
-          "rss_bytes": 11976704,
+          "elapsed_ns": 140049240815,
+          "rss_bytes": 11513856,
           "goroutines": 32,
-          "heap_bytes": 4552904,
+          "heap_bytes": 3137856,
           "inflight": null
         },
         {
-          "elapsed_ns": 130005087040,
-          "rss_bytes": 12541952,
-          "goroutines": 32,
-          "heap_bytes": 4519336,
+          "elapsed_ns": 153910080746,
+          "rss_bytes": 9924608,
+          "goroutines": 24,
+          "heap_bytes": 2114664,
           "inflight": null
         },
         {
-          "elapsed_ns": 140008238950,
-          "rss_bytes": 12886016,
+          "elapsed_ns": 160001451376,
+          "rss_bytes": 11821056,
           "goroutines": 32,
-          "heap_bytes": 4119688,
+          "heap_bytes": 4560904,
           "inflight": null
         },
         {
-          "elapsed_ns": 154461914258,
-          "rss_bytes": 12480512,
+          "elapsed_ns": 170000183529,
+          "rss_bytes": 10735616,
           "goroutines": 32,
-          "heap_bytes": 2680552,
-          "inflight": null
-        },
-        {
-          "elapsed_ns": 160007666038,
-          "rss_bytes": 12251136,
-          "goroutines": 32,
-          "heap_bytes": 4157656,
-          "inflight": null
-        },
-        {
-          "elapsed_ns": 170003910882,
-          "rss_bytes": 11022336,
-          "goroutines": 32,
-          "heap_bytes": 3540088,
+          "heap_bytes": 3857656,
           "inflight": null
         }
       ],
@@ -706,17 +706,17 @@
     "crc": {
       "transport": "crc",
       "requested_duration_ns": 180000000000,
-      "elapsed_ns": 180000658668,
+      "elapsed_ns": 180001271652,
       "monotonic_duration_satisfied": true,
-      "operations": 18576,
-      "writes": 18576,
-      "append_once_verifications": 18576,
+      "operations": 18245,
+      "writes": 18245,
+      "append_once_verifications": 18245,
       "duplicate_mutations_detected": 0,
-      "reads": 18576,
-      "stats": 18576,
-      "removes": 18576,
+      "reads": 18245,
+      "stats": 18245,
+      "removes": 18245,
       "reconnects": 1,
-      "longest_connection_ns": 120003095776,
+      "longest_connection_ns": 120005281715,
       "credential_renewals": [
         {
           "service": "monitor",
@@ -724,8 +724,8 @@
           "session_id": 1,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:32.222173832Z",
-          "completed_at": "2026-10-21T17:09:32.427821539Z"
+          "due_at": "2026-11-01T11:09:30.481636403Z",
+          "completed_at": "2026-11-01T11:09:30.682887217Z"
         },
         {
           "service": "monitor",
@@ -733,8 +733,8 @@
           "session_id": 1,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:04.552150478Z",
-          "completed_at": "2026-10-21T17:10:04.752987888Z"
+          "due_at": "2026-11-01T11:10:02.004615823Z",
+          "completed_at": "2026-11-01T11:10:02.206038138Z"
         },
         {
           "service": "monitor",
@@ -742,8 +742,8 @@
           "session_id": 1,
           "due_generation": 8,
           "completed_generation": 10,
-          "due_at": "2026-10-21T17:10:27.253097314Z",
-          "completed_at": "2026-10-21T17:10:27.455542008Z"
+          "due_at": "2026-11-01T11:10:24.706370133Z",
+          "completed_at": "2026-11-01T11:10:24.908164535Z"
         },
         {
           "service": "monitor",
@@ -751,8 +751,8 @@
           "session_id": 1,
           "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-10-21T17:10:49.956742958Z",
-          "completed_at": "2026-10-21T17:10:50.158328717Z"
+          "due_at": "2026-11-01T11:10:47.409307787Z",
+          "completed_at": "2026-11-01T11:10:47.611546901Z"
         },
         {
           "service": "osd",
@@ -760,8 +760,8 @@
           "session_id": 2,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:35.973562882Z",
-          "completed_at": "2026-10-21T17:09:36.177292988Z"
+          "due_at": "2026-11-01T11:09:34.232224782Z",
+          "completed_at": "2026-11-01T11:09:34.435498488Z"
         },
         {
           "service": "osd",
@@ -769,8 +769,8 @@
           "session_id": 2,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:09:58.678615175Z",
-          "completed_at": "2026-10-21T17:09:58.884824367Z"
+          "due_at": "2026-11-01T11:09:56.933096376Z",
+          "completed_at": "2026-11-01T11:09:57.136608168Z"
         },
         {
           "service": "osd",
@@ -778,8 +778,8 @@
           "session_id": 2,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:08.299917869Z",
-          "completed_at": "2026-10-21T17:10:08.514259402Z"
+          "due_at": "2026-11-01T11:10:05.755068659Z",
+          "completed_at": "2026-11-01T11:10:05.973925416Z"
         },
         {
           "service": "osd",
@@ -787,8 +787,8 @@
           "session_id": 2,
           "due_generation": 8,
           "completed_generation": 10,
-          "due_at": "2026-10-21T17:10:31.003374634Z",
-          "completed_at": "2026-10-21T17:10:31.217757126Z"
+          "due_at": "2026-11-01T11:10:28.457211889Z",
+          "completed_at": "2026-11-01T11:10:28.663042118Z"
         },
         {
           "service": "osd",
@@ -796,8 +796,8 @@
           "session_id": 2,
           "due_generation": 10,
           "completed_generation": 12,
-          "due_at": "2026-10-21T17:10:53.70574375Z",
-          "completed_at": "2026-10-21T17:10:53.911159425Z"
+          "due_at": "2026-11-01T11:10:51.158197443Z",
+          "completed_at": "2026-11-01T11:10:51.368725712Z"
         },
         {
           "service": "osd",
@@ -805,8 +805,8 @@
           "session_id": 3,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:35.973312463Z",
-          "completed_at": "2026-10-21T17:09:36.177470323Z"
+          "due_at": "2026-11-01T11:09:34.232156656Z",
+          "completed_at": "2026-11-01T11:09:34.435696448Z"
         },
         {
           "service": "osd",
@@ -814,8 +814,8 @@
           "session_id": 3,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:09:58.678847139Z",
-          "completed_at": "2026-10-21T17:09:58.88474724Z"
+          "due_at": "2026-11-01T11:09:56.933106168Z",
+          "completed_at": "2026-11-01T11:09:57.136810503Z"
         },
         {
           "service": "osd",
@@ -823,8 +823,8 @@
           "session_id": 3,
           "due_generation": 6,
           "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:08.300058497Z",
-          "completed_at": "2026-10-21T17:10:08.507377504Z"
+          "due_at": "2026-11-01T11:10:05.754930199Z",
+          "completed_at": "2026-11-01T11:10:05.973701622Z"
         },
         {
           "service": "osd",
@@ -832,8 +832,8 @@
           "session_id": 4,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:09:35.97340363Z",
-          "completed_at": "2026-10-21T17:09:36.177721492Z"
+          "due_at": "2026-11-01T11:09:34.232223115Z",
+          "completed_at": "2026-11-01T11:09:34.435481113Z"
         },
         {
           "service": "osd",
@@ -841,71 +841,62 @@
           "session_id": 4,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:09:58.678796054Z",
-          "completed_at": "2026-10-21T17:09:58.884991579Z"
+          "due_at": "2026-11-01T11:09:56.933187419Z",
+          "completed_at": "2026-11-01T11:09:57.136638752Z"
         },
         {
           "service": "osd",
           "service_id": 1,
-          "session_id": 4,
-          "due_generation": 6,
-          "completed_generation": 8,
-          "due_at": "2026-10-21T17:10:08.299972245Z",
-          "completed_at": "2026-10-21T17:10:08.51421911Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 1,
-          "session_id": 4,
-          "due_generation": 8,
-          "completed_generation": 10,
-          "due_at": "2026-10-21T17:10:31.002725245Z",
-          "completed_at": "2026-10-21T17:10:31.217941922Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 1,
-          "session_id": 4,
-          "due_generation": 10,
-          "completed_generation": 12,
-          "due_at": "2026-10-21T17:10:53.705678832Z",
-          "completed_at": "2026-10-21T17:10:53.916517332Z"
-        },
-        {
-          "service": "osd",
-          "service_id": 0,
           "session_id": 5,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:10:31.00280108Z",
-          "completed_at": "2026-10-21T17:10:31.209248943Z"
+          "due_at": "2026-11-01T11:10:28.457276431Z",
+          "completed_at": "2026-11-01T11:10:28.659136209Z"
         },
         {
           "service": "osd",
-          "service_id": 0,
+          "service_id": 1,
           "session_id": 5,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:10:53.70558933Z",
-          "completed_at": "2026-10-21T17:10:53.915608521Z"
+          "due_at": "2026-11-01T11:10:51.158269735Z",
+          "completed_at": "2026-11-01T11:10:51.368133165Z"
         },
         {
-          "service": "monitor",
+          "service": "osd",
           "service_id": 0,
           "session_id": 6,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:32.227066739Z",
-          "completed_at": "2026-10-21T17:11:32.430885504Z"
+          "due_at": "2026-11-01T11:10:28.45728564Z",
+          "completed_at": "2026-11-01T11:10:28.66354058Z"
         },
         {
-          "service": "monitor",
+          "service": "osd",
           "service_id": 0,
           "session_id": 6,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:11:54.931231999Z",
-          "completed_at": "2026-10-21T17:11:55.134956262Z"
+          "due_at": "2026-11-01T11:10:51.158326736Z",
+          "completed_at": "2026-11-01T11:10:51.373632837Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 7,
+          "due_generation": 2,
+          "completed_generation": 4,
+          "due_at": "2026-11-01T11:11:30.493068315Z",
+          "completed_at": "2026-11-01T11:11:30.696495643Z"
+        },
+        {
+          "service": "monitor",
+          "service_id": 0,
+          "session_id": 7,
+          "due_generation": 4,
+          "completed_generation": 6,
+          "due_at": "2026-11-01T11:11:53.196457994Z",
+          "completed_at": "2026-11-01T11:11:53.398560934Z"
         },
         {
           "service": "osd",
@@ -913,8 +904,8 @@
           "session_id": 8,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:35.976924505Z",
-          "completed_at": "2026-10-21T17:11:36.182436348Z"
+          "due_at": "2026-11-01T11:11:34.240050149Z",
+          "completed_at": "2026-11-01T11:11:34.444017691Z"
         },
         {
           "service": "osd",
@@ -922,8 +913,8 @@
           "session_id": 8,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:11:58.680759008Z",
-          "completed_at": "2026-10-21T17:11:58.882775234Z"
+          "due_at": "2026-11-01T11:11:56.94657161Z",
+          "completed_at": "2026-11-01T11:11:57.150968572Z"
         },
         {
           "service": "osd",
@@ -931,8 +922,8 @@
           "session_id": 9,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:35.976824753Z",
-          "completed_at": "2026-10-21T17:11:36.182372138Z"
+          "due_at": "2026-11-01T11:11:34.240019941Z",
+          "completed_at": "2026-11-01T11:11:34.444666614Z"
         },
         {
           "service": "osd",
@@ -940,145 +931,155 @@
           "session_id": 9,
           "due_generation": 4,
           "completed_generation": 6,
-          "due_at": "2026-10-21T17:11:58.680709965Z",
-          "completed_at": "2026-10-21T17:11:58.882750275Z"
+          "due_at": "2026-11-01T11:11:56.946595985Z",
+          "completed_at": "2026-11-01T11:11:57.150746987Z"
         },
         {
           "service": "osd",
           "service_id": 1,
-          "session_id": 10,
+          "session_id": 11,
           "due_generation": 2,
           "completed_generation": 4,
-          "due_at": "2026-10-21T17:11:58.680976929Z",
-          "completed_at": "2026-10-21T17:11:58.883076365Z"
+          "due_at": "2026-11-01T11:11:56.946452192Z",
+          "completed_at": "2026-11-01T11:11:57.147665914Z"
         }
       ],
-      "credential_renewal_abandonments": [],
+      "credential_renewal_abandonments": [
+        {
+          "service": "osd",
+          "service_id": 1,
+          "session_id": 4,
+          "due_generation": 6,
+          "closed_generation": 7,
+          "due_at": "2026-11-01T11:10:05.75506195Z",
+          "closed_at": "2026-11-01T11:10:05.755329203Z"
+        }
+      ],
       "samples": [
         {
-          "elapsed_ns": 2870735,
-          "rss_bytes": 6320128,
+          "elapsed_ns": 1701723,
+          "rss_bytes": 6131712,
           "goroutines": 8,
-          "heap_bytes": 1003792,
+          "heap_bytes": 1003464,
           "inflight": null
         },
         {
-          "elapsed_ns": 10002491830,
-          "rss_bytes": 11395072,
+          "elapsed_ns": 10002646144,
+          "rss_bytes": 11010048,
           "goroutines": 32,
-          "heap_bytes": 4232000,
+          "heap_bytes": 3933064,
           "inflight": null
         },
         {
-          "elapsed_ns": 20004658115,
-          "rss_bytes": 11685888,
+          "elapsed_ns": 20005842793,
+          "rss_bytes": 11157504,
           "goroutines": 32,
-          "heap_bytes": 3488208,
+          "heap_bytes": 4021024,
           "inflight": null
         },
         {
-          "elapsed_ns": 30008385915,
-          "rss_bytes": 13189120,
+          "elapsed_ns": 31764839000,
+          "rss_bytes": 13033472,
           "goroutines": 32,
-          "heap_bytes": 3442336,
+          "heap_bytes": 3638320,
           "inflight": null
         },
         {
-          "elapsed_ns": 40000096188,
-          "rss_bytes": 12492800,
+          "elapsed_ns": 40000337072,
+          "rss_bytes": 12959744,
           "goroutines": 32,
-          "heap_bytes": 3204176,
+          "heap_bytes": 4072552,
           "inflight": null
         },
         {
-          "elapsed_ns": 50004665375,
-          "rss_bytes": 11902976,
+          "elapsed_ns": 50003579430,
+          "rss_bytes": 13058048,
           "goroutines": 32,
-          "heap_bytes": 2836512,
+          "heap_bytes": 3207672,
           "inflight": null
         },
         {
-          "elapsed_ns": 60002519346,
-          "rss_bytes": 12390400,
+          "elapsed_ns": 60006149948,
+          "rss_bytes": 10985472,
           "goroutines": 32,
-          "heap_bytes": 3378632,
+          "heap_bytes": 2542744,
           "inflight": null
         },
         {
-          "elapsed_ns": 75118596893,
-          "rss_bytes": 12713984,
+          "elapsed_ns": 74608921194,
+          "rss_bytes": 12394496,
           "goroutines": 24,
-          "heap_bytes": 3818776,
+          "heap_bytes": 4096032,
           "inflight": null
         },
         {
-          "elapsed_ns": 80003112393,
-          "rss_bytes": 11550720,
+          "elapsed_ns": 80001699611,
+          "rss_bytes": 11345920,
           "goroutines": 32,
-          "heap_bytes": 2821152,
+          "heap_bytes": 3608024,
           "inflight": null
         },
         {
-          "elapsed_ns": 90007532089,
-          "rss_bytes": 12066816,
+          "elapsed_ns": 90003025619,
+          "rss_bytes": 12189696,
           "goroutines": 32,
-          "heap_bytes": 3708152,
+          "heap_bytes": 3753880,
           "inflight": null
         },
         {
-          "elapsed_ns": 100004667795,
-          "rss_bytes": 12218368,
+          "elapsed_ns": 100005574971,
+          "rss_bytes": 11718656,
           "goroutines": 32,
-          "heap_bytes": 3326872,
+          "heap_bytes": 3942088,
           "inflight": null
         },
         {
-          "elapsed_ns": 110003164863,
-          "rss_bytes": 12341248,
+          "elapsed_ns": 110011811062,
+          "rss_bytes": 12251136,
           "goroutines": 32,
-          "heap_bytes": 3980600,
+          "heap_bytes": 3480376,
           "inflight": null
         },
         {
-          "elapsed_ns": 120008009774,
-          "rss_bytes": 12468224,
-          "goroutines": 8,
-          "heap_bytes": 1614672,
-          "inflight": null
-        },
-        {
-          "elapsed_ns": 130001192594,
-          "rss_bytes": 12328960,
+          "elapsed_ns": 120000642968,
+          "rss_bytes": 11927552,
           "goroutines": 32,
-          "heap_bytes": 4313944,
+          "heap_bytes": 4034672,
           "inflight": null
         },
         {
-          "elapsed_ns": 140004294377,
-          "rss_bytes": 13000704,
+          "elapsed_ns": 130001960622,
+          "rss_bytes": 11730944,
           "goroutines": 32,
-          "heap_bytes": 4599272,
+          "heap_bytes": 3437288,
           "inflight": null
         },
         {
-          "elapsed_ns": 154330083098,
-          "rss_bytes": 11542528,
+          "elapsed_ns": 140005584324,
+          "rss_bytes": 11837440,
+          "goroutines": 32,
+          "heap_bytes": 3243464,
+          "inflight": null
+        },
+        {
+          "elapsed_ns": 153686789790,
+          "rss_bytes": 10899456,
           "goroutines": 24,
-          "heap_bytes": 2056088,
+          "heap_bytes": 2007664,
           "inflight": null
         },
         {
-          "elapsed_ns": 160004101265,
-          "rss_bytes": 11755520,
+          "elapsed_ns": 160007759594,
+          "rss_bytes": 12353536,
           "goroutines": 32,
-          "heap_bytes": 4550984,
+          "heap_bytes": 3444232,
           "inflight": null
         },
         {
-          "elapsed_ns": 170006959877,
-          "rss_bytes": 11395072,
+          "elapsed_ns": 170004576352,
+          "rss_bytes": 10657792,
           "goroutines": 32,
-          "heap_bytes": 2569352,
+          "heap_bytes": 3617832,
           "inflight": null
         }
       ],
@@ -1092,12 +1093,12 @@
     "osd_restarts": 2,
     "osd_recoveries": 2,
     "final_osd_stat": {
-      "epoch": 28,
+      "epoch": 27,
       "num_osds": 3,
       "num_up_osds": 3,
-      "osd_up_since": 1792602697,
+      "osd_up_since": 1793531495,
       "num_in_osds": 3,
-      "osd_in_since": 1792602531,
+      "osd_in_since": 1793531330,
       "num_remapped_pgs": 0
     },
     "final_health": {
